@@ -25,15 +25,15 @@ potentials and functions defined on chunkers
 
 To install chunkie, you need mwrap to compile the
 mexfile. With mwrap installed, you should be able
-to build the mexfile with
+to build the mexfile by executing
 
 ```bash
 make mexfile
 ```
-
-Once the mexfile is installed, all that you need
-to do is to add the mwrap and matlab directories
-(with subdirectories) to your matlab path.
+in the top-level directory. Once the mexfile is installed,
+all that you need to do to use chunkie is to add the mwrap
+and matlab directories (with subdirectories) to your matlab
+path.
 
 ## Using chunkie
 
