@@ -249,22 +249,6 @@ whts = reshape(whts,k,nch);
 
 end
 
-@function mat = normalonesmatwrap(chunker)
-
-k = chunker.k;
-nch = chunker.nch;
-chunks = chunker.chunks;
-ders = chunker.ders;
-hs = chunker.hs;
-
-whts = chunkwhts(chunker);
-rnorms = chunknormals(chunker);
-
-mat = zeros(2*k*nch,2*k*nch) + 1i*zeros(2*k*nch,2*k*nch);
-
-# FORTRAN normalonesmat(inout dcomplex[] mat, double[] whts, double[] rnorms, int[1] k, int[1] nch);
-
-end
 
 @function rnorms = chunknormals(chunker)
 

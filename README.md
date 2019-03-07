@@ -1,8 +1,7 @@
-# chunkie --- CHUNK-based Integral Equations
+# chunkie: CHUNK-based Integral Equations
 
 A MATLAB package for prototyping integral equation
 methods in two dimensions.
-
 While chunkie is primarily intended as a proto-typing
 or pedagogical tool, it is designed to be reasonably
 efficient and has been used to produce research-grade
@@ -14,13 +13,39 @@ a "chunker" object which stores the description of the
 curve in chunk format (the curve is discretized into chunks
 such that on each chunk a legendre interpolant in parameter
 space is accurate to some prescribed accuracy).
-- routines for setting up system matrices corresponding
-to logarithmically singular integral equation kernels
-on a chunker
-- designed to inter-operate with Ken Ho's fast linear algebra
-in MATLAB (FLAM, more to come!)
-- various routines for evaluating layer potentials
-and functions defined on chunkers
+- chunkie has routines for setting up system matrices
+corresponding to logarithmically singular integral equation
+kernels defined on a chunker
+- chunkie is designed to inter-operate with Ken Ho's fast
+linear algebra in MATLAB package (FLAM) --- more to come!
+- chunkie includes various routines for evaluating layer
+potentials and functions defined on chunkers
 
-## 
+## License
 
+chunkie is copyright 2019 Michael O'Neil, James
+Bremer, Travis Askham, and Manas Rachh.
+
+chunkie is available under the terms of the
+BSD 3-clause license, which should have been included
+in the distribution (see LICENSE.md)
+
+chunkie also depends on some routines from the
+FMMLIB2D package of Greengard and Gimbutas (with
+some routines from Rokhlin) which are available
+under the BSD 3-clause license in that folder
+
+## TO DO
+
+chunkie is new software. Some short term plans
+include:
+
+- professionalization of documentation
+- building out a suite of demonstrations
+- tighter integration with FLAM
+- allowing for different singular integration
+paradigms (e.g. following the work of Helsing et al.,
+Kloeckner et al., and Serkh et al.)
+- arbitrary dimension curves on chunks
+- libraries for evaluating some common integral
+kernels

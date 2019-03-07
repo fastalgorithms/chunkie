@@ -5,6 +5,8 @@ narms = 5;
 amp = 0.3;
 x0 = 0.0;
 y0 = 0.0;
+phi = 0.0;
+scale = 1.0;
 if nargin > 1 && ~isempty(varargin{1})
     narms = varargin{1};
 end
