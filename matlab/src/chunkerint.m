@@ -38,36 +38,30 @@ else
     f = reshape(f,k,nch);
 end
 
-[xc,yc,xpc,ypc] = chunkerexps(chunker);
-[x,w,u,v] = legeexps(k);
-
 if opts.usesmooth
     % assume smooth weights are good enough
+    whts = chunkwhts(chunker);
     if iffun
         fint = 0.0;
-        for i = 1:nch
-            fvals = f(chunker.chunks(:,:,i));
-            fint = fint + sum(fvals.*sqrt(chunker.ders(1,:,i).^2 + ...
-                chunker.ders(2,:,i).^2).*w)*hs(i);
-        end
+        fvals = f(reshape(chunker.chunks,2,chunker.k*chunker.nch));
     else
-        fint = 0.0;
-        for i = 1:nch
-            fvals = f(:,k);
-            fint = fint + sum(fvals.*sqrt(chunker.ders(1,:,i).^2 + ...
-                chunker.ders(2,:,i).^2).*w)*hs(i);
-        end
+        fvals = f(:);
     end
+    
+    fint = (whts(:)).'*fvals(:);
     
 else
     % use adaptive quadrature
+    [xc,yc,xpc,ypc] = chunkerexps(chunker);
+    [x,w,u,v] = legeexps(k);
+    
     if iffun
         fint = 0.0;
         for i = 1:nch
             xci = xc(:,i); yci = yc(:,i); 
             xpci = xpc(:,i); ypci = ypc(:,i);
             fint = fint + ...
-                chunkerintchunk_fhandle(f,xci,yci,xpci,ypci)*hs(i);
+                chunkerintchunk_fhandle(f,xci,yci,xpci,ypci)*chunker.hs(i);
         end
     else
         fint = 0.0;
@@ -76,7 +70,7 @@ else
             xci = xc(:,i); yci = yc(:,i); 
             xpci = xpc(:,i); ypci = ypc(:,i);
             fci = fc(:,i);
-            fint = fint + chunkerintchunk_fcoefs(fci,xpci,ypci)*hs(i);
+            fint = fint + chunkerintchunk_fcoefs(fci,xpci,ypci)*chunker.hs(i);
         end
     end
     
