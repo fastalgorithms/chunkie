@@ -46,8 +46,8 @@ TEST_DIR = test
 TMP_DIR = tmp
 MDIR = matlab
 MWRAP_DIR = mwrap
-
-VPATH = $(SRC_DIR):$(BIN_DIR)
+FMMLIB_DIR = external/fmmlib_subset
+VPATH = $(SRC_DIR):$(BIN_DIR):$(FMMLIB_DIR)
 
 # names
 
@@ -62,9 +62,7 @@ GATEWAY = $(LIBBASE)gateway
 MWRAPFILE = $(LIBBASE)
 
 MODS =
-OBJS = 	prini.o \
-	chunks_ders.o \
-	dlaran.o \
+OBJS = 	chunks_ders.o \
 	chunks.o \
 	chunks_multi.o \
 	chunks_multi_extras.o\
@@ -99,11 +97,8 @@ lib: setup_dir $(MODS) $(OBJS)
 
 clean:
 	cd $(BIN_DIR); rm -f *
-	cd $(MDIR); rm -f *.m $(GATEWAY).c *.mex* *~
+	cd $(MWRAP_DIR); rm -f $(GATEWAY).c *.mex*
 
-deepclean:
-	cd $(BIN_DIR); rm -f *
-	cd $(TMP_DIR); rm -f *
 
 distclean: clean
 	cd $(BIN_DIR); rm -f $(LIBNAME)
