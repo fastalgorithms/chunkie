@@ -1,0 +1,1090 @@
+@function readme_chunks()
+%README
+%
+% This software is being released under a modified FreeBSD
+% license
+%
+% The chunks library is Copyright (c) 2018: Michael O'Neil,
+% James Bremer, Manas Rachh, and Travis Askham
+%
+% Contact: askham@uw.edu
+% 
+
+
+@function [x,w,u,v] = legeexps(k)
+
+itype = 0;
+if nargout > 1; itype = 1; end
+if nargout > 2; itype = 2; end
+
+if itype == 0
+   x = zeros(k,1);
+   w = zeros(1,1);
+   u = zeros(1,1);
+   v = zeros(1,1);
+end 
+
+if itype == 1
+   x = zeros(k,1);
+   w = zeros(k,1);
+   u = zeros(1,1);
+   v = zeros(1,1);
+end 
+
+if itype == 2
+   x = zeros(k,1);
+   w = zeros(k,1);
+   u = zeros(k,k);
+   v = zeros(k,k);
+end 
+
+# FORTRAN legeexps(int[1] itype, int[1] k, inout double[] x, inout double[] u, inout double[] v, inout double[] w);
+
+end
+
+@function vals = legeexevvec(x,coef)
+
+k = length(coef);
+km1 = k-1;
+
+sz = size(x);
+
+x = x(:);
+n = length(x);
+vals = zeros(n,1);
+
+if isreal(coef)
+
+   # FORTRAN legeexevvec(int[1] n, double[] x, inout double[] vals, double[] coef, int[1] km1);
+
+else
+
+   vals2 = zeros(n,1);
+   rcoef = real(coef); icoef = imag(coef);
+   # FORTRAN legeexevvec(int[1] n, double[] x, inout double[] vals, double[] rcoef, int[1] km1);
+   
+   # FORTRAN legeexevvec(int[1] n, double[] x, inout double[] vals2, double[] icoef, int[1] km1);
+
+   vals = vals+1i*vals2;
+
+end
+
+vals = reshape(vals,sz);
+
+end
+
+
+@function [wgeos,info] = multichunkfunc(geopars,varargin)
+%MULTICHUNKFUNC
+%
+% This routine constructs a multi-chunk object in
+% the array wgeos based on the description in geopars
+%
+
+eps = geopars.eps;
+ifclosed = geopars.ifclosed;
+chsmall = geopars.chsmall;
+tas = geopars.tas;
+tbs = geopars.tbs;
+pars = geopars.pars;
+ipars = geopars.ipars;
+k = geopars.k;
+novers = geopars.novers;
+type = geopars.type;
+ncomp = geopars.ncomp;
+
+% default values
+ntrymax = 100;
+ncompmax = ncomp;
+lwgeos = 100000;
+
+if (nargin > 1)
+   lwgeos = varargin{1};
+end
+
+if (nargin > 2)
+   ncompmax = varargin{2};
+end
+
+if (nargin > 3)
+   ntrymax = varargin{3};
+end	   
+
+lused = -1;
+ier = -1;
+
+for i = 1:ntrymax
+    wgeos = zeros(lwgeos,1);
+    if (strcmp(type,'rmodes'))
+       # FORTRAN multichunkfuncrmodes(double[] eps, int[] ifclosed, double[] chsmall, double[] tas, double[] tbs, double[] pars, int[] ipars, int[1] k, int[] novers, inout double[] wgeos, int[1] lwgeos, int[1] ncomp, int[1] ncompmax, inout int[1] lused, inout int[1] ier);
+    end
+    switch ier
+    	   case 1
+	   	ncompmax = ncomp;
+           case 4
+	   	lwgeos = 2*lwgeos;
+           otherwise
+		break;
+    end
+end
+
+% sort chunks
+# FORTRAN multichunksort(inout double[] wgeos, inout int[1] ier);
+
+info.ncomp = ncomp;
+info.ncompmax = ncompmax;
+info.lwgeos = lwgeos;
+info.k = k;
+info.lused = lused;
+info.ier = ier;
+
+end
+
+@function [wgeo,nchs] = multichunkmergepack(wgeos)
+
+ncomp = -1; ncompmax = -1;
+indices = -1; lwgeos = -1; lused = -1;
+ier = 0;
+% query
+# FORTRAN multichunkinfo(double[] wgeos, inout int[1] ncomp, inout int[1] ncompmax, inout int[1] indices, inout int[1] lwgeos, inout int[1] lused);
+lwgeo = lused;
+wgeo = zeros(lused,1);
+# FORTRAN multichunkmergepack(double[] wgeos, inout double[] wgeo, int[1] lwgeo, inout int[1] lused, inout int[1] ier);
+nchs = zeros(ncomp,1);
+# FORTRAN multichunknchs(double[] wgeos, inout int[] nchs, inout int[1] ncomp);
+
+end
+
+@function wgeo = multichunkgetcomp(wgeos,icomp)
+
+wgeo = 1.0;
+lwgeo = -1;
+lused = -1;
+ier = 0;
+% query
+# FORTRAN multichunkgetcomp(double[] wgeos, inout double[] wgeo, int[1] lwgeo, inout int[1] lused, int[1] icomp, inout int[1] ier);
+lwgeo = lused;
+wgeo = zeros(lused,1);
+# FORTRAN multichunkgetcomp(double[] wgeos, inout double[] wgeo, int[1] lwgeo, inout int[1] lused,int[1] icomp, inout int[1] ier);
+
+end
+
+@function chunker = chunkunpack(wgeo)
+
+k = -1; nch = -1; ichunks = -1; iadjs = -1;
+iders = -1; iders2 = -1; ihs = -1;
+
+# FORTRAN chunkunpack1(double[] wgeo, inout int[1] k, inout int[1] nch, inout int[1] ichunks, inout int[1] iadjs, inout int[1] iders, inout int[1] iders2, inout int[1] ihs);
+
+chunks = zeros(2,k,nch);
+adjs = zeros(2,nch);
+ders = zeros(2,k,nch);
+ders2 = zeros(2,k,nch);
+hs = zeros(nch,1);
+
+# FORTRAN chunkunpack(double[] wgeo, inout int[1] k, inout int[1] nch, inout double[] chunks, inout int[] adjs, inout double[] ders, inout double[] ders2, inout double[] hs);
+
+chunker.k = k; chunker.nch = nch;
+chunker.chunks = chunks;
+chunker.adjs = adjs;
+chunker.ders = ders;
+chunker.ders2 = ders2;
+chunker.hs = hs;
+
+end
+
+@function wgeo = chunkpack(chunker)
+
+k = chunker.k; nch = chunker.nch;
+chunks = chunker.chunks;
+adjs = chunker.adjs;
+ders = chunker.ders;
+ders2 = chunker.ders2;
+hs = chunker.hs;
+
+% estimate storage
+
+ninre = 1; % overestimate
+
+ichunks=11;
+lchunks=2*k*nch;
+
+iadjs=ichunks+lchunks+100;
+ladjs=2*nch/ninre;
+
+iders=iadjs+ladjs+100;
+lders=2*k*nch;
+
+iders2=iders+lders+100;
+lders2=2*k*nch;
+
+ihs=iders2+lders2+100;
+lhs=nch;
+lused=ihs+lhs+100;
+
+lwgeo = lused + 100;
+wgeo = zeros(lwgeo,1);
+
+#FORTRAN chunkpack(int[1] k, int[1] nch, double[] chunks, int[] adjs, double[] ders, double[] ders2, double[] hs, inout double[] wgeo, inout int[1] lused);
+
+if lused > lwgeo
+   error('wgeo too long')
+end
+
+end
+
+@function whts = chunkwhts(chunker)
+
+k = chunker.k;
+nch = chunker.nch;
+chunks = chunker.chunks;
+ders = chunker.ders;
+hs = chunker.hs;
+
+whts = zeros(k*nch,1);
+
+# FORTRAN chunkwhts(int[1] k, int[1] nch, double[] chunks, double[] ders, double[] hs, inout double[] whts);
+
+whts = reshape(whts,k,nch);
+
+end
+
+@function mat = normalonesmatwrap(chunker)
+
+k = chunker.k;
+nch = chunker.nch;
+chunks = chunker.chunks;
+ders = chunker.ders;
+hs = chunker.hs;
+
+whts = chunkwhts(chunker);
+rnorms = chunknormals(chunker);
+
+mat = zeros(2*k*nch,2*k*nch) + 1i*zeros(2*k*nch,2*k*nch);
+
+# FORTRAN normalonesmat(inout dcomplex[] mat, double[] whts, double[] rnorms, int[1] k, int[1] nch);
+
+end
+
+@function rnorms = chunknormals(chunker)
+
+k = chunker.k;
+nch = chunker.nch;
+ders = chunker.ders;
+hs = chunker.hs;
+
+dd = sqrt(ders(1,:,:).^2 + ders(2,:,:).^2);
+rnorms = zeros(2,k,nch);
+rnorms(1,:,:) = ders(2,:,:)./dd;
+rnorms(2,:,:) = -ders(1,:,:)./dd;
+
+end
+
+@function onesmat = chunkonesmat(chunker)
+
+whts = chunkwhts(chunker);
+whts = whts(:);
+temp = ones(size(whts));
+onesmat = bsxfun(@times,temp,whts.');
+
+end
+
+@function df = chunkderf(chunker,f,ndim)
+
+k = chunker.k;
+nch = chunker.nch;
+chunks = chunker.chunks;
+ders = chunker.ders;
+hs = chunker.hs;
+
+df = zeros(size(f));
+
+# FORTRAN chunkderf(double[] f,inout double[] df,int[1] ndim,int[1] k,int[1] nch,double[] chunks, double[] ders,double[] hs);
+
+end
+
+@function normonesmat = chunknormonesmat(chunker)
+
+whts = chunkwhts(chunker);
+rnorms = chunknormals(chunker);
+whts = whts(:);
+whts2 = repmat(whts.',2,1);
+whts2 = whts2(:).*rnorms(:);
+
+normonesmat = bsxfun(@times,rnorms(:),whts2.');
+
+end
+
+@function chunker = chunkfunc(fcurve,varargin)
+%CHUNKFUNC
+%
+%	cparams = varargin{1} ---> curve parameters
+%
+%	cparams.ta = left end of t interval (0)
+% 	cparams.tb = right end of t interval (2*pi)
+% 	cparams.ifclosed = flag determining if the curve
+% 	   is to be interpreted as a closed curve (1)
+% 	cparams.chsmall = max size of end intervals if
+% 	   ifclosed == 0 (1.0)
+%	cparams.nover = oversample resolved curve nover
+%          times (0)
+% 	cparams.k = order of chunking (16)
+%       cparams.nchmax = maximum number of chunks to
+%          use (10000)
+%       cparams.eps = resolve coordinates, arclength,
+%          and first and second derivs of coordinates
+%          to this tolerance (1.0e-6)
+%       cparams.levrestr = flag, determines if level
+%          restriction is enforce, i.e. no chunk should
+%          have double the arc length of its neighbor (1)
+%
+
+   cparams.ta = 0.0; cparams.tb = 2*pi; cparams.ifclosed=1;
+   cparams.chsmall = 1.0; cparams.nover = 0; cparams.k = 16;
+   cparams.nchmax = 10000; cparams.eps = 1.0e-6;
+   cparams.levrestr = 1; cparams.maxchunklen = Inf;
+
+   if (nargin > 1)
+     cpin = varargin{1};
+     if isfield(cpin,'ta')
+       cparams.ta = cpin.ta;
+     end	 
+     if isfield(cpin,'tb')
+       cparams.tb = cpin.tb;
+     end	 
+     if isfield(cpin,'ifclosed')
+       cparams.ifclosed = cpin.ifclosed;
+     end	 
+     if isfield(cpin,'chsmall')
+       cparams.chsmall = cpin.chsmall;
+     end	 
+     if isfield(cpin,'nover')
+       cparams.nover = cpin.nover;
+     end	 
+     if isfield(cpin,'k')
+       cparams.k = cpin.k;
+     end	 
+     if isfield(cpin,'nchmax')
+       cparams.nchmax = cpin.nchmax;
+     end	 
+     if isfield(cpin,'eps')
+       cparams.eps = cpin.eps;
+     end	 
+     if isfield(cpin,'levrestr')
+       cparams.levrestr = cpin.levrestr;
+     end
+     if isfield(cpin,'maxchunklen')
+       cparams.maxchunklen = cpin.maxchunklen;
+     end
+   end
+
+   ta = cparams.ta; tb = cparams.tb; ifclosed = cparams.ifclosed;
+   chsmall = cparams.chsmall; nover = cparams.nover; k = cparams.k;
+   nchmax = cparams.nchmax; eps = cparams.eps;
+   levrestr = cparams.levrestr;
+
+   ifprocess = zeros(nchmax,1);
+
+%       construct legendre nodes and weights, k and 2k of them, as well
+%       as the interpolation/coefficients matrices
+
+   itype=2; k2 = 2*k;
+   xs = zeros(k,1); u = zeros(k,k); v = zeros(k,k);
+   ws = zeros(k,1);
+   xs2 = zeros(k2,1); u2 = zeros(k2,k2); v2 = zeros(k2,k2);
+   ws2 = zeros(k2,1);
+# FORTRAN legeexps(int[1] itype,int[1] k, inout double[] xs, inout double[] u, inout double[] v, inout double[] ws);
+# FORTRAN legeexps(int[1] itype,int[1] k2, inout double[] xs2, inout double[] u2, inout double[] v2, inout double[] ws2);
+   
+
+%       . . . start chunking
+
+   ab = zeros(2,nchmax);
+   adjs = zeros(2,nchmax);
+   ab(1,1)=ta;
+   ab(2,1)=tb;
+   nch=1;
+   ifdone=1;
+   adjs(1,1)=-1;
+   adjs(2,1)=-1;
+   nchnew=nch;
+
+   fvals = zeros(k2,7);
+   coefs = zeros(k2,7);
+
+   maxiter_res=10000;
+   for ijk = 1:maxiter_res
+
+%       loop through all existing chunks, if resolved store, if not split
+     
+     ifdone=1;
+     for ich=1:nchnew
+
+       if (ifprocess(ich) ~= 1)
+         ifprocess(ich)=1;
+	 a=ab(1,ich);
+	 b=ab(2,ich);
+
+	 ts = a + (b-a)*(xs2+1)/2.0;
+	 fvals(:,1:6) = fcurve(ts);
+	 fvals(:,7) = sqrt(fvals(:,3).^2+fvals(:,4).^2);
+	 coefs = u2*fvals;
+
+	 errs0 = sum(coefs(1:k,:).^2,1);
+	 errs = sum(coefs(k+1:k2,:).^2,1);
+
+	 rmsemax = max(sqrt(errs./errs0/k));
+
+	 a=ab(1,ich);
+         b=ab(2,ich);
+         rlself = chunklength(fcurve,a,b,xs,ws);
+
+
+	 %       . . . mark as processed and resolved if less than eps
+
+	 if (rmsemax > eps || rlself > cparams.maxchunklen)
+		      %       . . . if here, not resolved
+		      %       divide - first update the adjacency list
+	   if (nch +1 > nchmax)
+	     error('too many chunks')
+	   end
+	   
+	   ifprocess(ich)=0;
+	   ifdone=0;
+
+	   if ((nch == 1) && (ifclosed > 0))
+	     adjs(1,nch)=2;
+	     adjs(2,nch)=2;
+	     adjs(1,nch+1)=1;
+	     adjs(2,nch+1)=1;
+	   end
+
+	   if ((nch == 1) && (ifclosed <= 0))
+	     adjs(1,nch)=-1;
+	     adjs(2,nch)=2;
+	     adjs(1,nch+1)=1;
+	     adjs(2,nch+1)=-1;
+	   end
+
+	   if (nch > 1)
+	     iold2=adjs(2,ich);
+	     adjs(2,ich)=nch+1;
+	     if (iold2 > 0)
+	     	adjs(1,iold2)=nch+1;
+             end	
+	       adjs(1,nch+1)=ich;
+	       adjs(2,nch+1)=iold2;
+
+	   end
+				%       now update the endpoints in ab
+	   
+	   ab(1,ich)=a;
+	   ab(2,ich)=(a+b)/2;
+	   
+	   nch=nch+1;
+	   
+	   ab(1,nch)=(a+b)/2;
+	   ab(2,nch)=b;
+	 end
+       end
+     end
+     if ((ifdone == 1) && (nchnew == nch))
+       break;
+     end
+     nchnew=nch;
+   end
+
+%       the curve should be resolved to precision eps now on
+%       each interval ab(,i)
+%       check the size of adjacent neighboring chunks - if off by a
+%       factor of more than 2, split them as well. iterate until done.
+   
+   maxiter_adj=1000;
+   for ijk = 1:maxiter_adj
+
+     nchold=nch;
+     ifdone=1;
+     for i = 1:nchold
+       i1=adjs(1,i);
+       i2=adjs(2,i);
+
+%       calculate chunk lengths
+
+       a=ab(1,i);
+       b=ab(2,i);
+       rlself = chunklength(fcurve,a,b,xs,ws);
+
+       rl1=rlself;
+       rl2=rlself;
+
+       if (i1 > 0)
+         a1=ab(1,i1);
+         b1=ab(2,i1);
+	 rl1 = chunklength(fcurve,a1,b1,xs,ws);
+       end
+       if (i2 > 0)
+         a2=ab(1,i2);
+         b2=ab(2,i2);
+	 rl2 = chunklength(fcurve,a2,b2,xs,ws);
+       end
+
+%       only check if self is larger than either of adjacent blocks,
+%       iterating a couple times will catch everything
+
+       sc = 2.05d0;
+       if (rlself > sc*rl1 || rlself > sc*rl2)
+
+%       split chunk i now, and recalculate nodes, ders, etc
+
+         if (nch + 1 > nchmax) then
+           error('too many chunks')
+         end
+
+	 
+         ifdone=0;
+         a=ab(1,i);
+         b=ab(2,i);
+         ab2=(a+b)/2;
+
+         i1=adjs(1,i);
+         i2=adjs(2,i);
+%        
+         adjs(1,i) = i1;
+         adjs(2,i) = nch+1;
+
+%       . . . first update nch+1
+
+         adjs(1,nch+1) = i;
+         adjs(2,nch+1) = i2;
+
+			     %       . . . if there's an i2, update it
+
+         if (i2 > 0)
+           adjs(1,i2) = nch+1;
+         end
+
+         nch=nch+1;
+
+         ab(1,i)=a;
+         ab(2,i)=ab2;
+
+         ab(1,nch)=ab2;
+         ab(2,nch)=b;
+       end
+     end
+
+     if (ifdone == 1)
+       break;
+     end
+
+   end
+
+%       go ahead and oversample by nover, updating
+%       the adjacency information adjs along the way
+
+
+   if (nover > 0) 
+     for ijk = 1:nover
+
+       nchold=nch;
+       for i = 1:nchold
+         a=ab(1,i);
+         b=ab(2,i);
+		   %       find ab2 using newton such that 
+		   %       len(a,ab2)=len(ab2,b)=half the chunk length
+	 rl = chunklength(fcurve,a,b,xs,ws);
+         rlhalf=rl/2;
+         thresh=1.0d-8;
+         ifnewt=0;
+         ab0=(a+b)/2;
+	 for iter = 1:1000
+
+	   rl1 = chunklength(fcurve,a,ab0,xs,ws);
+	   fval1 = fcurve(ab0);
+	   dsdt = sqrt(fval1(3)^2 + fval1(4)^2);
+           ab1=ab0-(rl1-rlhalf)/dsdt;
+
+           err=rl1-rlhalf;
+           if (abs(err) < thresh)
+	     ifnewt=ifnewt+1;
+	   end
+
+	   if (ifnewt == 3)
+	     break;
+	   end
+           ab0=ab1;
+	 end
+	 
+         if (ifnewt < 3)
+	   error('newton failed in chunker');
+         end
+         ab2=ab1;
+
+         i1=adjs(1,i);
+         i2=adjs(2,i);
+         adjs(2,i)=nch+1;
+         if (i2 > 0)
+	   adjs(1,i2)=nch+1;
+	 end
+
+	 if (nch + 1 > nchmax)
+	   error('too many chunks')
+         end
+
+         adjs(1,nch+1)=i;
+         adjs(2,nch+1)=i2;
+	 
+         ab(1,i)=a;
+         ab(2,i)=ab2;
+	 
+         nch=nch+1;
+
+         ab(1,nch)=ab2;
+         ab(2,nch)=b;
+       end
+     end
+   end
+
+%       up to here, everything has been done in parameter space, [ta,tb]
+%       . . . finally evaluate the k nodes on each chunk, along with 
+%       derivatives and chunk lengths
+
+   chunks = zeros(2,k,nch);
+   ders = zeros(2,k,nch);
+   ders2 = zeros(2,k,nch);
+   hs = zeros(nch,1);
+
+   for i = 1:nch
+     a=ab(1,i);
+     b=ab(2,i);
+     hs(i)=(b-a)/2;
+
+     ts = a + (b-a)*(xs+1)/2;
+     fvals = fcurve(ts);
+     chunks(1,:,i) = fvals(:,1);
+     chunks(2,:,i) = fvals(:,2);     
+     ders(1,:,i) = fvals(:,3);
+     ders(2,:,i) = fvals(:,4);
+     ders2(1,:,i) = fvals(:,5);
+     ders2(2,:,i) = fvals(:,6);
+   end
+
+   chunker.k = k; chunker.nch = nch;
+   chunker.chunks = reshape(chunks,2,k,nch);
+   chunker.adjs = adjs(:,1:nch);
+   chunker.ders = reshape(ders,2,k,nch);
+   chunker.ders2 = reshape(ders2,2,k,nch);
+   chunker.hs = hs;
+
+ end
+
+
+@function len = chunklength(fcurve,a,b,xs,ws)
+
+   k = length(xs);
+   ts = a+(b-a)*(xs+1)/2;
+   fvals = fcurve(ts);
+   dsdt = sqrt(fvals(:,3).^2 + fvals(:,4).^2)*(b-a)/2;
+   len = sum(dsdt.*ws);
+ end
+
+@function [sysmat,info] = chunkskernelmat(chunker,fkern,ndims,intparams)
+
+   k = chunker.k;
+   nch = chunker.nch;
+   chunks = chunker.chunks;
+   adjs = chunker.adjs;
+   ders = chunker.ders;
+   ders2 = chunker.ders2;
+   hs = chunker.hs;
+
+   itype = 1;
+   xs = zeros(k,1); whts = zeros(k,1);
+# FORTRAN legerts(int[1] itype, int[1] k, inout double[] xs, inout double[] whts);   
+
+   intorder = intparams.intorder;
+
+   nquad1 = 0;
+   nquad0 = 0;
+
+# FORTRAN getquadsinfo(int[1] intorder, inout int[1] nquad1, inout int[1] nquad0);
+
+   xs1 = zeros(nquad1,1); whts1 = zeros(nquad1,1);
+   xs0 = zeros(nquad0,k); whts0 = zeros(nquad0,k);
+
+# FORTRAN getquads(int[1] k, inout int[1] nquad1, inout double[] xs1, inout double[] whts1, inout int[1] nquad0, inout double[] xs0, inout double[] whts0);
+
+   sysmat = zeros(ndims(1)*k*nch,ndims(2)*k*nch);
+
+   work1 = zeros(2*k^2+k+500,1);
+   ts1 = zeros(k,1);
+   ainterp1 = zeros(ndims(2)*nquad1,ndims(2)*k);
+   ainterp1_sm = zeros(nquad1,k);
+   temp = eye(ndims(2));
+
+# FORTRAN lematrin(int[1] k, int[1] nquad1, double[] xs1,inout double[] ainterp1_sm,inout double[] ts1, inout double[] work1);
+   ainterp1 = kron(ainterp1_sm,temp);
+
+   ainterps0 = zeros(ndims(2)*nquad0,ndims(2)*k,k);
+   ainterp0_sm = zeros(nquad0,k);
+   for j = 1:k
+       xs0j = xs0(:,j);
+# FORTRAN lematrin(int[1] k, int[1] nquad0, double[] xs0j,inout double[] ainterp0_sm,inout double[] ts1, inout double[] work1);
+     ainterps0(:,:,j) = kron(ainterp0_sm,temp);
+   end
+
+   for j = 1:nch
+     jmat = 1 + (j-1)*k*ndims(2);
+     jmatend = j*k*ndims(2);
+     for i = 1:nch
+       imat = 1 + (i-1)*k*ndims(1);
+       imatend = i*k*ndims(1);
+       ibefore = adjs(1,i);
+       iafter = adjs(2,i);
+
+       if (j == ibefore || j == iafter)
+	 submat = chunksnearbuildmat(k,chunks,ders,hs,i,j, ...
+				     fkern,ndims,nquad1,xs1,whts1,...
+				    ainterp1);
+       elseif (j == i)
+	 submat = chunksdiagbuildmat(k,chunks,ders,hs,...
+				      j,fkern,ndims,...
+				      nquad0,xs0,whts0,ainterps0);
+       else
+	 submat = chunksfarbuildmat(k,chunks,ders,hs,i,j,fkern,ndims,whts);
+       end
+
+       sysmat(imat:imatend,jmat:jmatend) = submat;
+       
+     end
+   end
+	 
+
+ end
+
+@function [sysmat,inds] = chunkskernelmattd(chunker,fkern,ndims,intparams)
+%CHUNKSKERNELMATTD build self and near interactions only
+
+   k = chunker.k;
+   nch = chunker.nch;
+   chunks = chunker.chunks;
+   adjs = chunker.adjs;
+   ders = chunker.ders;
+   ders2 = chunker.ders2;
+   hs = chunker.hs;
+
+   itype = 1;
+   xs = zeros(k,1); whts = zeros(k,1);
+# FORTRAN legerts(int[1] itype, int[1] k, inout double[] xs, inout double[] whts);   
+
+   intorder = intparams.intorder;
+
+   nquad1 = 0;
+   nquad0 = 0;
+
+# FORTRAN getquadsinfo(int[1] intorder, inout int[1] nquad1, inout int[1] nquad0);
+
+   xs1 = zeros(nquad1,1); whts1 = zeros(nquad1,1);
+   xs0 = zeros(nquad0,k); whts0 = zeros(nquad0,k);
+
+# FORTRAN getquads(int[1] k, inout int[1] nquad1, inout double[] xs1, inout double[] whts1, inout int[1] nquad0, inout double[] xs0, inout double[] whts0);
+
+   sysmat = zeros(ndims(1)*k*nch,ndims(2)*k*3);
+
+   inds = zeros(size(sysmat));
+
+   work1 = zeros(2*k^2+k+500,1);
+   ts1 = zeros(k,1);
+   ainterp1 = zeros(ndims(2)*nquad1,ndims(2)*k);
+   ainterp1_sm = zeros(nquad1,k);
+   temp = eye(ndims(2));
+
+# FORTRAN lematrin(int[1] k, int[1] nquad1, double[] xs1,inout double[] ainterp1_sm,inout double[] ts1, inout double[] work1);
+   ainterp1 = kron(ainterp1_sm,temp);
+
+   ainterps0 = zeros(ndims(2)*nquad0,ndims(2)*k,k);
+   ainterp0_sm = zeros(nquad0,k);
+   for j = 1:k
+       xs0j = xs0(:,j);
+# FORTRAN lematrin(int[1] k, int[1] nquad0, double[] xs0j,inout double[] ainterp0_sm,inout double[] ts1, inout double[] work1);
+     ainterps0(:,:,j) = kron(ainterp0_sm,temp);
+   end
+
+   for i = 1:nch
+     imat = 1 + (i-1)*k*ndims(1);
+     imatend = i*k*ndims(1);
+     ibefore = adjs(1,i);
+     iafter = adjs(2,i);
+
+     j = ibefore;
+     jmat = 1;
+     jmatend = k*ndims(2);
+     submat = chunksnearbuildmat(k,chunks,ders,hs,i,j, ...
+				 fkern,ndims,nquad1,xs1,whts1,...
+				 ainterp1);
+
+     sysmat(imat:imatend,jmat:jmatend) = submat;
+     inds(imat:imatend,jmat:jmatend) = repmat((j-1)*k*ndims(2)+1:j*k*ndims(2),k*ndims(1),1);
+
+     j = i;
+     jmat = 1+k*ndims(2);
+     jmatend = 2*k*ndims(2);
+     submat = chunksdiagbuildmat(k,chunks,ders,hs,...
+				 j,fkern,ndims,...
+				 nquad0,xs0,whts0,ainterps0);
+     
+     sysmat(imat:imatend,jmat:jmatend) = submat;
+     inds(imat:imatend,jmat:jmatend) = repmat((j-1)*k*ndims(2)+1:j*k*ndims(2),k*ndims(1),1);
+     
+     j = iafter;
+     jmat = 1+2*k*ndims(2);
+     jmatend = 3*k*ndims(2);
+     submat = chunksnearbuildmat(k,chunks,ders,hs,i,j, ...
+				 fkern,ndims,nquad1,xs1,whts1,...
+				 ainterp1);
+
+     sysmat(imat:imatend,jmat:jmatend) = submat;  
+     inds(imat:imatend,jmat:jmatend) = repmat((j-1)*k*ndims(2)+1:j*k*ndims(2),k*ndims(1),1);		
+   end
+
+ end
+
+
+
+@function submat = chunksfarbuildmat(k,chunks,ders,hs,i,j,fkern,ndims,whts)
+
+				% grab specific boundary data
+      
+   chunks_src = chunks(:,:,j);
+   chunks_targ = chunks(:,:,i);
+   ders_src = ders(:,:,j);
+   ders_targ = ders(:,:,i);
+   h_src = hs(j);
+   h_targ = hs(i);
+
+				% weights and such
+
+   srcn = zeros(2,k);
+   targn = zeros(2,k);
+   
+   ddt = sqrt(ders_targ(1,:).^2 + ders_targ(2,:).^2);
+   targn(1,:) = ders_targ(2,:)./ddt;
+   targn(2,:) = -ders_targ(1,:)./ddt;
+   dds = sqrt(ders_src(1,:).^2 + ders_src(2,:).^2);
+   srcn(1,:) = ders_src(2,:)./dds;
+   srcn(2,:) = -ders_src(1,:)./dds;
+
+   dsdt = dds(:).*whts(:)*h_src;
+
+
+   dsdtndim2 = repmat(dsdt(:).',ndims(2),1);
+   dsdtndim2 = dsdtndim2(:);
+
+   submat = fkern(chunks_src,chunks_targ,srcn,targn)*diag(dsdtndim2);
+
+ end
+
+@function submat = chunksnearbuildmat(k,chunks,ders,hs,...
+				      i,j,fkern,ndims,...
+				      nquad1,xs1,whts1,ainterp1)
+
+				% grab specific boundary data
+      
+   chunks_src = chunks(:,:,j);
+   chunks_targ = chunks(:,:,i);
+   ders_src = ders(:,:,j);
+   ders_targ = ders(:,:,i);
+   h_src = hs(j);
+   h_targ = hs(i);
+
+				% interpolate boundary info
+
+				% get relevant coefficients
+
+   xcoefs_src = zeros(k,1);
+   ycoefs_src = zeros(k,1);
+   xpcoefs_src = zeros(k,1);
+   ypcoefs_src = zeros(k,1);   
+   
+# FORTRAN chunksexps(int[1] k,double[] chunks_src,inout double[] xcoefs_src,inout double[] ycoefs_src);
+# FORTRAN chunksexps(int[1] k,double[] ders_src,inout double[] xpcoefs_src,inout double[] ypcoefs_src);
+   
+				% then interpolate 
+   
+   xs = zeros(nquad1,1);
+   ys = zeros(nquad1,1);
+   xps = zeros(nquad1,1);
+   yps = zeros(nquad1,1);
+   srcn = zeros(2,nquad1);
+
+   xsj = 0; ysj = 0; xpsj = 0; ypsj = 0;
+   km1 = k-1;
+
+   xs = legeexevvec(xs1,xcoefs_src);
+   ys = legeexevvec(xs1,ycoefs_src);
+   xps = legeexevvec(xs1,xpcoefs_src);
+   yps = legeexevvec(xs1,ypcoefs_src);
+   
+   dds = sqrt(xps.^2+yps.^2);
+   src = [xs.';ys.'];
+   srcn(1,:) = yps./dds;
+   srcn(2,:) = -xps./dds;
+
+   targn = zeros(2,k);
+   ddt = sqrt(ders_targ(1,:).^2 + ders_targ(2,:).^2);
+   targn(1,:) = ders_targ(2,:)./ddt;
+   targn(2,:) = -ders_targ(1,:)./ddt;
+
+   dsdt = dds.*whts1*h_src;
+
+   dsdtndim2 = repmat(dsdt(:).',ndims(2),1);
+   dsdtndim2 = dsdtndim2(:);
+
+      % get kernel values and then premultiply by interpolating matrix
+   
+   smatbig = fkern(src,chunks_targ,srcn,targn);
+   submat = smatbig*diag(dsdtndim2)*ainterp1;
+
+ end
+   
+@function submat = chunksdiagbuildmat(k,chunks,ders,hs,...
+				      j,fkern,ndims,...
+				      nquad0,xs0,whts0,ainterps0)
+
+				% grab specific boundary data
+      
+   chunks_src = chunks(:,:,j);
+   ders_src = ders(:,:,j);
+   h_src = hs(j);
+
+				% interpolate boundary info
+
+				% get relevant coefficients
+
+   xcoefs_src = zeros(k,1);
+   ycoefs_src = zeros(k,1);
+   xpcoefs_src = zeros(k,1);
+   ypcoefs_src = zeros(k,1);   
+   
+# FORTRAN chunksexps(int[1] k,double[] chunks_src,inout double[] xcoefs_src,inout double[] ycoefs_src);
+# FORTRAN chunksexps(int[1] k,double[] ders_src,inout double[] xpcoefs_src,inout double[] ypcoefs_src);
+
+				% then interpolate 
+   
+   xs = zeros(nquad0,k);
+   ys = zeros(nquad0,k);
+   xps = zeros(nquad0,k);
+   yps = zeros(nquad0,k);
+   src = zeros(2,nquad0,k);
+   srcn = zeros(2,nquad0,k);   
+
+   xsj = 0; ysj = 0; xpsj = 0; ypsj = 0;
+   km1 = k-1;
+
+   xs = legeexevvec(xs0,xcoefs_src);
+   ys = legeexevvec(xs0,ycoefs_src);
+   xps = legeexevvec(xs0,xpcoefs_src);
+   yps = legeexevvec(xs0,ypcoefs_src);   
+
+   dds = sqrt(xps.^2+yps.^2);
+   src(1,:,:) = xs;
+   src(2,:,:) = ys;
+   srcn(1,:,:) = yps./dds;
+   srcn(2,:,:) = -xps./dds;
+
+   targn = zeros(2,k);
+   ddt = sqrt(ders_src(1,:).^2 + ders_src(2,:).^2);
+   targn(1,:) = ders_src(2,:)./ddt;
+   targn(2,:) = -ders_src(1,:)./ddt;
+
+   dsdt = dds.*whts0*h_src;
+
+      % get kernel values and then premultiply by interpolating matrix
+
+   submat = zeros(ndims(1)*k,ndims(2)*k);
+   for j = 1:k
+     smatbigj = fkern(src(:,:,j),chunks_src(:,j),srcn(:,:,j),targn(:,j));
+     dsdtndim2 = repmat(dsdt(:,j).',ndims(2),1);
+     dsdtndim2 = dsdtndim2(:);
+     submat(ndims(1)*(j-1)+1:ndims(1)*j,:) = smatbigj*diag(dsdtndim2)*ainterps0(:,:,j);
+   end
+
+ end
+   
+
+@function [xc,yc,xpc,ypc] = chunkerexps(chunker)
+%CHUNKEREXPS utility function, compute legendre expansions
+% of coordinates and derivatives of coordinates for each
+% chunk
+
+   k = chunker.k;
+
+   xcoefs_src = zeros(k,1);
+   ycoefs_src = zeros(k,1);
+   xpcoefs_src = zeros(k,1);
+   ypcoefs_src = zeros(k,1);
+
+   nch = chunker.nch;
+
+   xc = zeros(k,nch);
+   yc = zeros(k,nch);
+   xpc = zeros(k,nch);
+   ypc = zeros(k,nch);   
+
+   for i = 1:nch
+   chunks_src = chunker.chunks(:,:,i);
+   ders_src = chunker.ders(:,:,i);
+   # FORTRAN chunksexps(int[1] k,double[] chunks_src,inout double[] xcoefs_src,inout double[] ycoefs_src);
+   # FORTRAN chunksexps(int[1] k,double[] ders_src,inout double[] xpcoefs_src,inout double[] ypcoefs_src);
+   xc(:,i) = xcoefs_src;
+   yc(:,i) = ycoefs_src;
+   xpc(:,i) = xpcoefs_src;
+   ypc(:,i) = ypcoefs_src;
+
+   end
+
+end
+
+@function chunkerout = chunkreverse(chunker)
+
+
+k = chunker.k; nch = chunker.nch;
+chunks = chunker.chunks;
+adjs = chunker.adjs;
+ders = chunker.ders;
+ders2 = chunker.ders2;
+hs = chunker.hs;
+
+#FORTRAN chunkreverse(int[1] k, int[1] nch, inout double[] chunks, inout int[] adjs, inout double[] ders, inout double[] ders2, inout double[] hs);
+
+chunkerout = [];
+chunkerout.k = k; chunkerout.nch = nch;
+chunkerout.chunks = chunks;
+chunkerout.adjs = adjs;
+chunkerout.ders = ders;
+chunkerout.ders2 = ders2;
+chunkerout.hs = hs;  
+
+end
+
+@function chunkerout = chunksort(chunker)
+
+
+k = chunker.k; nch = chunker.nch;
+chunks = chunker.chunks;
+adjs = chunker.adjs;
+ders = chunker.ders;
+ders2 = chunker.ders2;
+hs = chunker.hs;
+
+#FORTRAN chunksort(int[1] k, int[1] nch, inout double[] chunks, inout int[] adjs, inout double[] ders, inout double[] ders2, inout double[] hs);
+
+chunkerout = [];
+chunkerout.k = k; chunkerout.nch = nch;
+chunkerout.chunks = chunks;
+chunkerout.adjs = adjs;
+chunkerout.ders = ders;
+chunkerout.ders2 = ders2;
+chunkerout.hs = hs;  
+
+end
