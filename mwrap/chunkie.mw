@@ -74,101 +74,6 @@ vals = reshape(vals,sz);
 end
 
 
-@function [wgeos,info] = multichunkfunc(geopars,varargin)
-%MULTICHUNKFUNC
-%
-% This routine constructs a multi-chunk object in
-% the array wgeos based on the description in geopars
-%
-
-eps = geopars.eps;
-ifclosed = geopars.ifclosed;
-chsmall = geopars.chsmall;
-tas = geopars.tas;
-tbs = geopars.tbs;
-pars = geopars.pars;
-ipars = geopars.ipars;
-k = geopars.k;
-novers = geopars.novers;
-type = geopars.type;
-ncomp = geopars.ncomp;
-
-% default values
-ntrymax = 100;
-ncompmax = ncomp;
-lwgeos = 100000;
-
-if (nargin > 1)
-   lwgeos = varargin{1};
-end
-
-if (nargin > 2)
-   ncompmax = varargin{2};
-end
-
-if (nargin > 3)
-   ntrymax = varargin{3};
-end	   
-
-lused = -1;
-ier = -1;
-
-for i = 1:ntrymax
-    wgeos = zeros(lwgeos,1);
-    if (strcmp(type,'rmodes'))
-       # FORTRAN multichunkfuncrmodes(double[] eps, int[] ifclosed, double[] chsmall, double[] tas, double[] tbs, double[] pars, int[] ipars, int[1] k, int[] novers, inout double[] wgeos, int[1] lwgeos, int[1] ncomp, int[1] ncompmax, inout int[1] lused, inout int[1] ier);
-    end
-    switch ier
-    	   case 1
-	   	ncompmax = ncomp;
-           case 4
-	   	lwgeos = 2*lwgeos;
-           otherwise
-		break;
-    end
-end
-
-% sort chunks
-# FORTRAN multichunksort(inout double[] wgeos, inout int[1] ier);
-
-info.ncomp = ncomp;
-info.ncompmax = ncompmax;
-info.lwgeos = lwgeos;
-info.k = k;
-info.lused = lused;
-info.ier = ier;
-
-end
-
-@function [wgeo,nchs] = multichunkmergepack(wgeos)
-
-ncomp = -1; ncompmax = -1;
-indices = -1; lwgeos = -1; lused = -1;
-ier = 0;
-% query
-# FORTRAN multichunkinfo(double[] wgeos, inout int[1] ncomp, inout int[1] ncompmax, inout int[1] indices, inout int[1] lwgeos, inout int[1] lused);
-lwgeo = lused;
-wgeo = zeros(lused,1);
-# FORTRAN multichunkmergepack(double[] wgeos, inout double[] wgeo, int[1] lwgeo, inout int[1] lused, inout int[1] ier);
-nchs = zeros(ncomp,1);
-# FORTRAN multichunknchs(double[] wgeos, inout int[] nchs, inout int[1] ncomp);
-
-end
-
-@function wgeo = multichunkgetcomp(wgeos,icomp)
-
-wgeo = 1.0;
-lwgeo = -1;
-lused = -1;
-ier = 0;
-% query
-# FORTRAN multichunkgetcomp(double[] wgeos, inout double[] wgeo, int[1] lwgeo, inout int[1] lused, int[1] icomp, inout int[1] ier);
-lwgeo = lused;
-wgeo = zeros(lused,1);
-# FORTRAN multichunkgetcomp(double[] wgeos, inout double[] wgeo, int[1] lwgeo, inout int[1] lused,int[1] icomp, inout int[1] ier);
-
-end
-
 @function chunker = chunkunpack(wgeo)
 
 k = -1; nch = -1; ichunks = -1; iadjs = -1;
@@ -323,49 +228,45 @@ end
 %          have double the arc length of its neighbor (1)
 %
 
-   cparams.ta = 0.0; cparams.tb = 2*pi; cparams.ifclosed=1;
-   cparams.chsmall = 1.0; cparams.nover = 0; cparams.k = 16;
-   cparams.nchmax = 10000; cparams.eps = 1.0e-6;
-   cparams.levrestr = 1; cparams.maxchunklen = Inf;
+   ta = 0.0; tb = 2*pi; ifclosed=1;
+   chsmall = 1.0; nover = 0; k = 16;
+   nchmax = 10000; eps = 1.0e-6;
+   levrestr = 1; maxchunklen = Inf;
 
    if (nargin > 1)
      cpin = varargin{1};
      if isfield(cpin,'ta')
-       cparams.ta = cpin.ta;
+       ta = cpin.ta;
      end	 
      if isfield(cpin,'tb')
-       cparams.tb = cpin.tb;
+       tb = cpin.tb;
      end	 
      if isfield(cpin,'ifclosed')
-       cparams.ifclosed = cpin.ifclosed;
+       ifclosed = cpin.ifclosed;
      end	 
      if isfield(cpin,'chsmall')
-       cparams.chsmall = cpin.chsmall;
+       chsmall = cpin.chsmall;
      end	 
      if isfield(cpin,'nover')
-       cparams.nover = cpin.nover;
+       nover = cpin.nover;
      end	 
      if isfield(cpin,'k')
-       cparams.k = cpin.k;
+       k = cpin.k;
      end	 
      if isfield(cpin,'nchmax')
-       cparams.nchmax = cpin.nchmax;
+       nchmax = cpin.nchmax;
      end	 
      if isfield(cpin,'eps')
-       cparams.eps = cpin.eps;
+       eps = cpin.eps;
      end	 
      if isfield(cpin,'levrestr')
-       cparams.levrestr = cpin.levrestr;
+       levrestr = cpin.levrestr;
      end
      if isfield(cpin,'maxchunklen')
-       cparams.maxchunklen = cpin.maxchunklen;
+       maxchunklen = cpin.maxchunklen;
      end
    end
 
-   ta = cparams.ta; tb = cparams.tb; ifclosed = cparams.ifclosed;
-   chsmall = cparams.chsmall; nover = cparams.nover; k = cparams.k;
-   nchmax = cparams.nchmax; eps = cparams.eps;
-   levrestr = cparams.levrestr;
 
    ifprocess = zeros(nchmax,1);
 
@@ -426,7 +327,7 @@ end
 
 	 %       . . . mark as processed and resolved if less than eps
 
-	 if (rmsemax > eps || rlself > cparams.maxchunklen)
+	 if (rmsemax > eps || rlself > maxchunklen)
 		      %       . . . if here, not resolved
 		      %       divide - first update the adjacency list
 	   if (nch +1 > nchmax)
