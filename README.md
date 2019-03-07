@@ -21,6 +21,24 @@ linear algebra in MATLAB package (FLAM) --- more to come!
 - chunkie includes various routines for evaluating layer
 potentials and functions defined on chunkers
 
+## Installing chunkie
+
+To install chunkie, you need mwrap to compile the
+mexfile. With mwrap installed, you should be able
+to build the mexfile with
+
+```bash
+make mexfile
+```
+
+Once the mexfile is installed, all that you need
+to do is to add the mwrap and matlab directories
+(with subdirectories) to your matlab path.
+
+## Using chunkie
+
+
+
 ## License
 
 chunkie is copyright 2019 Michael O'Neil, James
