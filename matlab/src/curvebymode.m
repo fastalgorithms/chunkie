@@ -1,5 +1,8 @@
 
 function [fvals] = curvebymode(t,modes,ctr)
+%CURVEBYMODE evaluate the position, and first and second derivatives
+% of the position described by r(t) = ctr + (modes(1) + modes(2)*cos(t) +
+% modes(3)*sin(t) + ...)(cos(t),sin(t))
 
   if nargin < 3
     ctr = zeros(2,1);

@@ -1,5 +1,5 @@
 %TEST_GREENLAP test the routines for integrating over chunks against the
-% Green's id for Laplace
+% Green's ID for Laplace
 %
 % 
 

@@ -1,4 +1,4 @@
-%TEST_CHUNKIN tests the routines for checking whether a point is 
+%TEST_CHUNKERIN tests the routines for checking whether a point is 
 % inside a domain or not
 % 
 
@@ -28,17 +28,17 @@ nt = length(xx(:)); targs = zeros(2,nt);
 targs(1,:) = xx(:); targs(2,:) = yy(:);
 
 opts = [];
-opts.verb = true; opts.quadgkparams = {'AbsTol',1e-3,'RelTol',1e-3};
+opts.verb = false; opts.quadgkparams = {'AbsTol',1e-7,'RelTol',1e-7};
 opts.gausseps = 1e-6;
 start = tic; in = chunkerin(chunker,targs,opts); toc(start)
 
 %
 
+figure(1)
+clf
 hold off
 scatter(targs(1,in),targs(2,in),'go')
 hold on
 scatter(targs(1,~in),targs(2,~in),'rx')
 scatter(xs(:),ys(:),'bo')
-
-colorbar
 

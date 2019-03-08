@@ -1,8 +1,7 @@
 
-%TESTCHUNKSKERNMAT
+%TEST_CHUNKSKERNMAT
 %
-% This file tests whether or not chunks 
-% lib is wrapped properly
+% test the matrix builder
 
 cparams.eps = 1.0e-6;
 cparams.nchmax = 100000;
