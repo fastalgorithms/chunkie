@@ -46,8 +46,8 @@ TEST_DIR = test
 TMP_DIR = tmp
 MDIR = matlab
 MWRAP_DIR = mwrap
-FMMLIB_DIR = external/fmmlib_subset
-VPATH = $(SRC_DIR):$(BIN_DIR):$(FMMLIB_DIR)
+RGG_DIR = external/rgg_tools
+VPATH = $(SRC_DIR):$(BIN_DIR):$(RGG_DIR)
 
 # names
 
