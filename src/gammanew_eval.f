@@ -1,4 +1,7 @@
-c         This file contains four two user-callable subroutines: 
+c       Copyright (C) 2019: Michael O'Neil
+c       Contact: oneil@cims.nyu.edu
+c 
+c     This file contains four two user-callable subroutines: 
 c         gammanew_eval, gammanew_eval_extend, gammanew_eval_log, 
 c         gammanew_eval_extend_log. The first calculates the Gamma 
 c         function of a real argument (either positive or negative) 

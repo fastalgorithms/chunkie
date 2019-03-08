@@ -1,7 +1,7 @@
 cc Copyright (C) 2019: Michael O'Neil
 cc 
 cc This software is being released under a modified FreeBSD license
-cc (see COPYING in home directory). 
+cc (see LICENSE in home directory). 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc 
 c
 c

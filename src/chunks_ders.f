@@ -1,3 +1,8 @@
+c     Copyright (C) 2019: Travis Askham
+c     Contact: askham@njit.edu
+c      
+cc This software is being released under a modified FreeBSD license
+cc (see LICENSE in home directory). 
 
       subroutine chunkderf(f,df,ndim,k,nch,chunks,ders,hs)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

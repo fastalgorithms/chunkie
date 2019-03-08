@@ -48,10 +48,10 @@ chunkie is available under the terms of the
 BSD 3-clause license, which should have been included
 in the distribution (see LICENSE.md)
 
-chunkie also depends on some routines from the
-FMMLIB2D package of Greengard and Gimbutas (with
-some routines from Rokhlin) which are available
-under the BSD 3-clause license in that folder
+chunkie also depends on some routines from Rokhlin,
+Greengard, and Gimbutas which were in-house tools that
+solve common problems. We have grouped these routines
+into the folder external/rgg_tools.
 
 ## TO DO
 

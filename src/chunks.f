@@ -1,16 +1,8 @@
-c       Copyright (C) 2014: Michael O'Neil
-c       Contact: oneil@cims.nyu.edu
-c 
-c       This program is free software; you can redistribute it and/or
-c       modify it under the terms of the GNU General Public License as
-c       published by the Free Software Foundation; either version 2 of
-c       the License, or (at your option) any later version.  This
-c       program is distributed in the hope that it will be useful, but
-c       WITHOUT ANY WARRANTY; without even the implied warranty of
-c       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-c       GNU General Public License for more details. You should have
-c       received a copy of the GNU General Public License along with
-c       this program; if not, see <http://www.gnu.org/licenses/>.
+c     Copyright (C) 2019: Michael O'Neil
+c     Contact: oneil@cims.nyu.edu
+c      
+cc This software is being released under a modified FreeBSD license
+cc (see LICENSE in home directory). 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c       $Date$

@@ -1,3 +1,7 @@
+c     Copyright (C) 2019: James Bremer
+c      
+cc This software is being released under a modified FreeBSD license
+cc (see LICENSE in home directory). 
 
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c

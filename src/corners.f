@@ -1,6 +1,9 @@
-
-c
-c
+c       Copyright (C) 2019: Michael O'Neil
+c     Contact: oneil@cims.nyu.edu
+c      
+cc This software is being released under a modified FreeBSD license
+cc (see LICENSE in home directory). 
+c 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c       this is the end of the debugging code
