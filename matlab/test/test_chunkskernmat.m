@@ -3,6 +3,8 @@
 %
 % test the matrix builder
 
+addpath('../src','../../mwrap');
+
 cparams.eps = 1.0e-6;
 cparams.nchmax = 100000;
 cparams.nover = 3;

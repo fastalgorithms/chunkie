@@ -1,4 +1,8 @@
-c 
+cc Copyright (C) 2009: Vladimir Rokhlin
+cc 
+cc This software is being released under a modified FreeBSD license
+cc (see COPYING in home directory). 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c 
 c        this is the end of the debugging code and the beginning

@@ -2,7 +2,7 @@
 %
 % test that gradients are set up right in helmfun
 
-
+addpath('../src','../../mwrap');
 
 zk = randn() + 1i*randn();
 start_eps = 1.0;
