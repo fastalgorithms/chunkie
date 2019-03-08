@@ -64,10 +64,7 @@ MWRAPFILE = $(LIBBASE)
 MODS =
 OBJS = 	chunks_ders.o \
 	chunks.o \
-	chunks_multi.o \
-	chunks_multi_extras.o\
 	legeexps.o \
-	cmat_build.o cmat_build_vec.o\
 	chunks_quads.o \
 	corners.o \
 	qerrfun.o \
