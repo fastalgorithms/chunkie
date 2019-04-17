@@ -1,5 +1,9 @@
 # chunkie: CHUNK-based Integral Equations
 
+WARNING: chunkie is currently under development and
+this readme is somewhat aspirational. Consider it
+pre-beta
+
 A MATLAB package for prototyping integral equation
 methods in two dimensions.
 While chunkie is primarily intended as a proto-typing
