@@ -33,7 +33,7 @@ MWRAP_DIR = mwrap
 RGG_DIR = external/rgg_tools
 VPATH = $(SRC_DIR):$(BIN_DIR):$(RGG_DIR)
 
-MEX_DEST = $(MDIR)/+utils
+MEX_DEST = $(MDIR)/utils
 
 # names
 
