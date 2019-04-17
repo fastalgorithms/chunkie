@@ -22,22 +22,6 @@ MWRAP=mwrap
 MWFLAGS=-c99complex
 endif
 
-ifeq ($(SYSTEM),mac)
-DBG=
-OPENMP=
-FFLAGS=$(DBG) -O3 $(OPENMP) -fPIC
-PREO = -framework accelerate
-POSTO =
-LDFLAGS = -shared
-SHELL = /bin/sh
-OBJSUF=o
-MODSUF=mod
-FC = gfortran
-MEX=mex
-MWRAP=mwrap
-MWFLAGS=-c99complex
-endif
-
 # locations
 
 SRC_DIR = src
@@ -49,17 +33,13 @@ MWRAP_DIR = mwrap
 RGG_DIR = external/rgg_tools
 VPATH = $(SRC_DIR):$(BIN_DIR):$(RGG_DIR)
 
+MEX_DEST = $(MDIR)/utils
+
 # names
 
-LIBBASE = chunkie
-LIBNAME  = lib$(LIBBASE).so
-LIBLINK = -l$(LIBBASE)
-#FSOURCES = $(shell echo $(SRC_DIR)/*.f)
-#F90SOURCES = $(shell echo $(SRC_DIR)/*.f90)
-#OBJS = $(patsubst $(SRC_DIR)/%.f,%.o,$(FSOURCES)) $(patsubst $(SRC_DIR)/%.f90,%.o,$(F90SOURCES))
-
-GATEWAY = $(LIBBASE)gateway
-MWRAPFILE = $(LIBBASE)
+BASE = utils
+GATEWAY = $(BASE)gateway
+MWRAPFILE = $(BASE)
 
 MODS =
 OBJS = 	chunks_ders.o \
@@ -74,7 +54,7 @@ OBJS = 	chunks_ders.o \
 LOBJS = $(patsubst %.o,../$(BIN_DIR)/%.o,$(OBJS))
 # targets
 
-all: lib
+all: mexfile
 
 .PHONY : all lib profile release \
   install install-strip uninstall clean distclean setup_dir\
@@ -90,12 +70,9 @@ setup_dir:
 %.o: %.f90
 	$(FC) $(FFLAGS) -c $< -o $(BIN_DIR)/$@
 
-lib: setup_dir $(MODS) $(OBJS) 
-	cd $(BIN_DIR); $(FC) $(LDFLAGS) -o $(LIBNAME) $(OBJS)
-
 clean:
 	cd $(BIN_DIR); rm -f *
-	cd $(MWRAP_DIR); rm -f $(GATEWAY).c *.mex*
+	cd $(MWRAP_DIR); rm -f $(GATEWAY).c *.mex* *.m
 
 
 distclean: clean
@@ -103,14 +80,6 @@ distclean: clean
 
 printflags: 
 	@echo $(DBG) $(OPENMP)
-
-## tests
-
-# note that, without install, we need to point to the library
-# at run-time as well... (see the -Wl,-rpath part)
-test%: setup_dir lib
-	cd $(TMP_DIR); $(FC) $(FFLAGS) -o $@ ../$(TEST_DIR)/$@.f $(PREO) ../$(BIN_DIR)/$(LIBNAME) $(POSTO) -Wl,-rpath=../$(BIN_DIR)
-	cd $(TMP_DIR); ./$@
 
 ## matlab
 
@@ -125,3 +94,5 @@ $(GATEWAY).c: $(MWRAP_DIR)/$(MWRAPFILE).mw Makefile
 # if it's not being installed (I think)
 mexfile: $(GATEWAY).c $(OBJS) Makefile
 	cd $(MWRAP_DIR); $(MEX) $(GATEWAY).c $(LOBJS) -largeArrayDims -lgfortran -lmwblas -lgomp -lm
+	mv $(MWRAP_DIR)/*.m $(MEX_DEST)/
+	mv $(MWRAP_DIR)/*.mex* $(MEX_DEST)/

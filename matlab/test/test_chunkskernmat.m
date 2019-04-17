@@ -3,50 +3,41 @@
 %
 % test the matrix builder
 
-addpath('../src','../../mwrap');
+addpaths_loc();
 
-cparams.eps = 1.0e-6;
-cparams.nchmax = 100000;
-cparams.nover = 3;
-narms = 5;
+
+cparams = [];
+cparams.eps = 1.0e-4;
+pref = []; 
+pref.k = 16;
+narms = 10;
 amp = 0.5;
-start = tic; chunker = chunkfunc(@(t) starfish(t,narms,amp),cparams); 
-time1 = toc(start);
+start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+t1 = toc(start);
 
-fprintf('%5.2e s : time to build geo\n',time1)
-
-xs = chunker.chunks(1,:,:); xs = xs(:);
-ys = chunker.chunks(2,:,:); ys = ys(:);
+fprintf('%5.2e s : time to build geo\n',t1)
 
 % build laplace dirichlet matrix
 
-fkern = @(s,t,sn,tn) glapkern(s,t,sn,tn,'D');
+fkern = @(s,t,stau,ttau) glapkern(s,t,stau,ttau,'D');
 ndims(1) = 1; ndims(2) = 1;
-intparams.intorder = chunker.k;
-start = tic; D = chunkskernelmat(chunker,fkern,ndims,intparams);
-time1 = toc(start);
+intparams.intorder = chnkr.k;
+start = tic; D = chunkskernmat(chnkr,fkern,ndims,intparams);
+t1 = toc(start);
 
-fprintf('%5.2e s : time to assemble matrix\n',time1)
+fprintf('%5.2e s : time to assemble matrix\n',t1)
 
-%
+sys = -0.5*eye(chnkr.k*chnkr.nch) + D;
 
-sysmat = eye(size(D))-2*D;
+rhs = cos(sum(abs(chnkr.r).^2,1)); rhs = rhs(:);
+start = tic; sol = gmres(sys,rhs,[],1e-12,100); t1 = toc(start);
 
-% built-in determinant computation
+fprintf('%5.2e s : time for dense gmres\n',t1)
 
-start = tic; d1 = det(sysmat); time1 = toc(start);
+start = tic; sol2 = sys\rhs; t1 = toc(start);
 
-fprintf('%5.2e s : time for built in determinant routine\n',time1)
+fprintf('%5.2e s : time for dense backslash solve\n',t1)
 
-% using FLAM
-npts = length(xs);
-xhifie = chunker.chunks(1:2,:);
+err = norm(sol-sol2,'fro')/norm(sol2,'fro');
 
-%
-start = tic; F = rskelf(sysmat,xhifie,80,1e-10); time1 = toc(start);
-fprintf('%5.2e s : time for FLAM rskelf\n',time1)
-start = tic; d2 = exp(rskelf_logdet(F)); time1 = toc(start);
-fprintf('%5.2e s : time for FLAM determinant\n',time1)
-fprintf('\n')
-fprintf('ratio of determinants : %9.6e\n',d1/d2)
-
+fprintf('difference between direct and iterative %5.2e\n',err)

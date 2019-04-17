@@ -2,6 +2,8 @@
 %
 % 
 
+addpaths_loc();
+
 seed = 8675309;
 rng(seed);
 addpath('../src')
@@ -9,28 +11,29 @@ addpath('../../mwrap')
 
 % geometry parameters and construction
 
-cparams.eps = 1.0e-5;
-cparams.nchmax = 100000;
-cparams.nover = 1;
+cparams = [];
+cparams.eps = 1.0e-4;
+pref = []; 
+pref.k = 16;
 narms = 5;
 amp = 0.5;
-chunker = chunkfunc(@(t) starfish(t,narms,amp),cparams);
+chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams);
 
 % scalar function on boundary
 
 fscal = @(xx) cos(xx(1,:)-1.0) + sin(xx(2,:)-0.5);
-fvals = fscal(reshape(chunker.chunks,2,chunker.k*chunker.nch));
+fvals = fscal(reshape(chnkr.r,2,chnkr.k*chnkr.nch));
 opts = [];
 opts.quadgkparams = {'RelTol',1e-15};
 opts.usesmooth = false;
-fscal_int1 = chunkerint(chunker,fvals,opts);
+fscal_int1 = chunkerint(chnkr,fvals,opts);
 opts.usesmooth = true;
-fscal_int3 = chunkerint(chunker,fvals,opts);
+fscal_int3 = chunkerint(chnkr,fvals,opts);
 
 opts.usesmooth = false;
-fscal_int2 = chunkerint(chunker,fscal,opts);
+fscal_int2 = chunkerint(chnkr,fscal,opts);
 opts.usesmooth = true;
-fscal_int4 = chunkerint(chunker,fscal,opts);
+fscal_int4 = chunkerint(chnkr,fscal,opts);
 
 abs(fscal_int1-fscal_int2)/abs(fscal_int2)
 abs(fscal_int3-fscal_int2)/abs(fscal_int2)

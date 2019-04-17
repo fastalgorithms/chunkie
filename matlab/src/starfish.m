@@ -1,5 +1,5 @@
 
-function [fvals] = starfish(t,varargin)
+function [r,d,d2] = starfish(t,varargin)
 
 narms = 5;
 amp = 0.3;
@@ -42,12 +42,9 @@ d2xs = d2xs*scale;
 d2ys = dxs-narms*amp*(narms*cnt.*st+snt.*ct);
 d2ys = d2ys*scale;
 
-fvals(:,1) = xs;
-fvals(:,2) = ys;
-fvals(:,3) = dxs;
-fvals(:,4) = dys;
-fvals(:,5) = d2xs;
-fvals(:,6) = d2ys;
+r = [(xs(:)).'; (ys(:)).'];
+d = [(dxs(:)).'; (dys(:)).'];
+d2 = [(d2xs(:)).'; (d2ys(:)).'];
 
 end
 

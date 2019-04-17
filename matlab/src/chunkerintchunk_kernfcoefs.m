@@ -1,29 +1,32 @@
-function fint = chunkerintchunk_kernfcoefs(kern,ndims,dim,fc,xci,yci, ...
-    xpci,ypci,targ,targn)
+function fint = chunkerintchunk_kernfcoefs(kern,ndims,rdim,fc,rci,dci,...
+    targ,targtau)
 
-fintfun = @(t) fkerneval(t,kern,fc,xci,yci,xpci,ypci,targ,targn,ndims,dim);
+fintfun = @(t) fkerneval(t,kern,fc,rci,dci,targ,targtau,ndims,rdim);
 
 fint = quadgk(fintfun,-1,1);
 
 end
 
-function fvals = fkerneval(t,kern,fc,xci,yci,xpci,ypci,targ,targn,ndims,...
-    dim)
+function fvals = fkerneval(t,kern,fc,rci,dci,targ,targtau,ndims,...
+    rdim)
 
 densvals = zeros(ndims(2),length(t));
 for i = 1:ndims(2)
     densvals(i,:) = legeexevvec(t,fc(:,i)); 
 end
-x = legeexevvec(t,xci); x = (x(:)).';
-xp = legeexevvec(t,xpci); xp = (xp(:)).';
-y = legeexevvec(t,yci); y = (y(:)).';
-yp = legeexevvec(t,ypci); yp = (yp(:)).';
-dsdt = sqrt(xp.^2+yp.^2);
-s = [ x; y ];
-sn = [ yp./dsdt; -xp./dsdt ];
 
-kernmat = kern(s,targ,sn,targn);
-kernmat = kernmat(dim:ndims(1):end,:);
+[dim,k] = size(rci);
+ri = zeros(dim,length(t));
+di = zeros(dim,length(t));
+for i = 1:dim
+    ri(i,:) = legeexevvec(t,rci(i,:));
+    di(i,:) = legeexevvec(t,dci(i,:));
+end
+dsdt = sqrt(sum(abs(di).^2,1));
+taui = bsxfun(@rdivide,di,dsdt);
+
+kernmat = kern(ri,targ,taui,targtau);
+kernmat = kernmat(rdim:ndims(1):end,:);
 
 kernmat = reshape(kernmat,ndims(2),length(t));
 fvals = kernmat.*densvals;

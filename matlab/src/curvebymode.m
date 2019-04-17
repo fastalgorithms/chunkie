@@ -1,5 +1,5 @@
 
-function [fvals] = curvebymode(t,modes,ctr)
+function [r,d,d2] = curvebymode(t,modes,ctr)
 %CURVEBYMODE evaluate the position, and first and second derivatives
 % of the position described by r(t) = ctr + (modes(1) + modes(2)*cos(t) +
 % modes(3)*sin(t) + ...)(cos(t),sin(t))
@@ -46,15 +46,9 @@ function [fvals] = curvebymode(t,modes,ctr)
   d2xs = dxdr.*rpp+(dxdrdth*2.0d0).*rp+dxdth2;
   d2ys = dydr.*rpp+(dydrdth*2.0d0).*rp+dydth2;
   
-  fvals = zeros(length(t),6);
-
-
-  fvals(:,1) = xs;
-  fvals(:,2) = ys;
-  fvals(:,3) = dxs;
-  fvals(:,4) = dys;
-  fvals(:,5) = d2xs;
-  fvals(:,6) = d2ys;
+  r = [(xs(:)).'; (ys(:)).'];
+  d = [(dxs(:)).'; (dys(:)).'];
+  d2 = [(d2xs(:)).'; (d2ys(:)).'];  
 
 end
 

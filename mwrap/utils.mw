@@ -1,0 +1,441 @@
+@function readme_chunks()
+%README
+%
+% This software is being released under a modified FreeBSD
+% license
+%
+% The chunks library is Copyright (c) 2018: the chunkie
+% team
+%
+% Contact: askham@uw.edu
+% 
+
+
+@function [x,w,u,v] = legeexps(k)
+
+itype = 0;
+if nargout > 1; itype = 1; end
+if nargout > 2; itype = 2; end
+
+if itype == 0
+   x = zeros(k,1);
+   w = zeros(1,1);
+   u = zeros(1,1);
+   v = zeros(1,1);
+end 
+
+if itype == 1
+   x = zeros(k,1);
+   w = zeros(k,1);
+   u = zeros(1,1);
+   v = zeros(1,1);
+end 
+
+if itype == 2
+   x = zeros(k,1);
+   w = zeros(k,1);
+   u = zeros(k,k);
+   v = zeros(k,k);
+end 
+
+# FORTRAN legeexps(int[1] itype, int[1] k, inout double[] x, inout double[] u, inout double[] v, inout double[] w);
+
+end
+
+@function vals = legeexevvec(x,coef)
+
+k = length(coef);
+km1 = k-1;
+
+sz = size(x);
+
+x = x(:);
+n = length(x);
+vals = zeros(n,1);
+
+if isreal(coef)
+
+   # FORTRAN legeexevvec(int[1] n, double[] x, inout double[] vals, double[] coef, int[1] km1);
+
+else
+
+   vals2 = zeros(n,1);
+   rcoef = real(coef); icoef = imag(coef);
+   # FORTRAN legeexevvec(int[1] n, double[] x, inout double[] vals, double[] rcoef, int[1] km1);
+   
+   # FORTRAN legeexevvec(int[1] n, double[] x, inout double[] vals2, double[] icoef, int[1] km1);
+
+   vals = vals+1i*vals2;
+
+end
+
+vals = reshape(vals,sz);
+
+end
+
+@function [x,w] = legerts(k)
+
+   itype = 0;
+   if nargout > 1
+      itype = 1;
+   end
+   x = zeros(k,1); w = zeros(k,1);
+# FORTRAN legerts(int[1] itype, int[1] k, inout double[] x, inout double[] w);
+
+end
+
+@function ainterp = lematrin(k,x)
+
+   m = length(x);
+   work = zeros(2*k^2+k+500,1);
+   t = zeros(k,1);
+   ainterp = zeros(m,k);
+
+# FORTRAN lematrin(int[1] k, int[1] m, double[] x, inout double[] ainterp, inout double[] t, inout double[] work);
+
+end
+
+@function [xs1,whts1,xs0,whts0] = getquads(k)
+   nquad1 = 0;
+   nquad0 = 0;
+
+# FORTRAN getquadsinfo(int[1] k, inout int[1] nquad1, inout int[1] nquad0);
+
+   xs1 = zeros(nquad1,1); whts1 = zeros(nquad1,1);
+   xs0 = zeros(nquad0,k); whts0 = zeros(nquad0,k);
+
+# FORTRAN getquads(int[1] k, inout int[1] nquad1, inout double[] xs1, inout double[] whts1, inout int[1] nquad0, inout double[] xs0, inout double[] whts0);
+
+end
+
+
+@function [sysmat,info] = chunkskernelmat_old(chnkr,fkern,ndims,intparams)
+
+   k = chnkr.k;
+   nch = chnkr.nch;
+   r = chnkr.r;
+   adj = chnkr.adj;
+   d = chnkr.d;
+   d2 = chnkr.d2;
+   h = chnkr.h;
+
+   dim = chnkr.dim;
+   assert(dim==2,'other dimensions not supported');
+
+   itype = 1;
+   xs = zeros(k,1); whts = zeros(k,1);
+# FORTRAN legerts(int[1] itype, int[1] k, inout double[] xs, inout double[] whts);   
+
+   intorder = intparams.intorder;
+
+   nquad1 = 0;
+   nquad0 = 0;
+
+# FORTRAN getquadsinfo(int[1] intorder, inout int[1] nquad1, inout int[1] nquad0);
+
+   xs1 = zeros(nquad1,1); whts1 = zeros(nquad1,1);
+   xs0 = zeros(nquad0,k); whts0 = zeros(nquad0,k);
+
+# FORTRAN getquads(int[1] k, inout int[1] nquad1, inout double[] xs1, inout double[] whts1, inout int[1] nquad0, inout double[] xs0, inout double[] whts0);
+
+   sysmat = zeros(ndims(1)*k*nch,ndims(2)*k*nch);
+
+   work1 = zeros(2*k^2+k+500,1);
+   ts1 = zeros(k,1);
+   ainterp1 = zeros(ndims(2)*nquad1,ndims(2)*k);
+   ainterp1_sm = zeros(nquad1,k);
+   temp = eye(ndims(2));
+
+# FORTRAN lematrin(int[1] k, int[1] nquad1, double[] xs1,inout double[] ainterp1_sm,inout double[] ts1, inout double[] work1);
+   ainterp1 = kron(ainterp1_sm,temp);
+
+   ainterps0 = zeros(ndims(2)*nquad0,ndims(2)*k,k);
+   ainterp0_sm = zeros(nquad0,k);
+   for j = 1:k
+       xs0j = xs0(:,j);
+# FORTRAN lematrin(int[1] k, int[1] nquad0, double[] xs0j,inout double[] ainterp0_sm,inout double[] ts1, inout double[] work1);
+     ainterps0(:,:,j) = kron(ainterp0_sm,temp);
+   end
+
+   for j = 1:nch
+     jmat = 1 + (j-1)*k*ndims(2);
+     jmatend = j*k*ndims(2);
+     for i = 1:nch
+       imat = 1 + (i-1)*k*ndims(1);
+       imatend = i*k*ndims(1);
+       ibefore = adj(1,i);
+       iafter = adj(2,i);
+
+       if (j == ibefore || j == iafter)
+	 submat = chunksnearbuildmat_old(k,r,d,h,i,j, ...
+				     fkern,ndims,nquad1,xs1,whts1,...
+				    ainterp1);
+       elseif (j == i)
+	 submat = chunksdiagbuildmat_old(k,r,d,h,...
+				      j,fkern,ndims,...
+				      nquad0,xs0,whts0,ainterps0);
+       else
+	 submat = chunksfarbuildmat_old(k,r,d,h,i,j,fkern,ndims,whts);
+       end
+
+       sysmat(imat:imatend,jmat:jmatend) = submat;
+       
+     end
+   end
+	 
+
+ end
+
+@function [sysmat,inds] = chunkskernelmattd_old(chnkr,fkern,ndims,intparams)
+%CHUNKSKERNELMATTD build self and near interactions only
+
+   k = chnkr.k;
+   nch = chnkr.nch;
+   r = chnkr.r;
+   adj = chnkr.adj;
+   d = chnkr.d;
+   d2 = chnkr.d2;
+   h = chnkr.h;
+
+   dim = chnkr.dim;
+   assert(dim==2,'other dimensions not supported');
+
+   itype = 1;
+   xs = zeros(k,1); whts = zeros(k,1);
+# FORTRAN legerts(int[1] itype, int[1] k, inout double[] xs, inout double[] whts);   
+
+   intorder = intparams.intorder;
+
+   nquad1 = 0;
+   nquad0 = 0;
+
+# FORTRAN getquadsinfo(int[1] intorder, inout int[1] nquad1, inout int[1] nquad0);
+
+   xs1 = zeros(nquad1,1); whts1 = zeros(nquad1,1);
+   xs0 = zeros(nquad0,k); whts0 = zeros(nquad0,k);
+
+# FORTRAN getquads(int[1] k, inout int[1] nquad1, inout double[] xs1, inout double[] whts1, inout int[1] nquad0, inout double[] xs0, inout double[] whts0);
+
+   sysmat = zeros(ndims(1)*k*nch,ndims(2)*k*3);
+
+   inds = zeros(size(sysmat));
+
+   work1 = zeros(2*k^2+k+500,1);
+   ts1 = zeros(k,1);
+   ainterp1 = zeros(ndims(2)*nquad1,ndims(2)*k);
+   ainterp1_sm = zeros(nquad1,k);
+   temp = eye(ndims(2));
+
+# FORTRAN lematrin(int[1] k, int[1] nquad1, double[] xs1,inout double[] ainterp1_sm,inout double[] ts1, inout double[] work1);
+   ainterp1 = kron(ainterp1_sm,temp);
+
+   ainterps0 = zeros(ndims(2)*nquad0,ndims(2)*k,k);
+   ainterp0_sm = zeros(nquad0,k);
+   for j = 1:k
+       xs0j = xs0(:,j);
+# FORTRAN lematrin(int[1] k, int[1] nquad0, double[] xs0j,inout double[] ainterp0_sm,inout double[] ts1, inout double[] work1);
+     ainterps0(:,:,j) = kron(ainterp0_sm,temp);
+   end
+
+   for i = 1:nch
+     imat = 1 + (i-1)*k*ndims(1);
+     imatend = i*k*ndims(1);
+     ibefore = adj(1,i);
+     iafter = adj(2,i);
+
+     j = ibefore;
+     jmat = 1;
+     jmatend = k*ndims(2);
+     submat = chunksnearbuildmat_old(k,r,d,h,i,j, ...
+				 fkern,ndims,nquad1,xs1,whts1,...
+				 ainterp1);
+
+     sysmat(imat:imatend,jmat:jmatend) = submat;
+     inds(imat:imatend,jmat:jmatend) = repmat((j-1)*k*ndims(2)+1:j*k*ndims(2),k*ndims(1),1);
+
+     j = i;
+     jmat = 1+k*ndims(2);
+     jmatend = 2*k*ndims(2);
+     submat = chunksdiagbuildmat_old(k,r,d,h,...
+				 j,fkern,ndims,...
+				 nquad0,xs0,whts0,ainterps0);
+     
+     sysmat(imat:imatend,jmat:jmatend) = submat;
+     inds(imat:imatend,jmat:jmatend) = repmat((j-1)*k*ndims(2)+1:j*k*ndims(2),k*ndims(1),1);
+     
+     j = iafter;
+     jmat = 1+2*k*ndims(2);
+     jmatend = 3*k*ndims(2);
+     submat = chunksnearbuildmat_old(k,r,d,h,i,j, ...
+				 fkern,ndims,nquad1,xs1,whts1,...
+				 ainterp1);
+
+     sysmat(imat:imatend,jmat:jmatend) = submat;  
+     inds(imat:imatend,jmat:jmatend) = repmat((j-1)*k*ndims(2)+1:j*k*ndims(2),k*ndims(1),1);		
+   end
+
+ end
+
+
+
+@function submat = chunksfarbuildmat_old(k,r,d,h,i,j,fkern,ndims,whts)
+
+				% grab specific boundary data
+      
+   r_src = r(:,:,j);
+   r_targ = r(:,:,i);
+   d_src = d(:,:,j);
+   d_targ = d(:,:,i);
+   h_src = h(j);
+   h_targ = h(i);
+
+				% weights and such
+
+   srcn = zeros(2,k);
+   targn = zeros(2,k);
+   
+   ddt = sqrt(d_targ(1,:).^2 + d_targ(2,:).^2);
+   targn(1,:) = d_targ(2,:)./ddt;
+   targn(2,:) = -d_targ(1,:)./ddt;
+   dds = sqrt(d_src(1,:).^2 + d_src(2,:).^2);
+   srcn(1,:) = d_src(2,:)./dds;
+   srcn(2,:) = -d_src(1,:)./dds;
+
+   dsdt = dds(:).*whts(:)*h_src;
+
+
+   dsdtndim2 = repmat(dsdt(:).',ndims(2),1);
+   dsdtndim2 = dsdtndim2(:);
+
+   submat = fkern(r_src,r_targ,srcn,targn)*diag(dsdtndim2);
+
+ end
+
+@function submat = chunksnearbuildmat_old(k,r,d,h,...
+				      i,j,fkern,ndims,...
+				      nquad1,xs1,whts1,ainterp1)
+
+				% grab specific boundary data
+      
+   r_src = r(:,:,j);
+   r_targ = r(:,:,i);
+   d_src = d(:,:,j);
+   d_targ = d(:,:,i);
+   h_src = h(j);
+   h_targ = h(i);
+
+				% interpolate boundary info
+
+				% get relevant coefficients
+
+   xcoefs_src = zeros(k,1);
+   ycoefs_src = zeros(k,1);
+   xpcoefs_src = zeros(k,1);
+   ypcoefs_src = zeros(k,1);   
+   
+# FORTRAN chunksexps(int[1] k,double[] r_src,inout double[] xcoefs_src,inout double[] ycoefs_src);
+# FORTRAN chunksexps(int[1] k,double[] d_src,inout double[] xpcoefs_src,inout double[] ypcoefs_src);
+   
+				% then interpolate 
+   
+   xs = zeros(nquad1,1);
+   ys = zeros(nquad1,1);
+   xps = zeros(nquad1,1);
+   yps = zeros(nquad1,1);
+   srcn = zeros(2,nquad1);
+
+   xsj = 0; ysj = 0; xpsj = 0; ypsj = 0;
+   km1 = k-1;
+
+   xs = legeexevvec(xs1,xcoefs_src);
+   ys = legeexevvec(xs1,ycoefs_src);
+   xps = legeexevvec(xs1,xpcoefs_src);
+   yps = legeexevvec(xs1,ypcoefs_src);
+   
+   dds = sqrt(xps.^2+yps.^2);
+   src = [xs.';ys.'];
+   srcn(1,:) = yps./dds;
+   srcn(2,:) = -xps./dds;
+
+   targn = zeros(2,k);
+   ddt = sqrt(d_targ(1,:).^2 + d_targ(2,:).^2);
+   targn(1,:) = d_targ(2,:)./ddt;
+   targn(2,:) = -d_targ(1,:)./ddt;
+
+   dsdt = dds.*whts1*h_src;
+
+   dsdtndim2 = repmat(dsdt(:).',ndims(2),1);
+   dsdtndim2 = dsdtndim2(:);
+
+      % get kernel values and then premultiply by interpolating matrix
+   
+   smatbig = fkern(src,r_targ,srcn,targn);
+   submat = smatbig*diag(dsdtndim2)*ainterp1;
+
+ end
+   
+@function submat = chunksdiagbuildmat_old(k,r,d,h,...
+				      j,fkern,ndims,...
+				      nquad0,xs0,whts0,ainterps0)
+
+				% grab specific boundary data
+      
+   r_src = r(:,:,j);
+   d_src = d(:,:,j);
+   h_src = h(j);
+
+				% interpolate boundary info
+
+				% get relevant coefficients
+
+   xcoefs_src = zeros(k,1);
+   ycoefs_src = zeros(k,1);
+   xpcoefs_src = zeros(k,1);
+   ypcoefs_src = zeros(k,1);   
+   
+# FORTRAN chunksexps(int[1] k,double[] r_src,inout double[] xcoefs_src,inout double[] ycoefs_src);
+# FORTRAN chunksexps(int[1] k,double[] d_src,inout double[] xpcoefs_src,inout double[] ypcoefs_src);
+
+				% then interpolate 
+   
+   xs = zeros(nquad0,k);
+   ys = zeros(nquad0,k);
+   xps = zeros(nquad0,k);
+   yps = zeros(nquad0,k);
+   src = zeros(2,nquad0,k);
+   srcn = zeros(2,nquad0,k);   
+
+   xsj = 0; ysj = 0; xpsj = 0; ypsj = 0;
+   km1 = k-1;
+
+   xs = legeexevvec(xs0,xcoefs_src);
+   ys = legeexevvec(xs0,ycoefs_src);
+   xps = legeexevvec(xs0,xpcoefs_src);
+   yps = legeexevvec(xs0,ypcoefs_src);   
+
+   dds = sqrt(xps.^2+yps.^2);
+   src(1,:,:) = xs;
+   src(2,:,:) = ys;
+   srcn(1,:,:) = yps./dds;
+   srcn(2,:,:) = -xps./dds;
+
+   targn = zeros(2,k);
+   ddt = sqrt(d_src(1,:).^2 + d_src(2,:).^2);
+   targn(1,:) = d_src(2,:)./ddt;
+   targn(2,:) = -d_src(1,:)./ddt;
+
+   dsdt = dds.*whts0*h_src;
+
+      % get kernel values and then premultiply by interpolating matrix
+
+   submat = zeros(ndims(1)*k,ndims(2)*k);
+   for j = 1:k
+     smatbigj = fkern(src(:,:,j),r_src(:,j),srcn(:,:,j),targn(:,j));
+     dsdtndim2 = repmat(dsdt(:,j).',ndims(2),1);
+     dsdtndim2 = dsdtndim2(:);
+     submat(ndims(1)*(j-1)+1:ndims(1)*j,:) = smatbigj*diag(dsdtndim2)*ainterps0(:,:,j);
+   end
+
+ end
+   
+

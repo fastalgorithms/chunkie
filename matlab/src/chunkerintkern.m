@@ -1,19 +1,19 @@
-function fints = chunkerintkern(chunker,kern,ndims,dens,targs,opts)
-%CHUNKERINTKERN compute the comvolution of the integral kernel with
+function fints = chunkerintkern(chnkr,kern,ndims,dens,targs,opts)
+%CHUNKERINTKERN compute the convolution of the integral kernel with
 % the density defined on the chunk geometry. 
 %
 % input:
-%   chunker - chunks description of curve
+%   chnkr - chunks description of curve
 %   kern - integral kernel taking inputs kern(s,t,sn,tn) where 
 %          s is a source, sn is the normal at the source, t is a target
 %          and tn is the normal at the target
 %   ndims - input and output dimensions of the kernel (ndims(1) dimension
 %           output, ndims(2) dimension of input)
 %   dens - density on boundary, should have size ndims(2) x k x nch
-%          where k = chunker.k, nch = chunker.nch
+%          where k = chnkr.k, nch = chnkr.nch
 %   targs - targ(1:2,i) gives the coords of the ith target
 %   opts - structure for setting various parameters
-%       opts.targsn - if provided, the normals at the targets
+%       opts.targstau - if provided, the normals at the targets
 %       opts.usesmooth - if = 1, then just use the smooth integration
 %          rule for each chunk. if = 0, adaptive integration 
 %          (quadgk) is used. if = 2, a hybrid method is used 
@@ -35,39 +35,39 @@ if nargin < 6
     opts = [];
 end
 
-[k2,nt] = size(targs);
-assert(k2==2,'targs array of incorrect shape, should be (2,nt)');
+[dim,nt] = size(targs);
+assert(dim==2,'only dimension two tested');
 
 if ~isfield(opts,'usesmooth'); opts.usesmooth = false; end
 if ~isfield(opts,'quadgkparams'); opts.quadgkparams = {}; end
 if ~isfield(opts,'gausseps'); opts.gausseps = 1e-8; end
-if ~isfield(opts,'targsn'); opts.targsn = zeros(2,nt); end
+if ~isfield(opts,'targstau'); opts.targstau = zeros(dim,nt); end
 if ~isfield(opts,'verb'); opts.verb= false; end
 
-targsn = opts.targsn;
+targstau = opts.targstau;
 
-[k2,nt2] = size(targsn);
+[dim,nt2] = size(targstau);
 
-assert(k2==2 && nt2==nt,...
-    'opts.targsn should have same dimensions as targs');
+assert(dim==2 && nt2==nt,...
+    'opts.targstau should have same dimensions as targs');
 
 if opts.usesmooth == 1
-    fints = chunkerintkern_smooth(chunker,kern,ndims,dens, ...
-        targs,targsn,opts);
+    fints = chunkerintkern_smooth(chnkr,kern,ndims,dens, ...
+        targs,targstau,opts);
 elseif opts.usesmooth == 0
-    fints = chunkerintkern_adap(chunker,kern,ndims,dens, ...
-        targs,targsn,opts);
+    fints = chunkerintkern_adap(chnkr,kern,ndims,dens, ...
+        targs,targstau,opts);
 elseif opts.usesmooth == 2
     fints = zeros(ndims(1),nt);
     optssw = []; optssw.gausseps = opts.gausseps; 
     optssw.justsmoothworks = true;
-    sw = chunkerin(chunker,targs,optssw);
+    sw = chunkerin(chnkr,targs,optssw);
     fints(:,sw) = reshape(...
-        chunkerintkern_smooth(chunker,kern,ndims,dens, ...
-        targs(:,sw),targsn(:,sw),opts),ndims(1),nnz(sw));
+        chunkerintkern_smooth(chnkr,kern,ndims,dens, ...
+        targs(:,sw),targstau(:,sw),opts),ndims(1),nnz(sw));
     fints(:,~sw) = reshape(...
-        chunkerintkern_adap(chunker,kern,ndims,dens, ...
-        targs(:,~sw),targsn(:,~sw),opts),ndims(1),nnz(~sw));
+        chunkerintkern_adap(chnkr,kern,ndims,dens, ...
+        targs(:,~sw),targstau(:,~sw),opts),ndims(1),nnz(~sw));
     fints = fints(:);
 end
 
@@ -75,11 +75,11 @@ end
 
 
 
-function fints = chunkerintkern_smooth(chunker,kern,ndims,dens, ...
-    targs,targsn,opts)
+function fints = chunkerintkern_smooth(chnkr,kern,ndims,dens, ...
+    targs,targstau,opts)
 
-k = chunker.k;
-nch = chunker.nch;
+k = chnkr.k;
+nch = chnkr.nch;
 
 assert(numel(dens) == ndims(2)*k*nch,'dens not of appropriate size')
 dens = reshape(dens,ndims(2),k,nch);
@@ -87,31 +87,30 @@ dens = reshape(dens,ndims(2),k,nch);
 [~,w] = legeexps(k);
 [~,nt] = size(targs);
 
-rnorms = chunknormals(chunker);
+tau = taus(chnkr);
 
 fints = zeros(ndims(1)*nt,1);
 
 % assume smooth weights are good enough
 for i = 1:nch
     densvals = dens(:,:,i); densvals = densvals(:);
-    dsdtdt = sqrt(chunker.ders(1,:,i).^2 + ...
-        chunker.ders(2,:,i).^2);
-    dsdtdt = dsdtdt(:).*w(:)*chunker.hs(i);
+    dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
+    dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
     dsdtdt = repmat( (dsdtdt(:)).',ndims(2),1);
     densvals = densvals.*(dsdtdt(:));
-    kernmat = kern(chunker.chunks(:,:,i),targs, ...
-        rnorms(:,:,i),targsn);
+    kernmat = kern(chnkr.r(:,:,i),targs, ...
+        tau(:,:,i),targstau);
 
     fints = fints + kernmat*densvals;
 end
 
 end
 
-function fints = chunkerintkern_adap(chunker,kern,ndims,dens, ...
-    targs,targsn,opts)
+function fints = chunkerintkern_adap(chnkr,kern,ndims,dens, ...
+    targs,targstau,opts)
 
-k = chunker.k;
-nch = chunker.nch;
+k = chnkr.k;
+nch = chnkr.nch;
 
 assert(numel(dens) == ndims(2)*k*nch,'dens not of appropriate size')
 dens = reshape(dens,ndims(2),k,nch);
@@ -119,16 +118,14 @@ dens = reshape(dens,ndims(2),k,nch);
 [~,~,u] = legeexps(k);
 [~,nt] = size(targs);
 
-rnorms = chunknormals(chunker);
-
 fints = zeros(ndims(1)*nt,1);
 
 % using adaptive quadrature
-[xc,yc,xpc,ypc] = chunkerexps(chunker);
+[rc,dc] = chunkerexps(chnkr);
 for i = 1:nch
     if opts.verb; fprintf('chunk %d integral\n',i); end
-    xci = xc(:,i); yci = yc(:,i); 
-    xpci = xpc(:,i); ypci = ypc(:,i);
+    rci = rc(:,:,i);
+    dci = dc(:,:,i);
     densvals = dens(:,:,i); densvals = densvals.';
     densc = u*densvals; % each column is set of coefficients
                     % for one dimension of density on chunk
@@ -137,9 +134,9 @@ for i = 1:nch
         for l = 1:ndims(1)
             ind = indj+l;
             temp = chunkerintchunk_kernfcoefs(kern,ndims,l,...
-                densc,xci,yci,xpci,ypci,targs(:,j),targsn(:,j));
+                densc,rci,dci,targs(:,j),targstau(:,j));
 
-            fints(ind) = fints(ind) + temp*chunker.hs(i);
+            fints(ind) = fints(ind) + temp*chnkr.h(i);
         end
     end
 end
