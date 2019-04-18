@@ -84,7 +84,7 @@ nch = chnkr.nch;
 assert(numel(dens) == ndims(2)*k*nch,'dens not of appropriate size')
 dens = reshape(dens,ndims(2),k,nch);
 
-[~,w] = legeexps(k);
+[~,w] = lege.exps(k);
 [~,nt] = size(targs);
 
 tau = taus(chnkr);
@@ -115,7 +115,7 @@ nch = chnkr.nch;
 assert(numel(dens) == ndims(2)*k*nch,'dens not of appropriate size')
 dens = reshape(dens,ndims(2),k,nch);
 
-[~,~,u] = legeexps(k);
+[~,~,u] = lege.exps(k);
 [~,nt] = size(targs);
 
 fints = zeros(ndims(1)*nt,1);

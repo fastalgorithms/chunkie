@@ -12,15 +12,15 @@ function fvals = fkerneval(t,kern,fc,rci,dci,targ,targtau,ndims,...
 
 densvals = zeros(ndims(2),length(t));
 for i = 1:ndims(2)
-    densvals(i,:) = legeexevvec(t,fc(:,i)); 
+    densvals(i,:) = lege.exev(t,fc(:,i)); 
 end
 
 [dim,k] = size(rci);
 ri = zeros(dim,length(t));
 di = zeros(dim,length(t));
 for i = 1:dim
-    ri(i,:) = legeexevvec(t,rci(i,:));
-    di(i,:) = legeexevvec(t,dci(i,:));
+    ri(i,:) = lege.exev(t,rci(i,:));
+    di(i,:) = lege.exev(t,dci(i,:));
 end
 dsdt = sqrt(sum(abs(di).^2,1));
 taui = bsxfun(@rdivide,di,dsdt);

@@ -4,7 +4,7 @@ function [rc,dc,d2c] = chunkerexps(chnkr)
 
 k = chnkr.k; nch = chnkr.nch; dim = chnkr.dim;
 
-[~,~,u] = legeexps(k);
+[~,~,u] = lege.exps(k);
 
 rc = ipermute(reshape(u*reshape(permute(chnkr.r,[2 1 3]),k,nch*dim), ...
         k,dim,nch),[2 1 3]);

@@ -24,8 +24,8 @@ dfine = zeros(length(xs1),dim);
 xs1 = xs1(:);
 
 for i = 1:dim
-    rfine(:,i) = legeexevvec(xs1,rsc(:,i));
-    dfine(:,i) = legeexevvec(xs1,dsc(:,i));
+    rfine(:,i) = lege.exev(xs1,rsc(:,i));
+    dfine(:,i) = lege.exev(xs1,dsc(:,i));
 end
 
 rfine = rfine.';

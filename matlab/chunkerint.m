@@ -53,7 +53,7 @@ if opts.usesmooth
 else
     % use adaptive quadrature
     
-    [~,~,u] = legeexps(k);
+    [~,~,u] = lege.exps(k);
     
     if iffun
         fint = 0.0;

@@ -14,13 +14,13 @@ h = chnkr.h;
 
 dim = chnkr.dim;
 
-[~,whts,u] = legeexps(k);
+[~,whts,u] = lege.exps(k);
 intorder = intparams.intorder;
 [xs1,whts1,xs0,whts0] = getquads(intorder);
 
 %sysmat = zeros(ndims(1)*k*nch,ndims(2)*k*nch);
 
-ainterp1_sm = lematrin(k,xs1);
+ainterp1_sm = lege.matrin(k,xs1);
 temp = eye(ndims(2));
 ainterp1 = kron(ainterp1_sm,temp);
 
@@ -30,7 +30,7 @@ ainterps0 = zeros(ndims(2)*nquad0,ndims(2)*k,k);
 
 for j = 1:k
     xs0j = xs0(:,j);
-    ainterp0_sm = lematrin(k,xs0j);
+    ainterp0_sm = lege.matrin(k,xs0j);
     ainterps0(:,:,j) = kron(ainterp0_sm,temp);
 end
 

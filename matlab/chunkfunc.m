@@ -74,8 +74,8 @@ ifprocess = zeros(nchmax,1);
 %       as the interpolation/coefficients matrices
 
 k2 = 2*k;
-[xs,ws] = legeexps(k);
-[xs2,~,u2] = legeexps(k2);   
+[xs,ws] = lege.exps(k);
+[xs2,~,u2] = lege.exps(k2);   
 
 %       . . . start chunking
 

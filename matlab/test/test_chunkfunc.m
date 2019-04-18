@@ -4,8 +4,7 @@
 % This file tests the routine chunkfunc on a couple of examples
 % as well as testing the plot, quiver, sort, and reverse utilities
 
-addpath('../src','../utils','../')
-
+addpaths_loc();
 cparams = [];
 cparams.eps = 1.0e-4;
 pref = []; 
