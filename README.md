@@ -29,7 +29,7 @@ potentials and functions defined on chunkers
 
 ## Installing chunkie
 
-Simply add the chunkie subfolder to your matlab path
+Simply add the chunkie subfolder to your matlab path.
 
 ## Using chunkie
 
@@ -37,17 +37,34 @@ Simply add the chunkie subfolder to your matlab path
 
 ## License
 
-chunkie is copyright 2019 Michael O'Neil, James
-Bremer, Travis Askham, and Manas Rachh.
+chunkie is copyright 2019 the chunkie team
 
 chunkie is available under the terms of the
 BSD 3-clause license, which should have been included
 in the distribution (see LICENSE.md)
 
-chunkie also depends on some routines from Rokhlin,
-Greengard, and Gimbutas which were in-house tools that
-solve common problems. We have grouped these routines
-into the folder external/rgg_tools.
+## chunkie team
+
+chunkie library: Travis Askham and Manas Rachh
+Fortran for chunking: Michael O'Neil
+Singular quads: James Bremer
+
+classic Fortran routs: Leslie Greengard, Zydrunas
+Gimbutas, Vladimir Rokhlin
+
+## Development
+
+At least for now, chunkie is pure MATLAB,
+which makes life easier on users. The biggest
+challenge in staying pure MATLAB will likely
+be working with rarer special functions.
+If you need to work with an original Fortran
+file (building out the lib, etc.), it can be
+helpful to mwrap a Fortran routine that you'd
+like to compare with, say, a new MATLAB equivalent.
+See the mwrap folder and Makefile for examples of
+working with this. 
+
 
 ## TO DO
 
@@ -60,6 +77,5 @@ include:
 - allowing for different singular integration
 paradigms (e.g. following the work of Helsing et al.,
 Kloeckner et al., and Serkh et al.)
-- arbitrary dimension curves on chunks
 - libraries for evaluating some common integral
 kernels

@@ -1,4 +1,4 @@
-Copyright 2019 Michael O'Neil, James Bremer, Travis Askham, Manas Rachh
+Copyright 2019 chunkie team
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 

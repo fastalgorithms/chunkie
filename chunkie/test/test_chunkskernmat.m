@@ -5,7 +5,6 @@
 
 addpaths_loc();
 
-
 cparams = [];
 cparams.eps = 1.0e-4;
 pref = []; 
@@ -14,6 +13,12 @@ narms = 10;
 amp = 0.5;
 start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
+
+figure(1)
+plot(chnkr)
+hold on
+quiver(chnkr)
+axis equal
 
 fprintf('%5.2e s : time to build geo\n',t1)
 

@@ -1,3 +1,3 @@
 function addpaths_loc()
 
-addpath('../','../utils');
+addpath('../');
