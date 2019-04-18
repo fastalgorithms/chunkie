@@ -16,7 +16,7 @@ dim = chnkr.dim;
 
 [~,whts,u] = lege.exps(k);
 intorder = intparams.intorder;
-[xs1,whts1,xs0,whts0] = getquads(intorder);
+[xs1,whts1,xs0,whts0] = quad.brem.getquad(intorder);
 
 %sysmat = zeros(ndims(1)*k*nch,ndims(2)*k*nch);
 
