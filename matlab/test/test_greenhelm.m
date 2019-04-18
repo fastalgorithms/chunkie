@@ -1,5 +1,5 @@
-%TEST_GREENLAP test the routines for integrating over chunks against the
-% Green's ID for Laplace
+%TEST_GREENHELM test the routines for integrating over chunks against the
+% Green's ID for Helmholtz
 %
 % 
 
@@ -49,11 +49,13 @@ axis equal
 
 %%
 
+zk = rand() + 1i*rand();
+
 % kernel defs
 
-kernd = @(s,t,sn,tn) glapkern(s,t,sn,tn,'d');
-kerns = @(s,t,sn,tn) glapkern(s,t,sn,tn,'s');
-kernsprime = @(s,t,sn,tn) glapkern(s,t,sn,tn,'sprime');
+kernd = @(s,t,sn,tn) helmkern(zk,s,t,sn,tn,'d');
+kerns = @(s,t,sn,tn) helmkern(zk,s,t,sn,tn,'s');
+kernsprime = @(s,t,sn,tn) helmkern(zk,s,t,sn,tn,'sprime');
 
 ndims = [1 1];
 

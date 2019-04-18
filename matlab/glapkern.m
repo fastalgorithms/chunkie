@@ -13,8 +13,8 @@ end
 
 if strcmpi(type,'sprime')
     [~,grad] = glapfun(src,targ);
-    nx = repmat(targtau(2,:),nt,1);
-    ny = repmat(-targtau(1,:),nt,1);
+    nx = repmat((targtau(2,:)).',1,ns);
+    ny = repmat(-(targtau(1,:)).',1,ns);
 
     submat = (grad(:,:,1).*nx + grad(:,:,2).*ny);
 end
