@@ -28,12 +28,13 @@ SRC_DIR = src
 BIN_DIR = bin
 TEST_DIR = test
 TMP_DIR = tmp
-MDIR = matlab
+MDIR = chunkie
+DEV_DIR = dev
 MWRAP_DIR = mwrap
 RGG_DIR = external/rgg_tools
 VPATH = $(SRC_DIR):$(BIN_DIR):$(RGG_DIR)
 
-MEX_DEST = $(MDIR)/utils
+MEX_DEST = $(DEV_DIR)
 
 # names
 
