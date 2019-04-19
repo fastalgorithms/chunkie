@@ -26,10 +26,10 @@ end
 kernd = @(s,t,sn,tn) glapkern(s,t,sn,tn,'d');
 dens1 = ones(chnkr.k,chnkr.nch);
 
-ndims = [1 1];
+opdims = [1 1];
 
 opts.usesmooth=true;
-d1 = chunkerintkern(chnkr,kernd,ndims,dens1,pts,opts); 
+d1 = chunkerintkern(chnkr,kernd,opdims,dens1,pts,opts); 
 
 eps = opts.gausseps;
 smoothworks = or(abs(d1) < eps,abs(d1+1) < eps);
@@ -42,7 +42,7 @@ end
 ptsfail = pts(:,~smoothworks);
 if opts.verb; fprintf('npts adaptive %d\n',nnz(~smoothworks)); end
 opts.usesmooth=false;
-d12 = chunkerintkern(chnkr,kernd,ndims,dens1,ptsfail,opts); 
+d12 = chunkerintkern(chnkr,kernd,opdims,dens1,ptsfail,opts); 
 
 d1(~smoothworks) = d12;
 

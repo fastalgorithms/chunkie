@@ -1,4 +1,4 @@
-function [sysmat] = chunkskernmat(chnkr,fkern,ndims,intparams)
+function [sysmat] = chunkskernmat(chnkr,fkern,opdims,intparams)
 %CHUNKSKERNMAT build matrix for given kernel and chnkr description of 
 % boundary
 %
@@ -18,15 +18,15 @@ dim = chnkr.dim;
 intorder = intparams.intorder;
 [xs1,whts1,xs0,whts0] = quad.brem.getquad(intorder);
 
-%sysmat = zeros(ndims(1)*k*nch,ndims(2)*k*nch);
+%sysmat = zeros(opdims(1)*k*nch,opdims(2)*k*nch);
 
 ainterp1_sm = lege.matrin(k,xs1);
-temp = eye(ndims(2));
+temp = eye(opdims(2));
 ainterp1 = kron(ainterp1_sm,temp);
 
 nquad0 = size(xs0,1);
 
-ainterps0 = zeros(ndims(2)*nquad0,ndims(2)*k,k);
+ainterps0 = zeros(opdims(2)*nquad0,opdims(2)*k,k);
 
 for j = 1:k
     xs0j = xs0(:,j);
@@ -35,13 +35,13 @@ for j = 1:k
 end
 
 % do smooth weight for all
-sysmat = chunksfarbuildmat(r,d,h,1:nch,1:nch,fkern,ndims,whts);
+sysmat = chunksfarbuildmat(r,d,h,1:nch,1:nch,fkern,opdims,whts);
 
 % overwrite nbor and self
 for j = 1:nch
 
-    jmat = 1 + (j-1)*k*ndims(2);
-    jmatend = j*k*ndims(2);
+    jmat = 1 + (j-1)*k*opdims(2);
+    jmatend = j*k*opdims(2);
     
     ibefore = adj(1,j);
     iafter = adj(2,j);
@@ -49,48 +49,48 @@ for j = 1:nch
     % neighbors
     
     submat = chunksnearbuildmat(r,d,h,ibefore,j, ...
-        fkern,ndims,u,xs1,whts1,ainterp1);
+        fkern,opdims,u,xs1,whts1,ainterp1);
     
-    imat = 1 + (ibefore-1)*k*ndims(1);
-    imatend = ibefore*k*ndims(1);
+    imat = 1 + (ibefore-1)*k*opdims(1);
+    imatend = ibefore*k*opdims(1);
 
     sysmat(imat:imatend,jmat:jmatend) = submat;
     
     submat = chunksnearbuildmat(r,d,h,iafter,j, ...
-        fkern,ndims,u,xs1,whts1,ainterp1);
+        fkern,opdims,u,xs1,whts1,ainterp1);
     
-    imat = 1 + (iafter-1)*k*ndims(1);
-    imatend = iafter*k*ndims(1);
+    imat = 1 + (iafter-1)*k*opdims(1);
+    imatend = iafter*k*opdims(1);
 
     sysmat(imat:imatend,jmat:jmatend) = submat;
     
     % self
     
-    submat = chunksdiagbuildmat(r,d,h,j,fkern,ndims,...
+    submat = chunksdiagbuildmat(r,d,h,j,fkern,opdims,...
         u,xs0,whts0,ainterps0);
 
-    imat = 1 + (j-1)*k*ndims(1);
-    imatend = j*k*ndims(1);
+    imat = 1 + (j-1)*k*opdims(1);
+    imatend = j*k*opdims(1);
 
     sysmat(imat:imatend,jmat:jmatend) = submat;
     
 %     
-%     jmat = 1 + (j-1)*k*ndims(2);
-%     jmatend = j*k*ndims(2);
+%     jmat = 1 + (j-1)*k*opdims(2);
+%     jmatend = j*k*opdims(2);
 %     for i = 1:nch
-%         imat = 1 + (i-1)*k*ndims(1);
-%         imatend = i*k*ndims(1);
+%         imat = 1 + (i-1)*k*opdims(1);
+%         imatend = i*k*opdims(1);
 %         ibefore = adj(1,i);
 %         iafter = adj(2,i);
 % 
 %         if (j == ibefore || j == iafter)
 %             submat = chunksnearbuildmat(r,d,h,i,j, ...
-%                 fkern,ndims,u,xs1,whts1,ainterp1);
+%                 fkern,opdims,u,xs1,whts1,ainterp1);
 %         elseif (j == i)
-%             submat = chunksdiagbuildmat(r,d,h,j,fkern,ndims,...
+%             submat = chunksdiagbuildmat(r,d,h,j,fkern,opdims,...
 %                 u,xs0,whts0,ainterps0);
 %         else
-%             submat = chunksfarbuildmat(r,d,h,i,j,fkern,ndims,whts);
+%             submat = chunksfarbuildmat(r,d,h,i,j,fkern,opdims,whts);
 %         end
 %         
 %         sysmat(imat:imatend,jmat:jmatend) = submat;

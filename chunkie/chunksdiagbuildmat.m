@@ -1,4 +1,4 @@
-function submat = chunksdiagbuildmat(r,d,h,i,fkern,ndims,...
+function submat = chunksdiagbuildmat(r,d,h,i,fkern,opdims,...
 				      u,xs0,whts0,ainterps0)
 %CHUNKSDIAGBUILDMAT                  
 
@@ -36,14 +36,14 @@ dsdt = dspecnrms.*whts0*hs;
 % get kernel values and then premultiply by interpolating matrix
 % special nodes are the sources and the targs are the regular points
 
-submat = zeros(ndims(1)*k,ndims(2)*k);
+submat = zeros(opdims(1)*k,opdims(2)*k);
 for j = 1:k
     rspecj = (squeeze(rspec(:,j,:))).';
     tauspecj = (squeeze(tauspec(:,j,:))).';
     smatbigi = fkern(rspecj,rs(:,j),tauspecj,taus(:,j));
-    dsdtndim2 = repmat(dsdt(:,j).',ndims(2),1);
+    dsdtndim2 = repmat(dsdt(:,j).',opdims(2),1);
     dsdtndim2 = dsdtndim2(:);
-    submat(ndims(1)*(j-1)+1:ndims(1)*j,:) = ...
+    submat(opdims(1)*(j-1)+1:opdims(1)*j,:) = ...
         smatbigi*diag(dsdtndim2)*ainterps0(:,:,j);
 end
 

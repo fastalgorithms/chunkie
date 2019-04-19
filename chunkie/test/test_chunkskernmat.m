@@ -25,9 +25,9 @@ fprintf('%5.2e s : time to build geo\n',t1)
 % build laplace dirichlet matrix
 
 fkern = @(s,t,stau,ttau) glapkern(s,t,stau,ttau,'D');
-ndims(1) = 1; ndims(2) = 1;
+opdims(1) = 1; opdims(2) = 1;
 intparams.intorder = chnkr.k;
-start = tic; D = chunkskernmat(chnkr,fkern,ndims,intparams);
+start = tic; D = chunkskernmat(chnkr,fkern,opdims,intparams);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)

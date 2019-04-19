@@ -1,4 +1,4 @@
-function submat = chunksnearbuildmat(r,d,h,i,j,fkern,ndims,...
+function submat = chunksnearbuildmat(r,d,h,i,j,fkern,opdims,...
 				      u,xs1,whts1,ainterp1)
 %CHUNKSNEARBUILDMAT
 
@@ -38,7 +38,7 @@ taut = (bsxfun(@rdivide,dt,dtnrms)).';
     
 dsdt = dfinenrms.*whts1*hs;
 
-dsdtndim2 = repmat(dsdt(:).',ndims(2),1);
+dsdtndim2 = repmat(dsdt(:).',opdims(2),1);
 dsdtndim2 = dsdtndim2(:);
 
 % get kernel values and then premultiply by interpolating matrix

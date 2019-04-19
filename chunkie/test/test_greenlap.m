@@ -55,7 +55,7 @@ kernd = @(s,t,sn,tn) glapkern(s,t,sn,tn,'d');
 kerns = @(s,t,sn,tn) glapkern(s,t,sn,tn,'s');
 kernsprime = @(s,t,sn,tn) glapkern(s,t,sn,tn,'sprime');
 
-ndims = [1 1];
+opdims = [1 1];
 
 % eval u and dudn on boundary
 
@@ -79,9 +79,9 @@ utarg = kernmatstarg*strengths;
 opts.usesmooth=false;
 opts.verb=false;
 opts.quadkgparams = {'RelTol',1.0e-13,'AbsTol',1.0e-13};
-start=tic; Du = chunkerintkern(chnkr,kernd,ndims,densu,targets,opts); 
+start=tic; Du = chunkerintkern(chnkr,kernd,opdims,densu,targets,opts); 
 toc(start)
-start=tic; Sun = chunkerintkern(chnkr,kerns,ndims,densun,targets,opts); 
+start=tic; Sun = chunkerintkern(chnkr,kerns,opdims,densun,targets,opts); 
 toc(start)
 
 utarg2 = Sun-Du;

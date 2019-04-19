@@ -1,4 +1,4 @@
-function submat = chunksfarbuildmat(r,d,h,i,j,fkern,ndims,whts)
+function submat = chunksfarbuildmat(r,d,h,i,j,fkern,opdims,whts)
 %CHUNKSFARBUILDMAT build matrix for far interactions with this kernel
 % assuming that the smooth rule is sufficient
 % 
@@ -23,7 +23,7 @@ ws = kron(hs(:),whts(:));
 
 dsdt = dsnrms(:).*ws;
 
-dsdtndim2 = repmat(dsdt(:).',ndims(2),1);
+dsdtndim2 = repmat(dsdt(:).',opdims(2),1);
 dsdtndim2 = dsdtndim2(:);
 
 submat = bsxfun(@times,fkern(rs,rt,taus,taut),(dsdtndim2(:)).');

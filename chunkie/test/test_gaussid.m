@@ -27,7 +27,7 @@ kerns = @(s,t,sn,tn) glapkern(s,t,sn,tn,'s');
 
 dens1 = ones(chnkr.k,chnkr.nch);
 
-ndims = [1 1];
+opdims = [1 1];
 
 nxdir = 40;
 
@@ -41,7 +41,7 @@ targs(1,:) = xx(:); targs(2,:) = yy(:);
 
 fprintf('computing Gauss I.D. with smooth rule...\n');
 opts.usesmooth=true;
-start=tic; d1 = chunkerintkern(chnkr,kernd,ndims,dens1,targs,opts); 
+start=tic; d1 = chunkerintkern(chnkr,kernd,opdims,dens1,targs,opts); 
 toc(start)
 
 if doadap
@@ -50,7 +50,7 @@ if doadap
     opts.usesmooth=false;
     opts.verb=false;
     opts.quadkgparams = {'RelTol',1.0e-7,'AbsTol',1.0e-7};
-    start=tic; d12 = chunkerintkern(chnkr,kernd,ndims,dens1,targs,opts); 
+    start=tic; d12 = chunkerintkern(chnkr,kernd,opdims,dens1,targs,opts); 
     toc(start)
     dd2 = reshape(d12,size(xx));
 end

@@ -296,7 +296,7 @@ if (nover > 0)
                 ab0=ab1;
             end
 	 
-            if (ifnewt < 3)
+            if (ifnewt < 3) 
                 error('newton failed in chunkfunc');
             end
             ab2=ab1;
