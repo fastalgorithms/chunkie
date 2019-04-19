@@ -7,8 +7,6 @@ seed = 8675309;
 rng(seed);
 addpaths_loc();
 
-doadap = false;
-
 % geometry parameters and construction
 
 cparams = [];
