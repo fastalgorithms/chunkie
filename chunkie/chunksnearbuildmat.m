@@ -12,21 +12,31 @@ hs = h(j); ht = h(i);
 % get relevant coefficients
 
 [dim,~] = size(rs);            
+
+
+
             
 rsc = u*rs.';
 dsc = u*ds.';
 
 % then interpolate 
 
-rfine = zeros(length(xs1),dim);
-dfine = zeros(length(xs1),dim);
+% rfine = zeros(length(xs1),dim);
+% dfine = zeros(length(xs1),dim);\
+
+
 
 xs1 = xs1(:);
 
-for i = 1:dim
-    rfine(:,i) = lege.exev(xs1,rsc(:,i));
-    dfine(:,i) = lege.exev(xs1,dsc(:,i));
-end
+rfine = lege.exev(xs1,rsc);
+dfine = lege.exev(xs1,dsc);
+
+% for i = 1:dim
+%     rfine(:,i) = lege.exev(xs1,rsc(:,i));
+%     dfine(:,i) = lege.exev(xs1,dsc(:,i));
+% end
+
+
 
 rfine = rfine.';
 

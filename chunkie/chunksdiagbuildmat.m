@@ -17,13 +17,17 @@ dsc = u*(ds.');
 
 % then interpolate 
 
-rspec = zeros(size(xs0,1),k,dim);
-dspec = zeros(size(xs0,1),k,dim);
-   
-for j = 1:dim
-    rspec(:,:,j) = lege.exev(xs0,rsc(:,j));
-    dspec(:,:,j) = lege.exev(xs0,dsc(:,j));
-end
+
+rspec = lege.exev(xs0,rsc);
+dspec = lege.exev(xs0,dsc);
+% 
+% rspec = zeros(size(xs0,1),k,dim);
+% dspec = zeros(size(xs0,1),k,dim);
+%    
+% for j = 1:dim
+%     rspec(:,:,j) = lege.exev(xs0,rsc(:,j));
+%     dspec(:,:,j) = lege.exev(xs0,dsc(:,j));
+% end
 
 dspecnrms = sqrt(sum(abs(dspec).^2,3));
 tauspec = bsxfun(@rdivide,dspec,dspecnrms);

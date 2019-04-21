@@ -45,11 +45,14 @@ in the distribution (see LICENSE.md)
 
 ## chunkie team
 
-chunkie library: Travis Askham and Manas Rachh
-Fortran for chunking: Michael O'Neil
-Singular quads: James Bremer
+chunkers:
+- Travis Askham
+- Manas Rachh
+- Michael O'Neil
 
-classic Fortran routs: Leslie Greengard, Zydrunas
+kindly donated code:
+- Singular quads: James Bremer (chunkie/+quad/+brem)
+- Classic Fortran routs: Leslie Greengard, Zydrunas
 Gimbutas, Vladimir Rokhlin
 
 ## Development

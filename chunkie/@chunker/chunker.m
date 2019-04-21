@@ -25,6 +25,7 @@ classdef chunker
     properties(Dependent,SetAccess=private)
         k
         dim
+        npt
     end
     
     methods
@@ -83,6 +84,9 @@ classdef chunker
         end
         function dim = get.dim(obj)
             dim = size(obj.r,1);
+        end
+        function npt = get.npt(obj)
+            npt = obj.k*obj.nch;
         end
             
         function obj = addchunk(obj,nchadd)
