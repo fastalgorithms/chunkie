@@ -1,4 +1,4 @@
-function [len,dsdt] = chunklength(fcurve,a,b,xs,ws)
+function [len] = chunklength(fcurve,a,b,xs,ws)
     
     nout = 3;
     out = cell(nout,1);

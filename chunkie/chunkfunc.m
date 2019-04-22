@@ -282,7 +282,10 @@ if (nover > 0)
             ab0=(a+b)/2;
             for iter = 1:1000
 
-                [rl1,dsdt] = chunklength(fcurve,a,ab0,xs,ws);
+                [rl1] = chunklength(fcurve,a,ab0,xs,ws);
+                
+                [out{:}] = fcurve(ab0);
+                dsdt = sqrt(sum((out{2}).^2));
                 ab1=ab0-(rl1-rlhalf)/dsdt;
 
                 err=rl1-rlhalf;

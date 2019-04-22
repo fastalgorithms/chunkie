@@ -16,12 +16,10 @@ for i = 1:opdims(2)
 end
 
 [dim,k] = size(rci);
-ri = zeros(dim,length(t));
-di = zeros(dim,length(t));
-for i = 1:dim
-    ri(i,:) = lege.exev(t,rci(i,:));
-    di(i,:) = lege.exev(t,dci(i,:));
-end
+
+ri = lege.exev(t,rci.').';
+di = lege.exev(t,dci.').';
+
 dsdt = sqrt(sum(abs(di).^2,1));
 taui = bsxfun(@rdivide,di,dsdt);
 
