@@ -9,7 +9,7 @@ rng(iseed);
 addpaths_loc();
 
 cparams = [];
-cparams.eps = 1.0e-4;
+cparams.eps = 1.0e-10;
 cparams.nover = 0;
 pref = []; 
 pref.k = 16;
@@ -18,15 +18,7 @@ amp = 0.5;
 start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
-figure(1)
-plot(chnkr)
-hold on
-quiver(chnkr)
-axis equal
-
 fprintf('%5.2e s : time to build geo\n',t1)
-
-
 
 % sources
 
@@ -48,6 +40,8 @@ targets = targets.*repmat(rand(1,nt),2,1);
 xs = chnkr.r(1,:,:); xmin = min(xs(:)); xmax = max(xs(:));
 ys = chnkr.r(2,:,:); ymin = min(ys(:)); ymax = max(ys(:));
 
+figure(1)
+clf
 hold off
 plot(chnkr)
 hold on
@@ -73,7 +67,7 @@ ubdry = kernmats*strengths;
 kernmatstarg = kerns(sources,targets,[],[]);
 utarg = kernmatstarg*strengths;
 
-%%
+%
 
 % build laplace dirichlet matrix
 

@@ -60,7 +60,7 @@ dd = reshape(d1,size(xx));
 %%
 
 figure(1)
-
+clf
 hold off
 
 h = pcolor(xx,yy,1.0*or((abs(dd+1)<1.0e-6),abs(dd)<1.0e-6)); set(h,'EdgeColor','none');
@@ -73,7 +73,7 @@ colorbar
 
 if doadap
     figure(2)
-
+    clf 
     hold off
 
     h = pcolor(xx,yy,1.0*or((abs(dd2+1)<1.0e-8),abs(dd2)<1.0e-8)); set(h,'EdgeColor','none');
