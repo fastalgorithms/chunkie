@@ -12,9 +12,9 @@ cparams = [];
 cparams.eps = 1.0e-10;
 cparams.nover = 0;
 pref = []; 
-pref.k = 16;
-narms = 10;
-amp = 0.5;
+pref.k = 30;
+narms = 3;
+amp = 0.25;
 start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
@@ -30,7 +30,7 @@ strengths = randn(ns,1);
 
 % targets
 
-nt = 10;
+nt = 1;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
 targets = targets.*repmat(rand(1,nt),2,1);
@@ -98,14 +98,17 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 
 opts.usesmooth=false;
 opts.verb=false;
-opts.quadkgparams = {'RelTol',1.0e-15,'AbsTol',1.0e-15};
-start=tic; Dsol = chunkerintkern(chnkr,fkern,opdims,sol,targets,opts); 
+opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
+start=tic; Dsol = chunkerintkern(chnkr,fkern,opdims,sol2,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
 %
 
-relerr = norm(utarg-Dsol,'fro')/norm(utarg,'fro');
+wchnkr = whts(chnkr);
 
+relerr = norm(utarg-Dsol,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
+relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
+fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 

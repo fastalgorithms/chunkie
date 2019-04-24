@@ -1,4 +1,4 @@
-function obj = sort(obj)
+function [obj,ifclosed] = sort(obj)
 %SORT sort the chunker object so that adjacent chunks have sequential 
 % indices
 % 
@@ -14,8 +14,8 @@ assert(length(iright) <= 1,...
 ifclosed=true;
 icurrent = 1;
 
-if length(ileft) == 1
-    assert(length(iright)==1,'chunker has left end but no right end');
+if or(length(ileft) == 1,length(iright)==1)
+    assert(and(length(iright)==1,length(ileft)==1),'chunker has one free end');
     icurrent = ileft;
     ifclosed=false;
 end

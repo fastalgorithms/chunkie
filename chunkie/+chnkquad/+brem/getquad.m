@@ -1,6 +1,6 @@
 function [xs1,whts1,xs0,whts0] = getquad(k)
 
-filename= '+quad/+brem/whts.mat';
+filename= '+chnkquad/+brem/whts.mat';
 
 persistent whts_dict
 if isempty(whts_dict)

@@ -131,7 +131,7 @@ classdef chunker
             obj.nchstor = nchstornew;
         end
         
-        obj = sort(obj)
+        [obj,ifclosed] = sort(obj)
         obj = reverse(obj)
         rmin = min(obj)
         rmax = max(obj)
@@ -144,6 +144,7 @@ classdef chunker
         quiver(obj,varargin)
         scatter(obj,varargin)
         tau = taus(obj)
+        obj = refine(obj,varargin)
     end
     methods(Static)
         obj = chunkfunc(fcurve,varargin)

@@ -12,11 +12,20 @@ d = chnkr.d;
 d2 = chnkr.d2;
 h = chnkr.h;
 
+intorder = k;
+smooth = false;
+if isfield(intparams,'intorder')
+    intorder = intparams.intorder;
+end
+if isfield(intparams,'smooth')
+    smooth = intparams.smooth;
+end
+
 dim = chnkr.dim;
 
 [~,whts,u] = lege.exps(k);
 intorder = intparams.intorder;
-[xs1,whts1,xs0,whts0] = quad.brem.getquad(intorder);
+[xs1,whts1,xs0,whts0] = chnkquad.brem.getquad(intorder);
 
 %sysmat = zeros(opdims(1)*k*nch,opdims(2)*k*nch);
 

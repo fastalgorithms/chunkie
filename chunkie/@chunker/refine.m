@@ -26,7 +26,7 @@ function chnkr = refine(chnkr,opts)
 %
 %
 
-if nargin < 1
+if nargin < 2
     opts = [];
 end
 
@@ -64,7 +64,7 @@ chunklens(1:nch) = sum(ws,1);
 
 % 
 
-[~,w] = lege.exps(k);
+[x,w,u] = lege.exps(k);
 
 % maximum chunklength
 
@@ -130,8 +130,8 @@ if lvlr
         ifdone=1;
 
         for i = 1:nchold
-            i1=chnkr.adjs(1,i);
-            i2=chnkr.adjs(2,i);
+            i1=chnkr.adj(1,i);
+            i2=chnkr.adj(2,i);
 
             rlself = chunklens(i);
 

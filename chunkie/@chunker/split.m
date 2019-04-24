@@ -120,6 +120,8 @@ chnkr.d2(:,:,nch+1) = d2_2;
 chnkr.adj(2,ich)=nch+1;
 chnkr.adj(1,nch+1)=ich;
 chnkr.adj(2,nch+1)=i2;
-chnkr.adj(1,i2)=nch+1;
+if i2 > 0
+    chnkr.adj(1,i2)=nch+1;
+end
 
 end
