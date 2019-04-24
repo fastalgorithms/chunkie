@@ -39,9 +39,14 @@ Simply add the chunkie subfolder to your matlab path.
 
 chunkie is copyright 2019 the chunkie team
 
-chunkie is available under the terms of the
+chunkie proper (the contents of the chunkie
+folder) is available under the terms of the
 BSD 3-clause license, which should have been included
-in the distribution (see LICENSE.md)
+in the distribution (see chunkie/LICENSE.md)
+
+this top-level folder contains some fortran
+files and others which may be subject to a slightly
+different license.
 
 ## chunkie team
 
@@ -51,7 +56,7 @@ chunkers:
 - Michael O'Neil
 
 kindly donated code:
-- Singular quads: James Bremer (chunkie/+quad/+brem)
+- Singular quads: James Bremer (chunkie/+chnk/+quad/+brem)
 - Classic Fortran routs: Leslie Greengard, Zydrunas
 Gimbutas, Vladimir Rokhlin
 
@@ -60,7 +65,9 @@ Gimbutas, Vladimir Rokhlin
 At least for now, chunkie is pure MATLAB,
 which makes life easier on users. The biggest
 challenge in staying pure MATLAB will likely
-be working with rarer special functions.
+be working with rarer special functions or
+incorporating FMMs and other fast algorithms
+which are not implemented in MATLAB.
 If you need to work with an original Fortran
 file (building out the lib, etc.), it can be
 helpful to mwrap a Fortran routine that you'd
