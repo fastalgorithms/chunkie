@@ -10,7 +10,7 @@ addpaths_loc();
 doadap = true;
 
 % geometry parameters and construction
-
+ 
 cparams = [];
 cparams.eps = 1.0e-4;
 pref = []; 
@@ -19,6 +19,7 @@ narms = 5;
 amp = 0.5;
 start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
+
 
 % scalar function on boundary
 

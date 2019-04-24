@@ -14,7 +14,6 @@ chnkr = chunkpoly(verts,cparams,p);
 
 assert(checkadjinfo(chnkr) == 0);
 
-
 figure(1)
 clf
 plot(chnkr,'-x')

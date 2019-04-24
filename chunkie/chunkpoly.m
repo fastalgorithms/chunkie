@@ -137,15 +137,15 @@ for i = 1:nv-1
         cosphi = dot(v2,v); %cosine of angle between edges
         sinphi = sqrt(1-cosphi*cosphi);
         trange = w2*sqrt((1-cosphi)/2); %parameter space range of gaussian
-        h = abs(trange)/8.0; % width parameter of gaussian
+        hbell = abs(trange)/8.0; % width parameter of gaussian
         m = sinphi/(1-cosphi); % slope of abs approx
         cpt.ta = -trange;
         cpt.tb = trange;
         cpt.eps = eps; cpt.levrestr = 0; cpt.ifclosed = 0;
-        chnkrt = sort(chunkfunc(@(t)fround(t,m,h,dim),cpt,pref));
+        chnkrt = sort(chunkfunc(@(t)fround(t,m,hbell,dim),cpt,pref));
         
         % do optimal procrustes match of left and right ends
-        rl = fround(-trange,m,h,dim); rr = fround(trange,m,h,dim);
+        rl = fround(-trange,m,hbell,dim); rr = fround(trange,m,hbell,dim);
         [um,~,vm] = svd([w2*v w2*v2]*([rl rr].'));
         rotmat = um*vm.';
         
