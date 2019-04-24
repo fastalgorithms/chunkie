@@ -145,6 +145,7 @@ classdef chunker
         scatter(obj,varargin)
         tau = taus(obj)
         obj = refine(obj,varargin)
+        a = area(obj)
     end
     methods(Static)
         obj = chunkfunc(fcurve,varargin)

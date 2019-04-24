@@ -1,6 +1,6 @@
 function iords = quadavail()
 
-filename= '+quad/+brem/whts.mat';
+filename= '+chnk/+quad/+brem/whts.mat';
 
 persistent whts_dict
 if isempty(whts_dict)

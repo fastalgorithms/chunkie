@@ -173,7 +173,7 @@ end
 
 function [r,d,d2] = fround(t,m,h,dim)
 
-[y,dy,d2y] = chnkspcl.absconvgauss(t,m,0.0,h);
+[y,dy,d2y] = chnk.spcl.absconvgauss(t,m,0.0,h);
 
 r = zeros(dim,length(t));
 d = zeros(dim,length(t));

@@ -3,16 +3,17 @@
 addpaths_loc();
 
 
-verts = barbell();
+verts = chnk.demo.barbell(2.0,2.0,1.0,1.0);
 
 cparams = [];
-cparams.widths = 0.3*ones(size(verts,2),1);
+cparams.widths = 0.1*ones(size(verts,2),1);
 cparams.eps = 1e-3;
 
 p.k = 16; p.dim = 2;
 chnkr = chunkpoly(verts,cparams,p);
 
 assert(checkadjinfo(chnkr) == 0);
+
 
 figure(1)
 clf
@@ -41,20 +42,20 @@ cparams.ifclosed = 0;
 cparams.eps = 1e-3;
 
 p.k = 16; p.dim = 2;
-chnkr = chunkpoly(verts,cparams,p);
+chnkr2 = chunkpoly(verts,cparams,p);
 
 
 figure(3)
 clf
-plot(chnkr,'-x')
+plot(chnkr2,'-x')
 hold on
-quiver(chnkr)
+quiver(chnkr2)
 axis equal
 
 figure(4)
-chnkr_ref = refine(chnkr);
+chnkr_ref2 = refine(chnkr2);
 clf
-plot(chnkr_ref,'-x')
+plot(chnkr_ref2,'-x')
 hold on
-quiver(chnkr_ref)
+quiver(chnkr_ref2)
 axis equal
