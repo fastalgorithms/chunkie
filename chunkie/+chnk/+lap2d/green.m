@@ -1,5 +1,5 @@
 
-function [val,grad,hess] = glapfun(src,targ)
+function [val,grad,hess] = green(src,targ)
 
 [~,ns] = size(src);
 [~,nt] = size(targ);
@@ -20,15 +20,15 @@ r2 = rx2+ry2;
 
 r4 = r2.*r2;
 
-if nargout > 0
-
+if nargout > 0 
+    
     val = -log(r2)/(4.0*pi);
     
 end
 
 [m,n] = size(xs);
 
-if nargout > 1
+if nargout > 1 
 
     grad = zeros(m,n,2);
 
@@ -37,7 +37,7 @@ if nargout > 1
     
 end
 
-if nargout > 2
+if nargout > 2 
 
     hess = zeros(m,n,3);
 

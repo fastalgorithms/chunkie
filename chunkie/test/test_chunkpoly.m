@@ -6,8 +6,8 @@ addpaths_loc();
 verts = chnk.demo.barbell(2.0,2.0,1.0,1.0);
 
 cparams = [];
-cparams.widths = 0.1*ones(size(verts,2),1);
-cparams.eps = 1e-3;
+cparams.widths = 0.001*ones(size(verts,2),1);
+cparams.eps = 1e-8;
 
 p.k = 16; p.dim = 2;
 chnkr = chunkpoly(verts,cparams,p);
@@ -29,7 +29,7 @@ hold on
 quiver(chnkr_ref)
 axis equal
 
-%
+%%
 
 verts = randn(2,5);
 

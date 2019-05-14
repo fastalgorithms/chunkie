@@ -51,9 +51,9 @@ zk = rand() + 1i*rand();
 
 % kernel defs
 
-kernd = @(s,t,sn,tn) helmkern(zk,s,t,sn,tn,'d');
-kerns = @(s,t,sn,tn) helmkern(zk,s,t,sn,tn,'s');
-kernsprime = @(s,t,sn,tn) helmkern(zk,s,t,sn,tn,'sprime');
+kernd = @(s,t,sn,tn) chnk.helm2d.kern(zk,s,t,sn,tn,'d');
+kerns = @(s,t,sn,tn) chnk.helm2d.kern(zk,s,t,sn,tn,'s');
+kernsprime = @(s,t,sn,tn) chnk.helm2d.kern(zk,s,t,sn,tn,'sprime');
 
 opdims = [1 1];
 

@@ -51,9 +51,9 @@ axis equal
 
 % kernel defs
 
-kernd = @(s,t,sn,tn) glapkern(s,t,sn,tn,'d');
-kerns = @(s,t,sn,tn) glapkern(s,t,sn,tn,'s');
-kernsprime = @(s,t,sn,tn) glapkern(s,t,sn,tn,'sprime');
+kernd = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'d');
+kerns = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'s');
+kernsprime = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'sprime');
 
 opdims = [1 1];
 

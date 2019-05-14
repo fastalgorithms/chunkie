@@ -1,5 +1,5 @@
 
-function [val,grad,hess] = helmfun(zk,src,targ)
+function [val,grad,hess] = green(zk,src,targ)
 
 [~,ns] = size(src);
 [~,nt] = size(targ);

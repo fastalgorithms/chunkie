@@ -1,11 +1,12 @@
 
-function [Kpxy,nbr] = pxyfun_sq(kern,proxy,pnorm,pwhts,x,xnorm,whts, ...
+function [Kpxy,nbr] = pxyfun(kern,pr,pd,pw,pin,sr,sd,sw, ...
     slf,nbr,l,ctr)
 %PXYFUN_SQ proxy surface utility for square proxy surface
 %
 % kern should be a kernel function of the form 
 % submat = kern(src, targ, srcn, targn, slf)
 %
+% sr and stau
 % src and targ are (2,_) arrays of points
 % srcn and targn are corresponding normals (same format)
 % slf is the indices of the subset of the sources to use
@@ -25,7 +26,7 @@ function [Kpxy,nbr] = pxyfun_sq(kern,proxy,pnorm,pwhts,x,xnorm,whts, ...
   pxy = bsxfun(@plus,proxy*l,ctr(:));
   N = size(x,2);
   pw = l*pwhts;
-  Kpxy = kern(x,pxy,xnorm,pnorm,whts,pw,slf);
+  Kpxy = kern(sr,pr,stau,ptau,sw,pw,slf);
   dx = x(1,nbr) - ctr(1);
   dy = x(2,nbr) - ctr(2);
   dist = max(abs([dx; dy]),[],1);

@@ -1,6 +1,6 @@
 %TEST_HELMFUN
 %
-% test that gradients are set up right in helmfun
+% test that gradients are set up right in chnk.helm2d.green
 
 addpaths_loc();
 
@@ -19,13 +19,13 @@ gradientTest(fcny,trg,start_eps);
 
 function [f,g] = fcn1(zk,src,trg)
 
-[f,g] = helmfun(zk,src,trg);
+[f,g] = chnk.helm2d.green(zk,src,trg);
 
 end
 
 function [f,g] = fcnx1(zk,src,trg)
 
-[~,g1,h1] = helmfun(zk,src,trg);
+[~,g1,h1] = chnk.helm2d.green(zk,src,trg);
 f = g1(1);
 g = h1(1:2);
 
@@ -33,7 +33,7 @@ end
 
 function [f,g] = fcny1(zk,src,trg)
 
-[~,g1,h1] = helmfun(zk,src,trg);
+[~,g1,h1] = chnk.helm2d.green(zk,src,trg);
 f = g1(2);
 g = h1(2:3);
 

@@ -44,7 +44,7 @@ classdef chunkerpref
             defpref.nchmax = 10000;
             defpref.k = 16;
             defpref.dim = 2;
-            defpref.nchstor = 64;
+            defpref.nchstor = 4;
         end
     end
 end

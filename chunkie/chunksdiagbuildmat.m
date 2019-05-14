@@ -41,10 +41,12 @@ dsdt = dspecnrms.*whts0*hs;
 % special nodes are the sources and the targs are the regular points
 
 submat = zeros(opdims(1)*k,opdims(2)*k);
+
+rspec = permute(rspec,[3 1 2]);
+tauspec = permute(tauspec,[3,1,2]);
+
 for j = 1:k
-    rspecj = (squeeze(rspec(:,j,:))).';
-    tauspecj = (squeeze(tauspec(:,j,:))).';
-    smatbigi = fkern(rspecj,rs(:,j),tauspecj,taus(:,j));
+    smatbigi = fkern(rspec(:,:,j),rs(:,j),tauspec(:,:,j),taus(:,j));
     dsdtndim2 = repmat(dsdt(:,j).',opdims(2),1);
     dsdtndim2 = dsdtndim2(:);
     submat(opdims(1)*(j-1)+1:opdims(1)*j,:) = ...

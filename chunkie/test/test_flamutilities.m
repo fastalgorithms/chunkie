@@ -1,7 +1,7 @@
 
-%TEST_CHUNKSKERNMAT
+%TEST_FLAMUTILITIES
 %
-% test the matrix builder and do a basic solve
+% test the FLAM matrix builder and do a basic solve
 
 iseed = 8675309;
 rng(iseed);
@@ -10,13 +10,15 @@ addpaths_loc();
 
 cparams = [];
 cparams.eps = 1.0e-10;
-cparams.nover = 0;
+cparams.nover = 5;
 pref = []; 
 pref.k = 30;
 narms = 3;
 amp = 0.25;
 start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
+
+wts = whts(chnkr);
 
 fprintf('%5.2e s : time to build geo\n',t1)
 
@@ -36,9 +38,6 @@ targets = starfish(ts,narms,amp);
 targets = targets.*repmat(rand(1,nt),2,1);
 
 % plot geo and sources
-
-xs = chnkr.r(1,:,:); xmin = min(xs(:)); xmax = max(xs(:));
-ys = chnkr.r(2,:,:); ymin = min(ys(:)); ymax = max(ys(:));
 
 figure(1)
 clf
@@ -81,18 +80,51 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 
 sys = -0.5*eye(chnkr.k*chnkr.nch) + D;
 
+% build sparse tridiag part 
+
+start = tic; spmat = chunkskernmattd(chnkr,fkern,opdims,intparams);
+t1 = toc(start);
+fprintf('%5.2e s : time to build tridiag\n',t1)
+
+spmat = spmat -0.5*speye(chnkr.k*chnkr.nch);
+
+% % test matrix entry evaluator
+% 
+% start = tic; 
+% sys2 = kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,fkern,opdims,spmat);
+% t1 = toc(start);
+% 
+% fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
+
+
+xflam = chnkr.r(:,:);
+matfun = @(i,j) kernbyindex(i,j,chnkr,wts,fkern,opdims,spmat);
+[pr,ptau,pw,pin] = proxy_square_pts();
+ifaddtrans = true;
+pxyfun = @(x,slf,nbr,l,ctr) proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
+    fkern,opdims,pr,ptau,pw,pin,ifaddtrans);
+start = tic; F = rskelf(matfun,xflam,200,1e-14,pxyfun); t1 = toc(start);
+
+afun = @(x) rskelf_mv(F,x);
+
+fprintf('%5.2e s : time for flam compress\n',t1)
+
+err2 = norm(sys2-sys,'fro')/norm(sys,'fro');
+fprintf('%5.2e   : fro error of build \n',err2)
+
 rhs = ubdry; rhs = rhs(:);
 start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
 
 fprintf('%5.2e s : time for dense gmres\n',t1)
 
-start = tic; sol2 = sys\rhs; t1 = toc(start);
+rhs = ubdry; rhs = rhs(:);
+start = tic; sol3 = rskelf_sv(F,rhs); t1 = toc(start);
 
-fprintf('%5.2e s : time for dense backslash solve\n',t1)
+fprintf('%5.2e s : time for rskelf_sv \n',t1)
 
-err = norm(sol-sol2,'fro')/norm(sol2,'fro');
+err = norm(sol-sol3,'fro')/norm(sol,'fro');
 
-fprintf('difference between direct and iterative %5.2e\n',err)
+fprintf('difference between fast-direct and iterative %5.2e\n',err)
 
 % evaluate at targets and compare
 
