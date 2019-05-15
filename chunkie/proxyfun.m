@@ -41,7 +41,7 @@ function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
 
 pxy = bsxfun(@plus,pr*l,ctr(:));
 pw = l*pw;
-pw2 = repmat(pw(:).',opdims(1)); pw2 = pw2(:);
+pw2 = repmat(pw(:).',opdims(1),1); pw2 = pw2(:);
 
 % find unique underlying points corresponding to slf indices
 
