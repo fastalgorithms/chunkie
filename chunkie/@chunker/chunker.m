@@ -9,6 +9,7 @@ classdef chunker
         d2stor
         adjstor
         hstor
+        datastor
     end
     properties(Dependent,Access=public)
         r
@@ -16,16 +17,19 @@ classdef chunker
         d2
         adj
         h
+        data
     end
     properties(SetAccess=private)
         nchmax
         nch
         nchstor
+        hasdata
     end
     properties(Dependent,SetAccess=private)
         k
         dim
         npt
+        datadim
     end
     
     methods
@@ -47,6 +51,8 @@ classdef chunker
             obj.d2stor = zeros(dim,k,nchstor);
             obj.adjstor = zeros(2,nchstor);
             obj.hstor = zeros(nchstor,1);
+            obj.hasdata = false;
+            obj.datastor = [];
         end
         
         function r = get.r(obj)
@@ -63,6 +69,12 @@ classdef chunker
         end
         function h = get.h(obj)
             h = obj.hstor(1:obj.nch);
+        end
+        function data = get.data(obj)
+            data = obj.datastor(:,1:(obj.nch*obj.hasdata));
+        end
+        function obj = set.data(obj,val)
+            obj.datastor(:,1:(obj.nch*obj.hasdata)) = val;
         end
         function obj = set.r(obj,val)
             obj.rstor(:,:,1:obj.nch)=val;
@@ -84,6 +96,9 @@ classdef chunker
         end
         function dim = get.dim(obj)
             dim = size(obj.r,1);
+        end
+        function datadim = get.datadim(obj)
+            datadim = size(obj.data,1);
         end
         function npt = get.npt(obj)
             npt = obj.k*obj.nch;
@@ -129,6 +144,15 @@ classdef chunker
             obj.adj = adjtemp;
             obj.h = htemp;
             obj.nchstor = nchstornew;
+        end
+        
+        function obj = makedatarows(obj,nrows)
+            assert(nrows > 0, ...
+                'error must add a positive number of rows to data');
+            datatemp = obj.data;
+            datadimold = obj.datadim;
+            obj.datastor = zeros(datadimold+nrows,obj.k,obj.nchstor);
+            obj.datastor(1:datadimold,:) = datatemp(:,:);
         end
         
         [obj,ifclosed] = sort(obj)

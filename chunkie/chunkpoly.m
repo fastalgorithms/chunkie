@@ -1,4 +1,4 @@
-function chnkr = chunkpoly(verts,cparams,pref)
+function [chnkr,varargout] = chunkpoly(verts,cparams,pref)
 %CHUNKPOLY return a chunker corresponding to
 % the corner points specified by verts and the
 % cparams structure. Can return a polygon with rounded
@@ -19,14 +19,11 @@ function chnkr = chunkpoly(verts,cparams,pref)
 %                             edges (0.1)
 %    	  cparams.ifclosed = 1, closed polygon
 %                         0, open segment (1)
-% 	  cparams.eps - resolve curve to tolerance eps
+% 	      cparams.eps - resolve curve to tolerance eps
 %                    resolve coordinates, arclength,
 %          	     and first and second derivs of coordinates
 %		     to this tolerance (1.0e-6) only used
 %                    with rounding 
-%	  cparams.nover - once resolved, oversample nover times (0)
-%    	  cparams.maxchunklen - maximum length of a chunk
-%                          (max edge length, i.e. not enforced)
 %         cparams.k - order of underlying Gauss nodes on chunks
 %                  (16)
 %                  
