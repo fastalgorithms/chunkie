@@ -71,10 +71,10 @@ classdef chunker
             h = obj.hstor(1:obj.nch);
         end
         function data = get.data(obj)
-            data = obj.datastor(:,1:(obj.nch*obj.hasdata));
+            data = obj.datastor(:,:,1:(obj.nch*obj.hasdata));
         end
         function obj = set.data(obj,val)
-            obj.datastor(:,1:(obj.nch*obj.hasdata)) = val;
+            obj.datastor(:,:,1:(obj.nch*obj.hasdata)) = val;
         end
         function obj = set.r(obj,val)
             obj.rstor(:,:,1:obj.nch)=val;
@@ -153,6 +153,12 @@ classdef chunker
             datadimold = obj.datadim;
             obj.datastor = zeros(datadimold+nrows,obj.k,obj.nchstor);
             obj.datastor(1:datadimold,:) = datatemp(:,:);
+            obj.hasdata = true;
+        end
+        
+        function obj = cleardata(obj)
+            obj.hasdata = false;
+            obj.datastor = [];
         end
         
         [obj,ifclosed] = sort(obj)
