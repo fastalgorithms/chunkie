@@ -1,7 +1,7 @@
 function [pols,ders] = pols(xs,n)
 %LEGE.POLS evaluate up to nth order Legendre polynomial via recursion
 %
-% output is size(xs) x (n+1) array
+% output is (n+1) x size(xs) array
 %
 % Copyright (C) 2009: Vladimir Rokhlin
 % 

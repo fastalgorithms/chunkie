@@ -1,4 +1,4 @@
-function [chnkr,varargout] = chunkpoly(verts,cparams,pref)
+function [chnkr,varargout] = chunkpoly(verts,cparams,pref,edgevals)
 %CHUNKPOLY return a chunker corresponding to
 % the corner points specified by verts and the
 % cparams structure. Can return a polygon with rounded
@@ -46,6 +46,9 @@ else
         warning('dimensions dont match, overwriting with vertex dim');
         pref.dim = dimv;
     end
+end
+if nargin < 4
+    edgevals = [];
 end
 
 autowidths = false;
@@ -95,9 +98,24 @@ if ifclosed
     nv = size(verts,2);
 end
 
+nedge = nv - 1;
+nvals = 0;
+if numel(edgevals) ~= 0
+    assert(rem(numel(edgevals),nedge) == 0, ...
+        'number of edge values should be multiple of number of edges');
+    nvals = numel(edgevals)/nedge;
+    edgevals = reshape(edgevals,nvals,nedge);
+end
+
 chnkr = chunker(pref);
+chnkr = chnkr.makedatarows(nvals);
 k = chnkr.k; dim = chnkr.dim;
-[t] = lege.exps(k);
+[t,w] = lege.exps(k);
+onek = ones(k,1);
+
+if nvals > 0
+    aint = lege.intmat(chnkr.k);
+end
 
 for i = 1:nv-1
     % grab vertices
@@ -111,6 +129,10 @@ for i = 1:nv-1
     ts = w1+(l-w2-w1)*(t+1)/2.0;
     chnkr = chnkr.addchunk();
     nch = chnkr.nch;
+    if nvals > 0
+        val1 = edgevals(:,i);
+        chnkr.data(:,:,nch) = bsxfun(@times,val1,onek(:).');
+    end
     chnkr.r(:,:,nch) = r1 + bsxfun(@times,v(:),(ts(:)).');
     chnkr.d(:,:,nch) = repmat(v(:),1,k);
     chnkr.d2(:,:,nch) = zeros(dim,k);
@@ -124,8 +146,14 @@ for i = 1:nv-1
     if or(i < nv-1,ifclosed)
         % chunk up smoothed corner made by three verts
         if (i==nv-1)
+            if nvals > 0
+                val2 = edgevals(:,1);
+            end
             r3 = verts(:,2);
         else
+            if nvals > 0
+                val2 = edgevals(:,i+1);
+            end
             r3 = verts(:,i+2);
         end
         l2 = sqrt(sum((r2-r3).^2));
@@ -156,6 +184,23 @@ for i = 1:nv-1
         chnkr.adj(2,nch) = nch+1;
         chnkr.adj(1,nch+1) = nch;
         chnkr.h(nch+1:nch+ncht) = chnkrt.h;
+        
+        if nvals > 0
+            ds = bsxfun(@times,reshape(sum((rotmat*chnkrt.d(:,:)).^2,1),k,ncht), ...
+                (chnkrt.h(:)).');
+            dsw = bsxfun(@times,w(:),ds);
+            dssums = sum(dsw,1);
+            dssums2 = cumsum([0,dssums(1:end-1)]);
+            dsint = aint*ds;
+            dsint = bsxfun(@plus,dsint,dssums2);
+            lencorner = sum(dsw(:));
+            ss = -lencorner/2.0 + dsint;
+            ss = ss/lencorner*16;
+            erfss = erf(ss);
+            datass = reshape((val2(:)-val1(:))/2*((erfss(:)).'+1) ...
+                +val1(:),nvals,k,ncht);
+            chnkr.data(:,:,nch+1:nch+ncht) = datass;
+        end
     end
     
 end
@@ -182,6 +227,11 @@ d(1,:) = 1.0;
 d(2,:) = dy;
 d2(1,:) = 0.0;
 d2(2,:) = d2y;
+
+end
+
+function vals = smoothtrans(ts,val1,val2)
+
 
 end
 

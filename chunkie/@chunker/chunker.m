@@ -133,16 +133,19 @@ classdef chunker
             d2temp = obj.d2;
             adjtemp = obj.adj;
             htemp = obj.h;
+            datatemp = obj.data;
             obj.rstor = zeros(obj.dim,obj.k,nchstornew);
             obj.dstor = zeros(obj.dim,obj.k,nchstornew);
             obj.d2stor = zeros(obj.dim,obj.k,nchstornew);
             obj.adjstor = zeros(2,nchstornew);
             obj.hstor = zeros(nchstornew,1);
+            obj.datastor = zeros(obj.datadim,obj.k,nchstornew);
             obj.r = rtemp;
             obj.d = dtemp;
             obj.d2 = d2temp;
             obj.adj = adjtemp;
             obj.h = htemp;
+            obj.data = datatemp;            
             obj.nchstor = nchstornew;
         end
         
@@ -176,6 +179,7 @@ classdef chunker
         tau = taus(obj)
         obj = refine(obj,varargin)
         a = area(obj)
+        s = arclength(obj)
     end
     methods(Static)
         obj = chunkfunc(fcurve,varargin)

@@ -24,5 +24,5 @@ end
 if nargout > 2
     v = (lege.pols(x(:),k-1)).';
     d = (2.0*(1:k) - 1)/2.0;
-    u = (v.*(w(:)*d)).';
+    u = ((v).*(w(:)*d)).';
 end
