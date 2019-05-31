@@ -155,7 +155,7 @@ classdef chunker
             datatemp = obj.data;
             datadimold = obj.datadim;
             obj.datastor = zeros(datadimold+nrows,obj.k,obj.nchstor);
-            obj.datastor(1:datadimold,:) = datatemp(:,:);
+            obj.data(1:datadimold,:) = datatemp(:,:);
             obj.hasdata = true;
         end
         

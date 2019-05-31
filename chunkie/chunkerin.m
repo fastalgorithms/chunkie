@@ -23,7 +23,7 @@ if ~isfield(opts,'justsmoothworks')
     opts.justsmoothworks = false;
 end
 
-kernd = @(s,t,sn,tn) glapkern(s,t,sn,tn,'d');
+kernd = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'d');
 dens1 = ones(chnkr.k,chnkr.nch);
 
 opdims = [1 1];

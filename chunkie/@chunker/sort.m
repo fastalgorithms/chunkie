@@ -36,6 +36,10 @@ obj.d = obj.d(:,:,inds);
 obj.d2 = obj.d2(:,:,inds);
 obj.h = obj.h(inds);
 
+if obj.hasdata
+    obj.data = obj.data(:,:,inds);
+end
+
 inds = 1:obj.nch;
 obj.adj(1,:) = inds-1;
 obj.adj(2,:) = inds+1;

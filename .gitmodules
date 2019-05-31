@@ -1,0 +1,3 @@
+[submodule "chunkie/FLAM"]
+	path = chunkie/FLAM
+	url = https://github.com/fastalgorithms/FLAM.git

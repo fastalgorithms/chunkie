@@ -66,44 +66,33 @@ ts2 = t1+(1-t1)*(x+1)/2.0;
 % evaluate the new values of r, d, d2 and 
 % update nch, adj, h
 
-xy = chnkr.r(:,:,ich);
-dxy = chnkr.d(:,:,ich);
-d2xy = chnkr.d2(:,:,ich);
+r = chnkr.r(:,:,ich);
+d = chnkr.d(:,:,ich);
+d2 = chnkr.d2(:,:,ich);
 
-cxy = u*(xy.');
-cdxy = u*(dxy.');
-cd2xy = u*(d2xy.');
+cr = u*(r.');
+cd = u*(d.');
+cd2 = u*(d2.');
 
-i1=chnkr.adj(1,ich);
-i2=chnkr.adj(2,ich);
-
-ndim = 2;
-
-r_1 = zeros(ndim,k,1);
-d_1 = zeros(ndim,k,1);
-d2_1 = zeros(ndim,k,1);
-r_2 = zeros(ndim,k,1);
-d_2 = zeros(ndim,k,1);
-d2_2 = zeros(ndim,k,1);
-
-for i = 1:ndim
-    x = lege.exev(ts1,cxy(:,i));
-    dx = lege.exev(ts1,cdxy(:,i));
-    d2x = lege.exev(ts1,cd2xy(:,i));
-    r_1(i,:,1) = x;
-    d_1(i,:,1) = dx;
-    d2_1(i,:,1) = d2x;
-    x = lege.exev(ts2,cxy(:,i));
-    dx = lege.exev(ts2,cdxy(:,i));
-    d2x = lege.exev(ts2,cd2xy(:,i));
-    r_2(i,:,1) = x;
-    d_2(i,:,1) = dx;
-    d2_2(i,:,1) = d2x;
-end
+r_1 = lege.exev(ts1,cr);
+r_1 = r_1.';
+r_2 = lege.exev(ts2,cr);
+r_2 = r_2.';
+d_1 = lege.exev(ts1,cd);
+d_1 = d_1.';
+d_2 = lege.exev(ts2,cd);
+d_2 = d_2.';
+d2_1 = lege.exev(ts1,cd2);
+d2_1 = d2_1.';
+d2_2 = lege.exev(ts2,cd2);
+d2_2 = d2_2.';
 
 hold=chnkr.h(ich);
 
 % update chnkr
+
+%i1=chnkr.adj(1,ich);
+i2=chnkr.adj(2,ich);
 
 chnkr = chnkr.addchunk();
 
@@ -123,5 +112,17 @@ chnkr.adj(2,nch+1)=i2;
 if i2 > 0
     chnkr.adj(1,i2)=nch+1;
 end
+
+if chnkr.hasdata
+    data = chnkr.data(:,:,ich);
+    cdata = u*(data.');
+    data1 = lege.exev(ts1,cdata);
+    data1 = data1.';
+    data2 = lege.exev(ts2,cdata);
+    data2 = data2.';
+    chnkr.data(:,:,ich) = data1;
+    chnkr.data(:,:,nch+1) = data2;
+end
+
 
 end
