@@ -98,10 +98,10 @@ if maxchunklen < Inf
                     chunklens = resizechunklens(chunklens,nchmax);
                 end
                 
-                di = chnkr.d(:,:,i);
-                hi = chnkr.h(i);
-                dnch = chnkr.d(:,:,nch);
-                hnch = chnkr.h(nch);
+                di = chnkr.dstor(:,:,i);
+                hi = chnkr.hstor(i);
+                dnch = chnkr.dstor(:,:,nch);
+                hnch = chnkr.hstor(nch);
 
                 dsdti = sum(di.^2,1)*hi;
                 dsdtnch = sum(dnch.^2,1)*hnch;
@@ -167,10 +167,10 @@ if lvlr
                     chunklens = resizechunklens(chunklens,nchmax);
                 end
                 
-                di = chnkr.d(:,:,i);
-                hi = chnkr.h(i);
-                dnch = chnkr.d(:,:,nch);
-                hnch = chnkr.h(nch);
+                di = chnkr.dstor(:,:,i);
+                hi = chnkr.hstor(i);
+                dnch = chnkr.dstor(:,:,nch);
+                hnch = chnkr.hstor(nch);
 
                 dsdti = sum(di.^2,1)*hi;
                 dsdtnch = sum(dnch.^2,1)*hnch;
@@ -213,10 +213,10 @@ for ijk = 1:nover
             chunklens = resizechunklens(chunklens,nchmax);
         end
                 
-        di = chnkr.d(:,:,i);
-        hi = chnkr.h(i);
-        dnch = chnkr.d(:,:,nch);
-        hnch = chnkr.h(nch);
+        di = chnkr.dstor(:,:,i);
+        hi = chnkr.hstor(i);
+        dnch = chnkr.dstor(:,:,nch);
+        hnch = chnkr.hstor(nch);
 
         dsdti = sum(di.^2,1)*hi;
         dsdtnch = sum(dnch.^2,1)*hnch;

@@ -49,7 +49,7 @@ y =chnkr.r(2,:,nchplot);
 z = chnkr.data(1,:,nchplot);
 plot3(x(:),y(:),z(:))
 
-%% solve and visualize the solution
+% solve and visualize the solution
 
 % build laplace dirichlet matrix
 
@@ -80,28 +80,43 @@ ytarg = linspace(rmin(2)+hy/2,rmax(2)-hy/2,nplot);
 targets = zeros(2,length(xxtarg(:)));
 targets(1,:) = xxtarg(:); targets(2,:) = yytarg(:);
 
+start = tic;
 chnkr2 = chnkr;
 chnkr2 = chnkr2.makedatarows(1);
 chnkr2.data(2,:) = sol(:);
 optref = []; optref.nover = 2;
 chnkr2 = chnkr2.refine(optref);
 sol2 = chnkr2.data(2,:);
-
-
-optsin = [];
-optsin.verb = false; optsin.quadgkparams = {'AbsTol',1e-4,'RelTol',1e-4};
-optsin.gausseps = 1e-3;
-start = tic; in = chunkerin(chnkr,targets,optsin); toc(start)
-
-opts.usesmooth=true;
-opts.verb=false;
-opts.quadkgparams = {'RelTol',1e-3,'AbsTol',1.0e-3};
-start=tic; 
-Dsol = chunkerintkern(chnkr2,fkern,opdims,sol2,targets(:,in),opts); 
 t1 = toc(start);
-fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
-%% 
+fprintf('%5.2e s : time to oversample boundary\n',t1)
+
+%
+
+start = tic; in = chunkerinflam(chnkr,targets); t1 = toc(start);
+
+fprintf('%5.2e s : time to find points in domain\n',t1)
+
+% compute layer potential based on oversample boundary
+
+wts2 = whts(chnkr2);
+
+matfun = @(i,j) kernbyindexr(i,j,targets(:,in),chnkr2,wts2,fkern,opdims);
+[pr,ptau,pw,pin] = proxy_square_pts();
+
+pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr2,wts2, ...
+    fkern,opdims,pr,ptau,pw,pin);
+
+xflam = chnkr2.r(:,:);
+
+start = tic; F = ifmm(matfun,targets(:,in),xflam,200,1e-14,pxyfun); 
+t1 = toc(start);
+fprintf('%5.2e s : time for ifmm form (for plotting)\n',t1)
+start = tic;
+Dsol = ifmm_mv(F,sol2(:),matfun); t1 = toc(start);
+fprintf('%5.2e s : time for ifmm apply (for plotting)\n',t1)
+
+% 
 
 figure(3)
 clf

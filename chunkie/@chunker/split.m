@@ -5,6 +5,10 @@ function chnkr = split(chnkr,ich,opts,x,w,u)
 %   Input
 %        ich - the chunk number to split
 
+r = chnkr.rstor(:,:,ich);
+d = chnkr.dstor(:,:,ich);
+d2 = chnkr.d2stor(:,:,ich);
+
 thresh=1.0e-10;
 nitermax = 1000;
 
@@ -19,17 +23,15 @@ if isfield(opts,'nitermax')
     nitermax = opts.nitermax;
 end
 
-
-k = chnkr.k;
 nch = chnkr.nch;
 
 if nargin < 6
-    [x, w, u, ~] = lege.exps(k);
+    [x, w, u, ~] = lege.exps(chnkr.k);
 end
 
 %  first construct dsdt
 
-dsdt = sqrt(chnkr.d(1,:,ich).^2+chnkr.d(2,:,ich).^2)*chnkr.h(ich);
+dsdt = sqrt(sum(d.^2,1))*chnkr.hstor(ich);
 dsdt = dsdt(:);
 rltot = dot(dsdt,w);
 
@@ -66,10 +68,6 @@ ts2 = t1+(1-t1)*(x+1)/2.0;
 % evaluate the new values of r, d, d2 and 
 % update nch, adj, h
 
-r = chnkr.r(:,:,ich);
-d = chnkr.d(:,:,ich);
-d2 = chnkr.d2(:,:,ich);
-
 cr = u*(r.');
 cd = u*(d.');
 cd2 = u*(d2.');
@@ -87,41 +85,41 @@ d2_1 = d2_1.';
 d2_2 = lege.exev(ts2,cd2);
 d2_2 = d2_2.';
 
-hold=chnkr.h(ich);
+hold=chnkr.hstor(ich);
 
 % update chnkr
 
-%i1=chnkr.adj(1,ich);
-i2=chnkr.adj(2,ich);
+%i1=chnkr.adjstor(1,ich);
+i2=chnkr.adjstor(2,ich);
 
 chnkr = chnkr.addchunk();
 
-chnkr.h(ich) = hold*(t1+1)/2;
-chnkr.h(nch+1) = hold*(1-t1)/2;
+chnkr.hstor(ich) = hold*(t1+1)/2;
+chnkr.hstor(nch+1) = hold*(1-t1)/2;
 
-chnkr.r(:,:,ich) = r_1;
-chnkr.r(:,:,nch+1) = r_2;
-chnkr.d(:,:,ich) = d_1;
-chnkr.d(:,:,nch+1) = d_2;
-chnkr.d2(:,:,ich) = d2_1;
-chnkr.d2(:,:,nch+1) = d2_2;
+chnkr.rstor(:,:,ich) = r_1;
+chnkr.rstor(:,:,nch+1) = r_2;
+chnkr.dstor(:,:,ich) = d_1;
+chnkr.dstor(:,:,nch+1) = d_2;
+chnkr.d2stor(:,:,ich) = d2_1;
+chnkr.d2stor(:,:,nch+1) = d2_2;
 
-chnkr.adj(2,ich)=nch+1;
-chnkr.adj(1,nch+1)=ich;
-chnkr.adj(2,nch+1)=i2;
+chnkr.adjstor(2,ich)=nch+1;
+chnkr.adjstor(1,nch+1)=ich;
+chnkr.adjstor(2,nch+1)=i2;
 if i2 > 0
-    chnkr.adj(1,i2)=nch+1;
+    chnkr.adjstor(1,i2)=nch+1;
 end
 
 if chnkr.hasdata
-    data = chnkr.data(:,:,ich);
+    data = chnkr.datastor(:,:,ich);
     cdata = u*(data.');
     data1 = lege.exev(ts1,cdata);
     data1 = data1.';
     data2 = lege.exev(ts2,cdata);
     data2 = data2.';
-    chnkr.data(:,:,ich) = data1;
-    chnkr.data(:,:,nch+1) = data2;
+    chnkr.datastor(:,:,ich) = data1;
+    chnkr.datastor(:,:,nch+1) = data2;
 end
 
 
