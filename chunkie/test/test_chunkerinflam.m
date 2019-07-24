@@ -52,6 +52,13 @@ axis equal
 
 targin_true = stretch <= 1;
 
-start = tic; targin = chunkerinflam(chnkr,targets); toc(start)
+start = tic; targin = chunkerinflam(chnkr,targets); 
+t1 = toc(start);
 
-nnz(targin(:) ~= targin_true(:))
+fprintf('%5.2e s : time to determine if in/out \n',t1)
+
+nfail = nnz(targin(:) ~= targin_true(:));
+
+fprintf('number of targets:      %7d\n',nt)
+fprintf('number of bdry pts:     %7d\n',chnkr.npt)
+fprintf('number of failures:     %7d\n',nfail)

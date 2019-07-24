@@ -17,7 +17,7 @@ verts = chnk.demo.barbell(2.0,2.0,1.0,1.0);
 nv = size(verts,2);
 edgevals = rand(1,nv);
 
-% parameters for curve rounding/chunking routine
+% parameters for curve rounding/chunking routineime to oversample boundary
 cparams = [];
 cparams.widths = 0.01*ones(size(verts,2),1);% width to cut about each corner
 cparams.eps = 1e-12; % tolerance at which to resolve curve

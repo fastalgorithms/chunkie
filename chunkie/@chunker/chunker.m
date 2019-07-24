@@ -150,13 +150,17 @@ classdef chunker
         end
         
         function obj = makedatarows(obj,nrows)
-            assert(nrows > 0, ...
-                'error must add a positive number of rows to data');
-            datatemp = obj.data;
-            datadimold = obj.datadim;
-            obj.datastor = zeros(datadimold+nrows,obj.k,obj.nchstor);
-            obj.data(1:datadimold,:) = datatemp(:,:);
-            obj.hasdata = true;
+            if (nrows > 0)
+                datatemp = obj.data;
+                datadimold = obj.datadim;
+                obj.datastor = zeros(datadimold+nrows,obj.k,obj.nchstor);
+                obj.data(1:datadimold,:) = datatemp(:,:);
+                obj.hasdata = true;
+            else
+                if (nrows < 0)
+                    warning('attempted to add negative rows, doing nothing');
+                end
+            end
         end
         
         function obj = cleardata(obj)
