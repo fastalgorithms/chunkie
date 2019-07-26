@@ -1,9 +1,14 @@
 
-function chnkr = split(chnkr,ich,opts,x,w,u)
+function chnkr = split(chnkr,ich,opts,x,w,u,stype)
 %SPLIT this routine takes the list of all chunks and splits one in
 %      half with respect to arclength.
 %   Input
 %        ich - the chunk number to split
+
+stype1 = 'a';
+if nargin >= 7
+    stype1 = stype;
+end
 
 r = chnkr.rstor(:,:,ich);
 d = chnkr.dstor(:,:,ich);
@@ -29,6 +34,9 @@ if nargin < 6
     [x, w, u, ~] = lege.exps(chnkr.k);
 end
 
+t1 = 0;
+
+if strcmpi(stype1,'a')
 %  first construct dsdt
 
 dsdt = sqrt(sum(d.^2,1))*chnkr.hstor(ich);
@@ -59,6 +67,10 @@ for ijk = 1:nitermax
 end
 
 if (ifdone < 3); warning('did not converge'); end
+
+end
+
+
 
 % new points in parameter space
 

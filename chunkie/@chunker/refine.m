@@ -8,9 +8,14 @@ function chnkr = refine(chnkr,opts)
 %   opts - options structure
 %       opts.nchmax = maximum number of chunks on refined chunker
 %                   (10*chnkr.nch)
-%       opts.lvlr = level restriction flag (true), if true, enforce that no
+%       opts.lvlr = level restriction flag ('a'), if 'a', enforce that no
 %                   two adjacent chunks should differ in length by more 
-%                   than a factor of two
+%                   than a factor of approx 2 (see lvlrfac). if 't', 
+%                   enforce that the 
+%                   length in parameter space of two adjacent chunks
+%                   differs by no more than a factor of approx 2. if 'n'
+%                   don't enforce (not recommended)
+%       opts.lvlrfac = (2.05) factor for enforcing level restriction
 %       opts.maxchunklen = maximum chunk length (Inf). enforce that no
 %                   chunk is larger than this maximum length
 %       opts.farfac = enforce that for each chunk, any non-adjacent 
@@ -30,7 +35,8 @@ if nargin < 2
     opts = [];
 end
 
-lvlr = true;
+lvlr = 'a';
+lvlrfac = 2.05;
 maxchunklen = Inf;
 farfac = Inf;
 nover = 0;
@@ -41,6 +47,7 @@ maxiter_maxlen=1000;
 nchmax = chnkr.nchmax;
 
 if isfield(opts,'lvlr'); lvlr = opts.lvlr; end
+if isfield(opts,'lvlrfac'); lvlrfac = opts.lvlrfac; end
 if isfield(opts,'maxchunklen'); maxchunklen = opts.maxchunklen; end
 if isfield(opts,'farfac'); farfac = opts.farfac; end
 if isfield(opts,'nchmax'); nchmax = opts.nchmax; end
@@ -123,7 +130,7 @@ end
 
 % level restriction
 
-if lvlr
+if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
     for ijk = 1:maxiter_lvlr
 
         nchold=chnkr.nch;
@@ -134,7 +141,7 @@ if lvlr
             i2=chnkr.adj(2,i);
 
             rlself = chunklens(i);
-
+    
             rl1=rlself;
             rl2=rlself;
 
@@ -145,10 +152,20 @@ if lvlr
                 rl2 = chunklens(i2);
             end
 
+            if (strcmpi(lvlr,'a'))
+                rlself = chnkr.h(i);
+                if (i1 > 0)
+                    rl1 = chnkr.h(i1);
+                end
+                if (i2 > 0)
+                    rl2 = chnkr.h(i2);
+                end
+            end
     %       only check if self is larger than either of adjacent blocks,
     %       iterating a couple times will catch everything
 
-            sc = 2.05d0;
+            
+            sc = lvlrfac;
             if (rlself > sc*rl1 || rlself > sc*rl2)
 
     %       split chunk i now, and recalculate nodes, d, etc
@@ -157,7 +174,7 @@ if lvlr
                     error('too many chunks')
                 end
 
-                chnkr = split(chnkr,i,[],x,w,u);
+                chnkr = split(chnkr,i,[],x,w,u,lvlr);
 
                 % update chunklens 
 
@@ -189,6 +206,7 @@ if lvlr
 
     end
 end
+
 
 % oversample 
 
