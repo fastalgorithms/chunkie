@@ -1,5 +1,5 @@
 function [aint,x,w] = intmat(n)
-%INTMAT returns the spectral differentiation matrix on n Gaussian nodes
+%INTMAT returns the spectral integration matrix on n Gaussian nodes
 % a transcription of part of the Rokhlin routine legeinmt
 %
 % input: 

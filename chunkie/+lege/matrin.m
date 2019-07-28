@@ -1,10 +1,10 @@
 function [mat,x,w,u,v] = matrin(n,xs)
-%MATRIN form the matrix for interpolating from n Legendre nodes to
+%LEGE.MATRIN form the matrix for interpolating from n Legendre nodes to
 % the points xs
 %
 % optionally returns the roots, weights, and matrices for switching
 % between values and coefficients (u : values -> coeffs, 
-% v : coeffs -> values)
+% v : coeffs -> values), which is the output of LEGE.EXPS
 
 [x,w,u,v] = lege.exps(n);
 

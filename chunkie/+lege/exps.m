@@ -1,5 +1,21 @@
 function [x,w,u,v] = exps(k,opts)
-
+%LEGE.EXPS get nodes, weights, and matrices for switching between values
+% and coefficients for Legendre nodes of the specified order
+%
+% IN:
+%   k - the desired order (number of points)
+%   opts - options structure. 
+%       opts.stab (false): if true, force use of slow but more stable
+%       method for weights and nodes. default false uses linear scaling
+%       routine which can lose some precision in the weights
+% OUT: 
+%   x - k Legendre nodes on [-1,1]
+%   w - the corresponding integration weights
+%   u - matrix which maps function values at k Legendre nodes to the 
+%   corresponding coefficients
+%   v - matrix which evaluates the Legendre polynomial with the given 
+%   coefficients at the k Legendre nodes.
+% 
 stab = false;
 if nargin > 1
     if isfield(opts,'stab')

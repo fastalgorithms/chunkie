@@ -1,7 +1,8 @@
 %TEST_TREFINEMENT
 %
-% compare refinement (until level restriction is met) in underlying 
-% parameter space with refinement in arclength
+% get chunker description of a starfish domain. check if that domain
+% satisfies a level restriction in the underlying parameter space. 
+% call a refinement routine to fix. 
 
 iseed = 8675309;
 rng(iseed);
