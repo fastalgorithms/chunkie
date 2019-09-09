@@ -9,7 +9,7 @@ cparams = [];
 cparams.npan = 16;
 pref = []; 
 pref.k = 16;
-narms = 10;
+narms = 3;
 amp = 0.5;
 start = tic; chnkr = chunkfuncuni(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
@@ -30,7 +30,7 @@ axis equal
 
 modes = randn(11,1); modes(1) = 1.1*sum(abs(modes(2:end))); ctr = [1.0;-0.5];
 
-start = tic; chnkr = chunkfuncuni(@(t) curvebymode(t,modes,ctr),cparams); 
+start = tic; chnkr = chunkfuncuni(@(t) chnk.curves.bymode(t,modes,ctr),cparams); 
 t1 = toc(start);
 
 fprintf('%5.2e seconds to chunk random mode domain with %d chunks\n', ...

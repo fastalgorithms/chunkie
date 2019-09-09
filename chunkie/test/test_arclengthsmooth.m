@@ -36,7 +36,7 @@ x = lege.exps(chnkr.k)+1;
 
 tt = [x(:); 2+x(:); 4+x(:)];
 figure(1)
-subplot(1,2,1)
+subplot(1,3,1)
 plot(tt,dsdt3(:))
 
 % plot arc length scaling the panel lengths (h stores the known length of
@@ -46,5 +46,13 @@ plot(tt,dsdt3(:))
 h3 =chnkr.h(ipan);
 h3sum = cumsum(h3);
 tt = [x(:)*h3(1)/2; h3sum(1)+x(:)*h3(2)/2; h3sum(2)+x(:)*h3(3)/2];
-subplot(1,2,2)
+subplot(1,3,2)
+plot(tt,dsdt3(:))
+
+% plot arc length scaled by panel length
+
+h3 =chnkr.h(ipan);
+tt = [x(:); 2+x(:); 4+x(:)];
+dsdt3 = [dsdt3(:,1)*h3(1); dsdt3(:,2)*h3(2); dsdt3(:,3)*h3(3)];
+subplot(1,3,3)
 plot(tt,dsdt3(:))

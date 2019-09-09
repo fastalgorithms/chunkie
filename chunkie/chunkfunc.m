@@ -17,7 +17,7 @@ function chnkr = chunkfunc(fcurve,cparams,pref)
 %       cparams.levrestr = flag, determines if level
 %          restriction is enforce, i.e. no chunk should
 %          have double the arc length of its neighbor (1)
-%
+%   cparams.maxchunklen - maximum length of any chunk
 
 if nargin < 2
     cparams = [];

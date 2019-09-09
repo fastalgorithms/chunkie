@@ -1,5 +1,5 @@
-function [rc,dc,d2c] = chunkerexps(chnkr)
-%CHUNKEREXPS compute Legendre coefficients for the position, derivative,
+function [rc,dc,d2c] = exps(chnkr)
+%EXPS compute Legendre coefficients for the position, derivative,
 % and second derivative of the chunker object on each chunk.
 
 k = chnkr.k; nch = chnkr.nch; dim = chnkr.dim;

@@ -185,6 +185,8 @@ classdef chunker
         obj = refine(obj,varargin)
         a = area(obj)
         s = arclength(obj)
+        [rc,dc,d2c] = exps(obj)
+        ier = checkadjinfo(obj)
     end
     methods(Static)
         obj = chunkfunc(fcurve,varargin)

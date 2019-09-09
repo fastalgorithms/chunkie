@@ -1,6 +1,6 @@
-function [xs1,whts1,xs0,whts0] = getquad(k)
+function [xs1,whts1,xs0,whts0] = getlogquad(k)
 
-filename= '+chnk/+quad/+brem/whts.mat';
+filename= '+chnk/+quadggq/logwhts.mat';
 
 persistent whts_dict
 if isempty(whts_dict)

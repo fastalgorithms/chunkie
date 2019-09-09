@@ -121,7 +121,7 @@ dens = reshape(dens,opdims(2),k,nch);
 fints = zeros(opdims(1)*nt,1);
 
 % using adaptive quadrature
-[rc,dc] = chunkerexps(chnkr);
+[rc,dc] = exps(chnkr);
 for i = 1:nch
     if opts.verb; fprintf('chunk %d integral\n',i); end
     rci = rc(:,:,i);

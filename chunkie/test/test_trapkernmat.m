@@ -1,24 +1,26 @@
 
-%TEST_CHUNKSKERNMAT
+%TEST_TRAPKERNMAT
 %
 % test the matrix builder and do a basic solve
 
+zk = 1.0;
+quadorder = 16;
 iseed = 8675309;
 rng(iseed);
 
 addpaths_loc();
 
 cparams = [];
-cparams.eps = 1.0e-10;
-cparams.nover = 0;
+cparams.npt = 200;
 pref = []; 
-pref.k = 30;
-narms = 3;
+narms = 5;
 amp = 0.25;
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; trap = trapfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
+
+%
 
 % sources
 
@@ -37,14 +39,13 @@ targets = targets.*repmat(rand(1,nt),2,1);
 
 % plot geo and sources
 
-xs = chnkr.r(1,:,:); xmin = min(xs(:)); xmax = max(xs(:));
-ys = chnkr.r(2,:,:); ymin = min(ys(:)); ymax = max(ys(:));
 
 figure(1)
 clf
 hold off
-plot(chnkr)
+plot(trap)
 hold on
+quiver(trap)
 scatter(sources(1,:),sources(2,:),'o')
 scatter(targets(1,:),targets(2,:),'x')
 axis equal 
@@ -52,12 +53,12 @@ axis equal
 %
 
 kerns = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'s');
+%kerns = @(s,t,sn,tn) chnk.helm2d.kern(zk,s,t,sn,tn,'s');
 
 % eval u on bdry
 
-targs = chnkr.r; targs = reshape(targs,2,chnkr.k*chnkr.nch);
-targstau = taus(chnkr); 
-targstau = reshape(targstau,2,chnkr.k*chnkr.nch);
+targs = trap.r;
+targstau = taus(trap); 
 
 kernmats = kerns(sources,targs,[],targstau);
 ubdry = kernmats*strengths;
@@ -72,14 +73,19 @@ utarg = kernmatstarg*strengths;
 % build laplace dirichlet matrix
 
 fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
+%fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'D');
 opdims(1) = 1; opdims(2) = 1;
-intparams.intorder = chnkr.k;
-start = tic; D = chunkskernmat(chnkr,fkern,opdims,intparams);
+
+%start = tic; D = chnk.quadba.buildmat(trap,fkern,quadorder,opdims,'log');
+opts = [];
+opts.quad = 'balog';
+opts.quadorder = quadorder;
+start = tic; D = trapmat(trap,fkern,opts);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 
-sys = -0.5*eye(chnkr.k*chnkr.nch) + D;
+sys = -0.5*eye(trap.npt) + D;
 
 rhs = ubdry; rhs = rhs(:);
 start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
@@ -96,18 +102,14 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 
 % evaluate at targets and compare
 
-opts.usesmooth=false;
-opts.verb=false;
-opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
-start=tic; Dsol = chunkerintkern(chnkr,fkern,opdims,sol2,targets,opts); 
-t1 = toc(start);
+Dsol = trapperintkern(trap,fkern,[],sol,targets,[]);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
 %
 
-wchnkr = whts(chnkr);
+wchnkr = whts(trap);
 
-relerr = norm(utarg-Dsol,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
+relerr = norm(utarg-Dsol,'fro')/(sqrt(trap.npt)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);

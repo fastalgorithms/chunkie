@@ -1,6 +1,6 @@
-function iords = quadavail()
+function iords = logavail()
 
-filename= '+chnk/+quad/+brem/whts.mat';
+filename= '+chnk/+quadggq/logwhts.mat';
 
 persistent whts_dict
 if isempty(whts_dict)
@@ -8,6 +8,6 @@ if isempty(whts_dict)
     assert(~isempty(whts_dict),'failed to load!')
 end
 
-iords = keys(whts_dict);
+iords = cell2mat(keys(whts_dict));
 
 end

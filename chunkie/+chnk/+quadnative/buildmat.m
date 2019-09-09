@@ -1,10 +1,25 @@
-function submat = chunksfarbuildmat(r,d,h,i,j,fkern,opdims,whts)
-%CHUNKSFARBUILDMAT build matrix for far interactions with this kernel
+function submat = buildmat(chnkr,kern,opdims,i,j,whts)
+%CHNK.QUADSMOOTH.BUILDMAT build matrix for far interactions with this kernel
 % assuming that the smooth rule is sufficient
 % 
 %
 
+
+if nargin < 4
+    i = 1:chnkr.nch;
+end
+if nargin < 5
+    j = 1:chnkr.nch;
+end
+if nargin < 6
+    [~,whts] = lege.exps(chnkr.k);
+end
+
 % grab specific boundary data
+
+r = chnkr.r;
+d = chnkr.d;
+h = chnkr.h;
 
 [dim,k,~] = size(r);
 rs = r(:,:,j); rt = r(:,:,i); ds = d(:,:,j); dt = d(:,:,i);
@@ -26,6 +41,6 @@ dsdt = dsnrms(:).*ws;
 dsdtndim2 = repmat(dsdt(:).',opdims(2),1);
 dsdtndim2 = dsdtndim2(:);
 
-submat = bsxfun(@times,fkern(rs,rt,taus,taut),(dsdtndim2(:)).');
+submat = bsxfun(@times,kern(rs,rt,taus,taut),(dsdtndim2(:)).');
 
 end

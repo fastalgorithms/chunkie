@@ -1,5 +1,5 @@
 
-%TEST_CHUNKSKERNMATHELM
+%TEST_CHUNKMATHELM
 %
 % test the matrix builder and do a basic solve
 
@@ -10,7 +10,7 @@ addpaths_loc();
 
 cparams = [];
 cparams.eps = 1.0e-10;
-cparams.nover = 0;
+cparams.nover = 4;
 pref = []; 
 pref.k = 30;
 narms = 3;
@@ -74,9 +74,7 @@ utarg = kernmatstarg*strengths;
 % build laplace dirichlet matrix
 
 fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'D');
-opdims(1) = 1; opdims(2) = 1;
-intparams.intorder = chnkr.k;
-start = tic; D = chunkskernmat(chnkr,fkern,opdims,intparams);
+start = tic; D = chunkmat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)

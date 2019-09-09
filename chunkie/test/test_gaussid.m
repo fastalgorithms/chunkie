@@ -23,8 +23,8 @@ t1 = toc(start);
 
 % scalar function on boundary
 
-kernd = @(s,t,sn,tn) glapkern(s,t,sn,tn,'d');
-kerns = @(s,t,sn,tn) glapkern(s,t,sn,tn,'s');
+kernd = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'d');
+kerns = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'s');
 
 dens1 = ones(chnkr.k,chnkr.nch);
 

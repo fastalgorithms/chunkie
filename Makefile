@@ -50,7 +50,8 @@ OBJS = 	chunks_ders.o \
 	corners.o \
 	qerrfun.o \
 	gammanew_eval.o \
-	prini.o adapgaus.o pplot.o
+	prini.o adapgaus.o pplot.o \
+	alpert_quads.o
 
 LOBJS = $(patsubst %.o,../$(BIN_DIR)/%.o,$(OBJS))
 # targets

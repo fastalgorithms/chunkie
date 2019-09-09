@@ -40,7 +40,7 @@ y =chnkr.r(2,:,nchplot);
 z = chnkr.data(1,:,nchplot);
 plot3(x(:),y(:),z(:))
 
-%%
+%
 
 verts = randn(2,5);
 
@@ -55,14 +55,14 @@ p.k = 16; p.dim = 2;
 chnkr2 = chunkpoly(verts,cparams,p);
 
 
-figure(3)
+figure(4)
 clf
 plot(chnkr2,'-x')
 hold on
 quiver(chnkr2)
 axis equal
 
-figure(4)
+figure(5)
 chnkr_ref2 = refine(chnkr2);
 clf
 plot(chnkr_ref2,'-x')

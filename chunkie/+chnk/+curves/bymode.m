@@ -1,8 +1,8 @@
 
-function [r,d,d2] = curvebymode(t,modes,ctr)
-%CURVEBYMODE evaluate the position, and first and second derivatives
+function [r,d,d2] = bymode(t,modes,ctr)
+%CHNK.CURVES.BYMODE evaluate the position, and first and second derivatives
 % of the position described by r(t) = ctr + (modes(1) + modes(2)*cos(t) +
-% modes(3)*sin(t) + ...)(cos(t),sin(t))
+% modes(3)*sin(t) + modes(4)*cos(2t) + modes(5)*sin(2t) ...)[cos(t),sin(t)]
 
   if nargin < 3
     ctr = zeros(2,1);

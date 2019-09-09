@@ -1,8 +1,9 @@
-function [spmat] = chunkskernmattd(chnkr,fkern,opdims,intparams)
-%CHUNKSKERNMATTD build sparse matrix corresponding to self and neighbor
+function [spmat] = buildmattd(chnkr,kern,quadorder,opdims,type)
+%BUILDMATTD build sparse matrix corresponding to self and neighbor
 % interactions for given kernel and chnkr description of boundary
 %
 %  
+
 
 k = chnkr.k;
 nch = chnkr.nch;
@@ -12,21 +13,21 @@ d = chnkr.d;
 d2 = chnkr.d2;
 h = chnkr.h;
 
-intorder = k;
-smooth = false;
-if isfield(intparams,'intorder')
-    intorder = intparams.intorder;
-end
-if isfield(intparams,'smooth')
-    smooth = intparams.smooth;
-end
-
-dim = chnkr.dim;
-
 [~,~,u] = lege.exps(k);
-intorder = intparams.intorder;
-[xs1,whts1,xs0,whts0] = chnk.quad.brem.getquad(intorder);
 
+if strcmpi(type,'log')
+
+    qavail = chnk.quadggq.logavail();
+    [~,i] = min(abs(qavail-quadorder));
+    if (qavail(i) ~= quadorder)
+        warning('order %d not found, using order %d', ...
+            quadorder,qavail(i));
+        quadorder = qavail(i);
+    end    
+    [xs1,whts1,xs0,whts0] = chnk.quadggq.getlogquad(quadorder);
+else
+    error('type not available')
+end
 
 ainterp1_sm = lege.matrin(k,xs1);
 temp = eye(opdims(2));
@@ -56,16 +57,20 @@ for j = 1:nch
 
     % neighbors
     
-    submat = chunksnearbuildmat(r,d,h,ibefore,j, ...
-        fkern,opdims,u,xs1,whts1,ainterp1);
+    submat = chnk.quadggq.nearbuildmat(r,d,h,ibefore,j, ...
+        kern,opdims,u,xs1,whts1,ainterp1);
+    
+    submat(submat == 0.0) = 1e-300; %hack
     
     imat = 1 + (ibefore-1)*k*opdims(1);
     imatend = ibefore*k*opdims(1);
 
     spmat(imat:imatend,jmat:jmatend) = submat;
     
-    submat = chunksnearbuildmat(r,d,h,iafter,j, ...
-        fkern,opdims,u,xs1,whts1,ainterp1);
+    submat = chnk.quadggq.nearbuildmat(r,d,h,iafter,j, ...
+        kern,opdims,u,xs1,whts1,ainterp1);
+    
+    submat(submat == 0.0) = 1e-300;
     
     imat = 1 + (iafter-1)*k*opdims(1);
     imatend = iafter*k*opdims(1);
@@ -74,8 +79,10 @@ for j = 1:nch
     
     % self
     
-    submat = chunksdiagbuildmat(r,d,h,j,fkern,opdims,...
+    submat = chnk.quadggq.diagbuildmat(r,d,h,j,kern,opdims,...
         u,xs0,whts0,ainterps0);
+    
+    submat(submat == 0.0) = 1e-300;
 
     imat = 1 + (j-1)*k*opdims(1);
     imatend = j*k*opdims(1);

@@ -107,3 +107,16 @@ end
 # FORTRAN getquads(int[1] k, inout int[1] nquad1, inout double[] xs1, inout double[] whts1, inout int[1] nquad0, inout double[] xs0, inout double[] whts0);
 
 end
+
+@function [xs,ws,nskip] = getquads_ba(norder)
+
+nskip = 0;
+nextra = 0;
+
+# FORTRAN getquadsinfoba(int[1] norder, inout int[1] nskip, inout int[1] nextra);
+
+   xs = zeros(nextra,1); ws = zeros(nextra,1);
+
+# FORTRAN getquadsba(int[1] norder, inout int[1] nskip, inout int[1] nextra, inout double[] xs, inout double[] ws);
+
+end

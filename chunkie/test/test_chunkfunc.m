@@ -30,7 +30,7 @@ axis equal
 
 modes = randn(11,1); modes(1) = 1.1*sum(abs(modes(2:end))); ctr = [1.0;-0.5];
 
-start = tic; chnkr = chunkfunc(@(t) curvebymode(t,modes,ctr),cparams); 
+start = tic; chnkr = chunkfunc(@(t) chnk.curves.bymode(t,modes,ctr),cparams); 
 t1 = toc(start);
 
 fprintf('%5.2e seconds to chunk random mode domain with %d chunks\n', ...
