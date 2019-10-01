@@ -71,9 +71,7 @@ utarg = kernmatstarg*strengths;
 % build laplace dirichlet matrix
 
 fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
-opdims(1) = 1; opdims(2) = 1;
-intparams.intorder = chnkr.k;
-start = tic; D = chunkskernmat(chnkr,fkern,opdims,intparams);
+start = tic; D = chunkmat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -82,19 +80,19 @@ sys = -0.5*eye(chnkr.k*chnkr.nch) + D;
 
 % build sparse tridiag part 
 
-start = tic; spmat = chunkskernmattd(chnkr,fkern,opdims,intparams);
+opts.nonsmoothonly = true;
+start = tic; spmat = chunkmat(chnkr,fkern,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to build tridiag\n',t1)
 
 spmat = spmat -0.5*speye(chnkr.k*chnkr.nch);
 
-% % test matrix entry evaluator
-% 
-% start = tic; 
-% sys2 = kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,fkern,opdims,spmat);
-% t1 = toc(start);
-% 
-% fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
+% test matrix entry evaluator
+start = tic; 
+sys2 = kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,fkern,opdims,spmat);
+t1 = toc(start);
+
+fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
 
 
 xflam = chnkr.r(:,:);
@@ -131,7 +129,7 @@ fprintf('difference between fast-direct and iterative %5.2e\n',err)
 opts.usesmooth=false;
 opts.verb=false;
 opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
-start=tic; Dsol = chunkerintkern(chnkr,fkern,opdims,sol2,targets,opts); 
+start=tic; Dsol = chunkerintkern(chnkr,fkern,sol3,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 

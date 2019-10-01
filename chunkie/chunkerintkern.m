@@ -1,4 +1,4 @@
-function fints = chunkerintkern(chnkr,kern,opdims,dens,targs,opts)
+function fints = chunkerintkern(chnkr,kern,dens,targs,opts)
 %CHUNKERINTKERN compute the convolution of the integral kernel with
 % the density defined on the chunk geometry. 
 %
@@ -30,6 +30,15 @@ function fints = chunkerintkern(chnkr,kern,opdims,dens,targs,opts)
 %   fints - opdims(1) x nt array of integral values
 %
 % see also QUADGK
+
+% determine operator dimensions using first two points
+
+rs = chnkr.r(:,1:2);
+ds = chnkr.d(:,1:2); dsn = sqrt(sum(ds.^2,1)); 
+ds = bsxfun(@rdivide,ds,dsn);
+
+ftemp = kern(rs(:,1),rs(:,2),ds(:,1),ds(:,2));
+opdims = size(ftemp);
 
 if nargin < 6
     opts = [];

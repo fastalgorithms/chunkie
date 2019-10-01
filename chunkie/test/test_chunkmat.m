@@ -72,8 +72,6 @@ utarg = kernmatstarg*strengths;
 % build laplace dirichlet matrix
 
 fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
-opdims(1) = 1; opdims(2) = 1;
-intparams.intorder = chnkr.k;
 start = tic; D = chunkmat(chnkr,fkern);
 t1 = toc(start);
 
