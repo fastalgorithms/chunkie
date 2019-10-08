@@ -40,7 +40,7 @@ end
 
 if opts.usesmooth
     % assume smooth weights are good enough
-    whts = chunkwhts(chnkr);
+    wts = whts(chnkr);
     if iffun
         fint = 0.0;
         fvals = f(reshape(chnkr.r,2,chnkr.k*chnkr.nch));
@@ -48,7 +48,7 @@ if opts.usesmooth
         fvals = f(:);
     end
     
-    fint = (whts(:)).'*fvals(:);
+    fint = (wts(:)).'*fvals(:);
     
 else
     % use adaptive quadrature
