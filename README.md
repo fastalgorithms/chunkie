@@ -71,22 +71,6 @@ kindly donated code:
 - Classic Fortran routs: Leslie Greengard, Zydrunas
 Gimbutas, Vladimir Rokhlin
 
-## Development
-
-At least for now, chunkie is pure MATLAB,
-which makes life easier on users. The biggest
-challenge in staying pure MATLAB will likely
-be working with rarer special functions or
-incorporating FMMs and other fast algorithms
-which are not implemented in MATLAB.
-If you need to work with an original Fortran
-file (building out the lib, etc.), it can be
-helpful to mwrap a Fortran routine that you'd
-like to compare with, say, a new MATLAB equivalent.
-See the mwrap folder and Makefile for examples of
-working with this. 
-
-
 ## TO DO
 
 chunkie is new software. Some short term plans
