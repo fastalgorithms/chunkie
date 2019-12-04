@@ -28,6 +28,9 @@ for i = 1:obj.nch
 end
 
 assert(all(inds >= 1),'problem with found chunk indices');
+if (length(unique(inds)) ~= length(inds))
+    warning('sort behavior ill defined for chunkers with disjoint parts');
+end
 
 % reorder
 

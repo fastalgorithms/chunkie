@@ -1,5 +1,5 @@
 function [sysmat] = chunkmat(chnkr,kern,opts)
-%CHUNKIEMAT build matrix for given kernel and chunker description of 
+%CHUNKMAT build matrix for given kernel and chunker description of 
 % boundary. This is a wrapper for various quadrature routines
 %
 % Input:
@@ -27,6 +27,10 @@ function [sysmat] = chunkmat(chnkr,kern,opts)
 % Output:
 %   sysmat - the system matrix for convolution of the kernel defined by
 %            kern with a density on the domain defined by chnkr
+
+if length(chnkr) > 1
+    chnkr = chunkermerge(chnkr);
+end
 
 if nargin < 3
     opts = [];

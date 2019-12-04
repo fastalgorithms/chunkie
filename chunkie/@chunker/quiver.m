@@ -1,15 +1,30 @@
 function quiver(obj,varargin)
 %QUIVER quiver plot of chunker normal vectors in 2 dimensions
 
-assert(obj.dim == 2,'for quiver plot must be 2D chunker');
 
-obj = sort(obj);
-xs = obj.r(1,:,:); xs = xs(:);
-ys = obj.r(2,:,:); ys = ys(:);
 
-rnorms = normals(obj);
+ifhold = ishold();
 
-u = rnorms(1,:,:); u = u(:);
-v = rnorms(2,:,:); v = v(:);
+for i = 1:length(obj)
+    tmp = obj(i);
+    assert(tmp.dim == 2,'for quiver plot must be 2D chunker');
 
-quiver(xs,ys,u,v,varargin{:});
+    tmp = sort(tmp);
+    xs = tmp.r(1,:,:); xs = xs(:);
+    ys = tmp.r(2,:,:); ys = ys(:);
+
+    rnorms = normals(tmp);
+
+    u = rnorms(1,:,:); u = u(:);
+    v = rnorms(2,:,:); v = v(:);
+
+    quiver(xs,ys,u,v,varargin{:});
+    hold on
+    
+end
+
+hold off
+
+if ifhold
+    hold on
+end
