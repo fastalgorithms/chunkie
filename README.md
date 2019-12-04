@@ -29,11 +29,22 @@ potentials and functions defined on chunkers
 
 ## Installing chunkie
 
-Simply add the chunkie subfolder to your matlab path.
+Add the chunkie subfolder to your matlab path.
+For some features, you will need to also add the
+FLAM library to your path. This is included as
+a submodule. You can either clone with the submodules
+
+    git clone --recurse-submodules https://github.com/fastalgorithms/chunkie.git
+
+or initialize the submodules after a git pull.
+Alternatively, it should work if you already have
+a reasonably up-to-date copy of FLAM on your path
+see [the FLAM GitHub page](https://github.com/klho/FLAM)
+
 
 ## Using chunkie
 
-
+Check out demo folder.
 
 ## License
 
