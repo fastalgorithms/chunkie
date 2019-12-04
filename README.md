@@ -37,9 +37,15 @@ a submodule. You can either clone with the submodules
     git clone --recurse-submodules https://github.com/fastalgorithms/chunkie.git
 
 or initialize the submodules after a git pull.
+Once the submodules are initialized, you can
+run the setup script (setup.m) from the main
+folder.
+
 Alternatively, it should work if you already have
 a reasonably up-to-date copy of FLAM on your path
-see [the FLAM GitHub page](https://github.com/klho/FLAM)
+see [the FLAM GitHub page](https://github.com/klho/FLAM).
+Be sure to add recursively (see MATLAB's genpath
+function) to include FLAM's subfolders.
 
 
 ## Using chunkie
