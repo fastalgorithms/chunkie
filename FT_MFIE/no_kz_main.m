@@ -1,4 +1,4 @@
-%DEMO_SCATTER
+%%DEMO_SCATTER
 %
 % Define a scattering problem on a starfish-shaped domain and solve
 %
@@ -9,7 +9,7 @@ addpaths_loc();
 
 % planewave vec
 
-kvec = 5*[1;-1.5];
+kvec = 2*[1;-1.5];
 
 %
 
@@ -23,7 +23,7 @@ cparams.nover = 0;
 cparams.maxchunklen = 4.0/zk;
 pref = []; 
 pref.k = 16;
-narms =5;
+narms =3;
 amp = 0.25;
 start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
@@ -32,7 +32,7 @@ fprintf('%5.2e s : time to build geo\n',t1)
 
 assert(checkadjinfo(chnkr) == 0);
 
-% plot geometry and data
+%% plot geometry and data
 
 figure(1)
 clf
@@ -44,11 +44,12 @@ axis equal
 %
 
 
-% solve and visualize the solution
+%% solve and visualize the solution
 
-% build CFIE
+%% build MFIE for J_t
 
-fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'sprime',1);
+% fkern = @(s,t,stau,ttau) chnk.MFIE2D.kern(zk,s,t,stau,ttau,'xx',1);
+fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'C',1);
 opdims(1) = 1; opdims(2) = 1;
 intparams.intorder = chnkr.k;
 opts = [];
@@ -56,16 +57,36 @@ opts.quadorder = 30;
 start = tic; sysmat = chunkmat(chnkr,fkern,opts);
 t1 = toc(start);
 
-fprintf('%5.2e s : time to assemble matrix\n',t1)
+fprintf('%5.2e s : time to assemble Jt matrix\n',t1)
 
 sys = 0.5*eye(chnkr.k*chnkr.nch) + sysmat;
 
 rhs = -planewave(kvec(:),chnkr.r(:,:)); rhs = rhs(:);
 start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
 
-fprintf('%5.2e s : time for dense gmres\n',t1)
+fprintf('%5.2e s : time for dense gmres to get Jt\n',t1)
 
-% evaluate at targets and plot
+%% build MFIE for J_n
+
+% fkern = @(s,t,stau,ttau) chnk.MFIE2D.kern(zk,s,t,stau,ttau,'zz',1);
+% opdims(1) = 1; opdims(2) = 1;
+% intparams.intorder = chnkr.k;
+% opts = [];
+% opts.quadorder = 30;
+% start = tic; sysmat = chunkmat(chnkr,fkern,opts);
+% t1 = toc(start);
+% 
+% fprintf('%5.2e s : time to assemble Jn matrix\n',t1)
+% 
+% sys = 0.5*eye(chnkr.k*chnkr.nch) + sysmat;
+% 
+% rhs = -planewave(kvec(:),chnkr.r(:,:)); rhs = rhs(:);
+% start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
+% 
+% fprintf('%5.2e s : time for dense gmres to get Jn\n',t1)
+% 
+
+%% evaluate at targets and plot
 
 rmin = min(chnkr); rmax = max(chnkr);
 xl = rmax(1)-rmin(1);
