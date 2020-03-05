@@ -152,7 +152,7 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
                 rl2 = chunklens(i2);
             end
 
-            if (strcmpi(lvlr,'a'))
+            if (strcmpi(lvlr,'t'))
                 rlself = chnkr.h(i);
                 if (i1 > 0)
                     rl1 = chnkr.h(i1);
