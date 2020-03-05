@@ -50,9 +50,7 @@ axis equal
 
 fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'C',1);
 opdims(1) = 1; opdims(2) = 1;
-intparams.intorder = chnkr.k;
 opts = [];
-opts.quadorder = 30;
 start = tic; sysmat = chunkmat(chnkr,fkern,opts);
 t1 = toc(start);
 
