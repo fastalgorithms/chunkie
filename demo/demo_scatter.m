@@ -48,7 +48,7 @@ axis equal
 
 % build CFIE
 
-fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'sprime',1);
+fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'c',1);
 opdims(1) = 1; opdims(2) = 1;
 opts = [];
 start = tic; sysmat = chunkmat(chnkr,fkern,opts);
