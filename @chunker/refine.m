@@ -15,7 +15,7 @@ function chnkr = refine(chnkr,opts)
 %                   length in parameter space of two adjacent chunks
 %                   differs by no more than a factor of approx 2. if 'n'
 %                   don't enforce (not recommended)
-%       opts.lvlrfac = (2.05) factor for enforcing level restriction
+%       opts.lvlrfac = (2.0) factor for enforcing level restriction
 %       opts.maxchunklen = maximum chunk length (Inf). enforce that no
 %                   chunk is larger than this maximum length
 %       opts.farfac = enforce that for each chunk, any non-adjacent 
@@ -36,7 +36,7 @@ if nargin < 2
 end
 
 lvlr = 'a';
-lvlrfac = 2.05;
+lvlrfac = 2.0;
 maxchunklen = Inf;
 farfac = Inf;
 nover = 0;
@@ -140,27 +140,31 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
             i1=chnkr.adj(1,i);
             i2=chnkr.adj(2,i);
 
-            rlself = chunklens(i);
-    
-            rl1=rlself;
-            rl2=rlself;
-
-            if (i1 > 0)
-                rl1 = chunklens(i1);
-            end
-            if (i2 > 0)
-                rl2 = chunklens(i2);
-            end
-
             if (strcmpi(lvlr,'t'))
                 rlself = chnkr.h(i);
+                rl1 = rlself;
+                rl2 = rlself;
                 if (i1 > 0)
                     rl1 = chnkr.h(i1);
                 end
                 if (i2 > 0)
                     rl2 = chnkr.h(i2);
                 end
+            else
+
+                rlself = chunklens(i);
+
+                rl1=rlself;
+                rl2=rlself;
+
+                if (i1 > 0)
+                    rl1 = chunklens(i1);
+                end
+                if (i2 > 0)
+                    rl2 = chunklens(i2);
+                end
             end
+
     %       only check if self is larger than either of adjacent blocks,
     %       iterating a couple times will catch everything
 
@@ -210,6 +214,11 @@ end
 
 % oversample 
 
+stype = 'a';
+if strcmpi(lvlr,'t')
+    stype = 't';
+end
+
 for ijk = 1:nover
 
     nchold=chnkr.nch;
@@ -221,7 +230,7 @@ for ijk = 1:nover
             error('too many chunks')
         end
 
-        chnkr = split(chnkr,i,[],x,w,u);
+        chnkr = split(chnkr,i,[],x,w,u,stype);
 
         % update chunklens 
 

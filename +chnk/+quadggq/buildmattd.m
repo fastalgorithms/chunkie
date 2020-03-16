@@ -17,14 +17,12 @@ h = chnkr.h;
 
 if strcmpi(type,'log')
 
+    
     qavail = chnk.quadggq.logavail();
-    [~,i] = min(abs(qavail-quadorder));
-    if (qavail(i) ~= quadorder)
-        warning('order %d not found, using order %d', ...
-            quadorder,qavail(i));
-        quadorder = qavail(i);
-    end    
-    [xs1,whts1,xs0,whts0] = chnk.quadggq.getlogquad(quadorder);
+    [~,i] = min(abs(qavail-k));
+    assert(qavail(i) == k,'order %d not found, consider using order %d chunks', ...
+        k,qavail(i));
+    [xs1,whts1,xs0,whts0] = chnk.quadggq.getlogquad(k);
 else
     error('type not available')
 end

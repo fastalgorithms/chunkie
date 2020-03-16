@@ -97,7 +97,7 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 opts.usesmooth=false;
 opts.verb=false;
 opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
-start=tic; Dsol = chunkerintkern(chnkr,fkern,opdims,sol2,targets,opts); 
+start=tic; Dsol = chunkerintkern(chnkr,fkern,sol2,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 

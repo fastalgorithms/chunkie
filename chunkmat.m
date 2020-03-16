@@ -72,9 +72,9 @@ if strcmpi(quad,'ggqlog')
     
     type = 'log';
     if nonsmoothonly
-        sysmat = chnk.quadggq.buildmattd(chnkr,kern,quadorder,opdims,type);
+        sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
     else
-        sysmat = chnk.quadggq.buildmat(chnkr,kern,quadorder,opdims,type);
+        sysmat = chnk.quadggq.buildmat(chnkr,kern,opdims,type);
     end
     
 elseif strcmpi(quad,'native')
