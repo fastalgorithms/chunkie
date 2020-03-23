@@ -43,7 +43,7 @@ rfine = rfine.';
 dfinenrms = sqrt(sum(abs(dfine).^2,2));
 taufine = (bsxfun(@rdivide,dfine,dfinenrms)).';
 
-dtnrms = sqrt(sum(abs(dt).^2,2));
+dtnrms = sqrt(sum(abs(dt).^2,1));
 taut = (bsxfun(@rdivide,dt,dtnrms));
     
 dsdt = dfinenrms.*whts1*hs;

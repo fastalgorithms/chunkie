@@ -23,6 +23,8 @@ function [sysmat] = chunkmat(chnkr,kern,opts)
 %                         entries for which a special quadrature is used
 %                         (e.g. self and neighbor interactoins) and return
 %                         in a sparse array.
+%           opts.l2scale = boolean (false), if true scale rows by 
+%                           sqrt(whts) and columns by 1/sqrt(whts)
 %
 % Output:
 %   sysmat - the system matrix for convolution of the kernel defined by
@@ -39,6 +41,7 @@ end
 quadorder = chnkr.k;
 quad = 'ggqlog';
 nonsmoothonly = false;
+l2scale = false;
 
 if or(chnkr.nch < 1,chnkr.k < 1)
     sysmat = [];
@@ -61,6 +64,9 @@ if isfield(opts,'quadorder')
 end
 if isfield(opts,'quad')
     quad = opts.quad;
+end
+if isfield(opts,'l2scale')
+    l2scale = opts.l2scale;
 end
 if isfield(opts,'nonsmoothonly')
     nonsmoothonly = opts.nonsmoothonly;
@@ -91,7 +97,16 @@ elseif strcmpi(quad,'native')
 else
     warning('specified quadrature method not available');
     sysmat = [];
+    return;
 end
 	 
+if l2scale
+    wts = whts(chnkr); wts = sqrt(wts(:)); wts = wts.';
+    wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
+    wtscol = wtscol.';
+    wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
+    sysmat = bsxfun(@times,wtsrow,sysmat);
+    sysmat = bsxfun(@rdivide,sysmat,wtscol);
+end
 
 end

@@ -1,33 +1,47 @@
 function [chnkr,varargout] = chunkpoly(verts,cparams,pref,edgevals)
 %CHUNKPOLY return a chunker corresponding to
 % the corner points specified by verts and the
-% cparams structure. Can return a polygon with rounded
-% corners
+% cparams structure. By default, a polygon with rounded
+% corners is returned.
 %
 % input
 %    verts - (dimv,nverts) array of vertices
 %            in order
 %    cparams - options structure
-%    	  cparams.widths = width of cut-out around
-%                 each piece of curve (defaults to
-%                                      1/10th of minimum
-%                                      of length of adjoining
-%				       edges)
-%         cparams.autowidths = automatically compute widths (false)
-%         cparams.autowidthsfac = if using autowidths, set widths
+%       cparams.rounded = true if corner rounding is to be used.
+%                         false if no rounding is used (true)
+%       cparams.widths = radius around each corner point where either the
+%                        rounding or dyadic refinement is applied 
+%                        (defaults to 1/10th of minimum
+%                         of length of adjoining edges)
+%       cparams.autowidths = automatically compute widths (false)
+%       cparams.autowidthsfac = if using autowidths, set widths
 %                             to autowidthsfac*minimum of adjoining
 %                             edges (0.1)
-%    	  cparams.ifclosed = 1, closed polygon
-%                         0, open segment (1)
-% 	      cparams.eps - resolve curve to tolerance eps
+%    	cparams.ifclosed = true, if it's a closed polygon
+%                          false, if it's an open segment (true)
+%
+%    Rounding parameters
+% 	    cparams.eps - resolve curve to tolerance eps
 %                    resolve coordinates, arclength,
 %          	     and first and second derivs of coordinates
-%		     to this tolerance (1.0e-6) only used
-%                    with rounding 
-%         cparams.k - order of underlying Gauss nodes on chunks
-%                  (16)
-%                  
+%		         to this tolerance (1.0e-6)
 %
+%   Parameters without rounding
+%       cparams.dyadic = do dyadic refinement into corners (true)
+%       cparams.depth = depth of dyadic refinement (30)
+%
+%   pref - chunker preference structure. pref.k determines order of
+%          underlying Gaussian rule
+%   edgevals - optional input. specifies constant values along each
+%              edge. The routine then stores a smoothed interpolant 
+%              of these edge values on the rounded structure in the 
+%              output chunker's data field
+%
+% output 
+%   chnkr - chunker object corresponding to rounded polygon
+%                  
+% See also CHUNKERPREF
 
 [dimv,nv] = size(verts);
 
@@ -51,6 +65,10 @@ if nargin < 4
     edgevals = [];
 end
 
+rounded = true;
+dyadic = true;
+depth = 30;
+
 autowidths = false;
 autowidthsfac = 0.1;
 ifclosed = true;
@@ -59,6 +77,9 @@ nover = 0;
 
 if isfield(cparams,'ifclosed')
    ifclosed = cparams.ifclosed;
+end
+if isfield(cparams,'rounded')
+   rounded = cparams.rounded;
 end
 if isfield(cparams,'eps')
    eps = cparams.eps;
@@ -86,6 +107,10 @@ end
 if isfield(cparams,'autowidthsfac')
    autowidthsfac = cparams.autowidthsfac;
 end
+if isfield(cparams,'depth')
+    depth = cparams.depth;
+    assert(depth >= 0, 'depth must be a nonnegative integer');
+end
 
 if (autowidths || widths_not_set)
    widths = autowidthsfac*...
@@ -112,6 +137,30 @@ chnkr = chnkr.makedatarows(nvals);
 k = chnkr.k; dim = chnkr.dim;
 [t,w] = lege.exps(k);
 onek = ones(k,1);
+
+% pre-define graded mesh for adaptivity in corners
+
+if ~rounded
+    tadap = zeros(k*(depth+1),1);
+    hadap = zeros(depth+1,1);
+    istart = 1;
+    iend = k;
+    t2 = 0.5*(t + 1);
+    scale = 2^(-depth);
+    shift = 0;
+    tadap(istart:iend) = shift + t2*scale;
+    hadap(1) = scale;
+    shift = scale;
+    for i = 1:depth
+        istart = istart+k;
+        iend = iend+k;
+        tadap(istart:iend) = shift + t2*scale;
+        hadap(i+1) = scale;
+        shift = shift + scale;
+        scale = scale*2;
+    end
+    tadap = reshape(tadap,1,k,depth+1);
+end
 
 if nvals > 0
     aint = lege.intmat(chnkr.k);
@@ -144,63 +193,139 @@ for i = 1:nv-1
     chnkr.h(nch) = (l-w2-w1)/2.0;
     
     if or(i < nv-1,ifclosed)
-        % chunk up smoothed corner made by three verts
-        if (i==nv-1)
-            if nvals > 0
-                val2 = edgevals(:,1);
+        if rounded
+            % chunk up smoothed corner made by three verts
+            if (i==nv-1)
+                if nvals > 0
+                    val2 = edgevals(:,1);
+                end
+                r3 = verts(:,2);
+            else
+                if nvals > 0
+                    val2 = edgevals(:,i+1);
+                end
+                r3 = verts(:,i+2);
             end
-            r3 = verts(:,2);
+            l2 = sqrt(sum((r2-r3).^2));
+            v = -v;
+            v2 = (r3-r2)/l2;
+            cosphi = dot(v2,v); %cosine of angle between edges
+            sinphi = sqrt(1-cosphi*cosphi);
+            trange = w2*sqrt((1-cosphi)/2); %parameter space range of gaussian
+            hbell = abs(trange)/8.0; % width parameter of gaussian
+            m = sinphi/(1-cosphi); % slope of abs approx
+            cpt.ta = -trange;
+            cpt.tb = trange;
+            cpt.eps = eps; cpt.levrestr = 0; cpt.ifclosed = 0;
+            chnkrt = sort(chunkfunc(@(t)fround(t,m,hbell,dim),cpt,pref));
+
+            % do optimal procrustes match of left and right ends
+            rl = fround(-trange,m,hbell,dim); rr = fround(trange,m,hbell,dim);
+            [um,~,vm] = svd([w2*v w2*v2]*([rl rr].'));
+            rotmat = um*vm.';
+
+            % copy in rotated and translated chunks
+            ncht = chnkrt.nch;
+            chnkr = chnkr.addchunk(ncht);
+            chnkr.r(:,:,nch+1:nch+ncht) = reshape(rotmat*chnkrt.r(:,:),dim,k,ncht)+r2;
+            chnkr.d(:,:,nch+1:nch+ncht) = reshape(rotmat*chnkrt.d(:,:),dim,k,ncht);
+            chnkr.d2(:,:,nch+1:nch+ncht) = reshape(rotmat*chnkrt.d2(:,:),dim,k,ncht);
+            chnkr.adj(:,nch+1:nch+ncht) = chnkrt.adj+nch;
+            chnkr.adj(2,nch) = nch+1;
+            chnkr.adj(1,nch+1) = nch;
+            chnkr.h(nch+1:nch+ncht) = chnkrt.h;
+
+            if nvals > 0
+                ds = bsxfun(@times,reshape(sum((rotmat*chnkrt.d(:,:)).^2,1),k,ncht), ...
+                    (chnkrt.h(:)).');
+                dsw = bsxfun(@times,w(:),ds);
+                dssums = sum(dsw,1);
+                dssums2 = cumsum([0,dssums(1:end-1)]);
+                dsint = aint*ds;
+                dsint = bsxfun(@plus,dsint,dssums2);
+                lencorner = sum(dsw(:));
+                ss = -lencorner/2.0 + dsint;
+                ss = ss/lencorner*16;
+                erfss = erf(ss);
+                datass = reshape((val2(:)-val1(:))/2*((erfss(:)).'+1) ...
+                    +val1(:),nvals,k,ncht);
+                chnkr.data(:,:,nch+1:nch+ncht) = datass;
+            end
         else
-            if nvals > 0
-                val2 = edgevals(:,i+1);
+            % chunk up corner made by three verts with true corners 
+            % and adaptive refinement
+            if (i==nv-1)
+                if nvals > 0
+                    val2 = edgevals(:,1);
+                end
+                r3 = verts(:,2);
+            else
+                if nvals > 0
+                    val2 = edgevals(:,i+1);
+                end
+                r3 = verts(:,i+2);
             end
-            r3 = verts(:,i+2);
-        end
-        l2 = sqrt(sum((r2-r3).^2));
-        v = -v;
-        v2 = (r3-r2)/l2;
-        cosphi = dot(v2,v); %cosine of angle between edges
-        sinphi = sqrt(1-cosphi*cosphi);
-        trange = w2*sqrt((1-cosphi)/2); %parameter space range of gaussian
-        hbell = abs(trange)/8.0; % width parameter of gaussian
-        m = sinphi/(1-cosphi); % slope of abs approx
-        cpt.ta = -trange;
-        cpt.tb = trange;
-        cpt.eps = eps; cpt.levrestr = 0; cpt.ifclosed = 0;
-        chnkrt = sort(chunkfunc(@(t)fround(t,m,hbell,dim),cpt,pref));
-        
-        % do optimal procrustes match of left and right ends
-        rl = fround(-trange,m,hbell,dim); rr = fround(trange,m,hbell,dim);
-        [um,~,vm] = svd([w2*v w2*v2]*([rl rr].'));
-        rotmat = um*vm.';
-        
-        % copy in rotated and translated chunks
-        ncht = chnkrt.nch;
-        chnkr = chnkr.addchunk(ncht);
-        chnkr.r(:,:,nch+1:nch+ncht) = reshape(rotmat*chnkrt.r(:,:),dim,k,ncht)+r2;
-        chnkr.d(:,:,nch+1:nch+ncht) = reshape(rotmat*chnkrt.d(:,:),dim,k,ncht);
-        chnkr.d2(:,:,nch+1:nch+ncht) = reshape(rotmat*chnkrt.d2(:,:),dim,k,ncht);
-        chnkr.adj(:,nch+1:nch+ncht) = chnkrt.adj+nch;
-        chnkr.adj(2,nch) = nch+1;
-        chnkr.adj(1,nch+1) = nch;
-        chnkr.h(nch+1:nch+ncht) = chnkrt.h;
-        
-        if nvals > 0
-            ds = bsxfun(@times,reshape(sum((rotmat*chnkrt.d(:,:)).^2,1),k,ncht), ...
-                (chnkrt.h(:)).');
-            dsw = bsxfun(@times,w(:),ds);
-            dssums = sum(dsw,1);
-            dssums2 = cumsum([0,dssums(1:end-1)]);
-            dsint = aint*ds;
-            dsint = bsxfun(@plus,dsint,dssums2);
-            lencorner = sum(dsw(:));
-            ss = -lencorner/2.0 + dsint;
-            ss = ss/lencorner*16;
-            erfss = erf(ss);
-            datass = reshape((val2(:)-val1(:))/2*((erfss(:)).'+1) ...
-                +val1(:),nvals,k,ncht);
-            chnkr.data(:,:,nch+1:nch+ncht) = datass;
-        end
+            l2 = sqrt(sum((r2-r3).^2));
+            v = -v;
+            v2 = (r3-r2)/l2;
+            
+            % left piece
+            
+            ncht = depth + 1;
+            chnkrt = chunker(pref);
+            chnkrt = chnkrt.addchunk(ncht);
+            chnkrt.r = bsxfun(@times,v,tadap)*w2 + r2;
+            chnkrt.d = repmat(v,1,k,ncht);
+            chnkrt.d2 = zeros(dim,k,ncht);
+            chnkrt.h = hadap*w2/2;
+            chnkrt.adj = [-1, 1:(ncht-1); 2:ncht, -1];
+            chnkrt = reverse(chnkrt);
+            chnkrt = sort(chnkrt);
+            
+            % copy in new chunks
+            chnkr = chnkr.addchunk(ncht);
+            chnkr.r(:,:,nch+1:nch+ncht) = chnkrt.r;
+            chnkr.d(:,:,nch+1:nch+ncht) = chnkrt.d;
+            chnkr.d2(:,:,nch+1:nch+ncht) = chnkrt.d2;
+            chnkr.adj(:,nch+1:nch+ncht) = chnkrt.adj+nch;
+            chnkr.adj(2,nch) = nch+1;
+            chnkr.adj(1,nch+1) = nch;
+            chnkr.adj(2,nch+ncht) = -1;
+            chnkr.h(nch+1:nch+ncht) = chnkrt.h;
+
+            if nvals > 0
+                chnkr.data(:,:,nch+1:nch+ncht) = repmat(val1,1,k,ncht);
+            end
+            
+            % right piece
+            
+            nch = chnkr.nch;
+            
+            ncht = depth + 1;
+            chnkrt = chunker(pref);
+            chnkrt = chnkrt.addchunk(ncht);
+            chnkrt.r = bsxfun(@times,v2,tadap)*w2 + r2;
+            chnkrt.d = repmat(v2,1,k,ncht);
+            chnkrt.d2 = zeros(dim,k,ncht);
+            chnkrt.h = hadap*w2/2;
+            chnkrt.adj = [-1, 1:(ncht-1); 2:ncht, -1];
+
+            chnkrt = sort(chnkrt);
+            
+            % copy in new chunks
+            chnkr = chnkr.addchunk(ncht);
+            chnkr.r(:,:,nch+1:nch+ncht) = chnkrt.r;
+            chnkr.d(:,:,nch+1:nch+ncht) = chnkrt.d;
+            chnkr.d2(:,:,nch+1:nch+ncht) = chnkrt.d2;
+            chnkr.adj(:,nch+1:nch+ncht) = chnkrt.adj+nch;
+            chnkr.adj(2,nch) = nch+1;
+            chnkr.adj(1,nch+1) = nch;
+            chnkr.h(nch+1:nch+ncht) = chnkrt.h;
+
+            if nvals > 0
+                chnkr.data(:,:,nch+1:nch+ncht) = repmat(val2,1,k,ncht);
+            end
+        end            
     end
     
 end
@@ -229,11 +354,3 @@ d2(1,:) = 0.0;
 d2(2,:) = d2y;
 
 end
-
-function vals = smoothtrans(ts,val1,val2)
-
-
-end
-
-
-
