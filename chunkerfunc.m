@@ -1,23 +1,45 @@
-function chnkr = chunkfunc(fcurve,cparams,pref)
-%CHUNKFUNC
+function chnkr = chunkerfunc(fcurve,cparams,pref)
+%CHUNKERFUNC create a chunker object corresponding to a parameterized curve
 %
-%	cparams = curve parameters
+% Syntax: chnkr = chunkerfunc(fcurve,cparams,pref)
 %
-%	cparams.ta = left end of t interval (0)
-% 	cparams.tb = right end of t interval (2*pi)
-% 	cparams.ifclosed = flag determining if the curve
-% 	   is to be interpreted as a closed curve (1)
-% 	cparams.chsmall = max size of end intervals if
-% 	   ifclosed == 0 (Inf)
-%	cparams.nover = oversample resolved curve nover
-%          times (0)
+% Input: 
+%   fcurve - function handle of the form
+%               [r,d,d2] = fcurve(t)
+%            where r, d, d2 are size [dim,size(t)] arrays describing
+%            position, first derivative, and second derivative of a curve
+%            in dim dimensions parameterized by t.
+%
+% Optional input:
+%	cparams - curve parameters structure (defaults)
+%       cparams.ta = left end of t interval (0)
+%       cparams.tb = right end of t interval (2*pi)
+%       cparams.ifclosed = flag determining if the curve
+%           is to be interpreted as a closed curve (1)
+%       cparams.chsmall = max size of end intervals if
+%           ifclosed == 0 (Inf)
+%       cparams.nover = oversample resolved curve nover
+%           times (0)
 %       cparams.eps = resolve coordinates, arclength,
 %          and first and second derivs of coordinates
 %          to this tolerance (1.0e-6)
 %       cparams.levrestr = flag, determines if level
-%          restriction is enforce, i.e. no chunk should
+%          restriction is to be enforced, i.e. no chunk should
 %          have double the arc length of its neighbor (1)
-%   cparams.maxchunklen - maximum length of any chunk
+%       cparams.maxchunklen - maximum length of any chunk (Inf)
+%   pref - chunkerpref object or structure (defaults)
+%       pref.nchmax - maximum number of chunks (10000)
+%       pref.k - number of Legendre nodes on chunks (16)
+%
+% Examples:
+%   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish with standard
+%                                        % options
+%   pref = []; pref.k = 30; 
+%   cparams = []; cparams.eps = 1e-3;
+%   chnkr = chunkerfunc(@(t) starfish(t),cparams,pref); % change up options
+%   
+% see also CHUNKPOLY, CHUNKERPREF, CHUNKER
+
 
 if nargin < 2
     cparams = [];
@@ -29,7 +51,7 @@ else
 end
 
 
-ta = 0.0; tb = 2*pi; ifclosed=1;
+ta = 0.0; tb = 2*pi; ifclosed=true;
 chsmall = Inf; nover = 0;
 eps = 1.0e-6;
 levrestr = 1; maxchunklen = Inf;
@@ -84,8 +106,13 @@ adjs = zeros(2,nchmax);
 ab(1,1)=ta;
 ab(2,1)=tb;
 nch=1;
-adjs(1,1)=-1;
-adjs(2,1)=-1;
+if ifclosed
+    adjs(1,1)=1;
+    adjs(2,1)=1;
+else
+    adjs(1,1)=-1;
+    adjs(2,1)=-1;
+end
 nchnew=nch;
 
 maxiter_res=10000;
@@ -136,14 +163,14 @@ for ijk = 1:maxiter_res
                 ifprocess(ich)=0;
                 ifdone=0;
 
-                if ((nch == 1) && (ifclosed > 0))
+                if ((nch == 1) && ifclosed)
                     adjs(1,nch)=2;
                     adjs(2,nch)=2;
                     adjs(1,nch+1)=1;
                     adjs(2,nch+1)=1;
                 end
 
-                if ((nch == 1) && (ifclosed <= 0))
+                if ((nch == 1) && (~ifclosed))
                     adjs(1,nch)=-1;
                     adjs(2,nch)=2;
                     adjs(1,nch+1)=1;
@@ -300,7 +327,7 @@ if (nover > 0)
             end
 	 
             if (ifnewt < 3) 
-                error('newton failed in chunkfunc');
+                error('newton failed in chunkerfunc');
             end
             ab2=ab1;
 

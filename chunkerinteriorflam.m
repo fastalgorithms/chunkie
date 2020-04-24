@@ -1,9 +1,9 @@
-function in = chunkerinflam(chnkr,pts)
-%CHUNKERINFLAM 
+function in = chunkerinteriorflam(chnkr,pts)
+%CHUNKERINTERIORFLAM 
 
 kernd = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'d');
 dens1 = ones(chnkr.k,chnkr.nch);
-wts = whts(chnkr);
+wts = weights(chnkr);
 
 opdims = [1 1];
 
@@ -29,7 +29,7 @@ xflam(:,chnkr.npt+1:chnkr.npt+nt) = pts;
 pt2chnk = repmat(1:chnkr.nch,chnkr.k,1);
 
 chunklens = zeros(chnkr.nch,1);
-ws = whts(chnkr);
+ws = weights(chnkr);
 chunklens(:) = sum(ws,1);
 lmax = max(chunklens)*3/chnkr.k;
 

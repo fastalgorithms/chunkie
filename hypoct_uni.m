@@ -84,11 +84,11 @@ function T = hypoct_uni(x,bl,lvlmax,ext)
 				% loop over all boxes at current level
     if l > bl % if boxes are too big
       for prnt = T.lvp(nlvl)+1:T.lvp(nlvl+1)
-	xi = T.nodes(prnt).xi;
-	xn = length(xi);
+        xi = T.nodes(prnt).xi;
+        xn = length(xi);
 
 			% subdivide box if it contains points
-	if xn > 0
+        if xn > 0
           ctr = T.nodes(prnt).ctr;
           idx = bsxfun(@gt,x(:,xi),ctr');
           idx = 2.^((1:d) - 1)*idx + 1;
@@ -109,7 +109,7 @@ function T = hypoct_uni(x,bl,lvlmax,ext)
             T.nodes(prnt).chld = [T.nodes(prnt).chld nbox];
           end
           T.nodes(prnt).xi = [];
-	end
+        end
       end
     end
 

@@ -9,7 +9,7 @@ addpaths_loc();
 
 % planewave vec
 
-kvec = 5*[1;-1.5];
+kvec = 10*[1;-1.5];
 
 %
 
@@ -25,12 +25,13 @@ pref = [];
 pref.k = 16;
 narms =5;
 amp = 0.25;
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
 
-assert(checkadjinfo(chnkr) == 0);
+[~,~,info] = sortinfo(chnkr);
+assert(info.ier == 0);
 
 % plot geometry and data
 
@@ -51,7 +52,7 @@ axis equal
 fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'c',1);
 opdims(1) = 1; opdims(2) = 1;
 opts = [];
-start = tic; sysmat = chunkmat(chnkr,fkern,opts);
+start = tic; sysmat = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -88,14 +89,14 @@ fprintf('%5.2e s : time to oversample boundary\n',t1)
 
 %
 
-start = tic; in = chunkerinflam(chnkr,targets); t1 = toc(start);
+start = tic; in = chunkerinteriorflam(chnkr,targets); t1 = toc(start);
 out = ~in;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
 
 % compute layer potential based on oversample boundary
 
-wts2 = whts(chnkr2);
+wts2 = weights(chnkr2);
 
 matfun = @(i,j) kernbyindexr(i,j,targets(:,out),chnkr2,wts2,fkern,opdims);
 [pr,ptau,pw,pin] = proxy_square_pts();
@@ -105,7 +106,8 @@ pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr2,wts2, ..
 
 xflam = chnkr2.r(:,:);
 
-start = tic; F = ifmm(matfun,targets(:,out),xflam,200,1e-14,pxyfun); 
+fmmopts = []; fmmopts.store = 'A'; % store everything (faster apply)
+start = tic; F = ifmm(matfun,targets(:,out),xflam,200,1e-14,pxyfun,fmmopts); 
 t1 = toc(start);
 fprintf('%5.2e s : time for ifmm form (for plotting)\n',t1)
 start = tic;

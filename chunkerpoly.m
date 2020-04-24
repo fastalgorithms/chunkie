@@ -1,12 +1,16 @@
-function [chnkr,varargout] = chunkpoly(verts,cparams,pref,edgevals)
-%CHUNKPOLY return a chunker corresponding to
-% the corner points specified by verts and the
-% cparams structure. By default, a polygon with rounded
-% corners is returned.
+function chnkr = chunkpoly(verts,cparams,pref,edgevals)
+%CHUNKPOLY return a chunker object corresponding to the polygon with the
+% given vertices. By default, a polygon with rounded corners is returned.
+% Open and higher dimensional "polygons" are allowed. Optional dyadic
+% refinement near corners of true polygons (no rounding).
 %
-% input
-%    verts - (dimv,nverts) array of vertices
+% Syntax: chnkr = chunkpoly(verts,cparams,pref,edgevals)
+%
+% Input:
+%    verts - (dimv,nverts) array of "polygon" vertices
 %            in order
+%
+% Optional input:
 %    cparams - options structure
 %       cparams.rounded = true if corner rounding is to be used.
 %                         false if no rounding is used (true)
@@ -21,27 +25,35 @@ function [chnkr,varargout] = chunkpoly(verts,cparams,pref,edgevals)
 %    	cparams.ifclosed = true, if it's a closed polygon
 %                          false, if it's an open segment (true)
 %
-%    Rounding parameters
+%           ~ Rounding parameters ~
 % 	    cparams.eps - resolve curve to tolerance eps
 %                    resolve coordinates, arclength,
 %          	     and first and second derivs of coordinates
 %		         to this tolerance (1.0e-6)
 %
-%   Parameters without rounding
+%           ~ Parameters without rounding ~
 %       cparams.dyadic = do dyadic refinement into corners (true)
 %       cparams.depth = depth of dyadic refinement (30)
 %
-%   pref - chunker preference structure. pref.k determines order of
-%          underlying Gaussian rule
-%   edgevals - optional input. specifies constant values along each
+%   pref - chunkerpref object/ preference structure 
+%       pref.k determines order of underlying Legendre nodes
+%   edgevals - very optional input. specifies constant values along each
 %              edge. The routine then stores a smoothed interpolant 
 %              of these edge values on the rounded structure in the 
 %              output chunker's data field
 %
-% output 
-%   chnkr - chunker object corresponding to rounded polygon
+% Output:
+%   chnkr - chunker object corresponding to (rounded) polygon
 %                  
-% See also CHUNKERPREF
+% Examples:
+%   barbell_verts = chnk.demo.barbell();
+%   chnkr = chunkpoly(barbell_verts); % rounded "barbell" domain
+%                                     % with standard options
+%   cparams = []; cparams.rounded = false;
+%   pref = []; pref.k = 30;
+%   chnkr = chunkpoly(barbell_verts,cparams,pref); % not rounded
+%
+% See also CHUNKERFUNC, CHUNKER, CHUNKERPREF
 
 [dimv,nv] = size(verts);
 
@@ -185,7 +197,7 @@ for i = 1:nv-1
     chnkr.r(:,:,nch) = r1 + bsxfun(@times,v(:),(ts(:)).');
     chnkr.d(:,:,nch) = repmat(v(:),1,k);
     chnkr.d2(:,:,nch) = zeros(dim,k);
-    chnkr.adj(1,nch) = -1; chnkr.adj(2,nch) = -1;
+    chnkr.adj(1,nch) = 0; chnkr.adj(2,nch) = 0;
     if nch > 1
         chnkr.adj(1,nch) = nch-1;
         chnkr.adj(2,nch-1) = nch;
@@ -217,7 +229,7 @@ for i = 1:nv-1
             cpt.ta = -trange;
             cpt.tb = trange;
             cpt.eps = eps; cpt.levrestr = 0; cpt.ifclosed = 0;
-            chnkrt = sort(chunkfunc(@(t)fround(t,m,hbell,dim),cpt,pref));
+            chnkrt = sort(chunkerfunc(@(t)fround(t,m,hbell,dim),cpt,pref));
 
             % do optimal procrustes match of left and right ends
             rl = fround(-trange,m,hbell,dim); rr = fround(trange,m,hbell,dim);
@@ -278,7 +290,7 @@ for i = 1:nv-1
             chnkrt.d = repmat(v,1,k,ncht);
             chnkrt.d2 = zeros(dim,k,ncht);
             chnkrt.h = hadap*w2/2;
-            chnkrt.adj = [-1, 1:(ncht-1); 2:ncht, -1];
+            chnkrt.adj = [0, 1:(ncht-1); 2:ncht, 0];
             chnkrt = reverse(chnkrt);
             chnkrt = sort(chnkrt);
             
@@ -290,7 +302,7 @@ for i = 1:nv-1
             chnkr.adj(:,nch+1:nch+ncht) = chnkrt.adj+nch;
             chnkr.adj(2,nch) = nch+1;
             chnkr.adj(1,nch+1) = nch;
-            chnkr.adj(2,nch+ncht) = -1;
+            chnkr.adj(2,nch+ncht) = 0;
             chnkr.h(nch+1:nch+ncht) = chnkrt.h;
 
             if nvals > 0
@@ -308,7 +320,7 @@ for i = 1:nv-1
             chnkrt.d = repmat(v2,1,k,ncht);
             chnkrt.d2 = zeros(dim,k,ncht);
             chnkrt.h = hadap*w2/2;
-            chnkrt.adj = [-1, 1:(ncht-1); 2:ncht, -1];
+            chnkrt.adj = [0, 1:(ncht-1); 2:ncht, 0];
 
             chnkrt = sort(chnkrt);
             
@@ -321,7 +333,9 @@ for i = 1:nv-1
             chnkr.adj(2,nch) = nch+1;
             chnkr.adj(1,nch+1) = nch;
             chnkr.h(nch+1:nch+ncht) = chnkrt.h;
-
+            
+            chnkr = chnkr.addvert([nch,nch+1]);
+            
             if nvals > 0
                 chnkr.data(:,:,nch+1:nch+ncht) = repmat(val2,1,k,ncht);
             end
@@ -334,6 +348,9 @@ if ifclosed
     nch = chnkr.nch;
     chnkr.adj(1,1) = nch;
     chnkr.adj(2,nch) = 1;
+    if ~rounded
+        chnkr = chnkr.addvert([1,nch]);
+    end
 end
     
 end

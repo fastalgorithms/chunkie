@@ -152,7 +152,8 @@ classdef trapper
         obj = reverse(obj)
         rmin = min(obj)
         rmax = max(obj)
-        whts = whts(obj)
+        wts = whts(obj)
+        wts = weights(obj)
         rnorm = normals(obj)
         onesmat = onesmat(obj)
         rnormonesmat = normonesmat(obj)
@@ -165,6 +166,6 @@ classdef trapper
         s = arclength(obj)
     end
     methods(Static)
-        obj = chunkfunc(fcurve,varargin)
+        obj = chunkerfunc(fcurve,varargin)
     end
 end

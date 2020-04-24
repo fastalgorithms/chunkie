@@ -1,0 +1,136 @@
+%TEST_ADAPCHUNKERMAT_CLOSETOTOUCHING
+%
+% - set up two discs which are nearly touching
+% - compute the solution of an exterior Dirichlet problem using 
+%   Laplace combined layer potential
+% - compare accuracy using the adaptive routine to do nearby panel
+%   evaluation vs smooth rule for everything but self and neighbors
+
+addpath('../');
+iseed = 8675309;
+rng(iseed);
+
+% define geometry
+
+
+circle = @(t,ctr,rad) chnk.curves.bymode(t,rad*ones(1,1),ctr);
+
+ctr1 = [-1;0]; ctr2 = [1;0];
+rad = 0.99;
+
+cparams = [];
+cparams.nover = 4;
+cparams.ifclosed = 1;
+chnkr1 = chunkerfunc(@(t) circle(t,ctr1,rad),cparams);
+chnkr2 = chunkerfunc(@(t) circle(t,ctr2,rad),cparams);
+
+chnkrs = [chnkr1 chnkr2];
+
+chnkr = chunkermerge(chnkrs);
+
+% set up sources for exterior problem
+
+srcs = [ (0.2*randn(2,10) + ctr1), (0.2*randn(2,10) + ctr2)];
+strengths = randn(size(srcs,2),1);
+
+% targets for exterior problems
+
+targs = [ 0.001*randn(2,1), ([-2.5;0]+0.2*randn(2,2)),([2.5;0]+0.2*randn(2,2))];
+
+% plot geometry
+
+% figure(1)
+% clf
+% plot(chnkrs,'-r')
+% hold on
+% %quiver(chnkrs,'r')
+% scatter(srcs(1,:),srcs(2,:),'bo')
+% scatter(targs(1,:),targs(2,:),'gx')
+% axis equal
+
+%
+
+kerns = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'s');
+
+% eval u on bdry
+
+targsb = chnkr.r; targsb = reshape(targsb,2,chnkr.k*chnkr.nch);
+targsbtau = taus(chnkr); 
+targsbtau = reshape(targsbtau,2,chnkr.k*chnkr.nch);
+
+kernmats = kerns(srcs,targsb,[],targsbtau);
+ubdry = kernmats*strengths;
+
+% eval u at targets
+
+kernmatstarg = kerns(srcs,targs,[],[]);
+utarg = kernmatstarg*strengths;
+
+%
+
+% build laplace dirichlet matrix (combined)
+% use adaptive routine to build matrix (self done by ggq, nbor by adaptive)
+
+eta = 1;
+fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'C',eta);
+
+type = 'log';
+opts = []; opts.robust = true;
+opdims = [1 1];
+start = tic;
+mata = chnk.quadadap.buildmat(chnkr,fkern,opdims,type,opts);
+t1 = toc(start);
+fprintf('%5.2e s : time to assemble matrix (adaptive)\n',t1)
+start = tic; mato = chunkermat(chnkr,fkern);
+t1 = toc(start);
+fprintf('%5.2e s : time to assemble matrix (original GGQ)\n',t1)
+
+sysa = 0.5*eye(chnkr.k*chnkr.nch) + mata;
+syso = 0.5*eye(chnkr.k*chnkr.nch) + mato;
+
+%
+
+rhs = ubdry(:); 
+start = tic; sola = sysa\rhs; t1 = toc(start);
+start = tic; solo = syso\rhs; t1 = toc(start);
+
+fprintf('%5.2e s : time for dense backslash solve\n',t1)
+
+err = norm(sola-solo,'fro')/norm(sola,'fro');
+
+fprintf('difference between adaptive and non-adaptive %5.2e\n',err)
+
+% evaluate at targets and compare
+
+opts.usesmooth=false;
+opts.verb=false;
+opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
+start=tic; layersola = chunkerkerneval(chnkr,fkern,sola,targs,opts); 
+t1 = toc(start);
+start=tic; layersolo = chunkerkerneval(chnkr,fkern,solo,targs,opts); 
+t1 = toc(start);
+
+%
+
+wchnkr = weights(chnkr);
+
+relerr = norm(utarg-layersola,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
+relerr2 = norm(utarg-layersola,'inf')/dot(abs(sola(:)),wchnkr(:));
+fprintf('relative frobenius error %5.2e (adap)\n',relerr);
+fprintf('relative l_inf/l_1 error %5.2e (adap)\n',relerr2);
+
+assert(relerr < 1e-10);
+
+relerr = norm(utarg-layersolo,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
+relerr2 = norm(utarg-layersolo,'inf')/dot(abs(solo(:)),wchnkr(:));
+fprintf('relative frobenius error %5.2e (no adap)\n',relerr);
+fprintf('relative l_inf/l_1 error %5.2e (no adap)\n',relerr2);
+
+% plot density
+% 
+% chnkr = chnkr.makedatarows(1);
+% chnkr.data(1,:) = sola;
+% 
+% figure(2)
+% plot3(chnkr,1)
+% 

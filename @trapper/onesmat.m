@@ -1,8 +1,8 @@
 function onesmat = onesmat(trap)
 
-whts = whts(trap);
-whts = whts(:);
-temp = ones(size(whts));
-onesmat = bsxfun(@times,temp,whts.');
+wts = weights(trap);
+wts = wts(:);
+temp = ones(size(wts));
+onesmat = bsxfun(@times,temp,wts.');
 
 end

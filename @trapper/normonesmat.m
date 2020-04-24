@@ -1,11 +1,11 @@
 function normonesmat = normonesmat(trap)
 
-whts = whts(trap);
+wts = weights(trap);
 rnorms = normals(trap);
-whts = whts(:);
-whts2 = repmat(whts.',2,1);
-whts2 = whts2(:).*rnorms(:);
+wts = wts(:);
+wts2 = repmat(wts.',2,1);
+wts2 = wts2(:).*rnorms(:);
 
-normonesmat = bsxfun(@times,rnorms(:),whts2.');
+normonesmat = bsxfun(@times,rnorms(:),wts2.');
 
 end

@@ -19,8 +19,8 @@ edgevals = rand(1,nv);
 
 % parameters for curve rounding/chunking routineime to oversample boundary
 cparams = [];
-cparams.widths = 0.01*ones(size(verts,2),1);% width to cut about each corner
-cparams.eps = 1e-12; % tolerance at which to resolve curve
+cparams.widths = 0.1*ones(size(verts,2),1);% width to cut about each corner
+cparams.eps = 1e-6; % tolerance at which to resolve curve
 
 % parameters for chunk discretization
 p.k = 16; p.dim = 2;
@@ -30,8 +30,10 @@ p.k = 16; p.dim = 2;
 % chnkr.data
 chnkr = chunkpoly(verts,cparams,p,edgevals);
 chnkr = chnkr.refine(); chnkr = chnkr.sort();
-assert(checkadjinfo(chnkr) == 0);
+[~,~,info] = sortinfo(chnkr);
+assert(info.ier == 0);
 
+%%
 % plot smoothed geometry and data
 
 figure(1)
@@ -56,10 +58,12 @@ plot3(x(:),y(:),z(:))
 fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
 opdims(1) = 1; opdims(2) = 1;
 intparams.intorder = chnkr.k;
-start = tic; D = chunkmat(chnkr,fkern);
+start = tic; D = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
+
+%
 
 sys = -0.5*eye(chnkr.k*chnkr.nch) + D;
 
@@ -93,13 +97,13 @@ fprintf('%5.2e s : time to oversample boundary\n',t1)
 
 %
 
-start = tic; in = chunkerinflam(chnkr,targets); t1 = toc(start);
+start = tic; in = chunkerinteriorflam(chnkr,targets); t1 = toc(start);
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
 
 % compute layer potential based on oversample boundary
 
-wts2 = whts(chnkr2);
+wts2 = weights(chnkr2);
 
 matfun = @(i,j) kernbyindexr(i,j,targets(:,in),chnkr2,wts2,fkern,opdims);
 [pr,ptau,pw,pin] = proxy_square_pts();

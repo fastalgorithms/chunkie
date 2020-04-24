@@ -1,4 +1,4 @@
-%TEST_CHUNKERINFLAM
+%TEST_CHUNKERINTERIORFLAM
 %
 % determine points inside/outside domain reasonably fast 
 
@@ -14,10 +14,10 @@ pref = [];
 pref.k = 16;
 narms = 3;
 amp = 0.25;
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
-wts = whts(chnkr);
+wts = weights(chnkr);
 
 fprintf('%5.2e s : time to build geo\n',t1)
 
@@ -52,7 +52,7 @@ axis equal
 
 targin_true = stretch <= 1;
 
-start = tic; targin = chunkerinflam(chnkr,targets); 
+start = tic; targin = chunkerinteriorflam(chnkr,targets); 
 t1 = toc(start);
 
 fprintf('%5.2e s : time to determine if in/out \n',t1)
@@ -62,3 +62,5 @@ nfail = nnz(targin(:) ~= targin_true(:));
 fprintf('number of targets:      %7d\n',nt)
 fprintf('number of bdry pts:     %7d\n',chnkr.npt)
 fprintf('number of failures:     %7d\n',nfail)
+
+assert(nfail == 0);

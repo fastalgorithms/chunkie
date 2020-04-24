@@ -1,5 +1,5 @@
-function fints = chunkerintkern(chnkr,kern,dens,targs,opts)
-%CHUNKERINTKERN compute the convolution of the integral kernel with
+function fints = chunkerkerneval(chnkr,kern,dens,targs,opts)
+%CHUNKERKERNEVAL compute the convolution of the integral kernel with
 % the density defined on the chunk geometry. 
 %
 % input:
@@ -61,21 +61,21 @@ assert(dim==2 && nt2==nt,...
     'opts.targstau should have same dimensions as targs');
 
 if opts.usesmooth == 1
-    fints = chunkerintkern_smooth(chnkr,kern,opdims,dens, ...
+    fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
         targs,targstau,opts);
 elseif opts.usesmooth == 0
-    fints = chunkerintkern_adap(chnkr,kern,opdims,dens, ...
+    fints = chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
         targs,targstau,opts);
 elseif opts.usesmooth == 2
     fints = zeros(opdims(1),nt);
     optssw = []; optssw.gausseps = opts.gausseps; 
     optssw.justsmoothworks = true;
-    sw = chunkerin(chnkr,targs,optssw);
+    sw = chunkerinterior(chnkr,targs,optssw);
     fints(:,sw) = reshape(...
-        chunkerintkern_smooth(chnkr,kern,opdims,dens, ...
+        chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
         targs(:,sw),targstau(:,sw),opts),opdims(1),nnz(sw));
     fints(:,~sw) = reshape(...
-        chunkerintkern_adap(chnkr,kern,opdims,dens, ...
+        chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
         targs(:,~sw),targstau(:,~sw),opts),opdims(1),nnz(~sw));
     fints = fints(:);
 end
@@ -84,7 +84,7 @@ end
 
 
 
-function fints = chunkerintkern_smooth(chnkr,kern,opdims,dens, ...
+function fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
     targs,targstau,opts)
 
 k = chnkr.k;
@@ -115,7 +115,7 @@ end
 
 end
 
-function fints = chunkerintkern_adap(chnkr,kern,opdims,dens, ...
+function fints = chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
     targs,targstau,opts)
 
 k = chnkr.k;
@@ -142,7 +142,7 @@ for i = 1:nch
         indj = (j-1)*opdims(1);
         for l = 1:opdims(1)
             ind = indj+l;
-            temp = chunkerintchunk_kernfcoefs(kern,opdims,l,...
+            temp = chunkerinteriortegralchunk_kernfcoefs(kern,opdims,l,...
                 densc,rci,dci,targs(:,j),targstau(:,j));
 
             fints(ind) = fints(ind) + temp*chnkr.h(i);

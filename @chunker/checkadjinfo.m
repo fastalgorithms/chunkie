@@ -1,23 +1,25 @@
 function ier = checkadjinfo(chnkr)
+%CHECKADJINFO checks adjacency vector for errors. based on attempting
+% a sort.
+%
+% This is merely a wrapper for sortinfo.
+%
+% Syntax: ier = checkadjinfo(chnkr)
+%
+% Input: 
+%   chnkr - chunker object
+%
+% Output:
+%   ier - error flag
+%       ier = 1, bad adj info, different number of left and right ends
+%       ier = 2, bad adj info, missed/doubled chunks found
+%
+% Examples:
+%   ier = checkadjinfo(chnkr)
+%
+% see also SORT, SORTINFO
 
-i1 = 1;
+% author: Travis Askham (askhamwhat@gmail.com)
 
-hit = zeros(chnkr.nch,1);
-
-for i = 1:chnkr.nch
-    i2 = chnkr.adj(1,i1);
-    hit(i2) = hit(i2)+1;
-    i1 = i2;
-end
-
-ier = 0;
-if nnz(hit == 0) > 0
-    ier = ier + 1;
-end
-if nnz(hit > 1) > 0
-    ier = ier + 2;
-end
-% fprintf('nch %d\n',chnkr.nch)
-% fprintf('number hit %d\n',nnz(hit > 0))
-% fprintf('number missed %d\n',nnz(hit == 0))
-% fprintf('number doubled up %d\n',nnz(hit > 1))
+[~,~,info] = sortinfo(chnkr);
+ier = info.ier;

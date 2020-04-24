@@ -1,5 +1,5 @@
-function fint = chunkerint(chnkr,f,opts)
-%CHUNKERINT compute the integral of the function f over the chunk
+function fint = chunkerinteriortegral(chnkr,f,opts)
+%CHUNKERINTERIORTEGRAL compute the integral of the function f over the chunk
 % geometry. 
 %
 % input:

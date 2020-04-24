@@ -1,5 +1,5 @@
 
-function submat = kern(src,targ,srctau,targtau,type)
+function submat = kern(src,targ,srctau,targtau,type,varargin)
 
 [~,ns] = size(src);
 [~,nt] = size(targ);
@@ -21,4 +21,12 @@ end
 
 if strcmpi(type,'s')
     submat = chnk.lap2d.green(src,targ);
+end
+
+if strcmpi(type,'c')
+    eta = varargin{1};
+    [s,grad] = chnk.lap2d.green(src,targ);
+    nx = repmat(srctau(2,:),nt,1);
+    ny = repmat(-srctau(1,:),nt,1);
+    submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny) + eta*s;
 end

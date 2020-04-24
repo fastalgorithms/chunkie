@@ -1,5 +1,8 @@
 function wchnk = whts(chnkr)
 
+
+warning('whts is deprecated and will be removed, use weights instead');
+
   k = chnkr.k;
   nch = chnkr.nch;
   [~,w] = lege.exps(k);

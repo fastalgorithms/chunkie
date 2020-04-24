@@ -10,16 +10,6 @@ function trap = trapfunc(fcurve,cparams,pref)
 %
 % See also TRAPPER
 
-if nargin < 2
-    cparams = [];
-end
-if nargin < 3
-    pref = trapperpref();
-else
-    pref = trapperpref(pref);
-end
-
-
 ta = 0.0; tb = 2*pi;
 npt = 100;
 
@@ -32,6 +22,21 @@ end
 if isfield(cparams,'npt')
     npt = cparams.npt;
 end
+
+dim = checkcurveparam(fcurve,ta);
+
+if nargin < 2
+    cparams = [];
+end
+if nargin < 3
+    p = []; p.dim = dim;
+    pref = trapperpref(p);
+else
+    pref = trapperpref(pref);
+end
+
+assert(pref.dim == dim);
+
 
 nout = 3;
 out = cell(nout,1);

@@ -1,4 +1,4 @@
-function [spmat] = buildmattd(chnkr,kern,quadorder,opdims,type)
+function [spmat] = buildmattd(chnkr,kern,opdims,type)
 %BUILDMATTD build sparse matrix corresponding to self and neighbor
 % interactions for given kernel and chnkr description of boundary
 %
@@ -22,7 +22,7 @@ if strcmpi(type,'log')
     [~,i] = min(abs(qavail-k));
     assert(qavail(i) == k,'order %d not found, consider using order %d chunks', ...
         k,qavail(i));
-    [xs1,whts1,xs0,whts0] = chnk.quadggq.getlogquad(k);
+    [xs1,wts1,xs0,wts0] = chnk.quadggq.getlogquad(k);
 else
     error('type not available')
 end
@@ -56,7 +56,7 @@ for j = 1:nch
     % neighbors
     
     submat = chnk.quadggq.nearbuildmat(r,d,h,ibefore,j, ...
-        kern,opdims,u,xs1,whts1,ainterp1);
+        kern,opdims,u,xs1,wts1,ainterp1);
     
     submat(submat == 0.0) = 1e-300; %hack
     
@@ -66,7 +66,7 @@ for j = 1:nch
     spmat(imat:imatend,jmat:jmatend) = submat;
     
     submat = chnk.quadggq.nearbuildmat(r,d,h,iafter,j, ...
-        kern,opdims,u,xs1,whts1,ainterp1);
+        kern,opdims,u,xs1,wts1,ainterp1);
     
     submat(submat == 0.0) = 1e-300;
     
@@ -78,7 +78,7 @@ for j = 1:nch
     % self
     
     submat = chnk.quadggq.diagbuildmat(r,d,h,j,kern,opdims,...
-        u,xs0,whts0,ainterps0);
+        u,xs0,wts0,ainterps0);
     
     submat(submat == 0.0) = 1e-300;
 

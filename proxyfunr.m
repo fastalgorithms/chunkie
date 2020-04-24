@@ -40,8 +40,9 @@ function [Kpxy,nbr] = proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
 
 % scaled proxy points and weights (no scaling necessary on tangents)
 
-pxy = bsxfun(@plus,pr*l,ctr(:));
-pw = l*pw;
+lmax = max(l);
+pxy = bsxfun(@plus,pr*lmax,ctr(:));
+pw = lmax*pw;
 pw2 = repmat(pw(:).',opdims(1),1); pw2 = pw2(:);
 
 if strcmpi(rc,'c')
@@ -66,7 +67,7 @@ if strcmpi(rc,'c')
     % targets corresponding to nbr indices
 
     nbrpts = idivide(int64(nbr(:)-1),int64(opdims(1)))+1;
-    dr = (rx(:,nbrpts) - ctr(:))/l;
+    dr = (rx(:,nbrpts) - ctr(:))/lmax;
     nbr = nbr(pin(dr));
 else
     % find unique underlying points corresponding to slf indices
@@ -89,7 +90,7 @@ else
     % targets corresponding to nbr indices
 
     nbrpts = idivide(int64(nbr(:)-1),int64(opdims(2)))+1;
-    dr = (chnkr.r(:,nbrpts) - ctr(:))/l;
+    dr = (chnkr.r(:,nbrpts) - ctr(:))/lmax;
     nbr = nbr(pin(dr));
     
 end

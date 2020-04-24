@@ -1,8 +1,11 @@
 classdef chunker
-%CHUNKER class which describes a curve divided 
-% up into chunks. On each chunk the curve is represented by 
-% the values of its position, first and second derivatives in 
-% parameter space on a Legendre grid
+%CHUNKER class which describes a curve divided into chunks (panels). 
+% On each chunk the curve is represented by the values of its position, 
+% first and second derivatives in parameter space on a Legendre grid.
+%
+
+% author: Travis Askham (askhamwhat@gmail.com)
+
     properties(Access=private)
         rstor
         dstor
@@ -10,6 +13,9 @@ classdef chunker
         adjstor
         hstor
         datastor
+        verttol
+        wstor
+        tstor
     end
     properties(Dependent,Access=public)
         r
@@ -24,12 +30,15 @@ classdef chunker
         nch
         nchstor
         hasdata
+        vert
     end
     properties(Dependent,SetAccess=private)
         k
         dim
         npt
         datadim
+        nvert
+        vertdeg
     end
     
     methods
@@ -43,6 +52,7 @@ classdef chunker
             dim = p.dim;
             nchmax = p.nchmax;
             nchstor = p.nchstor;
+            obj.verttol = p.verttol;
             obj.nchmax = nchmax;
             obj.nchstor = nchstor;
             obj.nch = 0;
@@ -51,8 +61,10 @@ classdef chunker
             obj.d2stor = zeros(dim,k,nchstor);
             obj.adjstor = zeros(2,nchstor);
             obj.hstor = zeros(nchstor,1);
+            obj.vert = {};
             obj.hasdata = false;
             obj.datastor = [];
+            [obj.tstor,obj.wstor] = lege.exps(k);
         end
         
         function r = get.r(obj)
@@ -92,16 +104,22 @@ classdef chunker
             obj.hstor(1:obj.nch) = val;
         end
         function k = get.k(obj)
-            k = size(obj.r,2);
+            k = size(obj.rstor,2);
         end
         function dim = get.dim(obj)
-            dim = size(obj.r,1);
+            dim = size(obj.rstor,1);
+        end
+        function nvert = get.nvert(obj)
+            nvert = numel(obj.vert);
         end
         function datadim = get.datadim(obj)
             datadim = size(obj.data,1);
         end
         function npt = get.npt(obj)
             npt = obj.k*obj.nch;
+        end
+        function vertdeg = get.vertdeg(obj)
+            vertdeg = cellfun(@numel,obj.vert);
         end
             
         function obj = addchunk(obj,nchadd)
@@ -163,32 +181,89 @@ classdef chunker
             end
         end
         
+        function obj = addvert(obj,newvert,toleft)
+        %ADDVERT add vertex label to chunker object 
+        %
+            if (numel(newvert) == 0); warning('chunker:emptyvert',...
+                    'no vertex specified, doing nothing'); end
+            if (numel(newvert) == 1); warning('chunker:badvert',...
+              'free ends are not vertices in chunkers, doing nothing'); end
+            if (numel(newvert) > 1)
+                assert(all(and(1 <= newvert,newvert <= obj.nch)),...
+                    'vertex indices must correspond to existing chunks');
+                ends = chunkends(obj,newvert(:));
+                if (nargin < 3)
+                    lends = ends(:,1,:); rends = ends(:,2,:);
+                    lperm = permute(lends,[1,3,2]); 
+                    rperm = permute(rends,[1,3,2]);
+                
+                    lldist = squeeze(sqrt(sum( (lends - lperm).^2, 1)));
+                    rldist = squeeze(sqrt(sum( (lends - rperm).^2, 1)));
+                    rrdist = squeeze(sqrt(sum( (rends - rperm).^2, 1)));
+                
+                    ldist = min(lldist,rldist.'); ldist = sum(ldist,2);
+                    rdist = min(rldist,rrdist); rdist = sum(rdist,2);
+                    toleft = ldist < rdist;
+                end
+                
+                lens = chunklen(obj,newvert,obj.wstor); 
+                maxlen = max(lens(:));
+                tol = obj.verttol; tol = max(tol,maxlen*tol);
+                
+                vertends = zeros(obj.dim,numel(newvert));
+                vertends(:,toleft) = ends(:,1,toleft);
+                vertends(:,~toleft) = ends(:,2,~toleft);
+                
+                vertends = vertends - mean(vertends,2);
+                errvertends = norm(vertends,'fro');
+                if (errvertends > tol)
+                    warning('chunkie:badvertchunks', ...
+                     [sprintf('chunkends far from centroid %5.2e\n',...
+                     errvertends),
+                     'consider resetting verttol for chunker']);
+                end
+                
+                nvert1 = obj.nvert;
+                nvert1 = nvert1+1;
+                obj.adjstor(1,newvert(toleft)) = -nvert1;
+                obj.adjstor(2,newvert(~toleft)) = -nvert1;
+                obj.vert{nvert1} = newvert;
+                
+            end
+        end    
+            
+        
         function obj = cleardata(obj)
             obj.hasdata = false;
             obj.datastor = [];
         end
         
-        [obj,ifclosed] = sort(obj)
+        [obj,info] = sort(obj)
         [rn,dn,d2n,dist,tn,ichn] = nearest(obj,ref,ich,x,u)
         obj = reverse(obj)
         rmin = min(obj)
         rmax = max(obj)
         whts = whts(obj)
+        wts = weights(obj)
         rnorm = normals(obj)
         onesmat = onesmat(obj)
         rnormonesmat = normonesmat(obj)
         df = diff(obj,f,ndim)
         plot(obj,varargin)
+        plot3(obj,idata,varargin)
         quiver(obj,varargin)
         scatter(obj,varargin)
         tau = taus(obj)
         obj = refine(obj,varargin)
         a = area(obj)
         s = arclength(obj)
+        rflag = datares(obj,opts)
         [rc,dc,d2c] = exps(obj)
         ier = checkadjinfo(obj)
+        [inds,adjs,info] = sortinfo(obj)
+        [re,taue] = chunkends(obj,ich)
     end
     methods(Static)
-        obj = chunkfunc(fcurve,varargin)
+        obj = chunkerfunc(fcurve,varargin)
     end
 end

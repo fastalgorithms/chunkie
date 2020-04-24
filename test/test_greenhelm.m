@@ -15,7 +15,7 @@ pref = [];
 pref.k = 16;
 narms = 5;
 amp = 0.5;
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
 % sources
@@ -79,9 +79,9 @@ utarg = kernmatstarg*strengths;
 opts.usesmooth=false;
 opts.verb=false;
 opts.quadkgparams = {'RelTol',1.0e-13,'AbsTol',1.0e-13};
-start=tic; Du = chunkerintkern(chnkr,kernd,opdims,densu,targets,opts); 
+start=tic; Du = chunkerkerneval(chnkr,kernd,densu,targets,opts); 
 toc(start)
-start=tic; Sun = chunkerintkern(chnkr,kerns,opdims,densun,targets,opts); 
+start=tic; Sun = chunkerkerneval(chnkr,kerns,densun,targets,opts); 
 toc(start)
 
 utarg2 = Sun-Du;
@@ -91,4 +91,6 @@ utarg2 = Sun-Du;
 relerr = norm(utarg-utarg2,'fro')/norm(utarg,'fro');
 
 fprintf('relative frobenius error %5.2e\n',relerr);
+
+assert(relerr < 1e-11);
 

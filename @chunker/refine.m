@@ -1,11 +1,19 @@
 function chnkr = refine(chnkr,opts)
-%CHUNKREFINE refine the chunks structure according to any of a number of
-% rules. This routine takes the chnkr to be resolved, i.e. the underlying
-% curve is given to be exactly the chnkr.
+%REFINE refine the chunker object according to any of a number of
+% rules. This routine takes the chunker object to be *the domain* 
+% i.e. starting with an under-resolved chunker representation of some 
+% domain, you will not obtain a better approximation of that domain
+% by refining the chunker in this way.
+%
+% Syntax: chnkr = refine(chnkr,opts)
 %
 % Input:
 %   chnkr - chunker object
-%   opts - options structure
+% Optional input:
+%   opts - options structure (default values)
+%       opts.splitchunks = list of chunks to split ([]), helpful for 
+%                           refining chunks where a function is not 
+%                           resolved
 %       opts.nchmax = maximum number of chunks on refined chunker
 %                   (10*chnkr.nch)
 %       opts.lvlr = level restriction flag ('a'), if 'a', enforce that no
@@ -18,18 +26,21 @@ function chnkr = refine(chnkr,opts)
 %       opts.lvlrfac = (2.0) factor for enforcing level restriction
 %       opts.maxchunklen = maximum chunk length (Inf). enforce that no
 %                   chunk is larger than this maximum length
-%       opts.farfac = enforce that for each chunk, any non-adjacent 
-%                   chunk is closer than farfac*chunklength (Inf)
-%                   NOTE: a value of 0.5 would be like ensuring that 
-%                   the level restriction holds for near intersecting 
-%                   pieces of boundary
 %       opts.nover = oversample boundary nover times (0)
 %       opts.maxiter_lvlr = number of iterations allowed when attempting
 %                           level restriction (1000)
 %
-% TODO implement farfac option
+% Output:
+%   chnkr - modified chunker object
 %
+% Examples:
+%   opts = []; opts.lvlr = 'a'; opts.nover = 1;
+%   %this will enforce level restriction on the curve and oversample once
+%   chnkr = refine(chnkr,opts);
 %
+% see also CHUNKERFUNC, CHUNKPOLY, SPLIT
+
+% author: Travis Askham (askhamwhat@gmail.com)
 
 if nargin < 2
     opts = [];
@@ -38,8 +49,8 @@ end
 lvlr = 'a';
 lvlrfac = 2.0;
 maxchunklen = Inf;
-farfac = Inf;
 nover = 0;
+splitchunks = [];
 
 maxiter_lvlr=1000;
 maxiter_maxlen=1000;
@@ -49,29 +60,69 @@ nchmax = chnkr.nchmax;
 if isfield(opts,'lvlr'); lvlr = opts.lvlr; end
 if isfield(opts,'lvlrfac'); lvlrfac = opts.lvlrfac; end
 if isfield(opts,'maxchunklen'); maxchunklen = opts.maxchunklen; end
-if isfield(opts,'farfac'); farfac = opts.farfac; end
 if isfield(opts,'nchmax'); nchmax = opts.nchmax; end
 if isfield(opts,'nover'); nover= opts.nover; end
+if isfield(opts,'splitchunks'); splitchunks = opts.splitchunks; end
 
-
-if farfac < Inf
-    warning('far-field refinement not implemented')
-end
 
 nch = chnkr.nch;
 k = chnkr.k;
 dim = chnkr.dim;
+vert = chnkr.vert;
 
 % compute lengths of chunks at start and update along the way
 
 nchlen = min(2*nch,nchmax);
 chunklens = zeros(nchlen,1);
-ws = whts(chnkr);
+ws = weights(chnkr);
 chunklens(1:nch) = sum(ws,1);
 
 % 
 
 [x,w,u] = lege.exps(k);
+
+
+% splitting type
+
+stype = 'a';
+if strcmpi(lvlr,'t')
+    stype = 't';
+end
+
+
+% chunks told to split
+
+for i = 1:length(splitchunks)
+    ii = splitchunks(i);
+
+% split chunk ii now, and recalculate nodes, d, etc
+    if (chnkr.nch + 1 > nchmax)
+        error('too many chunks')
+    end
+
+    chnkr = split(chnkr,ii,[],x,w,u,stype);
+
+    % update chunklens 
+
+    nch = chnkr.nch;
+
+    if (nch > length(chunklens))
+        chunklens = resizechunklens(chunklens,nchmax);
+    end
+
+    di = chnkr.dstor(:,:,ii);
+    hi = chnkr.hstor(ii);
+    dnch = chnkr.dstor(:,:,nch);
+    hnch = chnkr.hstor(nch);
+
+    dsdti = sqrt(sum(di.^2,1))*hi;
+    dsdtnch = sqrt(sum(dnch.^2,1))*hnch;
+
+    chunklens(ii) = dot(dsdti,w);
+    chunklens(nch) = dot(dsdtnch,w);
+
+end    
+
 
 % maximum chunklength
 
@@ -95,7 +146,7 @@ if maxchunklen < Inf
                     error('too many chunks')
                 end
 
-                chnkr = split(chnkr,i,[],x,w,u);
+                chnkr = split(chnkr,i,[],x,w,u,stype);
 
                 % update chunklens 
                 
@@ -110,8 +161,8 @@ if maxchunklen < Inf
                 dnch = chnkr.dstor(:,:,nch);
                 hnch = chnkr.hstor(nch);
 
-                dsdti = sum(di.^2,1)*hi;
-                dsdtnch = sum(dnch.^2,1)*hnch;
+                dsdti = sqrt(sum(di.^2,1))*hi;
+                dsdtnch = sqrt(sum(dnch.^2,1))*hnch;
 
                 chunklens(i) = dot(dsdti,w);
                 chunklens(nch) = dot(dsdtnch,w);
@@ -150,6 +201,14 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
                 if (i2 > 0)
                     rl2 = chnkr.h(i2);
                 end
+                if (i1 < 0)
+                    % meets at vertex (parameter space ref not recommended)
+                    rl1 = min(chnkr.h(vert{-i1}));
+                end
+                if (i2 < 0)
+                    rl2 = min(chnkr.h(vert{-i2}));
+                end
+                    
             else
 
                 rlself = chunklens(i);
@@ -162,6 +221,14 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
                 end
                 if (i2 > 0)
                     rl2 = chunklens(i2);
+                end
+                if (i1 < 0)
+                    rl1 = min(chunklens(vert{-i1}));
+                end
+                if (i2 < 0)
+                    i2
+                    vert{-i2}
+                    rl2 = min(chunklens(vert{-i2}));
                 end
             end
 
@@ -178,7 +245,7 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
                     error('too many chunks')
                 end
 
-                chnkr = split(chnkr,i,[],x,w,u,lvlr);
+                chnkr = split(chnkr,i,[],x,w,u,stype);
 
                 % update chunklens 
 
@@ -193,8 +260,8 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
                 dnch = chnkr.dstor(:,:,nch);
                 hnch = chnkr.hstor(nch);
 
-                dsdti = sum(di.^2,1)*hi;
-                dsdtnch = sum(dnch.^2,1)*hnch;
+                dsdti = sqrt(sum(di.^2,1))*hi;
+                dsdtnch = sqrt(sum(dnch.^2,1))*hnch;
 
                 chunklens(i) = dot(dsdti,w);
                 chunklens(nch) = dot(dsdtnch,w);
@@ -213,11 +280,6 @@ end
 
 
 % oversample 
-
-stype = 'a';
-if strcmpi(lvlr,'t')
-    stype = 't';
-end
 
 for ijk = 1:nover
 
@@ -245,8 +307,8 @@ for ijk = 1:nover
         dnch = chnkr.dstor(:,:,nch);
         hnch = chnkr.hstor(nch);
 
-        dsdti = sum(di.^2,1)*hi;
-        dsdtnch = sum(dnch.^2,1)*hnch;
+        dsdti = sqrt(sum(di.^2,1))*hi;
+        dsdtnch = sqrt(sum(dnch.^2,1))*hnch;
 
         chunklens(i) = dot(dsdti,w);
         chunklens(nch) = dot(dsdtnch,w);

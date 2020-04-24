@@ -1,5 +1,5 @@
 
-%TEST_CHUNKMAT
+%TEST_CHUNKERMAT
 %
 % test the matrix builder and do a basic solve
 
@@ -15,7 +15,7 @@ pref = [];
 pref.k = 30;
 narms = 3;
 amp = 0.25;
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
@@ -72,7 +72,7 @@ utarg = kernmatstarg*strengths;
 % build laplace dirichlet matrix
 
 fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
-start = tic; D = chunkmat(chnkr,fkern);
+start = tic; D = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -97,16 +97,18 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 opts.usesmooth=false;
 opts.verb=false;
 opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
-start=tic; Dsol = chunkerintkern(chnkr,fkern,sol2,targets,opts); 
+start=tic; Dsol = chunkerkerneval(chnkr,fkern,sol2,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
 %
 
-wchnkr = whts(chnkr);
+wchnkr = weights(chnkr);
 
 relerr = norm(utarg-Dsol,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
+
+assert(relerr < 1e-10,'low precision in cunkmat test at target');
 

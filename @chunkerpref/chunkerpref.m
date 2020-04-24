@@ -7,6 +7,7 @@ classdef chunkerpref
         k
         dim
         nchstor
+        verttol
     end
     
     methods
@@ -16,7 +17,7 @@ classdef chunkerpref
 
             assert(nargin <= 1,'number of arguments must be 0 or 1');
             defpref = chunkerpref.defaultprefs();
-            if nargin < 1
+            if nargin < 1 || isempty(pref)
                 pref = defpref;
             end
             assert(or(isstruct(pref),isa(pref,'chunkerpref')), ...
@@ -45,6 +46,7 @@ classdef chunkerpref
             defpref.k = 16;
             defpref.dim = 2;
             defpref.nchstor = 4;
+            defpref.verttol = 1e-12;
         end
     end
 end

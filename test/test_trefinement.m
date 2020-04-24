@@ -22,7 +22,7 @@ amp = 0.25;
 % form curve without strict enforcement of level restriction
 % in h
 
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 fprintf('%5.2e s : time to build geo\n',t1)
 fprintf('originally, nch = %d\n',chnkr.nch)

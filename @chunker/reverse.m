@@ -1,6 +1,20 @@
 function obj = reverse(obj)
 %REVERSE reverses the orientation of the chunker object
 %
+% Syntax: chnkr = reverse(chnkr)
+%
+% Input:
+%   chnkr - chunker object
+%
+% Output:
+%   chnkr - modified chunker object
+%
+% Examples:
+%   chnkr = reverse(chnkr)
+%
+% see also SORT
+
+% author: Travis Askham (askhamwhat@gmail.com)
 
 k = obj.k;
 obj.r = obj.r(:,k:-1:1,:);

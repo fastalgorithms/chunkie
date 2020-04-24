@@ -1,4 +1,4 @@
-function submat = buildmat(chnkr,kern,opdims,i,j,whts)
+function submat = buildmat(chnkr,kern,opdims,i,j,wts)
 %CHNK.QUADSMOOTH.BUILDMAT build matrix for far interactions with this kernel
 % assuming that the smooth rule is sufficient
 % 
@@ -12,7 +12,7 @@ if nargin < 5
     j = 1:chnkr.nch;
 end
 if nargin < 6
-    [~,whts] = lege.exps(chnkr.k);
+    [~,wts] = lege.exps(chnkr.k);
 end
 
 % grab specific boundary data
@@ -34,7 +34,7 @@ taus = bsxfun(@rdivide,ds,dsnrms);
 dtnrms = sqrt(sum(abs(dt).^2,1));
 taut = bsxfun(@rdivide,dt,dtnrms);
 
-ws = kron(hs(:),whts(:));
+ws = kron(hs(:),wts(:));
 
 dsdt = dsnrms(:).*ws;
 

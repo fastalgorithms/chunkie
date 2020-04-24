@@ -1,5 +1,5 @@
-function in = chunkerin(chnkr,pts,opts)
-%CHUNKERIN returns an array indicating whether each point in
+function in = chunkerinterior(chnkr,pts,opts)
+%CHUNKERINTERIOR returns an array indicating whether each point in
 % pts is inside the domain
 %
 % TODO: faster algorithm (smooth rule + compare normal at nearest point)
@@ -29,7 +29,7 @@ dens1 = ones(chnkr.k,chnkr.nch);
 opdims = [1 1];
 
 opts.usesmooth=true;
-d1 = chunkerintkern(chnkr,kernd,opdims,dens1,pts,opts); 
+d1 = chunkerkerneval(chnkr,kernd,dens1,pts,opts); 
 
 eps = opts.gausseps;
 smoothworks = or(abs(d1) < eps,abs(d1+1) < eps);
@@ -42,7 +42,7 @@ end
 ptsfail = pts(:,~smoothworks);
 if opts.verb; fprintf('npts adaptive %d\n',nnz(~smoothworks)); end
 opts.usesmooth=false;
-d12 = chunkerintkern(chnkr,kernd,opdims,dens1,ptsfail,opts); 
+d12 = chunkerkerneval(chnkr,kernd,dens1,ptsfail,opts); 
 
 d1(~smoothworks) = d12;
 

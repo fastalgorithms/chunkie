@@ -1,59 +1,44 @@
-function [obj,ifclosed] = sort(obj)
+function [chnkr,info] = sort(chnkr)
 %SORT sort the chunker object so that adjacent chunks have sequential 
 % indices
 % 
+% Syntax: [chnkr,info] = sort(chnkr)
+%
+% Input:
+%   chnkr - chunker object
+%
+% Output:
+%   chnkr - the sorted chunker
+%   info - adjacency info structure
+%       info.ncomp - number of curve components detected
+%       info.nchs - number of chunks on each component
+%       info.ifclosed - whether/or not each detected component is closed
+%       info.ier - error flag
+%           ier = 1, bad adj info, different number of left and right ends
+%           ier = 2, bad adj info, missed/doubled chunks found
+%
+% Examples:
+%   chnkr = sort(chnkr)
+%   [chnkr,info] = sort(chnkr)
+%
+% see also SORTINFO
 
-ileft = find(obj.adj(1,:) < 1);
-iright = find(obj.adj(2,:) < 1);
+% author: Travis Askham (askhamwhat@gmail.com)
 
-assert(length(ileft) <= 1,...
-    'found more than one left end');
-assert(length(iright) <= 1,...
-    'found more than one right end');
-
-ifclosed=true;
-icurrent = 1;
-
-if or(length(ileft) == 1,length(iright)==1)
-    assert(and(length(iright)==1,length(ileft)==1),'chunker has one free end');
-    icurrent = ileft;
-    ifclosed=false;
-end
-
-adj2 = obj.adj(2,:);
-inds = 1:obj.nch;
-for i = 1:obj.nch
-    inds(i) = icurrent;
-    icurrent = adj2(icurrent);
-end
-
-assert(all(inds >= 1),'problem with found chunk indices');
-if (length(unique(inds)) ~= length(inds))
-    warning('sort behavior ill defined for chunkers with disjoint parts');
-end
+[inds,adjs,info] = sortinfo(chnkr);
 
 % reorder
 
-obj.r = obj.r(:,:,inds);
-obj.d = obj.d(:,:,inds);
-obj.d2 = obj.d2(:,:,inds);
-obj.h = obj.h(inds);
+chnkr.r = chnkr.r(:,:,inds);
+chnkr.d = chnkr.d(:,:,inds);
+chnkr.d2 = chnkr.d2(:,:,inds);
+chnkr.h = chnkr.h(inds);
 
-if obj.hasdata
-    obj.data = obj.data(:,:,inds);
+if chnkr.hasdata
+    chnkr.data = chnkr.data(:,:,inds);
 end
 
-inds = 1:obj.nch;
-obj.adj(1,:) = inds-1;
-obj.adj(2,:) = inds+1;
-
-obj.adj(1,1) = obj.nch;
-obj.adj(2,obj.nch) = 1;
-
-if ~ifclosed
-    obj.adj(1,1) = -1;
-    obj.adj(2,obj.nch) = -1;
-end
+chnkr.adj = adjs;
 
     
 end

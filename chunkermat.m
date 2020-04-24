@@ -1,6 +1,10 @@
-function [sysmat] = chunkmat(chnkr,kern,opts)
-%CHUNKMAT build matrix for given kernel and chunker description of 
-% boundary. This is a wrapper for various quadrature routines
+function [sysmat] = chunkermat(chnkr,kern,opts)
+%CHUNKERMAT build matrix for given kernel and chunker description of 
+% boundary. This is a wrapper for various quadrature routines. Optionally,
+% return only those interactions which do not use the smooth integration
+% rule in the sparse matrix format.
+%
+% Syntax: sysmat = chunkermat(chnkr,kern,opts)
 %
 % Input:
 %   chnkr - chunker object describing boundary
@@ -8,6 +12,8 @@ function [sysmat] = chunkmat(chnkr,kern,opts)
 %           accepting input of the form kern(s,t,taus,taut), where s and t
 %           are the source and target locations and taus and taut are the 
 %           unit tangent at the source and target locations.
+%
+% Optional input:
 %   opts  - options structure. available options (default settings)
 %           opts.quad = string ('ggqlog'), specify quadrature routine to 
 %                       use. 
@@ -29,6 +35,11 @@ function [sysmat] = chunkmat(chnkr,kern,opts)
 % Output:
 %   sysmat - the system matrix for convolution of the kernel defined by
 %            kern with a density on the domain defined by chnkr
+%
+% Examples:
+%   sysmat = chunkermat(chnkr,kern); % standard options
+%   sysmat = chunkermat(chnkr,kern,opts);
+%
 
 if length(chnkr) > 1
     chnkr = chunkermerge(chnkr);
@@ -101,7 +112,7 @@ else
 end
 	 
 if l2scale
-    wts = whts(chnkr); wts = sqrt(wts(:)); wts = wts.';
+    wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
     wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
     wtscol = wtscol.';
     wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);

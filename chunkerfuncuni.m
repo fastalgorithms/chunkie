@@ -1,5 +1,5 @@
-function chnkr = chunkfuncuni(fcurve,cparams,pref)
-%CHUNKFUNCUNI
+function chnkr = chunkerfuncuni(fcurve,cparams,pref)
+%CHUNKERFUNCUNI
 %
 %	cparams = curve parameters
 %

@@ -23,7 +23,7 @@ if nargin > 1
     end
 end
 
-if (stab)
+if (or(stab,k<=200))
     if nargout > 1
         [x,w] = lege.rts_stab(k);
     else

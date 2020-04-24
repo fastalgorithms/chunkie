@@ -52,9 +52,9 @@ chnkr = chunkermerge(chnkrs);
 
 figure(1)
 clf
-plot(chnkrs,'-b')
+plot(chnkr,'-b')
 hold on
-quiver(chnkrs,'r')
+quiver(chnkr,'r')
 axis equal
 
 %
@@ -68,8 +68,7 @@ fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'C',1);
 opdims(1) = 1; opdims(2) = 1;
 
 opts = [];
-opts.quadorder = 30;
-start = tic; sysmat = chunkmat(chnkr,fkern,opts);
+start = tic; sysmat = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -116,7 +115,7 @@ fprintf('%5.2e s : time to oversample boundary\n',t1)
 
 %
 
-start = tic; in = chunkerinflam(chnkr,targets); t1 = toc(start);
+start = tic; in = chunkerinteriorflam(chnkr,targets); t1 = toc(start);
 out = ~in;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
@@ -161,11 +160,11 @@ zztarg(out) = uin;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
 hold on
-plot(chnkrs,'g')
+plot(chnkr,'g')
 axis equal
 axis tight
 colormap(redblue)
-caxis([-maxu,maxu])
+caxis([-maxu/5,maxu/5])
 title('$u_{in}$','Interpreter','latex','FontSize',24)
 
 
@@ -175,11 +174,11 @@ zztarg(out) = uscat;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
 hold on
-plot(chnkrs,'g')
+plot(chnkr,'g')
 axis equal
 axis tight
 colormap(redblue)
-caxis([-maxu,maxu])
+caxis([-maxu/5,maxu/5])
 title('$u_{scat}$','Interpreter','latex','FontSize',24)
 
 subplot(1,3,3)
@@ -188,10 +187,10 @@ zztarg(out) = utot;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
 hold on
-plot(chnkrs,'g')
+plot(chnkr,'g')
 axis equal
 axis tight
 colormap(redblue)
-caxis([-maxu,maxu])
+caxis([-maxu/5,maxu/5])
 title('$u_{tot}$','Interpreter','latex','FontSize',24)
 

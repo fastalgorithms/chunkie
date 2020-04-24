@@ -13,7 +13,7 @@ d = chnkr.d;
 d2 = chnkr.d2;
 h = chnkr.h;
 
-[~,whts,u] = lege.exps(k);
+[~,wts,u] = lege.exps(k);
 
 if strcmpi(type,'log')
 
@@ -21,7 +21,7 @@ if strcmpi(type,'log')
     [~,i] = min(abs(qavail-k));
     assert(qavail(i) == k,'order %d not found, consider using order %d chunks', ...
         k,qavail(i));
-    [xs1,whts1,xs0,whts0] = chnk.quadggq.getlogquad(k);
+    [xs1,wts1,xs0,wts0] = chnk.quadggq.getlogquad(k);
 else
     error('type not available')
 end
@@ -41,7 +41,7 @@ for j = 1:k
 end
 
 % do smooth weight for all
-sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims,1:nch,1:nch,whts);
+sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims,1:nch,1:nch,wts);
 
 % overwrite nbor and self
 for j = 1:nch
@@ -55,7 +55,7 @@ for j = 1:nch
     % neighbors
     
     submat = chnk.quadggq.nearbuildmat(r,d,h,ibefore,j, ...
-        kern,opdims,u,xs1,whts1,ainterp1);
+        kern,opdims,u,xs1,wts1,ainterp1);
     
     imat = 1 + (ibefore-1)*k*opdims(1);
     imatend = ibefore*k*opdims(1);
@@ -63,7 +63,7 @@ for j = 1:nch
     sysmat(imat:imatend,jmat:jmatend) = submat;
     
     submat = chnk.quadggq.nearbuildmat(r,d,h,iafter,j, ...
-        kern,opdims,u,xs1,whts1,ainterp1);
+        kern,opdims,u,xs1,wts1,ainterp1);
     
     imat = 1 + (iafter-1)*k*opdims(1);
     imatend = iafter*k*opdims(1);
@@ -73,7 +73,7 @@ for j = 1:nch
     % self
     
     submat = chnk.quadggq.diagbuildmat(r,d,h,j,kern,opdims,...
-        u,xs0,whts0,ainterps0);
+        u,xs0,wts0,ainterps0);
 
     imat = 1 + (j-1)*k*opdims(1);
     imatend = j*k*opdims(1);

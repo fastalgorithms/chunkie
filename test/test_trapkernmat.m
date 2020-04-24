@@ -107,7 +107,7 @@ fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
 %
 
-wchnkr = whts(trap);
+wchnkr = weights(trap);
 
 relerr = norm(utarg-Dsol,'fro')/(sqrt(trap.npt)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));

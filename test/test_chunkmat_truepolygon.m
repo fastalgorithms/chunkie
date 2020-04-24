@@ -1,5 +1,5 @@
 
-%TEST_CHUNKMAT_TRUE_POLYGON
+%TEST_CHUNKERMAT_TRUE_POLYGON
 %
 % test the matrix builder and do a basic solve for a true polygonal
 % domain. This is the Neumann problem...
@@ -82,7 +82,7 @@ utarg = kernmatstarg*strengths;
 
 opts = [];
 opts.l2scale = true;
-start = tic; Sprime = chunkmat(chnkr,kernsprime,opts);
+start = tic; Sprime = chunkermat(chnkr,kernsprime,opts);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -115,7 +115,7 @@ end
 opts.usesmooth=false;
 opts.verb=false;
 opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
-start=tic; Ssol = chunkerintkern(chnkr,kerns,sol2,targets,opts); 
+start=tic; Ssol = chunkerkerneval(chnkr,kerns,sol2,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 

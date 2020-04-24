@@ -25,7 +25,7 @@ pref = [];
 pref.k = 16;
 narms =3;
 amp = 0.25;
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
@@ -54,7 +54,7 @@ opdims(1) = 1; opdims(2) = 1;
 intparams.intorder = chnkr.k;
 opts = [];
 opts.quadorder = 30;
-start = tic; sysmat = chunkmat(chnkr,fkern,opts);
+start = tic; sysmat = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble Jt matrix\n',t1)
@@ -73,7 +73,7 @@ fprintf('%5.2e s : time for dense gmres to get Jt\n',t1)
 % intparams.intorder = chnkr.k;
 % opts = [];
 % opts.quadorder = 30;
-% start = tic; sysmat = chunkmat(chnkr,fkern,opts);
+% start = tic; sysmat = chunkermat(chnkr,fkern,opts);
 % t1 = toc(start);
 % 
 % fprintf('%5.2e s : time to assemble Jn matrix\n',t1)
@@ -111,7 +111,7 @@ fprintf('%5.2e s : time to oversample boundary\n',t1)
 
 %
 
-start = tic; in = chunkerinflam(chnkr,targets); t1 = toc(start);
+start = tic; in = chunkerinteriorflam(chnkr,targets); t1 = toc(start);
 out = ~in;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)

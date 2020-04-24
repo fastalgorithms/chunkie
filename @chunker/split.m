@@ -1,9 +1,36 @@
-
 function chnkr = split(chnkr,ich,opts,x,w,u,stype)
 %SPLIT this routine takes the list of all chunks and splits one in
-%      half with respect to arclength.
-%   Input
-%        ich - the chunk number to split
+%      half with respect to either arclength or parameter space
+%       (this routine is not necessarily designed to be user-callable,
+%       though it is fairly simple)
+%
+% Syntax: chnkr = split(chnkr,ich,opts,x,w,u,stype)
+%
+% Input:
+%   chnkr - the chunker object
+%   ich - the chunk number to split
+%
+% Optional input:
+%   opts - options structure
+%       opts.thresh = threshold for newton (1e-10)
+%       opts.nitermax = maximum iters for newton (1000)
+%   x - precomputed Legendre nodes of order chnkr.k
+%   w - precomputed Legendre weights
+%   u - precomputed vals at legendre nodes -> coeffs matrix
+%   stype - type of split ('a'), 'a' arclength split, 
+%               't' parameter space split.
+%
+% Output:
+%   chnkr - modified chunker object
+%
+% Examples:
+%   [x,w,u] = lege.exps(chnkr.k); % precompute relevant quantities
+%   chnkr = split(chnkr,10,[],x,w,u,'a')
+%   chnkr = split(chnkr,10); % routine computes x,w,u
+%
+% see also REFINE
+
+% author: Travis Askham (askhamwhat@gmail.com)
 
 stype1 = 'a';
 if nargin >= 7
@@ -121,6 +148,10 @@ chnkr.adjstor(1,nch+1)=ich;
 chnkr.adjstor(2,nch+1)=i2;
 if i2 > 0
     chnkr.adjstor(1,i2)=nch+1;
+end
+if i2 < 0
+    ii = (chnkr.vert{-i2} == ich);
+    chnkr.vert{-i2}(ii) = nch+1;
 end
 
 if chnkr.hasdata

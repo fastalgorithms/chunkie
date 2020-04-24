@@ -1,6 +1,21 @@
 function rnorms = normals(chnkr)
+%NORMALS compute normal vectors along boundary of 2D curve
+% 
+% Syntax: rnorms = normals(chnkr)
+%
+% Input:
+%   chnkr - chunker object
+%
+% Output:
+%   rnorms - normals along boundary of chunker curve
+%
+% Examples:
+%   rnorms = normals(chnkr)
+%
 
-assert(chnkr.dim == 2,'normals only well-defined for dim=2');
+% author: Travis Askham (askhamwhat@gmail.com)
+
+assert(chnkr.dim == 2,'normals only implemented for dim=2');
 k = chnkr.k;
 nch = chnkr.nch;
 d = chnkr.d;

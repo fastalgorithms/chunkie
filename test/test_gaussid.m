@@ -17,7 +17,7 @@ pref = [];
 pref.k = 16;
 narms = 5;
 amp = 0.5;
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
 
@@ -42,7 +42,7 @@ targs(1,:) = xx(:); targs(2,:) = yy(:);
 
 fprintf('computing Gauss I.D. with smooth rule...\n');
 opts.usesmooth=true;
-start=tic; d1 = chunkerintkern(chnkr,kernd,opdims,dens1,targs,opts); 
+start=tic; d1 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
 toc(start)
 
 if doadap
@@ -51,7 +51,7 @@ if doadap
     opts.usesmooth=false;
     opts.verb=false;
     opts.quadkgparams = {'RelTol',1.0e-7,'AbsTol',1.0e-7};
-    start=tic; d12 = chunkerintkern(chnkr,kernd,opdims,dens1,targs,opts); 
+    start=tic; d12 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
     toc(start)
     dd2 = reshape(d12,size(xx));
 end

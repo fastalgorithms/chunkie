@@ -1,33 +1,56 @@
-function [rn,dn,d2n,dist,tn,ichn] = nearest(chnkr,ref,ich,x,u)
+function [rn,dn,d2n,dist,tn,ichn] = nearest(chnkr,ref,ich,x,u,opts)
 %NEAREST Find nearest point on chunker for given reference point. 
-%If ich provided, only checks chunks in ich. If not, checks all chunks.
+% If ich provided, only checks chunks in ich. If not, checks all chunks.
 %
-%         k - number of points per chunk
-%         xnodes - the k Legendre points
-%         u - the matrix created by legewhts mapping points to coefs
-%         chunk - points on the chunk at legendre nodes
-%         der - derivatices w.r.t. "some" parameterization
-%         der2 - 2nd derivatives w.r.t. the same parameterization
-%         h - normalizing factor for the parameterization
-%         targ - the distance from chunk ich to targ is desired
+% Syntax: [rn,dn,d2n,dist,tn,ichn] = nearest(chnkr,ref,ich,x,u,opts)
+%
+% Input:
+%   chnkr - chunker object
+%   ref - the reference point whose distance to curve is being computed
+%
+% Optional input:
+%   ich - vector of chunks to check (instead of checking all)
+%   x - precomputed Legendre nodes of order chnkr.k
+%   u - the matrix created by lege.exps mapping points to coefs for order
+%       chnkr.k
+%   opts - options structure
+%       opts.thresh - threshold for newton (1e-9)
+%       opts.nitermax - maximum iterations for newton (200)
+%
+% Output:
+%   rn - nearest point
+%   dn - derivative at nearest point
+%   d2n - second derivative at nearest point
+%   dist - distance
+%   tn - point in [-1,1] on ichn
+%   ichn - chunk containing nearest point
+%
+% Examples:
+%   % check all chunks for nearest point
+%   [rn,~,~,dist] = nearest(chnkr,ref);
+%   % only check some chunks
+%   ich = 3:10;
+%   rn = nearest(chnkr,ref,ich);
+%
 
-%       output:
-%         dist - the distance from the chunk to targ
-%         xy - the point lying on the chunk that is the closest, this
-%             point is determined by newton
-%         xy_norm - the outward normal, i.e. into the unbounded domain,
-%             assuming that the chunk is parameterized counter-clockwise
+% author: Travis Askham (askhamwhat@gmail.com)
+
+maxnewt = 200;
+thresh = 1.0d-9;
 
 
-%       find the closest legendre node
+if nargin < 5 || or(isempty(x),isempty(u))
+    [x,~,u] = lege.exps(chnkr.k);
+end
+if nargin < 6
+    opts = [];
+end
 
-
-
-%        ifwhts = 0
-%        call legewhts(k, xnodes, whts, ifwhts)
-
-if nargin < 4
-    [x,w,u] = lege.exps(chnkr.k);
+if isfield(opts,'nitermax')
+    maxnewt = opts.nitermax;
+end
+if isfield(opts,'thresh')
+    thresh = opts.thresh;
 end
 
 dist = Inf;
@@ -39,10 +62,10 @@ end
 for i = 1:length(ich)
     % grab chunk data
     ii = ich(i);
-    r = chnkr.r(:,:,ii);
-    d = chnkr.d(:,:,ii);
-    d2 = chnkr.d2(:,:,ii);
-    h = chnkr.h(ii);
+    r = chnkr.rstor(:,:,ii);
+    d = chnkr.dstor(:,:,ii);
+    d2 = chnkr.d2stor(:,:,ii);
+    h = chnkr.hstor(ii);
     rc = u*(r.');
     dc = u*(d.');
     d2c = u*(d2.');
@@ -79,9 +102,6 @@ for i = 1:length(ich)
     % otherwise run newton
 
     t0 = tt;
-    maxnewt = 200;
-    thresh = 1.0d-10;
-    thresh = 1.0d-9;
     iextra = 3;
     ifend = 0;
 

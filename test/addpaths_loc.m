@@ -1,4 +1,4 @@
 function addpaths_loc()
 
-addpath('../');
-addpath(genpath('../FLAM'))
+addpath('../../chunkie');
+addpath(genpath('../../chunkie/FLAM'))

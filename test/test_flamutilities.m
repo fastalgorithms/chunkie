@@ -15,10 +15,10 @@ pref = [];
 pref.k = 30;
 narms = 3;
 amp = 0.25;
-start = tic; chnkr = chunkfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
-wts = whts(chnkr);
+wts = weights(chnkr);
 
 fprintf('%5.2e s : time to build geo\n',t1)
 
@@ -71,7 +71,7 @@ utarg = kernmatstarg*strengths;
 % build laplace dirichlet matrix
 
 fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
-start = tic; D = chunkmat(chnkr,fkern);
+start = tic; D = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -81,7 +81,7 @@ sys = -0.5*eye(chnkr.k*chnkr.nch) + D;
 % build sparse tridiag part 
 
 opts.nonsmoothonly = true;
-start = tic; spmat = chunkmat(chnkr,fkern,opts);
+start = tic; spmat = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to build tridiag\n',t1)
 
@@ -89,6 +89,7 @@ spmat = spmat -0.5*speye(chnkr.k*chnkr.nch);
 
 % test matrix entry evaluator
 start = tic; 
+opdims = [1 1];
 sys2 = kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,fkern,opdims,spmat);
 t1 = toc(start);
 
@@ -105,7 +106,13 @@ start = tic; F = rskelf(matfun,xflam,200,1e-14,pxyfun); t1 = toc(start);
 
 afun = @(x) rskelf_mv(F,x);
 
-fprintf('%5.2e s : time for flam compress\n',t1)
+fprintf('%5.2e s : time for flam rskelf compress\n',t1)
+
+start = tic; F2 = hifie2x(matfun,xflam,200,1e-14,pxyfun,[]); t1 = toc(start);
+
+afun = @(x) hifie_mv(F,x);
+
+fprintf('%5.2e s : time for flam hifie compress\n',t1)
 
 err2 = norm(sys2-sys,'fro')/norm(sys,'fro');
 fprintf('%5.2e   : fro error of build \n',err2)
@@ -117,8 +124,10 @@ fprintf('%5.2e s : time for dense gmres\n',t1)
 
 rhs = ubdry; rhs = rhs(:);
 start = tic; sol3 = rskelf_sv(F,rhs); t1 = toc(start);
+start = tic; sol4 = hifie_sv(F2,rhs); t2 = toc(start);
 
 fprintf('%5.2e s : time for rskelf_sv \n',t1)
+fprintf('%5.2e s : time for hifie_sv \n',t2)
 
 err = norm(sol-sol3,'fro')/norm(sol,'fro');
 
@@ -129,13 +138,13 @@ fprintf('difference between fast-direct and iterative %5.2e\n',err)
 opts.usesmooth=false;
 opts.verb=false;
 opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
-start=tic; Dsol = chunkerintkern(chnkr,fkern,sol3,targets,opts); 
+start=tic; Dsol = chunkerkerneval(chnkr,fkern,sol3,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
 %
 
-wchnkr = whts(chnkr);
+wchnkr = weights(chnkr);
 
 relerr = norm(utarg-Dsol,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
