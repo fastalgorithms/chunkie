@@ -1,8 +1,9 @@
-%TEST_GAUSSID test the routines for integrating over chunks against the
-% Gauss' identity for the double layer potential
+%CHUNKERKERNEVAL_GAUSSIDTEST test the routines for integrating over 
+% chunks against Gauss' identity for the double layer potential
 %
 % 
 
+clearvars; close all;
 seed = 8675309;
 rng(seed);
 addpaths_loc();
@@ -23,8 +24,8 @@ t1 = toc(start);
 
 % scalar function on boundary
 
-kernd = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'d');
-kerns = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'s');
+kernd = @(s,t) chnk.lap2d.kern(s,t,'d');
+kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
 
 dens1 = ones(chnkr.k,chnkr.nch);
 
@@ -45,6 +46,8 @@ opts.usesmooth=true;
 start=tic; d1 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
 toc(start)
 
+
+
 if doadap
     fprintf( ...
       'computing Gauss I.D. with adaptive quadrature (may be slow)...\n');
@@ -53,6 +56,7 @@ if doadap
     opts.quadkgparams = {'RelTol',1.0e-7,'AbsTol',1.0e-7};
     start=tic; d12 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
     toc(start)
+    assert(all(or(abs(d12(:))<1e-6,abs(d12(:)+1)<1e-6)));
     dd2 = reshape(d12,size(xx));
 end
 

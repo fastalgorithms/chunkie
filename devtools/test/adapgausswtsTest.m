@@ -1,8 +1,9 @@
 
-%TEST_ADAPGAUSSWTS
+%ADAPGAUSSWTSTEST
 %
 % define geometry and test adaptive integration routine
 
+clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
@@ -55,8 +56,8 @@ targets = targets.*repmat(rand(1,nt),2,1);
 
 % build layer potential matrix with GGQ routine for comparison
 
-%fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'S');
-fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'D');
+%fkern = @(s,t) chnk.lap2d.kern(s,t,'S');
+fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'D');
 start = tic; mat1 = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
@@ -77,7 +78,7 @@ ich = chnkr.adj(1,j);
 opdims = zeros(2,1);
 opdims(1) = 1; opdims(2) = 1;
 
-r = chnkr.r; d = chnkr.d; h = chnkr.h;
+r = chnkr.r; d = chnkr.d; h = chnkr.h; d2 = chnkr.d2;
 k = chnkr.k; [t,w] = lege.exps(k);
 bw = lege.barywts(k);
 
@@ -86,6 +87,7 @@ k2 = max(27,k+1);
 
 rt = r(:,:,ich);
 dt = d(:,:,ich);
+d2t = d2(:,:,ich);
 dtlen = sqrt(sum(dt.^2,1));
 taut = dt./dtlen;
 
@@ -95,8 +97,8 @@ opts.eps = 1e-5;
 ntimes = 100;
 start = tic;
 for i = 1:ntimes
-    [mat,maxrecs,numints,iers] = chnk.adapgausswts(r,d,h,t,bw,j,rt,taut, ...
-        fkern,opdims,t2,w2,opts);
+    [mat,maxrecs,numints,iers] = chnk.adapgausswts(r,d,d2,h,t,bw,j, ...
+        rt,dt,d2t,fkern,opdims,t2,w2,opts);
 end
 t1 = toc(start);
 

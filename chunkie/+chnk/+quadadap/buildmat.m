@@ -43,14 +43,16 @@ end
 
 nquad0 = size(xs0,1);
 
-ainterps0 = zeros(opdims(2)*nquad0,opdims(2)*k,k);
+ainterps0kron = zeros(opdims(2)*nquad0,opdims(2)*k,k);
+ainterps0 = zeros(nquad0,k,k);
 
 temp = eye(opdims(2));
 
 for i = 1:k
     xs0j = xs0(:,i);
     ainterp0_sm = lege.matrin(k,xs0j);
-    ainterps0(:,:,i) = kron(ainterp0_sm,temp);
+    ainterps0(:,:,i) = ainterp0_sm;
+    ainterps0kron(:,:,i) = kron(ainterp0_sm,temp);
 end
 
 % do smooth weight for all
@@ -68,9 +70,8 @@ for i = 1:nch
     % neighbors
     rt = r(:,:,ibefore);
     dt = d(:,:,ibefore);
-    dtlen = sqrt(sum(d.^2,1));
-    taut = dt./dtlen;
-    submat = chnk.adapgausswts(r,d,h,t,bw,i,rt,taut, ...
+    d2t = d2(:,:,ibefore);
+    submat = chnk.adapgausswts(r,d,d2,h,t,bw,i,rt,dt,d2t, ...
         kern,opdims,t2,w2);
     
     imat = 1 + (ibefore-1)*k*opdims(1);
@@ -80,9 +81,8 @@ for i = 1:nch
     
     rt = r(:,:,iafter);
     dt = d(:,:,iafter);
-    dtlen = sqrt(sum(d.^2,1));
-    taut = dt./dtlen;
-    submat = chnk.adapgausswts(r,d,h,t,bw,i,rt,taut, ...
+    d2t = d2(:,:,iafter);
+    submat = chnk.adapgausswts(r,d,d2,h,t,bw,i,rt,dt,d2t, ...
         kern,opdims,t2,w2);
     
     imat = 1 + (iafter-1)*k*opdims(1);
@@ -92,8 +92,8 @@ for i = 1:nch
     
     % self
     
-    submat = chnk.quadggq.diagbuildmat(r,d,h,i,kern,opdims,...
-        u,xs0,wts0,ainterps0);
+    submat = chnk.quadggq.diagbuildmat(r,d,d2,h,i,kern,opdims,...
+        u,xs0,wts0,ainterps0kron,ainterps0);
 
     imat = 1 + (i-1)*k*opdims(1);
     imatend = i*k*opdims(1);
@@ -117,7 +117,7 @@ if robust
     end
     dists = sqrt(dists);
     
-    wtschnk = whts(chnkr);
+    wtschnk = weights(chnkr);
     chnklen = sum(wtschnk,1);
 
     % do adaptive quadrature for points that aren't
@@ -151,10 +151,9 @@ if robust
         
         rt = r(:,targfix);
         dt = d(:,targfix);
-        dtlen = sqrt(sum(dt.^2,1));
-        taut = dt./dtlen;
+        d2t = d2(:,targfix);
 
-        submat = chnk.adapgausswts(r,d,h,t,bw,i,rt,taut, ...
+        submat = chnk.adapgausswts(r,d,d2,h,t,bw,i,rt,dt,d2t, ...
                 kern,opdims,t2,w2);
             
         imats = bsxfun(@plus,(1:opdims(1)).',opdims(1)*(targfix(:)-1).');

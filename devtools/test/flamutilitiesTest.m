@@ -1,8 +1,9 @@
 
-%TEST_FLAMUTILITIES
+%FLAMUTILITIESTEST
 %
 % test the FLAM matrix builder and do a basic solve
 
+clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
@@ -50,27 +51,27 @@ axis equal
 
 %
 
-kerns = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'s');
+kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
 
 % eval u on bdry
 
-targs = chnkr.r; targs = reshape(targs,2,chnkr.k*chnkr.nch);
-targstau = taus(chnkr); 
-targstau = reshape(targstau,2,chnkr.k*chnkr.nch);
-
-kernmats = kerns(sources,targs,[],targstau);
+srcinfo = []; srcinfo.r = sources;
+targinfo = []; targinfo.r = chnkr.r(:,:); 
+targinfo.d = chnkr.d(:,:);
+kernmats = kerns(srcinfo,targinfo);
 ubdry = kernmats*strengths;
 
 % eval u at targets
 
-kernmatstarg = kerns(sources,targets,[],[]);
+targinfo = []; targinfo.r = targets;
+kernmatstarg = kerns(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
 %
 
 % build laplace dirichlet matrix
 
-fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
+fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
 start = tic; D = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
@@ -108,12 +109,6 @@ afun = @(x) rskelf_mv(F,x);
 
 fprintf('%5.2e s : time for flam rskelf compress\n',t1)
 
-start = tic; F2 = hifie2x(matfun,xflam,200,1e-14,pxyfun,[]); t1 = toc(start);
-
-afun = @(x) hifie_mv(F,x);
-
-fprintf('%5.2e s : time for flam hifie compress\n',t1)
-
 err2 = norm(sys2-sys,'fro')/norm(sys,'fro');
 fprintf('%5.2e   : fro error of build \n',err2)
 
@@ -124,14 +119,14 @@ fprintf('%5.2e s : time for dense gmres\n',t1)
 
 rhs = ubdry; rhs = rhs(:);
 start = tic; sol3 = rskelf_sv(F,rhs); t1 = toc(start);
-start = tic; sol4 = hifie_sv(F2,rhs); t2 = toc(start);
 
 fprintf('%5.2e s : time for rskelf_sv \n',t1)
-fprintf('%5.2e s : time for hifie_sv \n',t2)
 
 err = norm(sol-sol3,'fro')/norm(sol,'fro');
 
 fprintf('difference between fast-direct and iterative %5.2e\n',err)
+
+assert(err < 1e-10);
 
 % evaluate at targets and compare
 

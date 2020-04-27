@@ -1,13 +1,13 @@
-function fint = chunkerinteriortegralchunk_kernfcoefs(kern,opdims,rdim,fc,rci,dci,...
-    targ,targtau)
+function fint = chunkerintchunk_kernfcoefs(kern,opdims,rdim,fc, ...
+    rci,dci,d2ci,targ)
 
-fintfun = @(t) fkerneval(t,kern,fc,rci,dci,targ,targtau,opdims,rdim);
+fintfun = @(t) fkerneval(t,kern,fc,rci,dci,d2ci,targ,opdims,rdim);
 
 fint = quadgk(fintfun,-1,1);
 
 end
 
-function fvals = fkerneval(t,kern,fc,rci,dci,targ,targtau,opdims,...
+function fvals = fkerneval(t,kern,fc,rci,dci,d2ci,targ,opdims,...
     rdim)
 
 densvals = zeros(opdims(2),length(t));
@@ -19,11 +19,12 @@ end
 
 ri = lege.exev(t,rci.').';
 di = lege.exev(t,dci.').';
+d2i = lege.exev(t,d2ci.').';
 
-dsdt = sqrt(sum(abs(di).^2,1));
-taui = bsxfun(@rdivide,di,dsdt);
-
-kernmat = kern(ri,targ,taui,targtau);
+targinfo = []; targinfo.r = targ;
+srcinfo = []; srcinfo.r = ri; srcinfo.d = di; srcinfo.d2 = d2i;
+dsdt = sqrt(sum(di.^2,1));
+kernmat = kern(srcinfo,targinfo);
 kernmat = kernmat(rdim:opdims(1):end,:);
 
 kernmat = reshape(kernmat,opdims(2),length(t));

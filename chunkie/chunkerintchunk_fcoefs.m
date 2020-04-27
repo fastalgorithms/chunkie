@@ -1,6 +1,7 @@
-function fint = chunkerinteriortegralchunk_fcoefs(fc,xpci,ypci)
+function fint = chunkerintchunk_fcoefs(fc,dc)
 
-dsdtfun = @(t) sqrt(lege.exev(t,xpci).^2 + lege.exev(t,ypci).^2);
+
+dsdtfun = @(t) sqrt(sum((lege.exev(t,dc.').^2).',1));
 fintfun = @(t) lege.exev(t,fc).*dsdtfun(t);
 
 fint = quadgk(fintfun,-1,1);

@@ -1,8 +1,10 @@
 %DEMO_SCATTER
 %
-% Define a scattering problem on a starfish-shaped domain and solve
+% Define an exterior scattering problem on a starfish-shaped domain and 
+% solve
 %
 
+clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 addpaths_loc();
@@ -15,12 +17,13 @@ kvec = 10*[1;-1.5];
 
 zk = norm(kvec);
 
-%   
+% discretize domain
 
 cparams = [];
 cparams.eps = 1.0e-10;
 cparams.nover = 0;
-cparams.maxchunklen = 4.0/zk;
+cparams.maxchunklen = 4.0/zk; % setting a chunk length helps when the
+                              % frequency is known
 pref = []; 
 pref.k = 16;
 narms =5;
@@ -49,7 +52,7 @@ axis equal
 
 % build CFIE
 
-fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'c',1);
+fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'c',1);
 opdims(1) = 1; opdims(2) = 1;
 opts = [];
 start = tic; sysmat = chunkermat(chnkr,fkern,opts);

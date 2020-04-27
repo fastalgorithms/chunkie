@@ -1,10 +1,11 @@
 
-%TEST_CHUNKERFUNC
+%CHUNKERFUNCTEST
 %
 % This file tests the routine chunkerfunc on a couple of examples
 
 %
 
+clearvars; close all;
 addpaths_loc();
 cparams = [];
 cparams.eps = 1.0e-4;

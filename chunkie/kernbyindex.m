@@ -41,10 +41,13 @@ jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;
 
 ri = chnkr.r(:,iuni); rj = chnkr.r(:,juni);
 di = chnkr.d(:,iuni); dj = chnkr.d(:,juni);
-di = bsxfun(@rdivide,di,sqrt(sum(di.^2,1)));
-dj = bsxfun(@rdivide,dj,sqrt(sum(dj.^2,1)));
+d2i = chnkr.d(:,iuni); d2j = chnkr.d2(:,juni);
+srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
+targinfo = []; targinfo.r = ri; targinfo.d = di; targinfo.d2 = d2i;
+%di = bsxfun(@rdivide,di,sqrt(sum(di.^2,1)));
+%dj = bsxfun(@rdivide,dj,sqrt(sum(dj.^2,1)));
 
-matuni = kern(rj,ri,dj,di);
+matuni = kern(srcinfo,targinfo);
 
 % relevant rows and columns in matuni
 

@@ -1,7 +1,8 @@
-%TEST_CHUNKERINTERIORFLAM
+%CHUNKERINTERIORFLAMTEST
 %
 % determine points inside/outside domain reasonably fast 
 
+clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
@@ -38,17 +39,17 @@ stretch = 2*rand(1,nt);
 targets = targets.*repmat(stretch,2,1);
 
 % plot geo and sources
+% 
+% figure(1)
+% clf
+% hold on
+% scatter(sources(1,:),sources(2,:),'o')
+% scatter(targets(1,:),targets(2,:),'x')
+% plot(chnkr)
+% axis equal 
 
-figure(1)
-clf
-hold on
-scatter(sources(1,:),sources(2,:),'o')
-scatter(targets(1,:),targets(2,:),'x')
-plot(chnkr)
-axis equal 
 
-
-%%
+%
 
 targin_true = stretch <= 1;
 

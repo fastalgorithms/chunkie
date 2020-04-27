@@ -52,17 +52,17 @@ islfuni2 = (islfuni-1)*opdims(2) + mod(slf(:)-1,opdims(2))+1;
 
 % get matrix-valued entries of kernel for unique points
 
-rslf = chnkr.r(:,slfuni);
-dslf = chnkr.d(:,slfuni);
-dslf = bsxfun(@rdivide,dslf,sqrt(sum(dslf.^2,1)));
-
-Kpxy = kern(rslf,pxy,dslf,ptau);
+srcinfo = []; srcinfo.r = chnkr.r(:,slfuni);
+srcinfo.d = chnkr.d(:,slfuni); srcinfo.d2 = chnkr.d2(:,slfuni);
+targinfo = []; targinfo.r = pxy; targinfo.d = ptau; 
+targinfo.d2 = [];
+Kpxy = kern(srcinfo,targinfo);
 
 Kpxy = Kpxy(:,islfuni2);
 Kpxy = bsxfun(@times,Kpxy,whts(slfpts).');
 
 if ifaddtrans
-    Kpxy2 = kern(pxy,rslf,ptau,dslf);
+    Kpxy2 = kern(targinfo,srcinfo);
     Kpxy2 = Kpxy2(islfuni2,:);
     Kpxy2 = bsxfun(@times,Kpxy2,pw2(:).');
     Kpxy = [Kpxy; Kpxy2.'];

@@ -1,4 +1,4 @@
-%TEST_ADAPCHUNKERMAT_CLOSETOTOUCHING
+%CHUNKERMAT_QUADADAP_CLOSETOTOUCHINGTEST
 %
 % - set up two discs which are nearly touching
 % - compute the solution of an exterior Dirichlet problem using 
@@ -6,7 +6,8 @@
 % - compare accuracy using the adaptive routine to do nearby panel
 %   evaluation vs smooth rule for everything but self and neighbors
 
-addpath('../');
+clearvars; close all;
+addpaths_loc();
 iseed = 8675309;
 rng(iseed);
 
@@ -50,20 +51,19 @@ targs = [ 0.001*randn(2,1), ([-2.5;0]+0.2*randn(2,2)),([2.5;0]+0.2*randn(2,2))];
 
 %
 
-kerns = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'s');
+kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
 
 % eval u on bdry
 
-targsb = chnkr.r; targsb = reshape(targsb,2,chnkr.k*chnkr.nch);
-targsbtau = taus(chnkr); 
-targsbtau = reshape(targsbtau,2,chnkr.k*chnkr.nch);
-
-kernmats = kerns(srcs,targsb,[],targsbtau);
+srcinfo = []; srcinfo.r = srcs; targinfo = []; targinfo.r = chnkr.r(:,:);
+targinfo.d = chnkr.d(:,:);
+kernmats = kerns(srcinfo,targinfo);
 ubdry = kernmats*strengths;
 
 % eval u at targets
 
-kernmatstarg = kerns(srcs,targs,[],[]);
+targinfo = []; targinfo.r = targs;
+kernmatstarg = kerns(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
 %
@@ -72,7 +72,7 @@ utarg = kernmatstarg*strengths;
 % use adaptive routine to build matrix (self done by ggq, nbor by adaptive)
 
 eta = 1;
-fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'C',eta);
+fkern = @(s,t) chnk.lap2d.kern(s,t,'C',eta);
 
 type = 'log';
 opts = []; opts.robust = true;

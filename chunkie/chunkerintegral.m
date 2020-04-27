@@ -1,12 +1,15 @@
-function fint = chunkerinteriortegral(chnkr,f,opts)
-%CHUNKERINTERIORTEGRAL compute the integral of the function f over the chunk
+function fint = chunkerintegral(chnkr,f,opts)
+%CHUNKERINTEGRAL compute the integral of the function f over the chunk
 % geometry. 
 %
-% input:
+% Syntax: fint = chunkerintegral(chnkr,f,opts)
+%
+% Input:
 %   chnkr - chunker object description of curve
-%   f - either an array of values for each point on the chnkr or a 
-%       function handle which acts on an array of 2d points, 
-%       i.e. fvals = f(xx) is an array of values for each xx(1:2,i) pair
+%   f - either an array of values for each point on the chunker or a 
+%       function handle which acts on an array of points in the
+%       appropriate dimension, i.e. fvals = f(xx) is an array of values 
+%       of f at each coordinate xx(1:chnkr.dim,i)
 %   opts - structure for setting various parameters
 %       opts.usesmooth - if = 1, then just use the smooth integration
 %          rule for each chunk. otherwise, adaptive integration 
@@ -15,7 +18,7 @@ function fint = chunkerinteriortegral(chnkr,f,opts)
 %       containing string,value pairs to be sent to quadgk (default {})
 %
 % output:
-%   fint - 
+%   fint - integral of f over the chunker object
 %
 % see also QUADGK
 
@@ -40,10 +43,9 @@ end
 
 if opts.usesmooth
     % assume smooth weights are good enough
-    wts = whts(chnkr);
+    wts = weights(chnkr);
     if iffun
-        fint = 0.0;
-        fvals = f(reshape(chnkr.r,2,chnkr.k*chnkr.nch));
+        fvals = f(chnkr.r(:,:));
     else
         fvals = f(:);
     end
@@ -55,22 +57,22 @@ else
     
     [~,~,u] = lege.exps(k);
     
+    [rc,dc] = exps(chnkr);
+    
     if iffun
         fint = 0.0;
         for i = 1:nch
-            xci = xc(:,i); yci = yc(:,i); 
-            xpci = xpc(:,i); ypci = ypc(:,i);
-            fint = fint + ...
-                chnkrintchunk_fhandle(f,xci,yci,xpci,ypci)*chnkr.h(i);
+            rci = rc(:,:,i);
+            dci = dc(:,:,i);
+            fint = fint + chunkerintchunk_fhandle(f,rci,dci)*chnkr.h(i);
         end
     else
         fint = 0.0;
         fc = u*f;
         for i = 1:nch
-            xci = xc(:,i); yci = yc(:,i); 
-            xpci = xpc(:,i); ypci = ypc(:,i);
+            dci = dc(:,:,i);
             fci = fc(:,i);
-            fint = fint + chnkrintchunk_fcoefs(fci,xpci,ypci)*chnkr.h(i);
+            fint = fint + chunkerintchunk_fcoefs(fci,dci)*chnkr.h(i);
         end
     end
     

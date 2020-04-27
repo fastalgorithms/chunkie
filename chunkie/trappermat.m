@@ -1,5 +1,5 @@
-function [sysmat] = trapmat(trap,kern,opts)
-%TRAPMAT build matrix for given kernel and trapper description of 
+function [sysmat] = trappermat(trap,kern,opts)
+%TRAPPERMAT build matrix for given kernel and trapper description of 
 % boundary. This is a wrapper for various quadrature routines
 %
 % Input:
@@ -44,11 +44,10 @@ end
 
 % determine operator dimensions using first two points
 
-rs = trap.r(:,1:2);
-ds = trap.d(:,1:2); dsn = sqrt(sum(ds.^2,1)); 
-ds = bsxfun(@rdivide,ds,dsn);
-
-ftemp = kern(rs(:,1),rs(:,2),ds(:,1),ds(:,2));
+srcinfo = []; srcinfo.r = trap.r(:,1); srcinfo.d = trap.d(:,1);
+srcinfo.d2 = trap.d2(:,1);
+targinfo = []; targinfo.r = trap.r(:,2); targinfo.d = trap.d(:,2);
+ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
 
 % get opts from struct if available

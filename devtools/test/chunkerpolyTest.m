@@ -1,5 +1,6 @@
-%TEST_CHUNKPOLY
+%CHUNKERPOLYTEST
 
+clearvars; close all;
 addpaths_loc();
 
 % pre-defined vertices for a barbell shape
@@ -21,7 +22,7 @@ nv = size(verts,2);
 edgevals = rand(3,nv); % constant values on edges to smooth out in arclength
 
 p.k = 16; p.dim = 2;
-chnkr = chunkpoly(verts,cparams,p,edgevals);
+chnkr = chunkerpoly(verts,cparams,p,edgevals);
 chnkr = chnkr.sort();
 assert(checkadjinfo(chnkr) == 0);
 
@@ -54,7 +55,7 @@ p.k = 16; p.dim = 2;
 cparams = [];
 cparams.rounded = false;
 cparams.depth = 8;
-chnkr2 = chunkpoly(verts,cparams,p,edgevals);
+chnkr2 = chunkerpoly(verts,cparams,p,edgevals);
 chnkr2 = chnkr2.sort();
 assert(checkadjinfo(chnkr2) == 0);
 
@@ -72,7 +73,7 @@ plot3(x(:),y(:),z(:))
 
 barb_area_2 = area(chnkr2);
 err_area = abs(barb_area-barb_area_2)/abs(barb_area);
-barb_length_2 = sum(sum(whts(chnkr2)));
+barb_length_2 = sum(sum(weights(chnkr2)));
 err_length = abs(barb_length -barb_length_2)/abs(barb_length);
 fprintf('%5.2e : diff between true/computed area\n',err_area);
 fprintf('%5.2e : diff between true/computed length\n',err_length);
@@ -89,7 +90,7 @@ cparams.ifclosed = 0;
 cparams.eps = 1e-3;
 
 p.k = 16; p.dim = 2;
-chnkr3 = chunkpoly(verts,cparams,p);
+chnkr3 = chunkerpoly(verts,cparams,p);
 
 
 figure(6)

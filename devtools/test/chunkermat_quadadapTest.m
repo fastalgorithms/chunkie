@@ -1,8 +1,9 @@
 
-%TEST_ADAPCHUNKERMAT
+%CHUNKERMAT_QUADADAPTEST
 %
 % define geometry and test adaptive matrix builder routine
 
+clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
@@ -39,24 +40,24 @@ targets = targets.*repmat(rand(1,nt),2,1);
 
 % plot geo and sources
 
-xs = chnkr.r(1,:,:); xmin = min(xs(:)); xmax = max(xs(:));
-ys = chnkr.r(2,:,:); ymin = min(ys(:)); ymax = max(ys(:));
-
-figure(1)
-clf
-hold off
-plot(chnkr)
-hold on
-scatter(sources(1,:),sources(2,:),'o')
-scatter(targets(1,:),targets(2,:),'x')
-axis equal 
-
+% xs = chnkr.r(1,:,:); xmin = min(xs(:)); xmax = max(xs(:));
+% ys = chnkr.r(2,:,:); ymin = min(ys(:)); ymax = max(ys(:));
+% 
+% figure(1)
+% clf
+% hold off
+% plot(chnkr)
+% hold on
+% scatter(sources(1,:),sources(2,:),'o')
+% scatter(targets(1,:),targets(2,:),'x')
+% axis equal 
+% 
 %
 
 % build layer potential matrix with GGQ routine for comparison
 
-fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'S');
-fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'D');
+fkern = @(s,t) chnk.lap2d.kern(s,t,'S');
+fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'D');
 
 start = tic; mat1 = chunkermat(chnkr,fkern);
 t1 = toc(start);

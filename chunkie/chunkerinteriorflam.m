@@ -1,7 +1,7 @@
 function in = chunkerinteriorflam(chnkr,pts)
 %CHUNKERINTERIORFLAM 
 
-kernd = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'d');
+kernd = @(s,t) chnk.lap2d.kern(s,t,'d');
 dens1 = ones(chnkr.k,chnkr.nch);
 wts = weights(chnkr);
 

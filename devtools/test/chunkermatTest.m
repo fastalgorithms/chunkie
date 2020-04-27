@@ -1,8 +1,9 @@
 
-%TEST_CHUNKERMAT
+%CHUNKERMATTEST
 %
 % test the matrix builder and do a basic solve
 
+clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
@@ -10,7 +11,7 @@ addpaths_loc();
 
 cparams = [];
 cparams.eps = 1.0e-10;
-cparams.nover = 4;
+cparams.nover = 1;
 pref = []; 
 pref.k = 30;
 narms = 3;
@@ -40,38 +41,37 @@ targets = targets.*repmat(rand(1,nt),2,1);
 xs = chnkr.r(1,:,:); xmin = min(xs(:)); xmax = max(xs(:));
 ys = chnkr.r(2,:,:); ymin = min(ys(:)); ymax = max(ys(:));
 
-figure(1)
-clf
-hold off
-plot(chnkr)
-hold on
-scatter(sources(1,:),sources(2,:),'o')
-scatter(targets(1,:),targets(2,:),'x')
-axis equal 
+% figure(1)
+% clf
+% hold off
+% plot(chnkr)
+% hold on
+% scatter(sources(1,:),sources(2,:),'o')
+% scatter(targets(1,:),targets(2,:),'x')
+% axis equal 
 
 %
 
-kerns = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'s');
+kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
 
 % eval u on bdry
 
-targs = chnkr.r; targs = reshape(targs,2,chnkr.k*chnkr.nch);
-targstau = taus(chnkr); 
-targstau = reshape(targstau,2,chnkr.k*chnkr.nch);
-
-kernmats = kerns(sources,targs,[],targstau);
+srcinfo = []; srcinfo.r = sources;
+targinfo = []; targinfo.r = chnkr.r;
+kernmats = kerns(srcinfo,targinfo);
 ubdry = kernmats*strengths;
 
 % eval u at targets
 
-kernmatstarg = kerns(sources,targets,[],[]);
+targinfo = []; targinfo.r = targets;
+kernmatstarg = kerns(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
 %
 
 % build laplace dirichlet matrix
 
-fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
+fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
 start = tic; D = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
@@ -110,5 +110,5 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
-assert(relerr < 1e-10,'low precision in cunkmat test at target');
+assert(relerr < 1e-10,'low precision in chunkmat test at target');
 

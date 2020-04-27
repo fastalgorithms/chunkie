@@ -7,6 +7,7 @@
 % across the rounded corners
 %
 
+clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 addpaths_loc();
@@ -21,6 +22,7 @@ edgevals = rand(1,nv);
 cparams = [];
 cparams.widths = 0.1*ones(size(verts,2),1);% width to cut about each corner
 cparams.eps = 1e-6; % tolerance at which to resolve curve
+cparams.rounded = true;
 
 % parameters for chunk discretization
 p.k = 16; p.dim = 2;
@@ -28,12 +30,12 @@ p.k = 16; p.dim = 2;
 % call smoothed-polygon chunking routine
 % a smoothed version of edgevals is returned in 
 % chnkr.data
-chnkr = chunkpoly(verts,cparams,p,edgevals);
+chnkr = chunkerpoly(verts,cparams,p,edgevals);
 chnkr = chnkr.refine(); chnkr = chnkr.sort();
 [~,~,info] = sortinfo(chnkr);
 assert(info.ier == 0);
 
-%%
+%
 % plot smoothed geometry and data
 
 figure(1)
@@ -55,7 +57,7 @@ plot3(x(:),y(:),z(:))
 
 % build laplace dirichlet matrix
 
-fkern = @(s,t,stau,ttau) chnk.lap2d.kern(s,t,stau,ttau,'D');
+fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
 opdims(1) = 1; opdims(2) = 1;
 intparams.intorder = chnkr.k;
 start = tic; D = chunkermat(chnkr,fkern);

@@ -1,7 +1,9 @@
-%TEST_ABSCONVGAUSS
+%ABSCONVGAUSSTEST
 %
 % This file tests the absconvgauss routine
 
+clearvars; close all;
+addpaths_loc();
 a = 0.75;
 
 b = -0.75;
@@ -36,11 +38,12 @@ ifprint = false;
 niter = 6;
 for i = 1:ntest
     x0 = xtest(i);
-    errsf= gradientTest(@(x) chnk.spcl.absconvgauss(x,m,offset,h),...
+    errsf= gradient_check(@(x) chnk.spcl.absconvgauss(x,m,offset,h),...
         x0,pert,niter,ifprint);
-    errsg = gradientTest(@(x) acgder(x,m,offset,h),x0,pert,niter,ifprint);
+    errsg = gradient_check(@(x) ...
+        acgder(x,m,offset,h),x0,pert,niter,ifprint);
     assert(min(errsf) < 1e-8);
-    assert(min(errsg) < 1e-6)
+    assert(min(errsg) < 1e-6);
 end
 
 function [d,d2] = acgder(x,a,b,h)

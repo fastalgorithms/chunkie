@@ -23,10 +23,9 @@ if ~isfield(opts,'justsmoothworks')
     opts.justsmoothworks = false;
 end
 
-kernd = @(s,t,sn,tn) chnk.lap2d.kern(s,t,sn,tn,'d');
+kernd = @(s,t) chnk.lap2d.kern(s,t,'d');
 dens1 = ones(chnkr.k,chnkr.nch);
 
-opdims = [1 1];
 
 opts.usesmooth=true;
 d1 = chunkerkerneval(chnkr,kernd,dens1,pts,opts); 

@@ -1,22 +1,27 @@
-function [mat,maxrecs,numints,iers] = adapgausswts(r,d,h,ct,bw,j,rt,taut, ...
-    kern,opdims,t,w,opts)
+function [mat,maxrecs,numints,iers] = adapgausswts(r,d,d2,h,ct,bw,j,...
+    rt,dt,d2t,kern,opdims,t,w,opts)
 %CHNK.ADAPGAUSSWTS adaptive integration for interaction of kernel on chunk 
 % at targets
+%
 % WARNING: this routine is not designed to be user-callable and assumes 
 %   a lot of precomputed values as input
 %
-% Syntax: [mat,maxrecs,numints,iers] = adapgausswts(r,d,h,ct,bw,j,rt, ...
-%   taut,kern,opdims,t,w,opts)
+% Syntax: [mat,maxrecs,numints,iers] = adapgausswts(r,d,d2,h,ct,bw,j, ...
+%   rt,dt,d2t,kern,opdims,t,w,opts)
 %
 % Input:
 %   r - chnkr nodes
 %   d - chnkr derivatives at nodes
+%   d2 - chnkr 2nd derivatives at nodes
 %   h - lengths of chunks in parameter space
 %   ct - Legendre nodes at order of chunker
 %   bw - barycentric interpolation weights for Legendre nodes at order of
 %   chunker
 %   j - chunk of interest
-%   rt - set of target nodes
+%   rt,dt,d2t - position, derivative, second derivative of select 
+%               target points. if any are not used by kernel (or not well
+%               defined, e.g. when not on curve), a dummy array
+%               of the appropriate size should be supplied
 %   kern - kernel function of form kern(rs,rt,taus,taut)
 %   opdims - dimensions of kernel
 %   t - (Legendre) integration nodes for adaptive integration
@@ -34,7 +39,7 @@ eps = 1e-12;
 nnmax=100000;
 maxdepth=200;
 
-if nargin < 13
+if nargin < 15
     opts = [];
 end
 
@@ -54,6 +59,7 @@ k2 = length(t);
 
 rs = r(:,:,j);
 ds = d(:,:,j);
+d2s = d2(:,:,j);
 hs = h(j);
 
 stack = zeros(2,maxdepth);
@@ -68,13 +74,14 @@ numints = zeros(nt,1); iers = zeros(nt,1); maxrecs = zeros(nt,1);
 for ii = 1:nt
     
     rt1 = rt(:,ii);
-    tau1 = taut(:,ii);
+    dt1 = dt(:,ii);
+    d2t1 = d2t(:,ii);
     
     % start the recursion
 
     stack(1,1)=-1;
     stack(2,1)=1;
-    vals(:,1) = oneintp(-1,1,rs,ds,ct,bw,rt1,tau1,kern,opdims,t,w);
+    vals(:,1) = oneintp(-1,1,rs,ds,d2s,ct,bw,rt1,dt1,d2t1,kern,opdims,t,w);
 
     % recursively integrate the thing
 
@@ -91,8 +98,8 @@ for ii = 1:nt
 
         a = stack(1,jj); b = stack(2,jj);
         c=(a+b)/2;
-        v2 = oneintp(a,c,rs,ds,ct,bw,rt1,tau1,kern,opdims,t,w);
-        v3 = oneintp(c,b,rs,ds,ct,bw,rt1,tau1,kern,opdims,t,w);
+        v2 = oneintp(a,c,rs,ds,d2s,ct,bw,rt1,dt1,d2t1,kern,opdims,t,w);
+        v3 = oneintp(c,b,rs,ds,d2s,ct,bw,rt1,dt1,d2t1,kern,opdims,t,w);
     
         dd= max(abs(v2+v3-vals(:,jj)));
         if(dd <= eps) 
@@ -147,7 +154,7 @@ mat = mat*hs;
 
 end
 
-function val = oneintp(a,b,rs,ds,ct,bw,rt,taut,kern,opdims,t,w)
+function val = oneintp(a,b,rs,ds,d2s,ct,bw,rt,dt,d2t,kern,opdims,t,w)
 %       integrate the kernel multiplied by each Lagrange interpolant
 %   on the interval [a,b] at a single target
 
@@ -164,10 +171,14 @@ interpmat = bsxfun(@rdivide,interpmat,interpmatsum);
 
 rint = rs*interpmat;
 dint = ds*interpmat;
+d2int = d2s*interpmat;
 dintlen = sqrt(sum(dint.^2,1));
-tauint = bsxfun(@rdivide,dint,dintlen);
-
-mat_tt = kern(rint,rt,tauint,taut);
+%tauint = bsxfun(@rdivide,dint,dintlen);
+srcinfo = []; srcinfo.r = rint; srcinfo.d = dint; 
+srcinfo.d2 = d2int;
+targinfo = []; targinfo.r = rt; targinfo.d = dt; 
+targinfo.d2 = d2t;
+mat_tt = kern(srcinfo,targinfo);
 
 dsdt = u*( (w(:).' ).*dintlen);
 dsdt = repmat(dsdt,opdims(2),1); dsdt = dsdt(:);

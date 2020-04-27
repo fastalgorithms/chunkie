@@ -1,9 +1,10 @@
-%TEST_TREFINEMENT
+%REFINE_TREFINEMENTTEST
 %
 % get chunker description of a starfish domain. check if that domain
 % satisfies a level restriction in the underlying parameter space. 
 % call a refinement routine to fix. 
 
+clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 

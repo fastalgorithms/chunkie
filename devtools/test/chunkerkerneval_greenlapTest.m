@@ -1,11 +1,14 @@
-%TEST_GREENHELM test the routines for integrating over chunks against the
-% Green's ID for Helmholtz
+%CHUNKERKERNEVAL_GREENLAPTEST test the routines for integrating over 
+% chunks against the Green's ID for Laplace
 %
 % 
 
+clearvars; close all;
 seed = 8675309;
 rng(seed);
 addpaths_loc();
+
+doadap = false;
 
 % geometry parameters and construction
 
@@ -45,32 +48,30 @@ scatter(sources(1,:),sources(2,:),'o')
 scatter(targets(1,:),targets(2,:),'x')
 axis equal 
 
-%%
-
-zk = rand() + 1i*rand();
+%
 
 % kernel defs
 
-kernd = @(s,t,sn,tn) chnk.helm2d.kern(zk,s,t,sn,tn,'d');
-kerns = @(s,t,sn,tn) chnk.helm2d.kern(zk,s,t,sn,tn,'s');
-kernsprime = @(s,t,sn,tn) chnk.helm2d.kern(zk,s,t,sn,tn,'sprime');
+kernd = @(s,t) chnk.lap2d.kern(s,t,'d');
+kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
+kernsprime = @(s,t) chnk.lap2d.kern(s,t,'sprime');
 
 opdims = [1 1];
 
 % eval u and dudn on boundary
 
-targs = chnkr.r; targs = reshape(targs,2,chnkr.k*chnkr.nch);
-targstau = taus(chnkr); 
-targstau = reshape(targstau,2,chnkr.k*chnkr.nch);
-
-kernmats = kerns(sources,targs,[],targstau);
-kernmatsprime = kernsprime(sources,targs,[],targstau);
+srcinfo = []; srcinfo.r = sources; 
+targinfo = []; targinfo.r = chnkr.r(:,:); 
+targinfo.d = chnkr.d(:,:);
+kernmats = kerns(srcinfo,targinfo);
+kernmatsprime = kernsprime(srcinfo,targinfo);
 densu = kernmats*strengths;
 densun = kernmatsprime*strengths;
 
 % eval u at targets
 
-kernmatstarg = kerns(sources,targets,[],[]);
+targinfo = []; targinfo.r = targets;
+kernmatstarg = kerns(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
 

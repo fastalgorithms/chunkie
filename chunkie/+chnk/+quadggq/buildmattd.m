@@ -4,7 +4,6 @@ function [spmat] = buildmattd(chnkr,kern,opdims,type)
 %
 %  
 
-
 k = chnkr.k;
 nch = chnkr.nch;
 r = chnkr.r;
@@ -13,11 +12,10 @@ d = chnkr.d;
 d2 = chnkr.d2;
 h = chnkr.h;
 
-[~,~,u] = lege.exps(k);
+[~,wts,u] = lege.exps(k);
 
 if strcmpi(type,'log')
 
-    
     qavail = chnk.quadggq.logavail();
     [~,i] = min(abs(qavail-k));
     assert(qavail(i) == k,'order %d not found, consider using order %d chunks', ...
@@ -27,18 +25,20 @@ else
     error('type not available')
 end
 
-ainterp1_sm = lege.matrin(k,xs1);
+ainterp1 = lege.matrin(k,xs1);
 temp = eye(opdims(2));
-ainterp1 = kron(ainterp1_sm,temp);
+ainterp1kron = kron(ainterp1,temp);
 
 nquad0 = size(xs0,1);
 
-ainterps0 = zeros(opdims(2)*nquad0,opdims(2)*k,k);
+ainterps0kron = zeros(opdims(2)*nquad0,opdims(2)*k,k);
+ainterps0 = zeros(nquad0,k,k);
 
 for j = 1:k
     xs0j = xs0(:,j);
     ainterp0_sm = lege.matrin(k,xs0j);
-    ainterps0(:,:,j) = kron(ainterp0_sm,temp);
+    ainterps0(:,:,j) = ainterp0_sm;
+    ainterps0kron(:,:,j) = kron(ainterp0_sm,temp);
 end
 
 mmat = k*nch*opdims(1); nmat = k*nch*opdims(2);
@@ -55,8 +55,8 @@ for j = 1:nch
 
     % neighbors
     
-    submat = chnk.quadggq.nearbuildmat(r,d,h,ibefore,j, ...
-        kern,opdims,u,xs1,wts1,ainterp1);
+    submat = chnk.quadggq.nearbuildmat(r,d,d2,h,ibefore,j, ...
+        kern,opdims,u,xs1,wts1,ainterp1kron,ainterp1);
     
     submat(submat == 0.0) = 1e-300; %hack
     
@@ -65,8 +65,8 @@ for j = 1:nch
 
     spmat(imat:imatend,jmat:jmatend) = submat;
     
-    submat = chnk.quadggq.nearbuildmat(r,d,h,iafter,j, ...
-        kern,opdims,u,xs1,wts1,ainterp1);
+    submat = chnk.quadggq.nearbuildmat(r,d,d2,h,iafter,j, ...
+        kern,opdims,u,xs1,wts1,ainterp1kron,ainterp1);
     
     submat(submat == 0.0) = 1e-300;
     
@@ -77,8 +77,8 @@ for j = 1:nch
     
     % self
     
-    submat = chnk.quadggq.diagbuildmat(r,d,h,j,kern,opdims,...
-        u,xs0,wts0,ainterps0);
+    submat = chnk.quadggq.diagbuildmat(r,d,d2,h,j,kern,opdims,...
+        u,xs0,wts0,ainterps0kron,ainterps0);
     
     submat(submat == 0.0) = 1e-300;
 

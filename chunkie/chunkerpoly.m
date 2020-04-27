@@ -348,9 +348,6 @@ if ifclosed
     nch = chnkr.nch;
     chnkr.adj(1,1) = nch;
     chnkr.adj(2,nch) = 1;
-    if ~rounded
-        chnkr = chnkr.addvert([1,nch]);
-    end
 end
     
 end

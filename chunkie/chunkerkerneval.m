@@ -4,16 +4,13 @@ function fints = chunkerkerneval(chnkr,kern,dens,targs,opts)
 %
 % input:
 %   chnkr - chunks description of curve
-%   kern - integral kernel taking inputs kern(s,t,sn,tn) where 
-%          s is a source, sn is the normal at the source, t is a target
-%          and tn is the normal at the target
+%   kern - integral kernel taking inputs kern(srcinfo,targinfo) 
 %   opdims - input and output dimensions of the kernel (opdims(1) dimension
 %           output, opdims(2) dimension of input)
 %   dens - density on boundary, should have size opdims(2) x k x nch
 %          where k = chnkr.k, nch = chnkr.nch
 %   targs - targ(1:2,i) gives the coords of the ith target
 %   opts - structure for setting various parameters
-%       opts.targstau - if provided, the normals at the targets
 %       opts.usesmooth - if = 1, then just use the smooth integration
 %          rule for each chunk. if = 0, adaptive integration 
 %          (quadgk) is used. if = 2, a hybrid method is used 
@@ -33,11 +30,14 @@ function fints = chunkerkerneval(chnkr,kern,dens,targs,opts)
 
 % determine operator dimensions using first two points
 
-rs = chnkr.r(:,1:2);
-ds = chnkr.d(:,1:2); dsn = sqrt(sum(ds.^2,1)); 
-ds = bsxfun(@rdivide,ds,dsn);
 
-ftemp = kern(rs(:,1),rs(:,2),ds(:,1),ds(:,2));
+srcinfo = []; targinfo = [];
+srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 
+srcinfo.d2 = chnkr.d2(:,1);
+targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
+targinfo.d2 = chnkr.d2(:,2);
+
+ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
 
 if nargin < 6
@@ -50,22 +50,14 @@ assert(dim==2,'only dimension two tested');
 if ~isfield(opts,'usesmooth'); opts.usesmooth = false; end
 if ~isfield(opts,'quadgkparams'); opts.quadgkparams = {}; end
 if ~isfield(opts,'gausseps'); opts.gausseps = 1e-8; end
-if ~isfield(opts,'targstau'); opts.targstau = zeros(dim,nt); end
 if ~isfield(opts,'verb'); opts.verb= false; end
-
-targstau = opts.targstau;
-
-[dim,nt2] = size(targstau);
-
-assert(dim==2 && nt2==nt,...
-    'opts.targstau should have same dimensions as targs');
 
 if opts.usesmooth == 1
     fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
-        targs,targstau,opts);
+        targs);
 elseif opts.usesmooth == 0
     fints = chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
-        targs,targstau,opts);
+        targs,opts);
 elseif opts.usesmooth == 2
     fints = zeros(opdims(1),nt);
     optssw = []; optssw.gausseps = opts.gausseps; 
@@ -73,10 +65,10 @@ elseif opts.usesmooth == 2
     sw = chunkerinterior(chnkr,targs,optssw);
     fints(:,sw) = reshape(...
         chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
-        targs(:,sw),targstau(:,sw),opts),opdims(1),nnz(sw));
+        targs(:,sw)),opdims(1),nnz(sw));
     fints(:,~sw) = reshape(...
         chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
-        targs(:,~sw),targstau(:,~sw),opts),opdims(1),nnz(~sw));
+        targs(:,~sw),opts),opdims(1),nnz(~sw));
     fints = fints(:);
 end
 
@@ -85,7 +77,7 @@ end
 
 
 function fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
-    targs,targstau,opts)
+    targs)
 
 k = chnkr.k;
 nch = chnkr.nch;
@@ -96,9 +88,9 @@ dens = reshape(dens,opdims(2),k,nch);
 [~,w] = lege.exps(k);
 [~,nt] = size(targs);
 
-tau = taus(chnkr);
-
 fints = zeros(opdims(1)*nt,1);
+
+targinfo = []; targinfo.r = targs;
 
 % assume smooth weights are good enough
 for i = 1:nch
@@ -107,8 +99,9 @@ for i = 1:nch
     dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
     dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
     densvals = densvals.*(dsdtdt(:));
-    kernmat = kern(chnkr.r(:,:,i),targs, ...
-        tau(:,:,i),targstau);
+    srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
+    srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
+    kernmat = kern(srcinfo,targinfo);
 
     fints = fints + kernmat*densvals;
 end
@@ -116,7 +109,7 @@ end
 end
 
 function fints = chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
-    targs,targstau,opts)
+    targs,opts)
 
 k = chnkr.k;
 nch = chnkr.nch;
@@ -130,11 +123,12 @@ dens = reshape(dens,opdims(2),k,nch);
 fints = zeros(opdims(1)*nt,1);
 
 % using adaptive quadrature
-[rc,dc] = exps(chnkr);
+[rc,dc,d2c] = exps(chnkr);
 for i = 1:nch
     if opts.verb; fprintf('chunk %d integral\n',i); end
     rci = rc(:,:,i);
     dci = dc(:,:,i);
+    d2ci = d2c(:,:,i);    
     densvals = dens(:,:,i); densvals = densvals.';
     densc = u*densvals; % each column is set of coefficients
                     % for one dimension of density on chunk
@@ -142,8 +136,8 @@ for i = 1:nch
         indj = (j-1)*opdims(1);
         for l = 1:opdims(1)
             ind = indj+l;
-            temp = chunkerinteriortegralchunk_kernfcoefs(kern,opdims,l,...
-                densc,rci,dci,targs(:,j),targstau(:,j));
+            temp = chunkerintchunk_kernfcoefs(kern,opdims,l,...
+                densc,rci,dci,d2ci,targs(:,j));
 
             fints(ind) = fints(ind) + temp*chnkr.h(i);
         end

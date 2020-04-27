@@ -40,11 +40,13 @@ jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;
 % matrix-valued entries of kernel for unique points
 
 ri = targs(:,iuni); rj = chnkr.r(:,juni);
-di = zeros(size(ri)); dj = chnkr.d(:,juni);
+dj = chnkr.d(:,juni);
 %di = bsxfun(@rdivide,di,sqrt(sum(di.^2,1)));
-dj = bsxfun(@rdivide,dj,sqrt(sum(dj.^2,1)));
+%dj = bsxfun(@rdivide,dj,sqrt(sum(dj.^2,1)));
+srcinfo = []; srcinfo.r = rj; srcinfo.d = dj;% srcinfo.d2 = d2j;
+targinfo = []; targinfo.r = ri;
 
-matuni = kern(rj,ri,dj,di);
+matuni = kern(srcinfo,targinfo);
 
 % relevant rows and columns in matuni
 

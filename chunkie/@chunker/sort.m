@@ -34,6 +34,14 @@ chnkr.d = chnkr.d(:,:,inds);
 chnkr.d2 = chnkr.d2(:,:,inds);
 chnkr.h = chnkr.h(inds);
 
+indinv = 1:length(inds);
+indinv(inds) = 1:length(inds);
+
+for i = 1:chnkr.nvert
+    ivert = chnkr.vert{i};
+    chnkr.vert{i} = indinv(ivert);
+end
+
 if chnkr.hasdata
     chnkr.data = chnkr.data(:,:,inds);
 end

@@ -1,20 +1,27 @@
+function submat = kern(srcinfo,targinfo,type,varargin)
+%CHNK.LAP2D.KERN standard Laplace layer potential kernels in 2D
+%
+% Syntax: submat = kern(srcinfo,targinfo,type,varargin)
 
-function submat = kern(src,targ,srctau,targtau,type,varargin)
+src = srcinfo.r;
+targ = targinfo.r;
 
 [~,ns] = size(src);
 [~,nt] = size(targ);
 
 if strcmpi(type,'d')
+    srcnorm = chnk.normal2d(srcinfo);
     [~,grad] = chnk.lap2d.green(src,targ);
-    nx = repmat(srctau(2,:),nt,1);
-    ny = repmat(-srctau(1,:),nt,1);
+    nx = repmat(srcnorm(1,:),nt,1);
+    ny = repmat(srcnorm(2,:),nt,1);
     submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
 end
 
 if strcmpi(type,'sprime')
+    targnorm = chnk.normal2d(targinfo);
     [~,grad] = chnk.lap2d.green(src,targ);
-    nx = repmat((targtau(2,:)).',1,ns);
-    ny = repmat(-(targtau(1,:)).',1,ns);
+    nx = repmat((targnorm(1,:)).',1,ns);
+    ny = repmat((targnorm(2,:)).',1,ns);
 
     submat = (grad(:,:,1).*nx + grad(:,:,2).*ny);
 end
@@ -24,9 +31,10 @@ if strcmpi(type,'s')
 end
 
 if strcmpi(type,'c')
+    srcnorm = chnk.normal2d(srcinfo);
     eta = varargin{1};
     [s,grad] = chnk.lap2d.green(src,targ);
-    nx = repmat(srctau(2,:),nt,1);
-    ny = repmat(-srctau(1,:),nt,1);
+    nx = repmat(srcnorm(1,:),nt,1);
+    ny = repmat(srcnorm(2,:),nt,1);
     submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny) + eta*s;
 end

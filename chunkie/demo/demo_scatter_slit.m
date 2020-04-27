@@ -23,9 +23,10 @@ verts = [ [-2;-0.5],[2;-0.5],[2;0.5],[-2;0.5] ];
 
 cparams = [];
 cparams.eps = 1.0e-5;
+cparams.rounded = true;
 pref = []; 
 pref.k = 16;
-start = tic; chnkr = chunkpoly(verts,cparams,pref); 
+start = tic; chnkr = chunkerpoly(verts,cparams,pref); 
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
@@ -64,7 +65,7 @@ axis equal
 
 % build CFIE
 
-fkern = @(s,t,stau,ttau) chnk.helm2d.kern(zk,s,t,stau,ttau,'C',1);
+fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'C',1);
 opdims(1) = 1; opdims(2) = 1;
 
 opts = [];
@@ -77,12 +78,13 @@ sys = 0.5*eye(chnkr.k*chnkr.nch) + sysmat;
 
 % get the boundary data for a source located at the point above
 
-kerns = @(s,t,sn,tn) chnk.helm2d.kern(zk,s,t,sn,tn,'s');
+kerns = @(s,t) chnk.helm2d.kern(zk,s,t,'s');
 targs = chnkr.r; targs = reshape(targs,2,chnkr.k*chnkr.nch);
-targstau = taus(chnkr); 
+targstau = tangents(chnkr); 
 targstau = reshape(targstau,2,chnkr.k*chnkr.nch);
 
-kernmats = kerns(src0,targs,[],targstau);
+srcinfo = []; srcinfo.r = src0; targinfo = []; targinfo.r = targs;
+kernmats = kerns(srcinfo,targinfo);
 ubdry = -kernmats*strengths;
 
 rhs = ubdry; rhs = rhs(:);
@@ -122,7 +124,7 @@ fprintf('%5.2e s : time to find points in domain\n',t1)
 
 % compute layer potential based on oversample boundary
 
-wts2 = whts(chnkr2);
+wts2 = weights(chnkr2);
 
 matfun = @(i,j) kernbyindexr(i,j,targets(:,out),chnkr2,wts2,fkern,opdims);
 [pr,ptau,pw,pin] = proxy_square_pts();
@@ -139,10 +141,11 @@ start = tic;
 uscat = ifmm_mv(F,sol2(:),matfun); t1 = toc(start);
 fprintf('%5.2e s : time for ifmm apply (for plotting)\n',t1)
 
-uin = kerns(src0,targets(:,out),[],[])*strengths;
+srcinfo = []; srcinfo.r = src0; targinfo = []; targinfo.r = targets(:,out);
+uin = kerns(srcinfo,targinfo)*strengths;
 utot = uscat(:)+uin(:);
 
-%%
+%
 
 maxin = max(abs(uin(:)));
 maxsc = max(abs(uscat(:)));

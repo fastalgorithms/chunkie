@@ -57,9 +57,12 @@ if strcmpi(rc,'c')
 
     rslf = chnkr.r(:,slfuni);
     dslf = chnkr.d(:,slfuni);
-    dslf = bsxfun(@rdivide,dslf,sqrt(sum(dslf.^2,1)));
+    %dslf = bsxfun(@rdivide,dslf,sqrt(sum(dslf.^2,1)));
+    
+    srcinfo = []; srcinfo.r = rslf; srcinfo.d = dslf;
+    targinfo = []; targinfo.r = pxy; targinfo.d = ptau;
 
-    Kpxy = kern(rslf,pxy,dslf,ptau);
+    Kpxy = kern(srcinfo,targinfo);
 
     Kpxy = Kpxy(:,islfuni2);
     Kpxy = bsxfun(@times,Kpxy,whts(slfpts).');
@@ -82,7 +85,10 @@ else
     dslf = zeros(size(rslf));
     %dslf = bsxfun(@rdivide,dslf,sqrt(sum(dslf.^2,1)));
 
-    Kpxy = kern(pxy,rslf,ptau,dslf);
+    targinfo = []; targinfo.r = rslf; 
+    srcinfo = []; srcinfo.r = pxy; srcinfo.d = ptau;
+    
+    Kpxy = kern(srcinfo,targinfo);
 
     Kpxy = Kpxy(islfuni2,:);
     Kpxy = bsxfun(@times,Kpxy,pw2(:).');

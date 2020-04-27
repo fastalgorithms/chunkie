@@ -226,8 +226,6 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
                     rl1 = min(chunklens(vert{-i1}));
                 end
                 if (i2 < 0)
-                    i2
-                    vert{-i2}
                     rl2 = min(chunklens(vert{-i2}));
                 end
             end

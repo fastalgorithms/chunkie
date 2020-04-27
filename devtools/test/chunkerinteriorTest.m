@@ -1,7 +1,8 @@
-%TEST_CHUNKERINTERIOR tests the routines for checking whether a point is 
+%CHUNKERINTERIORTEST tests the routines for checking whether a point is 
 % inside a domain or not
 % 
 
+clearvars; close all;
 seed = 8675309;
 rng(seed);
 addpaths_loc();

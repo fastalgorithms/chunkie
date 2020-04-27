@@ -1,5 +1,5 @@
-function errs = gradientTest(fcn, x0, pert,niter,ifprint)
-%GRADIENTTEST gradient testing function
+function errs = gradient_check(fcn, x0, pert,niter,ifprint)
+%GRADIENT_CHECK gradient testing function
 %
 
     niter1 = 6;

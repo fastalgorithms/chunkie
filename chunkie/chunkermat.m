@@ -61,11 +61,13 @@ end
 
 % determine operator dimensions using first two points
 
-rs = chnkr.r(:,1:2);
-ds = chnkr.d(:,1:2); dsn = sqrt(sum(ds.^2,1)); 
-ds = bsxfun(@rdivide,ds,dsn);
+srcinfo = []; targinfo = [];
+srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 
+srcinfo.d2 = chnkr.d2(:,1);
+targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
+targinfo.d2 = chnkr.d2(:,2);
 
-ftemp = kern(rs(:,1),rs(:,2),ds(:,1),ds(:,2));
+ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
 
 % get opts from struct if available

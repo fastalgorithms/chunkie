@@ -19,20 +19,25 @@ end
 
 r = chnkr.r;
 d = chnkr.d;
+d2 = chnkr.d2;
 h = chnkr.h;
 
 [dim,k,~] = size(r);
 rs = r(:,:,j); rt = r(:,:,i); ds = d(:,:,j); dt = d(:,:,i);
+d2s = d2(:,:,j); d2t = d2(:,:,i);
 rs = reshape(rs,dim,k*length(j)); rt = reshape(rt,dim,k*length(i));
 ds = reshape(ds,dim,k*length(j)); dt = reshape(dt,dim,k*length(i));
+d2s = reshape(d2s,dim,k*length(j)); d2t = reshape(d2t,dim,k*length(i));
 
+srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; srcinfo.d2 = d2s;
+targinfo = []; targinfo.r = rt; targinfo.d = dt; targinfo.d2 = d2t;
 hs = h(j); ht = h(i);
 
 dsnrms = sqrt(sum(abs(ds).^2,1));
-taus = bsxfun(@rdivide,ds,dsnrms);
+%taus = bsxfun(@rdivide,ds,dsnrms);
 
 dtnrms = sqrt(sum(abs(dt).^2,1));
-taut = bsxfun(@rdivide,dt,dtnrms);
+%taut = bsxfun(@rdivide,dt,dtnrms);
 
 ws = kron(hs(:),wts(:));
 
@@ -41,6 +46,6 @@ dsdt = dsnrms(:).*ws;
 dsdtndim2 = repmat(dsdt(:).',opdims(2),1);
 dsdtndim2 = dsdtndim2(:);
 
-submat = bsxfun(@times,kern(rs,rt,taus,taut),(dsdtndim2(:)).');
+submat = bsxfun(@times,kern(srcinfo,targinfo),(dsdtndim2(:)).');
 
 end
