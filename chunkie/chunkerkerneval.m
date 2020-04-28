@@ -40,7 +40,7 @@ targinfo.d2 = chnkr.d2(:,2);
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
 
-if nargin < 6
+if nargin < 5
     opts = [];
 end
 

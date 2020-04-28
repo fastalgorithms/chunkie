@@ -239,7 +239,7 @@ classdef chunker
         end
         
         [obj,info] = sort(obj)
-        [rn,dn,d2n,dist,tn,ichn] = nearest(obj,ref,ich,x,u)
+        [rn,dn,d2n,dist,tn,ichn] = nearest(obj,ref,ich,opts,u,xover,aover)
         obj = reverse(obj)
         rmin = min(obj)
         rmax = max(obj)

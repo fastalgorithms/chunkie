@@ -13,7 +13,7 @@ doadap = false;
 
 
 cparams = [];
-cparams.eps = 1.0e-4;
+cparams.eps = 1.0e-9;
 pref = []; 
 pref.k = 16;
 narms = 5;
@@ -30,7 +30,7 @@ t1 = toc(start);
 % nt = length(xx(:)); targs = zeros(2,nt); 
 % targs(1,:) = xx(:); targs(2,:) = yy(:);
 
-nt = 100;
+nt = 100000;
 scal = 2*rand(1,nt);
 tr = 2*pi*rand(1,nt);
 
@@ -38,13 +38,18 @@ targs = bsxfun(@times,starfish(tr,narms,amp),scal);
 
 
 opts = [];
-opts.verb = false; opts.quadgkparams = {'AbsTol',1e-7,'RelTol',1e-7};
-opts.gausseps = 1e-6;
+opts.flam = false;
 start = tic; in = chunkerinterior(chnkr,targs,opts); t1 = toc(start);
+opts = [];
+opts.flam = true;
+start = tic; in2 = chunkerinterior(chnkr,targs,opts); t2 = toc(start);
 
-fprintf('%5.2e s : time for chunkerinterior\n',t1);
+fprintf('%5.2e s : time for chunkerinterior (no flam)\n',t1);
+fprintf('%5.2e s : time for chunkerinterior (with flam)\n',t2);
 
+ifail = in2(:) ~= (scal(:) < 1);
 assert(all(in(:) == (scal(:) < 1)));
+assert(all(in2(:) == (scal(:) < 1)));
 
 %
 % 

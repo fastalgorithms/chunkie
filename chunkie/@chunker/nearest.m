@@ -1,4 +1,5 @@
-function [rn,dn,d2n,dist,tn,ichn] = nearest(chnkr,ref,ich,x,u,opts)
+function [rn,dn,d2n,dist,tn,ichn] = nearest(chnkr,ref,ich,opts,u, ...
+    xover,ainterpover)
 %NEAREST Find nearest point on chunker for given reference point. 
 % If ich provided, only checks chunks in ich. If not, checks all chunks.
 %
@@ -10,9 +11,10 @@ function [rn,dn,d2n,dist,tn,ichn] = nearest(chnkr,ref,ich,x,u,opts)
 %
 % Optional input:
 %   ich - vector of chunks to check (instead of checking all)
-%   x - precomputed Legendre nodes of order chnkr.k
-%   u - the matrix created by lege.exps mapping points to coefs for order
-%       chnkr.k
+%   u - the matrix created by lege.exps mapping point values to coefs for 
+%       order chnkr.k
+%   xover - precomputed oversampled (order 2*chnkr.k) lege grid
+%   ainterpover - precomputed interpolation matrix to oversampled lege grid
 %   opts - options structure
 %       opts.thresh - threshold for newton (1e-9)
 %       opts.nitermax - maximum iterations for newton (200)
@@ -35,14 +37,18 @@ function [rn,dn,d2n,dist,tn,ichn] = nearest(chnkr,ref,ich,x,u,opts)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-maxnewt = 200;
-thresh = 1.0d-9;
+maxnewt = 15;
+thresh0 = 1.0d-9;
+iextra = 3;
 
-
-if nargin < 5 || or(isempty(x),isempty(u))
-    [x,~,u] = lege.exps(chnkr.k);
+if nargin < 5 || isempty(u)
+    [~,~,u] = lege.exps(chnkr.k);
 end
-if nargin < 6
+if nargin < 7 || or(isempty(xover),isempty(ainterpover))
+    xover = lege.exps(2*chnkr.k);
+    ainterpover = lege.matrin(chnkr.k,xover);
+end
+if nargin < 4
     opts = [];
 end
 
@@ -50,7 +56,7 @@ if isfield(opts,'nitermax')
     maxnewt = opts.nitermax;
 end
 if isfield(opts,'thresh')
-    thresh = opts.thresh;
+    thresh0 = opts.thresh;
 end
 
 dist = Inf;
@@ -70,19 +76,17 @@ for i = 1:length(ich)
     dc = u*(d.');
     d2c = u*(d2.');
 
-    % starting guess on grid
-    rdiff = sqrt(sum((r-ref(:)).^2,1));
-    [disti,ind] = min(rdiff);
-    tt = x(ind);
-    ri = r(:,ind);
-    di = r(:,ind);
-    d2i = r(:,ind);
+    % starting guess on over sampled grid
+    rover = (ainterpover*(r.')).';
+    rdist0 = sqrt(sum((rover-ref(:)).^2,1));
+    [disti,ind] = min(rdist0);
+    tt = xover(ind);
     
     % check the endpoints
     ts = [-1;1];
     rs = (lege.exev(ts,rc)).';
-    rsdiff = sqrt(sum((rs-ref).^2,1));
-    [dists,inds] = min(rsdiff);
+    rsdist = sqrt(sum((rs-ref).^2,1));
+    [dists,inds] = min(rsdist);
     if dists < disti
         % continue if endpoints closer
         ri = rs(:,inds);
@@ -99,52 +103,84 @@ for i = 1:length(ich)
         continue;
     end
         
-    % otherwise run newton
+    % run levenberg
 
     t0 = tt;
-    iextra = 3;
+
     ifend = 0;
 
+    r0 = (lege.exev(t0,rc)).';
+
+    rdiff0 = ref(:) - r0(:);
+
+    drc = lege.derpol(rc);
+    %d2rc = lege.derpol(drc);
+    thresh = thresh0;
+    
     for iii = 1:maxnewt
-        r0 = (lege.exev(t0,rc)).';
-        d0 = (lege.exev(t0,dc)).'*h;
-        d20 = (lege.exev(t0,d2c)).'*h*h;
+        %d0 = (lege.exev(t0,dc)).'*h;
+        d0 = (lege.exev(t0,drc)).'; % actual derivative of chunk
+%        d20 = (lege.exev(t0,d2rc)).'; % actual 2nd derivative of chunk
 
-        rdiff = r0(:) - ref(:);
-        dist0 = sum(rdiff.^2); 
+        % newton info
+%         
+%         dprime = rdiff0.'*d0(:);
+%         dprime2 = (d0(:).'*d0(:) + d0(:).'*d20(:));
 
-        dprime = 2*(rdiff.'*d0(:));
-        dprime2 = 2*(d0(:).'*d0(:) + d0(:).'*d20(:));
-        t1 = t0 - dprime/dprime2;
+        % levenberg instead
         
-        if t1 > 1.0
+        deltat = d0(:)\(rdiff0(:));
+        t1 = t0+deltat;
+        
+        if (t1 > 1.0)
             t1 = (1.0+t0)/2;
         end
-        if t1 < -1.0
+        if (t1 < -1.0)
             t1 = (-1.0+t0)/2;
         end
-        
-        err = abs(t1 - t0);
 
-        if (err < thresh)
-            ifend = ifend + 1;
+        r1 = (lege.exev(t1,rc)).';
+        rdiff1 = ref(:)-r1(:);
+
+        err = min(abs(deltat),abs(sum(d0(:).*rdiff0(:))));
+        if err < thresh
+            ifend = ifend+1;
         end
-
+        
+        %sum(rdiff0(:).*d0(:))
+        %abs(deltat)
+        
         t0 = t1;
+        rdiff0 = rdiff1;
+
+%         if (err < thresh)
+%             ifend = ifend + 1;
+%         end
+% 
+        %t0 = t1;
 
         if (ifend >= iextra)
             break;
         end
     end
-
+    
+    % done levenberg
+    
+    ri = (lege.exev(t0,rc)).';
+    disti = sqrt(sum((ri(:)-ref(:)).^2,1));
     if (ifend < iextra)
         warning('newton failed in nearest');
+%          deltat
+%          disti
+%          jac
+%          t0
+%          rhs
+%          ifend
+%          sum(jac.*rhs)
+    else
+%        fprintf('success\n')
     end
-
-
-    % if here, then success
-    ri = (lege.exev(t1,rc)).';
-    disti = sqrt(sum((ri(:)-ref(:)).^2,1));
+    
     if disti < dist
         dist = disti;
         rn = ri;
