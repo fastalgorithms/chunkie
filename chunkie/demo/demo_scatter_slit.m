@@ -47,7 +47,7 @@ chnkr2.r = chnkr2.r + [3;0]; % right rectangle
 % which piece of the geometry each chunk belongs to.
 
 chnkrs = [chnkr1,chnkr2];
-chnkr = chunkermerge(chnkrs);
+chnkr = merge(chnkrs);
 
 % plot geometry and data
 
@@ -117,7 +117,7 @@ fprintf('%5.2e s : time to oversample boundary\n',t1)
 
 %
 
-start = tic; in = chunkerinteriorflam(chnkr,targets); t1 = toc(start);
+start = tic; in = chunkerinterior(chnkr,targets); t1 = toc(start);
 out = ~in;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
@@ -126,10 +126,10 @@ fprintf('%5.2e s : time to find points in domain\n',t1)
 
 wts2 = weights(chnkr2);
 
-matfun = @(i,j) kernbyindexr(i,j,targets(:,out),chnkr2,wts2,fkern,opdims);
-[pr,ptau,pw,pin] = proxy_square_pts();
+matfun = @(i,j) chnk.flam.kernbyindexr(i,j,targets(:,out),chnkr2,wts2,fkern,opdims);
+[pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
 
-pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr2,wts2, ...
+pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr2,wts2, ...
     fkern,opdims,pr,ptau,pw,pin);
 
 xflam = chnkr2.r(:,:);

@@ -42,7 +42,7 @@ function [sysmat] = chunkermat(chnkr,kern,opts)
 %
 
 if length(chnkr) > 1
-    chnkr = chunkermerge(chnkr);
+    chnkr = merge(chnkr);
 end
 
 if nargin < 3

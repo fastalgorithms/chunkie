@@ -136,7 +136,7 @@ for i = 1:nch
         indj = (j-1)*opdims(1);
         for l = 1:opdims(1)
             ind = indj+l;
-            temp = chunkerintchunk_kernfcoefs(kern,opdims,l,...
+            temp = chnk.intchunk.kerncoefs(kern,opdims,l,...
                 densc,rci,dci,d2ci,targs(:,j));
 
             fints(ind) = fints(ind) + temp*chnkr.h(i);

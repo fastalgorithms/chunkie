@@ -27,7 +27,7 @@ chnkr2 = chunkerfunc(@(t) circle(t,ctr2,rad),cparams);
 
 chnkrs = [chnkr1 chnkr2];
 
-chnkr = chunkermerge(chnkrs);
+chnkr = merge(chnkrs);
 
 % set up sources for exterior problem
 

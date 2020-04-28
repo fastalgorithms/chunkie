@@ -64,7 +64,7 @@ else
         for i = 1:nch
             rci = rc(:,:,i);
             dci = dc(:,:,i);
-            fint = fint + chunkerintchunk_fhandle(f,rci,dci)*chnkr.h(i);
+            fint = fint + chnk.intchunk.fhandle(f,rci,dci)*chnkr.h(i);
         end
     else
         fint = 0.0;
@@ -72,7 +72,7 @@ else
         for i = 1:nch
             dci = dc(:,:,i);
             fci = fc(:,i);
-            fint = fint + chunkerintchunk_fcoefs(fci,dci)*chnkr.h(i);
+            fint = fint + chnk.intchunk.fcoefs(fci,dci)*chnkr.h(i);
         end
     end
     

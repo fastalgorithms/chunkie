@@ -91,17 +91,17 @@ spmat = spmat -0.5*speye(chnkr.k*chnkr.nch);
 % test matrix entry evaluator
 start = tic; 
 opdims = [1 1];
-sys2 = kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,fkern,opdims,spmat);
+sys2 = chnk.flam.kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,fkern,opdims,spmat);
 t1 = toc(start);
 
 fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
 
 
 xflam = chnkr.r(:,:);
-matfun = @(i,j) kernbyindex(i,j,chnkr,wts,fkern,opdims,spmat);
-[pr,ptau,pw,pin] = proxy_square_pts();
+matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkr,wts,fkern,opdims,spmat);
+[pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
 ifaddtrans = true;
-pxyfun = @(x,slf,nbr,l,ctr) proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
+pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
     fkern,opdims,pr,ptau,pw,pin,ifaddtrans);
 start = tic; F = rskelf(matfun,xflam,200,1e-14,pxyfun); t1 = toc(start);
 

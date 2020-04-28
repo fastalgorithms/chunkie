@@ -1,4 +1,4 @@
-function chnkrout = chunkermerge(chnkrs)
+function chnkrout = merge(chnkrs)
 
 if isempty(chnkrs)
     chnkrout = chunker();

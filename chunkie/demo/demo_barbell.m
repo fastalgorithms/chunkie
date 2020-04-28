@@ -99,7 +99,7 @@ fprintf('%5.2e s : time to oversample boundary\n',t1)
 
 %
 
-start = tic; in = chunkerinteriorflam(chnkr,targets); t1 = toc(start);
+start = tic; in = chunkerinterior(chnkr,targets); t1 = toc(start);
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
 
@@ -107,10 +107,10 @@ fprintf('%5.2e s : time to find points in domain\n',t1)
 
 wts2 = weights(chnkr2);
 
-matfun = @(i,j) kernbyindexr(i,j,targets(:,in),chnkr2,wts2,fkern,opdims);
-[pr,ptau,pw,pin] = proxy_square_pts();
+matfun = @(i,j) chnk.flam.kernbyindexr(i,j,targets(:,in),chnkr2,wts2,fkern,opdims);
+[pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
 
-pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr2,wts2, ...
+pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr2,wts2, ...
     fkern,opdims,pr,ptau,pw,pin);
 
 xflam = chnkr2.r(:,:);

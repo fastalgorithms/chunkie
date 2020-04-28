@@ -42,10 +42,10 @@ opdims = [1 1];
 
 if useflam
     xflam1 = chnkr.r(:,:);
-    matfun = @(i,j) kernbyindexr(i,j,pts,chnkr,wts,kernd,opdims);
-    [pr,ptau,pw,pin] = proxy_square_pts();
+    matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr,wts,kernd,opdims);
+    [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
 
-    pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) proxyfunr(rc,rx,slf,nbr,l, ...
+    pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
         ctr,chnkr,wts,kernd,opdims,pr,ptau,pw,pin);
     F = ifmm(matfun,pts,xflam1,200,1e-14,pxyfun);
     vals1 = ifmm_mv(F,dens1(:),matfun);
