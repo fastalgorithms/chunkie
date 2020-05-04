@@ -77,8 +77,6 @@ utarg = kernmatstarg*strengths;
 
 % test green's id
 
-opts.usesmooth=false;
-opts.verb=false;
 opts.quadkgparams = {'RelTol',1.0e-13,'AbsTol',1.0e-13};
 start=tic; Du = chunkerkerneval(chnkr,kernd,densu,targets,opts); 
 toc(start)

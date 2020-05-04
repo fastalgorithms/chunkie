@@ -1,11 +1,36 @@
-function chnkr = chunkerfuncuni(fcurve,cparams,pref)
-%CHUNKERFUNCUNI
+function chnkr = funcuni(fcurve,cparams,pref)
+%CHNK.FUNCUNI uniform discretization of parameterized curve, mostly for
+%   debugging and convergence tests.
 %
-%	cparams = curve parameters
+% Syntax: chnkr = chnk.funcuni(fcurve,cparams,pref)
 %
-%	cparams.ta = left end of t interval (0)
-% 	cparams.tb = right end of t interval (2*pi)
-%   cparams.npan = number of panels
+% Input: 
+%   fcurve - function handle of the form
+%               [r,d,d2] = fcurve(t)
+%            where r, d, d2 are size [dim,size(t)] arrays describing
+%            position, first derivative, and second derivative of a curve
+%            in dim dimensions parameterized by t.
+%
+% Optional input:
+%	cparams - curve parameters structure (defaults)
+%   	cparams.ta = left end of t interval (0)
+%       cparams.tb = right end of t interval (2*pi)
+%       cparams.npan = number of panels
+%   pref - chunkerpref object or structure (defaults)
+%       pref.nchmax - maximum number of chunks (10000)
+%       pref.k - number of Legendre nodes on chunks (16)
+%
+% Examples:
+%   chnkr = chnk.funcuni(@(t) starfish(t)); % chunk up starfish w/ standard
+%                                        % options
+%   pref = []; pref.k = 30; 
+%   cparams = []; cparams.npan = 30;
+%   chnkr = chnk.funcuni(@(t) starfish(t),cparams,pref); 
+%                                           % change up options
+%   
+% see also CHUNKERFUNC, CHUNKERPOLY, CHUNKERPREF, CHUNKER
+
+% author: Travis Askham (askhamwhat@gmail.com)
 %
 
 if nargin < 2

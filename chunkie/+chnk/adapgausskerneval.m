@@ -1,6 +1,6 @@
-function [mat,maxrecs,numints,iers] = adapgausswts(r,d,d2,h,ct,bw,j,...
-    rt,dt,d2t,kern,opdims,t,w,opts)
-%CHNK.ADAPGAUSSWTS adaptive integration for interaction of kernel on chunk 
+function [fints,maxrecs,numints,iers] = adapgausskerneval(r,d,d2,h,ct,bw,j,...
+    dens,rt,dt,d2t,kern,opdims,t,w,opts)
+%CHNK.ADAPGAUSSKERNEVAL adaptive integration for interaction of kernel on chunk 
 % at targets
 %
 % WARNING: this routine is not designed to be user-callable and assumes 
@@ -18,6 +18,7 @@ function [mat,maxrecs,numints,iers] = adapgausswts(r,d,d2,h,ct,bw,j,...
 %   bw - barycentric interpolation weights for Legendre nodes at order of
 %   chunker
 %   j - chunk of interest
+%   dens - (opdims(2)*chnkr.k,chnkr.nch) array of density values
 %   rt,dt,d2t - position, derivative, second derivative of select 
 %               target points. if any are not used by kernel (or not well
 %               defined, e.g. when not on curve), a dummy array
@@ -27,6 +28,10 @@ function [mat,maxrecs,numints,iers] = adapgausswts(r,d,d2,h,ct,bw,j,...
 %   t - (Legendre) integration nodes for adaptive integration
 %   w - integration nodes for adaptive integrator (t and w not necessarily 
 %       same order as chunker order)
+%   opts - options structure
+%       opts.eps = tolerance (1e-12)
+%       opts.maxints = maximum number of integrals to use (100000)
+%       opts.maxdepth = maximum depth in recursion (200)
 %
 % Output
 %   mat - integration matrix
@@ -39,7 +44,7 @@ eps = 1e-12;
 nnmax=100000;
 maxdepth=200;
 
-if nargin < 15
+if nargin < 16
     opts = [];
 end
 
@@ -61,11 +66,14 @@ rs = r(:,:,j);
 ds = d(:,:,j);
 d2s = d2(:,:,j);
 hs = h(j);
+jstart = opdims(2)*k*(j-1)+1;
+jend = opdims(2)*k*j;
+densj = reshape(dens(jstart:jend),opdims(2),k);
 
 stack = zeros(2,maxdepth);
-vals = zeros(opdims(1)*opdims(2)*k,maxdepth);
+vals = zeros(opdims(1),maxdepth);
 
-mat = zeros(opdims(1)*nt,opdims(2)*k);
+fints = zeros(opdims(1)*nt,1);
 
 numints = zeros(nt,1); iers = zeros(nt,1); maxrecs = zeros(nt,1);
 
@@ -81,12 +89,13 @@ for ii = 1:nt
 
     stack(1,1)=-1;
     stack(2,1)=1;
-    vals(:,1) = oneintp(-1,1,rs,ds,d2s,ct,bw,rt1,dt1,d2t1,kern,opdims,t,w);
+    vals(:,1) = oneintp(-1,1,rs,ds,d2s,densj,ct,bw,rt1,dt1,d2t1,kern,...
+        opdims,t,w);
 
     % recursively integrate the thing
 
     jj=1;
-    mat1=0;
+    fint1=0;
     iers(ii)=0;
     maxrecs(ii)=0;
     toomanyints = true;
@@ -98,8 +107,8 @@ for ii = 1:nt
 
         a = stack(1,jj); b = stack(2,jj);
         c=(a+b)/2;
-        v2 = oneintp(a,c,rs,ds,d2s,ct,bw,rt1,dt1,d2t1,kern,opdims,t,w);
-        v3 = oneintp(c,b,rs,ds,d2s,ct,bw,rt1,dt1,d2t1,kern,opdims,t,w);
+        v2 = oneintp(a,c,rs,ds,d2s,densj,ct,bw,rt1,dt1,d2t1,kern,opdims,t,w);
+        v3 = oneintp(c,b,rs,ds,d2s,densj,ct,bw,rt1,dt1,d2t1,kern,opdims,t,w);
     
         dd= max(abs(v2+v3-vals(:,jj)));
         if(dd <= eps) 
@@ -111,7 +120,7 @@ for ii = 1:nt
     %       in the stack
 
     %
-            mat1=mat1+v2+v3;
+            fint1=fint1+v2+v3;
             jj=jj-1;
     %
     %        if the whole thing has been integrated - return
@@ -146,15 +155,15 @@ for ii = 1:nt
     if toomanyints; iers(ii) = 16; end
     
     istart = (ii-1)*opdims(1)+1; iend = ii*opdims(1);
-    mat(istart:iend,:) = reshape(mat1,opdims(1),opdims(2)*k);
+    fints(istart:iend) = fint1;
     
 end
 
-mat = mat*hs;
+fints = fints*hs;
 
 end
 
-function val = oneintp(a,b,rs,ds,d2s,ct,bw,rt,dt,d2t,kern,opdims,t,w)
+function val = oneintp(a,b,rs,ds,d2s,densj,ct,bw,rt,dt,d2t,kern,opdims,t,w)
 %       integrate the kernel multiplied by each Lagrange interpolant
 %   on the interval [a,b] at a single target
 
@@ -172,6 +181,7 @@ interpmat = bsxfun(@rdivide,interpmat,interpmatsum);
 rint = rs*interpmat;
 dint = ds*interpmat;
 d2int = d2s*interpmat;
+densint = densj*interpmat;
 dintlen = sqrt(sum(dint.^2,1));
 %tauint = bsxfun(@rdivide,dint,dintlen);
 srcinfo = []; srcinfo.r = rint; srcinfo.d = dint; 
@@ -183,11 +193,9 @@ mat_tt = kern(srcinfo,targinfo);
 dsdt = u*( (w(:).' ).*dintlen);
 dsdt = repmat(dsdt,opdims(2),1); dsdt = dsdt(:);
 
-mat_tt = bsxfun(@times,mat_tt,dsdt.');
+densint = densint(:).*dsdt;
 
-mat_tt = reshape(mat_tt,opdims(1)*opdims(2),ntt);
-val = mat_tt*(interpmat.');
-val = val(:);
+val = mat_tt*densint;
 
 end
 

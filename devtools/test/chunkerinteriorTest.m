@@ -30,7 +30,7 @@ t1 = toc(start);
 % nt = length(xx(:)); targs = zeros(2,nt); 
 % targs(1,:) = xx(:); targs(2,:) = yy(:);
 
-nt = 100000;
+nt = 10000;
 scal = 2*rand(1,nt);
 tr = 2*pi*rand(1,nt);
 

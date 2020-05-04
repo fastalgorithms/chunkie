@@ -32,7 +32,8 @@ t1 = toc(start);
 fprintf('%5.2e s : time to build geo\n',t1)
 
 assert(checkadjinfo(chnkr) == 0);
-chnkr = chnkr.refine(); chnkr = chnkr.sort();
+refopts = []; refopts.maxchunklen = 4.0/abs(zk);
+chnkr = chnkr.refine(refopts); chnkr = chnkr.sort();
 
 % make 2 shifted copies of this chnkr and merge them
 
@@ -66,10 +67,8 @@ axis equal
 % build CFIE
 
 fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'C',1);
-opdims(1) = 1; opdims(2) = 1;
 
-opts = [];
-start = tic; sysmat = chunkermat(chnkr,fkern,opts);
+start = tic; sysmat = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -104,17 +103,6 @@ ytarg = linspace(-6,6,nplot);
 targets = zeros(2,length(xxtarg(:)));
 targets(1,:) = xxtarg(:); targets(2,:) = yytarg(:);
 
-start = tic;
-chnkr2 = chnkr;
-chnkr2 = chnkr2.makedatarows(1);
-chnkr2.data(1,:) = sol(:);
-optref = []; optref.nover = 4;
-chnkr2 = chnkr2.refine(optref);
-sol2 = chnkr2.data(1,:);
-t1 = toc(start);
-
-fprintf('%5.2e s : time to oversample boundary\n',t1)
-
 %
 
 start = tic; in = chunkerinterior(chnkr,targets); t1 = toc(start);
@@ -124,22 +112,12 @@ fprintf('%5.2e s : time to find points in domain\n',t1)
 
 % compute layer potential based on oversample boundary
 
-wts2 = weights(chnkr2);
-
-matfun = @(i,j) chnk.flam.kernbyindexr(i,j,targets(:,out),chnkr2,wts2,fkern,opdims);
-[pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
-
-pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr2,wts2, ...
-    fkern,opdims,pr,ptau,pw,pin);
-
-xflam = chnkr2.r(:,:);
-
-start = tic; F = ifmm(matfun,targets(:,out),xflam,200,1e-14,pxyfun); 
-t1 = toc(start);
-fprintf('%5.2e s : time for ifmm form (for plotting)\n',t1)
+optseval = []; optseval.eps = 1e-3;
 start = tic;
-uscat = ifmm_mv(F,sol2(:),matfun); t1 = toc(start);
-fprintf('%5.2e s : time for ifmm apply (for plotting)\n',t1)
+uscat = chunkerkerneval(chnkr,fkern,sol,targets(:,out),optseval); 
+t1 = toc(start);
+
+fprintf('%5.2e s : time to evaluate kernel\n',t1)
 
 srcinfo = []; srcinfo.r = src0; targinfo = []; targinfo.r = targets(:,out);
 uin = kerns(srcinfo,targinfo)*strengths;

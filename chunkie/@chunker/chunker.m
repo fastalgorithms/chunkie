@@ -262,6 +262,7 @@ classdef chunker
         ier = checkadjinfo(obj)
         [inds,adjs,info] = sortinfo(obj)
         [re,taue] = chunkends(obj,ich)
+        flag = flagnear(obj,pts,opts)
     end
     methods(Static)
         obj = chunkerfunc(fcurve,varargin)

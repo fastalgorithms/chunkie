@@ -1,9 +1,9 @@
-function fint = chunkerintchunk_kernfcoefs(kern,opdims,rdim,fc, ...
-    rci,dci,d2ci,targ)
+function fint = kerncoefs(kern,opdims,rdim,fc, ...
+    rci,dci,d2ci,targ,quadgkparams)
 
 fintfun = @(t) fkerneval(t,kern,fc,rci,dci,d2ci,targ,opdims,rdim);
 
-fint = quadgk(fintfun,-1,1);
+fint = quadgk(fintfun,-1,1,quadgkparams{:});
 
 end
 

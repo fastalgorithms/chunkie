@@ -15,7 +15,7 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %       cparams.ta = left end of t interval (0)
 %       cparams.tb = right end of t interval (2*pi)
 %       cparams.ifclosed = flag determining if the curve
-%           is to be interpreted as a closed curve (1)
+%           is to be interpreted as a closed curve (true)
 %       cparams.chsmall = max size of end intervals if
 %           ifclosed == 0 (Inf)
 %       cparams.nover = oversample resolved curve nover
@@ -23,23 +23,31 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %       cparams.eps = resolve coordinates, arclength,
 %          and first and second derivs of coordinates
 %          to this tolerance (1.0e-6)
-%       cparams.levrestr = flag, determines if level
-%          restriction is to be enforced, i.e. no chunk should
-%          have double the arc length of its neighbor (1)
+%       cparams.lvlr = string, determines type of level
+%          restriction to be enforced
+%               lvlr = 'a' -> no chunk should have double the arc length 
+%                               of its neighbor 
+%               lvlr = 't' -> no chunk should have double the length in 
+%                               parameter space of its neighbor 
+%               lvlr = 'n' -> no enforcement of level restriction
+%       cparams.lvlrfac = factor in level restriction, i.e. check if 
+%               neighboring chunks differ in size by this factor (2.0)
 %       cparams.maxchunklen - maximum length of any chunk (Inf)
 %   pref - chunkerpref object or structure (defaults)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
 %
 % Examples:
-%   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish with standard
+%   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish w/ standard
 %                                        % options
 %   pref = []; pref.k = 30; 
 %   cparams = []; cparams.eps = 1e-3;
 %   chnkr = chunkerfunc(@(t) starfish(t),cparams,pref); % change up options
 %   
-% see also CHUNKPOLY, CHUNKERPREF, CHUNKER
+% see also CHUNKERPOLY, CHUNKERPREF, CHUNKER
 
+% author: Travis Askham (askhamwhat@gmail.com)
+%
 
 if nargin < 2
     cparams = [];
@@ -54,7 +62,7 @@ end
 ta = 0.0; tb = 2*pi; ifclosed=true;
 chsmall = Inf; nover = 0;
 eps = 1.0e-6;
-levrestr = 1; maxchunklen = Inf;
+lvlr = 'a'; maxchunklen = Inf; lvlrfac = 2.0;
 
 if isfield(cparams,'ta')
     ta = cparams.ta;
@@ -74,8 +82,11 @@ end
 if isfield(cparams,'eps')
     eps = cparams.eps;
 end	 
-if isfield(cparams,'levrestr')
-    levrestr = cparams.levrestr;
+if isfield(cparams,'lvlr')
+    lvlr = cparams.lvlr;
+end
+if isfield(cparams,'lvlrfac')
+    lvlrfac = cparams.lvlrfac;
 end
 if isfield(cparams,'maxchunklen')
     maxchunklen = cparams.maxchunklen;
@@ -153,7 +164,9 @@ for ijk = 1:maxiter_res
 
      %       . . . mark as processed and resolved if less than eps
 
-            if (rmsemax > eps || rlself > maxchunklen)
+            if (rmsemax > eps || rlself > maxchunklen || ...
+                    and(or(adjs(1,ich) <= 0, adjs(2,ich) <= 0), ...
+                rlself > chsmall))
               %       . . . if here, not resolved
               %       divide - first update the adjacency list
                 if (nch +1 > nchmax)
@@ -210,83 +223,98 @@ end
 %       check the size of adjacent neighboring chunks - if off by a
 %       factor of more than 2, split them as well. iterate until done.
    
-maxiter_adj=1000;
-for ijk = 1:maxiter_adj
+if or(strcmpi(lvlr,'a'),strcmpi(lvlr,'t'))
+    maxiter_adj=1000;
+    for ijk = 1:maxiter_adj
 
-    nchold=nch;
-    ifdone=1;
-    for i = 1:nchold
-        i1=adjs(1,i);
-        i2=adjs(2,i);
-
-%       calculate chunk lengths
-
-        a=ab(1,i);
-        b=ab(2,i);
-        rlself = chunklength(fcurve,a,b,xs,ws);
-
-        rl1=rlself;
-        rl2=rlself;
-
-        if (i1 > 0)
-            a1=ab(1,i1);
-            b1=ab(2,i1);
-            rl1 = chunklength(fcurve,a1,b1,xs,ws);
-        end
-        if (i2 > 0)
-            a2=ab(1,i2);
-            b2=ab(2,i2);
-            rl2 = chunklength(fcurve,a2,b2,xs,ws);
-        end
-
-%       only check if self is larger than either of adjacent blocks,
-%       iterating a couple times will catch everything
-
-        sc = 2.05d0;
-        if (rlself > sc*rl1 || rlself > sc*rl2)
-
-%       split chunk i now, and recalculate nodes, ders, etc
-
-            if (nch + 1 > nchmax)
-                error('too many chunks')
-            end
-
-	 
-            ifdone=0;
-            a=ab(1,i);
-            b=ab(2,i);
-            ab2=(a+b)/2;
-
+        nchold=nch;
+        ifdone=1;
+        for i = 1:nchold
             i1=adjs(1,i);
             i2=adjs(2,i);
-%        
-            adjs(1,i) = i1;
-            adjs(2,i) = nch+1;
 
-%       . . . first update nch+1
+    %       calculate chunk lengths
 
-            adjs(1,nch+1) = i;
-            adjs(2,nch+1) = i2;
+            a=ab(1,i);
+            b=ab(2,i);
+            
+            if strcmpi(lvlr,'a')
+                rlself = chunklength(fcurve,a,b,xs,ws);
 
- %       . . . if there's an i2, update it
+                rl1=rlself;
+                rl2=rlself;
 
-            if (i2 > 0)
-                adjs(1,i2) = nch+1;
+                if (i1 > 0)
+                    a1=ab(1,i1);
+                    b1=ab(2,i1);
+                    rl1 = chunklength(fcurve,a1,b1,xs,ws);
+                end
+                if (i2 > 0)
+                    a2=ab(1,i2);
+                    b2=ab(2,i2);
+                    rl2 = chunklength(fcurve,a2,b2,xs,ws);
+                end
+            else
+                
+                rlself = b-a;
+                rl1 = rlself;
+                rl2 = rlself;
+                if (i1 > 0)
+                    rl1 = ab(2,i1)-ab(1,i1);
+                end
+                if (i2 > 0)
+                    rl2 = ab(2,i2)-ab(1,i2);
+                end
             end
 
-            nch=nch+1;
-            ab(1,i)=a;
-            ab(2,i)=ab2;
+    %       only check if self is larger than either of adjacent blocks,
+    %       iterating a couple times will catch everything
 
-            ab(1,nch)=ab2;
-            ab(2,nch)=b;
+            if (rlself > lvlrfac*rl1 || rlself > lvlrfac*rl2)
+
+    %       split chunk i now, and recalculate nodes, ders, etc
+
+                if (nch + 1 > nchmax)
+                    error('too many chunks')
+                end
+
+
+                ifdone=0;
+                a=ab(1,i);
+                b=ab(2,i);
+                ab2=(a+b)/2;
+
+                i1=adjs(1,i);
+                i2=adjs(2,i);
+    %        
+                adjs(1,i) = i1;
+                adjs(2,i) = nch+1;
+
+    %       . . . first update nch+1
+
+                adjs(1,nch+1) = i;
+                adjs(2,nch+1) = i2;
+
+     %       . . . if there's an i2, update it
+
+                if (i2 > 0)
+                    adjs(1,i2) = nch+1;
+                end
+
+                nch=nch+1;
+                ab(1,i)=a;
+                ab(2,i)=ab2;
+
+                ab(1,nch)=ab2;
+                ab(2,nch)=b;
+            end
         end
-    end
 
-    if (ifdone == 1)
-        break;
-    end
+        if (ifdone == 1)
+            break;
+        end
 
+    end
 end
 
 %       go ahead and oversample by nover, updating

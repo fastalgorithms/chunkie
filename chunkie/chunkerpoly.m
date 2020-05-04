@@ -1,4 +1,4 @@
-function chnkr = chunkpoly(verts,cparams,pref,edgevals)
+function chnkr = chunkerpoly(verts,cparams,pref,edgevals)
 %CHUNKPOLY return a chunker object corresponding to the polygon with the
 % given vertices. By default, a polygon with rounded corners is returned.
 % Open and higher dimensional "polygons" are allowed. Optional dyadic

@@ -21,7 +21,8 @@ function in = chunkerinterior(chnkr,pts,opts)
 %   pts = 2*randn(2,100);
 %   in = chunkerinterior(chnkr,pts);
 %
-% TODO: faster algorithm (smooth rule + compare normal at nearest point)
+
+% author: Travis Askham (askhamwhat@gmail.com)
 
 assert(chnkr.dim == 2,'interior only well-defined for 2D');
 

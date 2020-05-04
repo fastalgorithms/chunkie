@@ -29,8 +29,6 @@ kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
 
 dens1 = ones(chnkr.k,chnkr.nch);
 
-opdims = [1 1];
-
 nxdir = 40;
 
 rmin = min(chnkr);
@@ -42,7 +40,8 @@ nt = length(xx(:)); targs = zeros(2,nt);
 targs(1,:) = xx(:); targs(2,:) = yy(:);
 
 fprintf('computing Gauss I.D. with smooth rule...\n');
-opts.usesmooth=true;
+opts.forcesmooth=true;
+opts.flam = true;
 start=tic; d1 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
 toc(start)
 
@@ -51,9 +50,11 @@ toc(start)
 if doadap
     fprintf( ...
       'computing Gauss I.D. with adaptive quadrature (may be slow)...\n');
-    opts.usesmooth=false;
-    opts.verb=false;
+    opts.forcesmooth=false;
+    opts.forceadap = false;
     opts.quadkgparams = {'RelTol',1.0e-7,'AbsTol',1.0e-7};
+    opts.fac = 1.0;
+    opts.flam = true;
     start=tic; d12 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
     toc(start)
     assert(all(or(abs(d12(:))<1e-6,abs(d12(:)+1)<1e-6)));
@@ -62,17 +63,17 @@ end
 
 dd = reshape(d1,size(xx));
 
-%%
+%
 
 figure(1)
 clf
 hold off
 
-h = pcolor(xx,yy,1.0*or((abs(dd+1)<1.0e-6),abs(dd)<1.0e-6)); set(h,'EdgeColor','none');
+h = pcolor(xx,yy,log10(min(abs(dd+1),abs(dd)))); set(h,'EdgeColor','none');
 hold on
 plot(chnkr)
 
-caxis([0 1]);
+caxis([-16,0])
 
 colorbar
 
@@ -81,11 +82,11 @@ if doadap
     clf 
     hold off
 
-    h = pcolor(xx,yy,1.0*or((abs(dd2+1)<1.0e-8),abs(dd2)<1.0e-8)); set(h,'EdgeColor','none');
+    h = pcolor(xx,yy,log10(min(abs(dd2+1),abs(dd2)))); set(h,'EdgeColor','none');
     hold on
     plot(chnkr)
 
-    caxis([0 1])
+    caxis([-16,0])
     
     colorbar
 end

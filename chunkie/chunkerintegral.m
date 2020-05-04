@@ -11,7 +11,7 @@ function fint = chunkerintegral(chnkr,f,opts)
 %       appropriate dimension, i.e. fvals = f(xx) is an array of values 
 %       of f at each coordinate xx(1:chnkr.dim,i)
 %   opts - structure for setting various parameters
-%       opts.usesmooth - if = 1, then just use the smooth integration
+%       opts.usesmooth - if = true, then just use the smooth integration
 %          rule for each chunk. otherwise, adaptive integration 
 %          (quadgk) is used (default 0)
 %       opts.quadgkparams - if non-empty this is a cell structure
@@ -21,6 +21,8 @@ function fint = chunkerintegral(chnkr,f,opts)
 %   fint - integral of f over the chunker object
 %
 % see also QUADGK
+
+% author: Travis Askham (askhamwhat@gmail.com)
 
 if nargin < 3
     opts = [];

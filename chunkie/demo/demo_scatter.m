@@ -11,7 +11,7 @@ addpaths_loc();
 
 % planewave vec
 
-kvec = 10*[1;-1.5];
+kvec = 20*[1;-1.5];
 
 %
 
@@ -63,7 +63,7 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 sys = 0.5*eye(chnkr.k*chnkr.nch) + sysmat;
 
 rhs = -planewave(kvec(:),chnkr.r(:,:)); rhs = rhs(:);
-start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
+start = tic; sol = gmres(sys,rhs,[],1e-14,400); t1 = toc(start);
 
 fprintf('%5.2e s : time for dense gmres\n',t1)
 
@@ -72,23 +72,12 @@ fprintf('%5.2e s : time for dense gmres\n',t1)
 rmin = min(chnkr); rmax = max(chnkr);
 xl = rmax(1)-rmin(1);
 yl = rmax(2)-rmin(2);
-nplot = 300;
-xtarg = linspace(rmin(1)-xl,rmax(1)+xl); 
+nplot = 400;
+xtarg = linspace(rmin(1)-xl,rmax(1)+xl,nplot); 
 ytarg = linspace(rmin(2)-yl,rmax(2)+yl,nplot);
 [xxtarg,yytarg] = meshgrid(xtarg,ytarg);
 targets = zeros(2,length(xxtarg(:)));
 targets(1,:) = xxtarg(:); targets(2,:) = yytarg(:);
-
-start = tic;
-chnkr2 = chnkr;
-chnkr2 = chnkr2.makedatarows(1);
-chnkr2.data(1,:) = sol(:);
-optref = []; optref.nover = 4;
-chnkr2 = chnkr2.refine(optref);
-sol2 = chnkr2.data(1,:);
-t1 = toc(start);
-
-fprintf('%5.2e s : time to oversample boundary\n',t1)
 
 %
 
@@ -99,23 +88,9 @@ fprintf('%5.2e s : time to find points in domain\n',t1)
 
 % compute layer potential based on oversample boundary
 
-wts2 = weights(chnkr2);
-
-matfun = @(i,j) chnk.flam.kernbyindexr(i,j,targets(:,out),chnkr2,wts2,fkern,opdims);
-[pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
-
-pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr2,wts2, ...
-    fkern,opdims,pr,ptau,pw,pin);
-
-xflam = chnkr2.r(:,:);
-
-fmmopts = []; fmmopts.store = 'A'; % store everything (faster apply)
-start = tic; F = ifmm(matfun,targets(:,out),xflam,200,1e-14,pxyfun,fmmopts); 
-t1 = toc(start);
-fprintf('%5.2e s : time for ifmm form (for plotting)\n',t1)
 start = tic;
-uscat = ifmm_mv(F,sol2(:),matfun); t1 = toc(start);
-fprintf('%5.2e s : time for ifmm apply (for plotting)\n',t1)
+uscat = chunkerkerneval(chnkr,fkern,sol,targets(:,out)); t1 = toc(start);
+fprintf('%5.2e s : time for kernel eval (for plotting)\n',t1)
 
 uin = planewave(kvec,targets(:,out));
 utot = uscat(:)+uin(:);

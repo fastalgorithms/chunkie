@@ -1,5 +1,5 @@
 
-%CHUNKERFUNCUNITEST
+%CHNKFUNCUNITEST
 %
 % This file tests the routine chunkerfunc on a couple of examples
 % as well as testing the plot, quiver, sort, and reverse utilities
@@ -12,7 +12,7 @@ pref = [];
 pref.k = 16;
 narms = 3;
 amp = 0.5;
-start = tic; chnkr = chunkerfuncuni(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chnk.funcuni(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
 %
@@ -31,7 +31,7 @@ axis equal
 
 modes = randn(11,1); modes(1) = 1.1*sum(abs(modes(2:end))); ctr = [1.0;-0.5];
 
-start = tic; chnkr = chunkerfuncuni(@(t) chnk.curves.bymode(t,modes,ctr),cparams); 
+start = tic; chnkr = chnk.funcuni(@(t) chnk.curves.bymode(t,modes,ctr),cparams); 
 t1 = toc(start);
 
 fprintf('%5.2e seconds to chunk random mode domain with %d chunks\n', ...
@@ -50,7 +50,7 @@ axis equal
 
 modes = 5*rand(); ctr = [1.0;-0.5];
 
-start = tic; chnkr = chunkerfuncuni(@(t) chnk.curves.bymode(t,modes,ctr),cparams); 
+start = tic; chnkr = chnk.funcuni(@(t) chnk.curves.bymode(t,modes,ctr),cparams); 
 t1 = toc(start);
 
 fprintf('%5.2e seconds to chunk circle domain with %d chunks\n', ...
