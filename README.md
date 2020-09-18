@@ -61,10 +61,6 @@ folder) is available under the terms of the
 BSD 3-clause license, which should have been included
 in the distribution (see chunkie/LICENSE.md)
 
-this top-level folder contains some fortran
-files and others which may be subject to a slightly
-different license.
-
 ## chunkie team
 
 chunkers:

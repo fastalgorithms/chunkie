@@ -68,27 +68,31 @@ for i = 1:nch
     iafter = adj(2,i);
 
     % neighbors
-    rt = r(:,:,ibefore);
-    dt = d(:,:,ibefore);
-    d2t = d2(:,:,ibefore);
-    submat = chnk.adapgausswts(r,d,d2,h,t,bw,i,rt,dt,d2t, ...
-        kern,opdims,t2,w2);
     
-    imat = 1 + (ibefore-1)*k*opdims(1);
-    imatend = ibefore*k*opdims(1);
+    if ibefore > 0
+        rt = r(:,:,ibefore);
+        dt = d(:,:,ibefore);
+        d2t = d2(:,:,ibefore);
+        submat = chnk.adapgausswts(r,d,d2,h,t,bw,i,rt,dt,d2t, ...
+            kern,opdims,t2,w2);
 
-    sysmat(imat:imatend,jmat:jmatend) = submat;
-    
-    rt = r(:,:,iafter);
-    dt = d(:,:,iafter);
-    d2t = d2(:,:,iafter);
-    submat = chnk.adapgausswts(r,d,d2,h,t,bw,i,rt,dt,d2t, ...
-        kern,opdims,t2,w2);
-    
-    imat = 1 + (iafter-1)*k*opdims(1);
-    imatend = iafter*k*opdims(1);
+        imat = 1 + (ibefore-1)*k*opdims(1);
+        imatend = ibefore*k*opdims(1);
 
-    sysmat(imat:imatend,jmat:jmatend) = submat;
+        sysmat(imat:imatend,jmat:jmatend) = submat;
+    end
+    if iafter > 0
+        rt = r(:,:,iafter);
+        dt = d(:,:,iafter);
+        d2t = d2(:,:,iafter);
+        submat = chnk.adapgausswts(r,d,d2,h,t,bw,i,rt,dt,d2t, ...
+            kern,opdims,t2,w2);
+
+        imat = 1 + (iafter-1)*k*opdims(1);
+        imatend = iafter*k*opdims(1);
+
+        sysmat(imat:imatend,jmat:jmatend) = submat;
+    end
     
     % self
     

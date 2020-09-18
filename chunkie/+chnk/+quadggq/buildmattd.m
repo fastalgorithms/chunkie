@@ -55,26 +55,30 @@ for j = 1:nch
 
     % neighbors
     
-    submat = chnk.quadggq.nearbuildmat(r,d,d2,h,ibefore,j, ...
-        kern,opdims,u,xs1,wts1,ainterp1kron,ainterp1);
+    if ibefore > 0
     
-    submat(submat == 0.0) = 1e-300; %hack
-    
-    imat = 1 + (ibefore-1)*k*opdims(1);
-    imatend = ibefore*k*opdims(1);
+        submat = chnk.quadggq.nearbuildmat(r,d,d2,h,ibefore,j, ...
+            kern,opdims,u,xs1,wts1,ainterp1kron,ainterp1);
 
-    spmat(imat:imatend,jmat:jmatend) = submat;
-    
-    submat = chnk.quadggq.nearbuildmat(r,d,d2,h,iafter,j, ...
-        kern,opdims,u,xs1,wts1,ainterp1kron,ainterp1);
-    
-    submat(submat == 0.0) = 1e-300;
-    
-    imat = 1 + (iafter-1)*k*opdims(1);
-    imatend = iafter*k*opdims(1);
+        submat(submat == 0.0) = 1e-300; %hack
 
-    spmat(imat:imatend,jmat:jmatend) = submat;
+        imat = 1 + (ibefore-1)*k*opdims(1);
+        imatend = ibefore*k*opdims(1);
+
+        spmat(imat:imatend,jmat:jmatend) = submat;
+    end
     
+    if iafter > 0
+        submat = chnk.quadggq.nearbuildmat(r,d,d2,h,iafter,j, ...
+            kern,opdims,u,xs1,wts1,ainterp1kron,ainterp1);
+
+        submat(submat == 0.0) = 1e-300;
+
+        imat = 1 + (iafter-1)*k*opdims(1);
+        imatend = iafter*k*opdims(1);
+
+        spmat(imat:imatend,jmat:jmatend) = submat;
+    end
     % self
     
     submat = chnk.quadggq.diagbuildmat(r,d,d2,h,j,kern,opdims,...

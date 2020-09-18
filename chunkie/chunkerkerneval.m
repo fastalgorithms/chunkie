@@ -196,7 +196,13 @@ else
 %        opdims,sp);
     matfun = @(i,j) chnk.flam.kernbyindexr(i,j,targs,chnkr,wts,kern, ...
         opdims);
-    [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(200);
+    
+    width = max(abs(max(chnkr)-min(chnkr)))/3;
+    tmax = max(targs(:,:),[],2); tmin = min(targs(:,:),[],2);
+    wmax = max(abs(tmax-tmin));
+    width = max(width,wmax/3);
+    npxy = chnk.flam.nproxy_square(kern,width);
+    [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
     pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
         ctr,chnkr,wts,kern,opdims,pr,ptau,pw,pin);

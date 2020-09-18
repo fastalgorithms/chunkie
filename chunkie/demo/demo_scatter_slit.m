@@ -110,7 +110,7 @@ out = ~in;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
 
-% compute layer potential based on oversample boundary
+% compute layer potential at points for visualization
 
 optseval = []; optseval.eps = 1e-3;
 start = tic;

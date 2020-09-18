@@ -9,9 +9,13 @@ function [sysmat] = chunkermat(chnkr,kern,opts)
 % Input:
 %   chnkr - chunker object describing boundary
 %   kern  - kernel function. By default, this should be a function handle
-%           accepting input of the form kern(s,t,taus,taut), where s and t
-%           are the source and target locations and taus and taut are the 
-%           unit tangent at the source and target locations.
+%           accepting input of the form kern(srcinfo,targinfo), where srcinfo
+%           and targinfo are in the ptinfo struct format, i.e.
+%                ptinfo.r - positions (2,:) array
+%                ptinfo.d - first derivative in underlying
+%                     parameterization (2,:)
+%                ptinfo.d2 - second derivative in underlying
+%                     parameterization (2,:)
 %
 % Optional input:
 %   opts  - options structure. available options (default settings)

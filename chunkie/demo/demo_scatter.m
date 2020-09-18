@@ -63,7 +63,7 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 sys = 0.5*eye(chnkr.k*chnkr.nch) + sysmat;
 
 rhs = -planewave(kvec(:),chnkr.r(:,:)); rhs = rhs(:);
-start = tic; sol = gmres(sys,rhs,[],1e-14,400); t1 = toc(start);
+start = tic; sol = gmres(sys,rhs,[],1e-13,100); t1 = toc(start);
 
 fprintf('%5.2e s : time for dense gmres\n',t1)
 

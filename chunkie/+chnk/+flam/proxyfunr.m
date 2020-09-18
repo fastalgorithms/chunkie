@@ -1,6 +1,6 @@
 
 function [Kpxy,nbr] = proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
-    pr,ptau,pw,pin)
+    pr,ptau,pw,pin,rd)
 %PROXYFUNR proxy function utility for kernels defined on chunkers,
 % rectangular version
 %
@@ -83,9 +83,13 @@ else
 
     rslf = rx(:,slfuni);
     dslf = zeros(size(rslf));
+    if nargin > 14
+        dslf = rd(:,slfuni);
+    end
+    
     %dslf = bsxfun(@rdivide,dslf,sqrt(sum(dslf.^2,1)));
 
-    targinfo = []; targinfo.r = rslf; 
+    targinfo = []; targinfo.r = rslf; targinfo.d = dslf;
     srcinfo = []; srcinfo.r = pxy; srcinfo.d = ptau;
     
     Kpxy = kern(srcinfo,targinfo);
