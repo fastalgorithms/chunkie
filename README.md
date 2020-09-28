@@ -1,9 +1,3 @@
-# WARNING
-
-WARNING: chunkie is currently under development and
-this readme is somewhat aspirational. Consider it
-pre-beta
-
 # chunkie: CHUNK-based Integral Equations
 
 A MATLAB package for prototyping integral equation
@@ -23,7 +17,7 @@ space is accurate to some prescribed accuracy).
 corresponding to logarithmically singular integral equation
 kernels defined on a chunker
 - chunkie is designed to inter-operate with Ken Ho's fast
-linear algebra in MATLAB package (FLAM) --- more to come!
+linear algebra in MATLAB package (FLAM)
 - chunkie includes various routines for evaluating layer
 potentials and functions defined on chunkers
 
@@ -38,8 +32,8 @@ a submodule. You can either clone with the submodules
 
 or initialize the submodules after a git pull.
 Once the submodules are initialized, you can
-run the setup script (setup.m) from the main
-folder.
+run the setup script (setup.m) from the
+chunkie subfolder.
 
 Alternatively, it should work if you already have
 a reasonably up-to-date copy of FLAM on your path
@@ -50,7 +44,7 @@ function) to include FLAM's subfolders.
 
 ## Using chunkie
 
-Check out demo folder.
+Check out the chunkie/demo folder.
 
 ## License
 
@@ -68,21 +62,14 @@ chunkers:
 - Manas Rachh
 - Michael O'Neil
 
-kindly donated code:
-- Singular quads: James Bremer (chunkie/+chnk/+quad/+brem)
-- Classic Fortran routs: Leslie Greengard, Zydrunas
-Gimbutas, Vladimir Rokhlin
+James Bremer provided generalized Gaussian quadrature rules (chunkie/+chnk/+quad/+brem)
 
-## TO DO
+Many routines were modelled after parts of the legeexps.f library (Copyright Vladimir Rokhlin, Free BSD 3-clause) and FMMLIB2D (Copyright Leslie Greengard and Zydrunas Gimbutas, Free BSD 3-clause).
 
-chunkie is new software. Some short term plans
-include:
+## Contributing
 
-- professionalization of documentation
-- building out a suite of demonstrations
-- tighter integration with FLAM
-- allowing for different singular integration
-paradigms (e.g. following the work of Helsing et al.,
-Kloeckner et al., and Serkh et al.)
-- libraries for evaluating some common integral
-kernels
+Contributions are welcome. See the issues tab or create
+a new issue if there is something you're interested in
+bringing to chunkie. See the
+[wiki](https://github.com/fastalgorithms/chunkie/wiki)
+for more on the developer process.

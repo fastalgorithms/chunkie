@@ -1,1 +1,2 @@
+addpath('.')
 addpath(genpath('FLAM'))
