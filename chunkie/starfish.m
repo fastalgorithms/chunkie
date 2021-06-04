@@ -1,5 +1,19 @@
 
 function [r,d,d2] = starfish(t,varargin)
+%STARFISH
+% return position, first and second derivatives of parameterized starfish
+% domain. 
+%
+% Inputs:
+% t - points (in [0,2pi] to evaluate these quantities
+%
+% Optional inputs:
+% narms - integer, number of arms on starfish (5)
+% amp - float, amplitude of starfish arms relative to radius of length 1
+%               (0.3)
+% ctr - float(2), x,y coordinates of center of starfish ( [0,0] )
+% phi - float, phase shift (0)
+% scale - scaling factor (1.0)
 
 narms = 5;
 amp = 0.3;
