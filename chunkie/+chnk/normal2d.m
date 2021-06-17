@@ -1,7 +1,7 @@
 function nrm = normal2d(ptinfo)
-%CHNKR.NORMAL2D normal vector to curve for 2D curves
+%CHNK.NORMAL2D normal vector to curve for 2D curves
 % 
-% Syntax: nrm = chnkr.normal2d(ptinfo)
+% Syntax: nrm = chnk.normal2d(ptinfo)
 %
 % Input:
 %   ptinfo - curve point info struct, with entries
@@ -12,8 +12,10 @@ function nrm = normal2d(ptinfo)
 % Output:
 %   nrm - (2,:) array containing corresponding normal information
 %
-% see also CHNKR.CURVATURE2D
+% see also CHNK.CURVATURE2D
 
-d = ptinfo.d;
-dnrm = sqrt(sum(d.^2,1));
-nrm = bsxfun(@rdivide,[d(2,:);-d(1,:)],dnrm);
+nrm = ptinfo.d;
+dnrm = sqrt(sum(nrm.^2,1));
+nrm = flipud(nrm);
+nrm(2,:) = -nrm(2,:);
+nrm = bsxfun(@rdivide,nrm,dnrm);
