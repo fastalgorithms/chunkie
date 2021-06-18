@@ -9,23 +9,26 @@ function npxy = nproxy_square(kern,width,opts)
 %   width - box/cube width (of center box, proxy surface at
 %                1.5*width)
 %   opts - options structure
-%       opts.eps - tolerance (default 1e-13)
+%       opts.rank_or_tol - tolerance or maximum rank (default 1e-13)
+%       opts.eps - alias for rank_or_tol for backward compat (default 1e-13)
 %       opts.nsrc - number of sources to use in test (default 200)  
 %
 % Output:
-%   npxy - number of points on side of box to be passed
-%       to proxy surface routine
+%   npxy - number of points on perimeter of box to be sent to proxy routine
 %
 
   nsrc = 200;
-  eps = 1e-13;
+  rank_or_tol = 1e-13;
 
   if nargin < 3
     opts = [];
   end
 
   if isfield(opts,'eps')
-    eps = opts.eps;
+    rank_or_tol = opts.eps;
+  end
+  if isfield(opts,'rank_or_tol')
+    rank_or_tol = opts.rank_or_tol;
   end
   if isfield(opts,'nsrc')
     nsrc = opts.nsrc;
@@ -50,7 +53,7 @@ function npxy = nproxy_square(kern,width,opts)
 
     mat = kern(srcinfo,targinfo);
 
-    [sk,~] = id(mat,eps);
+    [sk,~] = id(mat,rank_or_tol);
     
     if length(sk) < min(nsrc,npxy)
       npxy = (floor((length(sk)-1)/4+0.1)+1)*4;

@@ -28,7 +28,6 @@ function [sysmat] = chunkermat(chnkr,kern,opts)
 %                       - 'native' selects standard scaled Gauss-Legendre 
 %                       quadrature for native functions
 %
-%           opts.quadorder = integer (chnkr.k), desired quadrature order.
 %           opts.nonsmoothonly = boolean (false), if true, only compute the
 %                         entries for which a special quadrature is used
 %                         (e.g. self and neighbor interactoins) and return
@@ -53,7 +52,6 @@ if nargin < 3
     opts = [];
 end
 
-quadorder = chnkr.k;
 quad = 'ggqlog';
 nonsmoothonly = false;
 l2scale = false;
@@ -76,9 +74,6 @@ opdims = size(ftemp);
 
 % get opts from struct if available
 
-if isfield(opts,'quadorder')
-    quadorder = opts.quadorder;
-end
 if isfield(opts,'quad')
     quad = opts.quad;
 end

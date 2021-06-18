@@ -103,11 +103,24 @@ matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkr,wts,fkern,opdims,spmat);
 ifaddtrans = true;
 pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
     fkern,opdims,pr,ptau,pw,pin,ifaddtrans);
+
+
 start = tic; F = rskelf(matfun,xflam,200,1e-14,pxyfun); t1 = toc(start);
+F = chunkerflam(chnkr,fkern,-0.5);
+
+fprintf('%5.2e s : time for flam rskelf compress\n',t1)
+
+pxyfunr = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
+        ctr,chnkr,wts,fkern,opdims,pr,ptau,pw,pin);
+
+opts = [];
+start = tic; F2 = rskel(matfun,xflam,xflam,200,1e-14,pxyfunr,opts); t1 = toc(start);
+
+fprintf('%5.2e s : time for flam rskel compress\n',t1)
 
 afun = @(x) rskelf_mv(F,x);
 
-fprintf('%5.2e s : time for flam rskelf compress\n',t1)
+
 
 err2 = norm(sys2-sys,'fro')/norm(sys,'fro');
 fprintf('%5.2e   : fro error of build \n',err2)
