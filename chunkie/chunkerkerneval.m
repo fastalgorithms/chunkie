@@ -55,7 +55,7 @@ if nargin < 5
     opts = [];
 end
 
-forcesmooth = false;
+forcesmooth = true;
 forceadap = false;
 flam = true;
 fac = 1.0;
@@ -106,7 +106,7 @@ end
 function fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
     targs,flag,opts)
 
-flam = true;
+flam = false;
 
 if nargin < 6
     flag = [];
@@ -137,7 +137,8 @@ if ~flam
         % nothing to ignore
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
+            dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
+            %dsdtdt = chnkr.d(1,:,i);% for complex contour, added by SJ 9/30/21
             dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
@@ -150,7 +151,7 @@ if ~flam
         % ignore interactions in flag array
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
+            dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
             dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));

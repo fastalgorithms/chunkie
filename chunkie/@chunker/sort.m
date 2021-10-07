@@ -26,7 +26,6 @@ function [chnkr,info] = sort(chnkr)
 % author: Travis Askham (askhamwhat@gmail.com)
 
 [inds,adjs,info] = sortinfo(chnkr);
-
 % reorder
 
 chnkr.r = chnkr.r(:,:,inds);

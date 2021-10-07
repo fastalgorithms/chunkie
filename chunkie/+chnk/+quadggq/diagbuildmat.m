@@ -64,6 +64,7 @@ end
 % d2fine = permute(d2fine,[3,1,2]);
 
 dfinenrm = squeeze(sqrt(sum(dfine.^2,1)));
+%dfinenrm = squeeze(dfine(1,:,:)); % for complex contour, added by SJ 9/30/21
 dsdt = dfinenrm.*whts0*hs;
 
 srcinfo = [];

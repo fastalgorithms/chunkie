@@ -72,6 +72,18 @@ if strcmpi(type,'s')
     submat = chnk.helm2d.green(zk,src,targ);
 end
 
+if strcmpi(type,'dprime')
+    targnorm = chnk.normal2d(targinfo);
+    srcnorm = chnk.normal2d(srcinfo);
+    [~,~,hess] = chnk.helm2d.green(zk,src,targ);
+    nxsrc = repmat(srcnorm(1,:),nt,1);
+    nysrc = repmat(srcnorm(2,:),nt,1);
+    nxtarg = repmat((targnorm(1,:)).',1,ns);
+    nytarg = repmat((targnorm(2,:)).',1,ns);
+    submat = -(hess(:,:,1).*nxsrc.*nxtarg + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+        + hess(:,:,3).*nysrc.*nytarg);
+end
+
 if strcmpi(type,'c')
     srcnorm = chnk.normal2d(srcinfo);
     eta = varargin{1};

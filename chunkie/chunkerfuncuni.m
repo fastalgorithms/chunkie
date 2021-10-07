@@ -45,6 +45,7 @@ else
 end
 
 
+
 ta = 0.0; tb = 2*pi; ifclosed=true;
 chsmall = Inf; nover = 0;
 eps = 1.0e-6;
@@ -59,6 +60,9 @@ end
 if isfield(cparams,'ifclosed')
     ifclosed = cparams.ifclosed;
 end	 
+
+chnkr = chunker(pref); % empty chunker
+chnkr = chnkr.addchunk(nch);
 
 ts = linspace(ta,tb,nch+1);
 
@@ -93,9 +97,6 @@ end
 %       up to here, everything has been done in parameter space, [ta,tb]
 %       . . . finally evaluate the k nodes on each chunk, along with 
 %       derivatives and chunk lengths
-
-chnkr = chunker(pref); % empty chunker
-chnkr = chnkr.addchunk(nch);
 
 
 for i = 1:nch

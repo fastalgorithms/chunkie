@@ -59,6 +59,7 @@ targinfo = []; targinfo.r = rt; targinfo.d = dt;
 targinfo.d2 = d2t;
 
 dfinenrm = sqrt(sum(dfine.^2,1));
+%dfinenrm = dfine(1,:,:); % for complex contour, by SJ 09/30/21
 dsdt = dfinenrm(:).*whts1(:)*hs;
 
 dsdtndim2 = repmat(dsdt(:).',opdims(2),1);
