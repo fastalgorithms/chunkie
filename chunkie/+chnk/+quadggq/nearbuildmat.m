@@ -1,5 +1,5 @@
 function submat = nearbuildmat(r,d,d2,h,i,j,fkern,opdims,...
-				      u,xs1,whts1,ainterp1kron,ainterp1)
+				      xs1,whts1,ainterp1kron,ainterp1)
 %CHNKR.QUADGGQ.NEARBUILDMAT
 
 % grab specific boundary data

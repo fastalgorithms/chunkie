@@ -1,12 +1,5 @@
 function testclm2
 %% This program solves the following layered medium problem.
-% Features: 1. it uses complexified x-coordinates to deal with two infinite 
-% half lines; 2. it uses the RCIP method to deal with the triple junction
-% singularity; 3. the solution in each domain is represented by c D+S on
-% all four curve segments so that the results integral equations are of the
-% second kind except at two triple junctions.
-% 
-%
 %
 %              Omega_1
 %
@@ -32,14 +25,23 @@ function testclm2
 %
 %  The unit normal vector is ALWAYS pointing outward w.r.t. the interior domain.
 %
+%  Features: 1. it uses complexified x-coordinates to deal with two infinite 
+%  half lines; 2. it uses the RCIP method to deal with the triple junction
+%  singularity; 3. the solution in each domain is represented by c D+S on
+%  all four curve segments so that the results integral equations are of the
+%  second kind except at two triple junctions (not a correct mathematical
+%  statement, but sort of true).
+% 
 %
-%  The representations:
+%  The representation:
 %
-%  u_i = sum_{j\in \Gamma} u_{i,j},
+%  u_i = sum_{j\in \Gamma} u_{i,j}, i=1,...,ndomain
 %
 %  u_{i,j} = c_i D_{i,\Gamma_j}[\mu_j] + S_{i,\Gamma_j}[\rho_j],
 %
-%
+%  Note here that the solution is represented via a sum of layer potentials
+%  on ALL curves. This is a nice trick by Leslie which reduces
+%  near-hypersingular integrals to near-singular integrals.
 %
 %  SKIEs:
 %
@@ -72,7 +74,7 @@ chnkr(1,ncurve) = chunker();
 rn = zeros(ndomain,1); 
 % rn(i) is the index of refraction of the ith domain
 rn(1) = 1.0;
-rn(2) = 1.9;
+rn(2) = 1.2;
 rn(3) = 1.4;
 
 % k0 is the wave number in vacuum
@@ -104,9 +106,9 @@ end
 % two circular arcs for the center eye for now
 theta = zeros(1,ncurve);
 % upper curve opening angle
-theta(3) = pi/2;
+theta(3) = pi/2.4;
 % lower curve opening angle
-theta(4) = 2*pi/3;
+theta(4) = pi/2.2;
 
 % parameters for the complexification of left and right flat parts.
 c1 = log(1d-2/eps)/min(k(1:2))
@@ -124,22 +126,24 @@ L(1) = C-a;
 L(2) = b+C;
 
 % number of chunks on each curve
+% should be proportional to the length*wavenumber
 nch = zeros(1,ncurve);
 
-n0 = 8;
+n0 = 6;
+fac = 1.2;
 
 lambda = 2*pi/max(abs(k(1)),abs(k(2)));
-nch(1) = round((a+L(1))/lambda) + n0;
-nch(2) = round((L(2)-b)/lambda) + n0;
+nch(1) = round(fac*(a+L(1))/lambda) + n0;
+nch(2) = round(fac*(L(2)-b)/lambda) + n0;
 
-n0 = 12;
+n0 = 16;
 lambda = 2*pi/max(abs(k(1)),abs(k(3)));
-nch(3) = round((b-a)/2/sin(theta(3)/2)/lambda) + n0;
+nch(3) = round(fac*(b-a)/2/sin(theta(3)/2)/lambda) + n0;
 lambda = 2*pi/max(abs(k(2)),abs(k(3)));
-nch(4) = round((b-a)/2/sin(theta(4)/2)/lambda) + n0;
+nch(4) = round(fac*(b-a)/2/sin(theta(4)/2)/lambda) + n0;
 
 nch
-% discretize domain
+% discretize the boundary
 tab = zeros(2,ncurve);
 tab(:,1) = [-L(1);a];
 tab(:,2) = [b;L(2)];
@@ -169,6 +173,11 @@ pref.k = ngl;
 
 opdims(1)=1;opdims(2)=1;
 
+% set up GGQ machinery
+[xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron] = ...
+  chnk.quadggq.setuplogquad(ngl,opdims);
+
+% define functions for curves
 fcurve = cell(1,ncurve);
 for icurve=1:ncurve
   fcurve{icurve} = @(t) clm.funcurve(t,icurve,cpars(:,icurve));
@@ -204,7 +213,8 @@ rpars.c = c;
 rpars.coef = coef;
 
 start = tic;
-[M,np,alpha1,alpha2] = clm.buildmat(chnkr,rpars);
+[M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,...
+  xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
 %M = M + eye(2*np);
 t1 = toc(start);
 
@@ -236,8 +246,11 @@ for icorner=1:ncorner
   rparslocal.c = c(:,clist);
   rparslocal.coef = coef;
   
-  tablocal = tab(:,clist);
-
+  cparslocal = [cpars(:,clist); isstart];
+  fcurvelocal = cell(1,nedge);
+  for i=1:nedge
+    fcurvelocal{i} = @(t) clm.funcurve(t,clist(i),cparslocal(:,i));
+  end
 
   [Pbc,PWbc,starL,circL,starS,circS] = rcip.setup(ngl,ndim,nedge,isstart);
 
@@ -249,12 +262,16 @@ for icorner=1:ncorner
       h0(i) = chnkr(clist(i)).h(end);
     end
   end
-  h0 = h0*2; % note the factor of 2 here!!!!
+  h0 = h0*2 % note the factor of 2 here!!!!
 
-  nsub = 28; % level of dyadic refinement in the forward recursion for computing R
-  R{icorner} = rcip.Rcomp(ngl,nedge,ndim,Pbc,PWbc,nsub,...
+  nsub = 33; % level of dyadic refinement in the forward recursion for computing R
+%   R{icorner} = rcip.Rcomp(ngl,nedge,ndim,Pbc,PWbc,nsub,...
+%     starL,circL,starS,circS,...
+%     h0,isstart,fcurvelocal,rparslocal);  
+  R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
     starL,circL,starS,circS,...
-    h0,tablocal,clist,isstart,fcurve,rparslocal);
+    h0,isstart,fcurvelocal,rparslocal,...
+    xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
 
   starind = [];
   for i=1:nedge
@@ -279,7 +296,7 @@ fprintf('%5.2e s : time to compute R\n',t1)
 
 % src(:,~i) are sources for the ith domain
 nsrc = ndomain;
-src = [-1, 1.3, 0; max(chnkr(3).r(2,:),[],'all')*1.2,...
+src = [-1, 1.3, 0; max(chnkr(3).r(2,:),[],'all')*1.3,...
   min(chnkr(4).r(2,:),[],'all')*1.3, 0];
 hold on;plot(src(1,:),src(2,:),'r*')
 
@@ -326,7 +343,7 @@ rhs = rhs(:);
 % solve the linear system using gmres
 start = tic; 
 %sol = gmres(M,rhs,[],1e-13,100); 
-[soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,100,eps*10);
+[soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,200,eps*20);
 
 sol = RG*soltilde;
 t1 = toc(start);
@@ -335,7 +352,7 @@ fprintf('%5.2e s : time for dense gmres\n',t1)
 disp(['GMRES iter = ',num2str(it)])
 
 % compute the solution at one target point in each domain
-targ1 = [-1; 1000]; % target point in domain #1
+targ1 = [-1; 500]; % target point in domain #1
 targ2 = [1.1; -100]; % target point in domain #2
 targ3 = [0; 0]; % target point in domain #3
 

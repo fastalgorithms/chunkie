@@ -1,7 +1,7 @@
 function testclmdirect
 %% validate complexification of the coordinates when solving a layered 
 % media problem using the chunkie code by Travis
-% direct formulation - buggy code
+% direct formulation - buggy code! Do not use!!!
 close all
 format long e
 format compact

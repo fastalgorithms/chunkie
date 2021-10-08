@@ -55,4 +55,4 @@ ucomp = -2*h*sum(kerval.*dens.*xp)
 uexact = 1i/4*besselh(0,omega*abs(ztarg-zsource))
 rerr = abs((ucomp-uexact)/uexact)
 
-find(imag(sqrt((x-x.').^2))<0)
+%find(imag(sqrt((x-x.').^2))<0)

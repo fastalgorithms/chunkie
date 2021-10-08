@@ -15,18 +15,31 @@ function [r,d,d2] = complexx1(t,icurve,cpars)
 
 L = cpars(1);c1=cpars(2);c2=cpars(3);
 
+islocal = -1;
+if length(cpars) == 4
+  islocal = cpars(4);
+end
 
 if icurve==1 % left part
-  
-   xs = t-c1*1i*erfc((t+L)/c2);
-   xp = 1+c1*1i*2/sqrt(pi)/c2*exp(-(t+L).^2/c2^2);
-   xpp = -c1*1i*4/sqrt(pi)/c2^3*(t+L).*exp(-(t+L).^2/c2^2);
-   
+  if islocal == -1
+    xs = t-c1*1i*erfc((t+L)/c2);
+    xp = 1+c1*1i*2/sqrt(pi)/c2*exp(-(t+L).^2/c2^2);
+    xpp = -c1*1i*4/sqrt(pi)/c2^3*(t+L).*exp(-(t+L).^2/c2^2);
+  elseif islocal == 0
+    xs = t;
+    xp = ones(size(t));
+    xpp = zeros(size(t));
+  end
 elseif icurve==2 % right part
-  
-   xs = t+c1*1i*erfc((L-t)/c2);
-   xp = 1+c1*1i*2/sqrt(pi)/c2*exp(-(L-t).^2/c2^2);
-   xpp = -c1*1i*4/sqrt(pi)/c2^3*(t-L).*exp(-(L-t).^2/c2^2);   
+  if islocal == -1
+    xs = t+c1*1i*erfc((L-t)/c2);
+    xp = 1+c1*1i*2/sqrt(pi)/c2*exp(-(L-t).^2/c2^2);
+    xpp = -c1*1i*4/sqrt(pi)/c2^3*(t-L).*exp(-(L-t).^2/c2^2);   
+  elseif islocal == 1
+    xs = t;
+    xp = ones(size(t));
+    xpp = zeros(size(t));
+  end
 end
 
 ys = zeros(size(t));

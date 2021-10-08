@@ -1,6 +1,6 @@
 function testclm1
 %% This program solves the following layered medium problem
-% 
+% legacy code, superseded by testclm2. Do not use!!!
 %
 %
 %              Omega_1

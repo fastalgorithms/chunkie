@@ -1,9 +1,13 @@
-function [sysmat] = buildmat(chnkr,kern,opdims,type)
+function [sysmat] = buildmat_fast(chnkr,kern,opdims,type,...
+  xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
 %CHNK.QUADGGQ.BUILDMAT build matrix for given kernel and chnkr 
 % description of boundary, using special quadrature for self
 % and neighbor panels.
 %
-%  
+%  difference between this function and the function buildmat:
+% all quadrature nodes, weights, and interpolation matrices for
+% logarithmically and nearly logarithmically singular integrals 
+% are precomputed and supplied as inputs.
 
 k = chnkr.k;
 nch = chnkr.nch;
@@ -13,35 +17,7 @@ d = chnkr.d;
 d2 = chnkr.d2;
 h = chnkr.h;
 
-[~,wts,u] = lege.exps(k);
-
-if strcmpi(type,'log')
-
-    qavail = chnk.quadggq.logavail();
-    [~,i] = min(abs(qavail-k));
-    assert(qavail(i) == k,'order %d not found, consider using order %d chunks', ...
-        k,qavail(i));
-    [xs1,wts1,xs0,wts0] = chnk.quadggq.getlogquad(k);
-else
-    error('type not available')
-end
-
-ainterp1 = lege.matrin(k,xs1);
-temp = eye(opdims(2));
-ainterp1kron = kron(ainterp1,temp);
-
-nquad0 = size(xs0,1);
-
-ainterps0kron = zeros(opdims(2)*nquad0,opdims(2)*k,k);
-ainterps0 = zeros(nquad0,k,k);
-
-for j = 1:k
-    xs0j = xs0(:,j);
-    ainterp0_sm = lege.matrin(k,xs0j);
-    ainterps0(:,:,j) = ainterp0_sm;
-    ainterps0kron(:,:,j) = kron(ainterp0_sm,temp);
-end
-
+[~,wts] = lege.exps(k);
 % do smooth weight for all
 sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims,1:nch,1:nch,wts);
 

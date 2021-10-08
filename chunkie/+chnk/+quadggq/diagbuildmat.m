@@ -1,5 +1,5 @@
 function submat = diagbuildmat(r,d,d2,h,i,fkern,opdims,...
-				      u,xs0,whts0,ainterps0kron,ainterps0)
+				      xs0,whts0,ainterps0kron,ainterps0)
 %CHNK.QUADGGQ.DIAGBUILDMAT                  
 
 % grab specific boundary data
