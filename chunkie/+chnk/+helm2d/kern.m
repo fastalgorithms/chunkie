@@ -96,19 +96,29 @@ end
 if strcmpi(type,'all')
   targnorm = chnk.normal2d(targinfo);
   srcnorm = chnk.normal2d(srcinfo);
+  
+  submat = zeros(2*nt,2*ns);
   % submat = S
-  [submats,grad,hess] = chnk.helm2d.green(zk,src,targ);
+  %[submats,grad,hess] = chnk.helm2d.green(zk,src,targ);
+  [submat(1:2:2*nt,2:2:2*ns),grad,hess] = chnk.helm2d.green(zk,src,targ);
+
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
   nxtarg = repmat((targnorm(1,:)).',1,ns);
   nytarg = repmat((targnorm(2,:)).',1,ns);
   % submat = D'
-  submatdp = -(hess(:,:,1).*nxsrc.*nxtarg + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+  %submatdp = -(hess(:,:,1).*nxsrc.*nxtarg ...
+  submat(2:2:2*nt,1:2:2*ns) = -(hess(:,:,1).*nxsrc.*nxtarg ...  
+      + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
       + hess(:,:,3).*nysrc.*nytarg);
   % submat = S'
-  submatsp = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
+  submat(2:2:2*nt,2:2:2*ns) = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
   % submat = D
-  submatd = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+  submat(1:2:2*nt,1:2:2*ns)  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
   
-  submat = [submatd, submats; submatdp, submatsp];
+  
+%   submat(1:2:2*nt,1:2:2*ns) = submatd;
+%   submat(1:2:2*nt,2:2:2*ns) = submats;
+%   submat(2:2:2*nt,1:2:2*ns) = submatdp;
+%   submat(2:2:2*nt,2:2:2*ns) = submatsp;
 end

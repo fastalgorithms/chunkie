@@ -1,6 +1,6 @@
   function [R]=Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
     starL,circL,starS,circS,...
-    h0,isstart,fcurve,rparslocal, ...
+    h0,isstart,fcurve,rparslocal, opdims,glxs,glwts,...
     xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
   % carry out the forward recursion for computing the preconditioner R 
   % in the RCIP method
@@ -28,7 +28,7 @@
     end
     % construct local chunks around the corner
     for i=1:nedge
-      chnkrlocal(i) = rcip.chunkerfunclocal(fcurve{i},ts(:,i),pref);
+      chnkrlocal(i) = rcip.chunkerfunclocal(fcurve{i},ts(:,i),pref,glxs);
     end
 %     figure
 %     clf
@@ -36,7 +36,7 @@
 %     axis equal
 %     pause
     % construct the system matrix for local chunks
-    [MAT,~,~,~] = clm.buildmat_fast(chnkrlocal,rparslocal,...
+    [MAT,~,~,~] = clm.buildmat_fast(chnkrlocal,rparslocal,opdims,glwts,...
       xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
     %
     MAT = eye(nsys) + MAT;

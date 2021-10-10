@@ -1,4 +1,4 @@
-function chnkr = chunkerfunclocal(fcurve,ts,pref)
+function chnkr = chunkerfunclocal(fcurve,ts,pref,xs)
 %CHUNKERFUNC create a chunker object for constructing the system matrix
 % used in the forward recursion for computing the preconditioner R 
 % in the RCIP method
@@ -17,7 +17,7 @@ function chnkr = chunkerfunclocal(fcurve,ts,pref)
 %   pref - chunkerpref object or structure (defaults)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
-%
+%   xs - Gauss-Legendre nodes
 
 if nargin < 3
     pref = chunkerpref();
@@ -38,7 +38,7 @@ pref.dim = dim;
 nout = 3;
 out = cell(nout,1);
 
-[xs,~] = lege.exps(k);
+%[xs,~] = lege.exps(k);
 
 %       . . . start chunking
 

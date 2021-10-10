@@ -81,6 +81,6 @@ for j = 1:k
         smatbigi*diag(dsdtndim2)*ainterps0kron(:,:,j);
 end
 
- end
+end
    
 

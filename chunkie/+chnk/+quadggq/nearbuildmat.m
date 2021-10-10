@@ -66,7 +66,6 @@ dsdtndim2 = repmat(dsdt(:).',opdims(2),1);
 dsdtndim2 = dsdtndim2(:);
 
 % get kernel values and then premultiply by interpolating matrix
-
 smatbig = fkern(srcinfo,targinfo);
 submat = smatbig*diag(dsdtndim2)*ainterp1kron;
 

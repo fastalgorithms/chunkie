@@ -1,4 +1,4 @@
-function [M,np,alpha1,alpha2] = buildmat_fast(chnkr,rpars,...
+function [M,np,alpha1,alpha2] = buildmat_fast(chnkr,rpars,opdims,glwts,...
   xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
 % build the system matrix for the interface problem
 % inputs: 
@@ -55,158 +55,50 @@ for i=1:ncurve
   alpha2(i) = 2/(1/coef(c(1,i))+1/coef(c(2,i)));
 end
 
-opdims = [1,1];
-
 for i=1:ncurve % target curve id
   c1 = coef(c(1,i));
   c2 = coef(c(2,i));
   %
   % define kernels
-  sk1 =  @(s,t) chnk.helm2d.kern(k1(i),s,t,'s',1);
-  sk2 =  @(s,t) chnk.helm2d.kern(k2(i),s,t,'s',1);
-
-  dk1 =  @(s,t) chnk.helm2d.kern(k1(i),s,t,'d',1);
-  dk2 =  @(s,t) chnk.helm2d.kern(k2(i),s,t,'d',1);
-
-  spk1 = @(s,t) chnk.helm2d.kern(k1(i),s,t,'sprime',1);
-  spk2 = @(s,t) chnk.helm2d.kern(k2(i),s,t,'sprime',1);
-
-  dpk1 = @(s,t) chnk.helm2d.kern(k1(i),s,t,'dprime',1);
-  dpk2 = @(s,t) chnk.helm2d.kern(k2(i),s,t,'dprime',1);
-  
   allk1 =  @(s,t) chnk.helm2d.kern(k1(i),s,t,'all',1);
   allk2 =  @(s,t) chnk.helm2d.kern(k2(i),s,t,'all',1);
 
-  indi1 = sum(nch(1:i-1))*ngl+(1:nch(i)*ngl);
-  indi2 = (indi1)+np;
+  indi1 = sum(nch(1:i-1))*2*ngl+(1:2:2*nch(i)*ngl);
+  indi2 = sum(nch(1:i-1))*2*ngl+(2:2:2*nch(i)*ngl);
   
-%   ni1 = 1:nch(i)*ngl;
-%   ni2 = nch(i)*ngl + (ni1);
+  ni1 = 1:2:2*nch(i)*ngl;
+  ni2 = 2:2:2*nch(i)*ngl;
   
   for j=1:ncurve % source curve id
     if j==i
       % build matrices for 8 layer potentials
-      S1  = chunkermat_fast(chnkr(i),sk1,opts,...
+      M1  = chunkermat_fast(chnkr(i),allk1,opts,...
         xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-      S2  = chunkermat_fast(chnkr(i),sk2,opts,...
+      M2  = chunkermat_fast(chnkr(i),allk2,opts,...
         xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-
-      D1  = chunkermat_fast(chnkr(i),dk1,opts,...
-        xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-      D2  = chunkermat_fast(chnkr(i),dk2,opts,...
-        xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-
-      S1p = chunkermat_fast(chnkr(i),spk1,opts,...
-        xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-      S2p = chunkermat_fast(chnkr(i),spk2,opts,...
-        xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-
-      D1p = chunkermat_fast(chnkr(i),dpk1,opts,...
-        xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-      D2p = chunkermat_fast(chnkr(i),dpk2,opts,...
-        xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-
-      M(indi1,indi1) =  alpha1(i)*(c2*D2-c1*D1);
-      M(indi1,indi2) =  alpha1(i)*(S2-S1);
       
-      M(indi2,indi1) = -alpha2(i)*(D2p-D1p);
-      M(indi2,indi2) = -alpha2(i)*(1/c2*S2p-1/c1*S1p);
+      M(indi1,indi1) =  alpha1(i)*(c2*M2(ni1,ni1)-c1*M1(ni1,ni1));
+      M(indi1,indi2) =  alpha1(i)*(M2(ni1,ni2)-M1(ni1,ni2));
       
-%       M1  = chunkermat_fast(chnkr(i),allk1,opts,...
-%         xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-%       M2  = chunkermat_fast(chnkr(i),allk2,opts,...
-%         xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-%       
-%       M(indi1,indi1) =  alpha1(i)*(c2*M2(ni1,ni1)-c1*M1(ni1,ni1));
-%       M(indi1,indi2) =  alpha1(i)*(M2(ni1,ni2)-M1(ni1,ni2));
-%       
-%       M(indi2,indi1) = -alpha2(i)*(M2(ni2,ni1)-M1(ni2,ni1));
-%       M(indi2,indi2) = -alpha2(i)*(1/c2*M2(ni2,ni2)-1/c1*M1(ni2,ni2));
+      M(indi2,indi1) = -alpha2(i)*(M2(ni2,ni1)-M1(ni2,ni1));
+      M(indi2,indi2) = -alpha2(i)*(1/c2*M2(ni2,ni2)-1/c1*M1(ni2,ni2));
       
       
     else
-      indj1 = sum(nch(1:j-1))*ngl+(1:nch(j)*ngl);
-      indj2 = (indj1)+np;
+      indj1 = sum(nch(1:j-1))*2*ngl+(1:2:2*nch(j)*ngl);
+      indj2 = sum(nch(1:j-1))*2*ngl+(2:2:2*nch(j)*ngl);
       
-%       nj1 = 1:nch(j)*ngl;
-%       nj2 = nch(j)*ngl + (nj1);  
-      S1  = chunkermat_smooth(chnkr(j),chnkr(i),sk1);
-      S2  = chunkermat_smooth(chnkr(j),chnkr(i),sk2);
-      
-      D1  = chunkermat_smooth(chnkr(j),chnkr(i),dk1);
-      D2  = chunkermat_smooth(chnkr(j),chnkr(i),dk2);
-      
-      S1p = chunkermat_smooth(chnkr(j),chnkr(i),spk1);
-      S2p = chunkermat_smooth(chnkr(j),chnkr(i),spk2);
-      
-      D1p = chunkermat_smooth(chnkr(j),chnkr(i),dpk1);       
-      D2p = chunkermat_smooth(chnkr(j),chnkr(i),dpk2); 
-      M(indi1,indj1) =  alpha1(i)*(c2*D2-c1*D1);
-      M(indi1,indj2) =  alpha1(i)*(S2-S1);
-      
-      M(indi2,indj1) = -alpha2(i)*(D2p-D1p);
-      M(indi2,indj2) = -alpha2(i)*(1/c2*S2p-1/c1*S1p);  
+      nj1 = 1:2:2*nch(j)*ngl;
+      nj2 = 2:2:2*nch(j)*ngl;
 
-%       M1  = chunkermat_smooth(chnkr(j),chnkr(i),allk1,opdims);
-%       M2  = chunkermat_smooth(chnkr(j),chnkr(i),allk2,opdims);
-%       
-%       M(indi1,indj1) =  alpha1(i)*(c2*M2(ni1,nj1)-c1*M1(ni1,nj1));
-%       M(indi1,indj2) =  alpha1(i)*(M2(ni1,nj2)-M1(ni1,nj2));
-%       
-%       M(indi2,indj1) = -alpha2(i)*(M2(ni2,nj1)-M1(ni2,nj1));
-%       M(indi2,indj2) = -alpha2(i)*(1/c2*M2(ni2,nj2)-1/c1*M1(ni2,nj2));
+      M1  = chunkermat_smooth(chnkr(j),chnkr(i),allk1,opdims,glwts);
+      M2  = chunkermat_smooth(chnkr(j),chnkr(i),allk2,opdims,glwts);
       
+      M(indi1,indj1) =  alpha1(i)*(c2*M2(ni1,nj1)-c1*M1(ni1,nj1));
+      M(indi1,indj2) =  alpha1(i)*(M2(ni1,nj2)-M1(ni1,nj2));
       
-      if 1==2
-      % now fix the near interactions between adjacent chunks on different
-      % curves
-      srcid=[];
-      if i==1 && j==4
-        targid = nch(i);
-        srcid = 1;
-      elseif i==4 && j==1
-        targid = 1;
-        srcid = nch(j);
-      elseif (i==1 && j==3) || (i==3 && j==1)
-        srcid = nch(j);
-        targid = nch(i);
-      elseif i==2 && j==4
-        srcid = nch(j);
-        targid = 1;
-      elseif i==4 && j==2
-        srcid = 1;
-        targid = nch(i);
-      elseif (i==2 && j==3) || (i==3 && j==2)
-        srcid = 1;
-        targid = 1;
-      elseif (i==3 && j==4) || (i==4 && j==3)
-        srcid = [1, nch(j)];
-        targid = [nch(i), 1];
-      end
-      
-      for m=1:length(srcid)
-      S1  = chunkermat_targ(chnkr(j),chnkr(i),srcid(m),targid(m),sk1,opdims,'nearlog');
-      S2  = chunkermat_targ(chnkr(j),chnkr(i),srcid(m),targid(m),sk2,opdims,'nearlog');
-      D1  = chunkermat_targ(chnkr(j),chnkr(i),srcid(m),targid(m),dk1,opdims,'nearlog');
-      D2  = chunkermat_targ(chnkr(j),chnkr(i),srcid(m),targid(m),dk2,opdims,'nearlog');      
-      S1p = chunkermat_targ(chnkr(j),chnkr(i),srcid(m),targid(m),spk1,opdims,'nearlog');
-      S2p = chunkermat_targ(chnkr(j),chnkr(i),srcid(m),targid(m),spk2,opdims,'nearlog');
-      D1p = chunkermat_targ(chnkr(j),chnkr(i),srcid(m),targid(m),dpk1,opdims,'nearlog');
-      D2p = chunkermat_targ(chnkr(j),chnkr(i),srcid(m),targid(m),dpk2,opdims,'nearlog'); 
-      
-      idi1 = (sum(nch(1:i-1))+targid(m)-1)*ngl+(1:ngl);
-      idi2 = idi1 + np;
-      
-      idj1 = (sum(nch(1:j-1))+srcid(m)-1)*ngl+(1:ngl);
-      idj2 = idj1 + np;
-      
-      M(idi1,idj1) =  alpha1(i)*(c2*D2-c1*D1);
-      M(idi1,idj2) =  alpha1(i)*(S2-S1);
-      
-      M(idi2,idj1) = -alpha2(i)*(D2p-D1p);
-      M(idi2,idj2) = -alpha2(i)*(1/c2*S2p-1/c1*S1p);   
-      end
-      end
+      M(indi2,indj1) = -alpha2(i)*(M2(ni2,nj1)-M1(ni2,nj1));
+      M(indi2,indj2) = -alpha2(i)*(1/c2*M2(ni2,nj2)-1/c1*M1(ni2,nj2));
     end
   end
 end
