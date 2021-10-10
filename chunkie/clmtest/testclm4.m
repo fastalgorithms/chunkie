@@ -177,8 +177,7 @@ opdims(1)=2;opdims(2)=2;
 % set up GGQ machinery
 [xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron] = ...
   chnk.quadggq.setuplogquad(ngl,opdims);
-size(ainterp1)
-size(ainterps0)
+
 % define functions for curves
 fcurve = cell(1,ncurve);
 for icurve=1:ncurve
@@ -217,7 +216,8 @@ rpars.coef = coef;
 isrcip = 1;
 
 start = tic;
-[M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opdims,glwts,...
+ilist=[];
+[M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opdims,glwts,ilist,...
   xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
 if ~isrcip, M = M + eye(2*np); end
 t1 = toc(start);
@@ -258,7 +258,7 @@ for icorner=1:ncorner
     fcurvelocal{i} = @(t) clm.funcurve(t,clist(i),cparslocal(:,i));
   end
 
-  [Pbc,PWbc,starL,circL,starS,circS] = rcip.setup(ngl,ndim,nedge,isstart);
+  [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
 
   h0 = zeros(1,nedge); % chunk size at the coarsest level
   for i=1:nedge
@@ -268,14 +268,14 @@ for icorner=1:ncorner
       h0(i) = chnkr(clist(i)).h(end);
     end
   end
-  h0 = h0*2 % note the factor of 2 here!!!!
+  h0 = h0*2; % note the factor of 2 here!!!!
 
   nsub = 33; % level of dyadic refinement in the forward recursion for computing R
 %   R{icorner} = rcip.Rcomp(ngl,nedge,ndim,Pbc,PWbc,nsub,...
 %     starL,circL,starS,circS,...
 %     h0,isstart,fcurvelocal,rparslocal);  
   R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
-    starL,circL,starS,circS,...
+    starL,circL,starS,circS,ilist,...
     h0,isstart,fcurvelocal,rparslocal,opdims,glnodes,glwts,...
     xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
 
@@ -347,12 +347,12 @@ rhs = rhs(:);
 
 % solve the linear system using gmres
 start = tic; 
-if ~isrcip
-  sol = gmres(M,rhs,[],1e-13,100);
-else
+if isrcip
   [soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,200,eps*20);
   sol = RG*soltilde;
   disp(['GMRES iter = ',num2str(it)])
+else
+  sol = gmres(M,rhs,[],1e-13,100);
 end
 t1 = toc(start);
 
@@ -367,7 +367,7 @@ targ = [targ1, targ2, targ3]
 
 sol1 = sol(1:2:2*np); % double layer density
 sol2 = sol(2:2:2*np); % single layer density
-[abs(sol1(1));abs(sol2(1))]
+%[abs(sol1(1));abs(sol2(1))]
 
 
 uexact = zeros(ndomain,1);

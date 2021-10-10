@@ -1,4 +1,4 @@
-function [sysmat] = chunkermat_fast(chnkr,kern,opts,...
+function [sysmat] = chunkermat_fast(chnkr,kern,opts,glwts,ilist,...
   xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
 %CHUNKERMAT build matrix for given kernel and chunker description of 
 % boundary. This is a wrapper for various quadrature routines. Optionally,
@@ -66,9 +66,10 @@ end
 
 srcinfo = []; targinfo = [];
 srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 
+srcinfo.n = chnkr.n(:,1);
 srcinfo.d2 = chnkr.d2(:,1);
 targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
-targinfo.d2 = chnkr.d2(:,2);
+targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
 
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
@@ -93,7 +94,7 @@ if strcmpi(quad,'ggqlog')
     if nonsmoothonly
         sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
     else
-        sysmat = chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,...
+        sysmat = chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,...
           xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
     end
     

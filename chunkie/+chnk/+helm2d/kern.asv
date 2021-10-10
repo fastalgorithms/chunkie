@@ -52,7 +52,7 @@ targ = targinfo.r;
 [~,nt] = size(targ);
 
 if strcmpi(type,'d')
-  srcnorm = srcinfo.n;
+  srcnorm = chnk.normal2d(srcinfo);
   [~,grad] = chnk.helm2d.green(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
   ny = repmat(srcnorm(2,:),nt,1);
@@ -60,7 +60,7 @@ if strcmpi(type,'d')
 end
 
 if strcmpi(type,'sprime')
-  targnorm = targinfo.n;
+  targnorm = chnk.normal2d(targinfo);
   [~,grad] = chnk.helm2d.green(zk,src,targ);
   nx = repmat((targnorm(1,:)).',1,ns);
   ny = repmat((targnorm(2,:)).',1,ns);
@@ -73,8 +73,8 @@ if strcmpi(type,'s')
 end
 
 if strcmpi(type,'dprime')
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = chnk.normal2d(targinfo);
+  srcnorm = chnk.normal2d(srcinfo);
   [~,~,hess] = chnk.helm2d.green(zk,src,targ);
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
@@ -85,7 +85,7 @@ if strcmpi(type,'dprime')
 end
 
 if strcmpi(type,'c')
-  srcnorm = srcinfo.n;
+  srcnorm = chnk.normal2d(srcinfo);
   eta = varargin{1};
   [s,grad] = chnk.helm2d.green(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
@@ -96,9 +96,9 @@ end
 if strcmpi(type,'all')
   %targnorm = chnk.normal2d(targinfo);
   %srcnorm = chnk.normal2d(srcinfo);
-  % added by Shidong Jiang to avoid O(N^2) calculation of normals
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  % added by Shidong Jiang to 
+  targnorm = targinfo.data;
+  srcnorm = srcinfo.data;
   
   submat = zeros(2*nt,2*ns);
   % S

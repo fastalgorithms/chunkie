@@ -1,11 +1,11 @@
-function submat = diagbuildmat(r,d,d2,h,i,fkern,opdims,...
+function submat = diagbuildmat(r,d,n,d2,h,i,fkern,opdims,...
 				      xs0,whts0,ainterps0kron,ainterps0)
 %CHNK.QUADGGQ.DIAGBUILDMAT                  
 
 % grab specific boundary data
                 
 rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i); hs = h(i); 
-
+ns = n(:,:,i);
 % interpolate boundary info
 
 % get relevant coefficients
@@ -15,10 +15,12 @@ rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i); hs = h(i);
 [nq,~,nt] = size(ainterps0);
 rfine = zeros(dim,nq,nt);
 dfine = zeros(dim,nq,nt);
+nfine = zeros(dim,nq,nt);
 d2fine = zeros(dim,nq,nt);
 for i = 1:nt
     rfine(:,:,i) = (ainterps0(:,:,i)*(rs.')).';
     dfine(:,:,i) = (ainterps0(:,:,i)*(ds.')).';
+    nfine(:,:,i) = (ainterps0(:,:,i)*(ns.')).';
     d2fine(:,:,i) = (ainterps0(:,:,i)*(d2s.')).';    
 end
 
@@ -72,8 +74,10 @@ targinfo = [];
 
 for j = 1:k
     srcinfo.r = rfine(:,:,j); srcinfo.d = dfine(:,:,j); 
-    srcinfo.d2 = d2fine(:,:,j);
-    targinfo.r = rs(:,j); targinfo.d = ds(:,j); targinfo.d2 = d2s(:,j);
+    srcinfo.d2 = d2fine(:,:,j); srcinfo.n = nfine(:,:,j);
+    targinfo.r = rs(:,j); targinfo.d = ds(:,j); 
+    targinfo.d2 = d2s(:,j); targinfo.n = ns(:,j);
+    
     smatbigi = fkern(srcinfo,targinfo);
     dsdtndim2 = repmat(dsdt(:,j).',opdims(2),1);
     dsdtndim2 = dsdtndim2(:);

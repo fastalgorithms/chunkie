@@ -72,5 +72,6 @@ for i = 1:nch
 end
 
 chnkr.adj = adjs(:,1:nch);
-
+% added by Shidong Jiang
+chnkr.n = normals(chnkr);
 end

@@ -19,18 +19,19 @@ end
 
 r = chnkr.r;
 d = chnkr.d;
+n = chnkr.n;
 d2 = chnkr.d2;
 h = chnkr.h;
 
 [dim,k,~] = size(r);
-rs = r(:,:,j); rt = r(:,:,i); ds = d(:,:,j); dt = d(:,:,i);
-d2s = d2(:,:,j); d2t = d2(:,:,i);
+rs = r(:,:,j); rt = r(:,:,i); ds = d(:,:,j); dt = d(:,:,i); ns = n(:,:,j);
+d2s = d2(:,:,j); d2t = d2(:,:,i); nt = n(:,:,j);
 rs = reshape(rs,dim,k*length(j)); rt = reshape(rt,dim,k*length(i));
 ds = reshape(ds,dim,k*length(j)); dt = reshape(dt,dim,k*length(i));
 d2s = reshape(d2s,dim,k*length(j)); d2t = reshape(d2t,dim,k*length(i));
 
-srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; srcinfo.d2 = d2s;
-targinfo = []; targinfo.r = rt; targinfo.d = dt; targinfo.d2 = d2t;
+srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; srcinfo.d2 = d2s; srcinfo.n = ns;
+targinfo = []; targinfo.r = rt; targinfo.d = dt; targinfo.d2 = d2t; targinfo.n = nt;
 hs = h(j); ht = h(i);
 
 dsnrms = sqrt(sum(ds.^2,1));

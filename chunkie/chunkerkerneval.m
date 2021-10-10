@@ -44,9 +44,9 @@ function fints = chunkerkerneval(chnkr,kern,dens,targs,opts)
 
 srcinfo = []; targinfo = [];
 srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 
-srcinfo.d2 = chnkr.d2(:,1);
+srcinfo.n = chnkr.n(:,1); srcinfo.d2 = chnkr.d2(:,1);
 targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
-targinfo.d2 = chnkr.d2(:,2);
+targinfo.n = chnkr.n(:,2); targinfo.d2 = chnkr.d2(:,2);
 
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
@@ -142,7 +142,7 @@ if ~flam
             dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
-            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
+            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
             kernmat = kern(srcinfo,targinfo);
             fints = fints + kernmat*densvals;
@@ -155,7 +155,7 @@ if ~flam
             dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
-            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
+            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
             kernmat = kern(srcinfo,targinfo);
 
@@ -220,7 +220,7 @@ else
             dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
-            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
+            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
 
             delsmooth = find(flag(:,i)); 

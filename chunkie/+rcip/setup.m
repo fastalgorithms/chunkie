@@ -1,5 +1,5 @@
   
-  function [Pbc,PWbc,starL,circL,starS,circS] = setup(ngl,ndim,nedge,isstart) 
+  function [Pbc,PWbc,starL,circL,starS,circS,ilist] = setup(ngl,ndim,nedge,isstart) 
   % setup for the RCIP forward recursion
   % inputs:
   % ngl - number of Gauss-Legendre nodes
@@ -22,6 +22,7 @@
   Pbc = rcip.Pbcinit(IP,nedge,ndim);
   PWbc = rcip.Pbcinit(IPW,nedge,ndim);
   
+  ilist = zeros(2,nedge);
   % starL - bad indices for the system matrix M
   % circL - good indices for the system matrix M
   starL = [];
@@ -36,9 +37,11 @@
     if isstart(i) 
       starL = [starL indb1+3*(i-1)*ngl*ndim];
       circL = [circL indg1+3*(i-1)*ngl*ndim];
+      ilist(:,i) = [1, 2];
     else
       starL = [starL indb0+3*(i-1)*ngl*ndim];
-      circL = [circL indg0+3*(i-1)*ngl*ndim]; 
+      circL = [circL indg0+3*(i-1)*ngl*ndim];
+      ilist(:,i) = [2, 3];
     end
   end
   

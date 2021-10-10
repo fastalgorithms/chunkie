@@ -1,4 +1,4 @@
-function [M,np,alpha1,alpha2] = buildmat_fast(chnkr,rpars,opdims,glwts,...
+function [M,np,alpha1,alpha2] = buildmat_fast(chnkr,rpars,opdims,glwts,iglist,...
   xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
 % build the system matrix for the interface problem
 % inputs: 
@@ -72,9 +72,13 @@ for i=1:ncurve % target curve id
   for j=1:ncurve % source curve id
     if j==i
       % build matrices for 8 layer potentials
-      M1  = chunkermat_fast(chnkr(i),allk1,opts,...
+      jlist = [];
+      if ~isempty(iglist)
+        jlist = iglist(:,j);
+      end
+      M1  = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,...
         xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-      M2  = chunkermat_fast(chnkr(i),allk2,opts,...
+      M2  = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,...
         xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
       
       M(indi1,indi1) =  alpha1(i)*(c2*M2(ni1,ni1)-c1*M1(ni1,ni1));
@@ -91,8 +95,15 @@ for i=1:ncurve % target curve id
       nj1 = 1:2:2*nch(j)*ngl;
       nj2 = 2:2:2*nch(j)*ngl;
 
-      M1  = chunkermat_smooth(chnkr(j),chnkr(i),allk1,opdims,glwts);
-      M2  = chunkermat_smooth(chnkr(j),chnkr(i),allk2,opdims,glwts);
+      ilist = [];
+      jlist = [];
+%       if ~isempty(iglist)
+%         ilist = iglist(:,i);
+%         jlist = iglist(:,j);
+%       end
+      
+      M1  = chunkermat_smooth(chnkr(j),chnkr(i),allk1,opdims,glwts,jlist,ilist);
+      M2  = chunkermat_smooth(chnkr(j),chnkr(i),allk2,opdims,glwts,jlist,ilist);
       
       M(indi1,indj1) =  alpha1(i)*(c2*M2(ni1,nj1)-c1*M1(ni1,nj1));
       M(indi1,indj2) =  alpha1(i)*(M2(ni1,nj2)-M1(ni1,nj2));

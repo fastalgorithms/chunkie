@@ -1,5 +1,5 @@
   function [R]=Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
-    starL,circL,starS,circS,...
+    starL,circL,starS,circS,ilist,...
     h0,isstart,fcurve,rparslocal, opdims,glxs,glwts,...
     xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
   % carry out the forward recursion for computing the preconditioner R 
@@ -36,7 +36,12 @@
 %     axis equal
 %     pause
     % construct the system matrix for local chunks
-    [MAT,~,~,~] = clm.buildmat_fast(chnkrlocal,rparslocal,opdims,glwts,...
+    if level == 1
+      ilistl = [];
+    else
+      ilistl = ilist;
+    end
+    [MAT,~,~,~] = clm.buildmat_fast(chnkrlocal,rparslocal,opdims,glwts,ilistl,...
       xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
     %
     MAT = eye(nsys) + MAT;
