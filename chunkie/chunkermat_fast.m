@@ -76,13 +76,13 @@ opdims = size(ftemp);
 % get opts from struct if available
 
 if isfield(opts,'quad')
-    quad = opts.quad;
+  quad = opts.quad;
 end
 if isfield(opts,'l2scale')
-    l2scale = opts.l2scale;
+  l2scale = opts.l2scale;
 end
 if isfield(opts,'nonsmoothonly')
-    nonsmoothonly = opts.nonsmoothonly;
+  nonsmoothonly = opts.nonsmoothonly;
 end
 
 % call requested routine
@@ -90,16 +90,20 @@ end
 if strcmpi(quad,'ggqlog')   
   type = 'log';
   if nonsmoothonly
-      sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
+    sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
   else
+    if ~isreal(chnkr.r(1,:,:))
       sysmat = chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad);
+    else
+      sysmat =  chnk.quadjh.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad); 
+    end
   end
 elseif strcmpi(quad,'jhlog')
   type = 'log';
   if nonsmoothonly
     sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
   else
-    sysmat = chnk.quadjh.buildmat(chnkr,kern,opdims,glwts,logquad);
+    sysmat = chnk.quadjh.buildmat(chnkr,kern,opdims,glwts,ilist,logquad);
   end
 elseif strcmpi(quad,'native')      
   if nonsmoothonly

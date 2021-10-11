@@ -1,4 +1,4 @@
-function submat = buildmat(chnkr,fkern,opdims,glwts,logquad)
+function submat = buildmat(chnkr,fkern,opdims,glwts,ilist,logquad)
 %%CHNK.QUADJH.BUILDMAT   
 % kernel-split quadrature for self-interaction of logarithmic singularity
 % type.
@@ -11,7 +11,7 @@ srcinfo.d2 = chnkr.d2; srcinfo.n = chnkr.n;
 targinfo = srcinfo;
 hs = chnkr.h;
 
-dsnrms = sqrt(sum(srcinfo.d.^2,1)); dsnrms = dsnrms(:);
+dsnrms = sqrt(sum(chnkr.d.^2,1)); dsnrms = dsnrms(:);
 ws = kron(hs(:),glwts(:));
 
 k = chnkr.k;
@@ -26,13 +26,43 @@ dsdt = dsnrms(:).*ws;
 dsdtndim2 = repmat(dsdt(:).',opdims(2),1);
 dsdtndim2 = dsdtndim2(:);
 
-if round(hs(1)/hs(2)) == 1
-  LogC = logquad.LogC1;
-elseif round(hs(1)/hs(2)) == 2
-  LogC = logquad.LogC0;
+if nch == 1
+  LogC = logquad.LogC;
+else
+  if round(hs(1)/hs(2)) == 1
+    LogC = logquad.LogC1;
+  elseif round(hs(1)/hs(2)) == 2
+    LogC = logquad.LogC0;
+  end
 end
 
 mat = fkern(srcinfo,targinfo);
+
+% compute only needed matrix blocks. somehow this is slower.
+
+% blist = ilist(:).';
+% glist=setdiff(1:nch,blist);
+% mat = zeros(k*nch*opdims(2));
+% srcg = []; srcg.r=chnkr.r(:,:,glist);srcg.d=chnkr.d(:,:,glist);
+% srcg.d2 = chnkr.d2(:,:,glist); srcg.n = chnkr.n(:,:,glist);
+% 
+% srcb = []; srcb.r=chnkr.r(:,:,blist);srcb.d=chnkr.d(:,:,blist);
+% srcb.d2 = chnkr.d2(:,:,blist); srcb.n = chnkr.n(:,:,blist);
+% 
+% ind0 = (1:k*opdims(2));
+% n0 = k*opdims(2);
+% indg = [];
+% for i=glist
+%   indg = [indg (i-1)*n0+ind0];
+% end
+% indb = [];
+% for i=blist
+%   indb = [indb (i-1)*n0+ind0];
+% end
+% 
+% mat(indg,indg) = fkern(srcg,srcg);
+% mat(indb,indg) = fkern(srcg,srcb);
+% mat(indg,indb) = fkern(srcb,srcg);
 
 submat = bsxfun(@times,mat,(dsdtndim2(:)).');
 

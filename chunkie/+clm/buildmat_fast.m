@@ -82,15 +82,11 @@ for i=1:ncurve % target curve id
         jlist = iglist(:,j);
       end
       
-      if strcmpi(quad,'jhlog')
-        logquad.omega = k1(i);
-      end
-      M1  = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,logquad);
-      
-      if strcmpi(quad,'jhlog')
-        logquad.omega = k2(i);
-      end
-      M2  = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,logquad);
+      logquad.omega = k1(i);
+      M1 = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,logquad);
+     
+      logquad.omega = k2(i);
+      M2 = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,logquad);
       
       M(indi1,indi1) =  alpha1(i)*(c2*M2(ni1,ni1)-c1*M1(ni1,ni1)); % D
       M(indi1,indi2) =  alpha1(i)*(M2(ni1,ni2)-M1(ni1,ni2)); % S
@@ -111,8 +107,8 @@ for i=1:ncurve % target curve id
 %         jlist = iglist(:,j);
 %       end
       
-      M1  = chunkermat_smooth(chnkr(j),chnkr(i),allk1,opdims,glwts,jlist,ilist);
-      M2  = chunkermat_smooth(chnkr(j),chnkr(i),allk2,opdims,glwts,jlist,ilist);
+      M1 = chunkermat_smooth(chnkr(j),chnkr(i),allk1,opdims,glwts,jlist,ilist);
+      M2 = chunkermat_smooth(chnkr(j),chnkr(i),allk2,opdims,glwts,jlist,ilist);
       
       M(indi1,indj1) =  alpha1(i)*(c2*M2(ni1,nj1)-c1*M1(ni1,nj1));
       M(indi1,indj2) =  alpha1(i)*(M2(ni1,nj2)-M1(ni1,nj2));

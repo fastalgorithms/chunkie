@@ -178,6 +178,12 @@ opdims(1)=2;opdims(2)=2;
 % set up GGQ machinery
 [logquad] = chnk.quadggq.setuplogquad(ngl,opdims);
 
+% log correction for self interaction in kernel-split style
+isclosed = 0;
+hlocal = [1];
+LogC = chnk.quadjh.setuplogquad(hlocal,ngl,isclosed,opdims);
+logquad.LogC  = LogC;
+
 % define functions for curves
 fcurve = cell(1,ncurve);
 for icurve=1:ncurve
@@ -231,10 +237,9 @@ start = tic;
 opts.quad = 'jhlog';
 hlocal1 = [0.5, 0.5, 1];
 hlocal0 = [1, 0.5, 0.5];
-isclose = 0;
 
-LogC0 = chnk.quadjh.setuplogquad(hlocal0,ngl,isclose,opdims);
-LogC1 = chnk.quadjh.setuplogquad(hlocal1,ngl,isclose,opdims);
+LogC0 = chnk.quadjh.setuplogquad(hlocal0,ngl,isclosed,opdims);
+LogC1 = chnk.quadjh.setuplogquad(hlocal1,ngl,isclosed,opdims);
 
 logquad.LogC0 = LogC0;
 logquad.LogC1 = LogC1;
