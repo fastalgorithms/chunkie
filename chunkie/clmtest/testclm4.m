@@ -65,8 +65,6 @@ close all
 format long e
 format compact
 
-addpaths_loc();
-
 ndomain = 3; % number of domains
 ncurve = 4; % number of curve segments
 chnkr(1,ncurve) = chunker();
@@ -172,11 +170,13 @@ ngl = 16;
 pref = []; 
 pref.k = ngl;
 
+% Treat the representation as if it were a 2x2 operator so that four layer 
+% potentials D, S, D', S' can be evaluated together. This will avoid 
+% redundant evaluation of Hankel functions.
 opdims(1)=2;opdims(2)=2;
 
 % set up GGQ machinery
-[xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron] = ...
-  chnk.quadggq.setuplogquad(ngl,opdims);
+[logquad] = chnk.quadggq.setuplogquad(ngl,opdims);
 
 % define functions for curves
 fcurve = cell(1,ncurve);
@@ -188,8 +188,7 @@ end
 start = tic; 
 
 for icurve=1:ncurve
-    chnkr(icurve) = chunkerfuncuni(fcurve{icurve},...
-        nch(icurve),cparams{icurve},pref);
+  chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
 end
 
 t1 = toc(start);
@@ -215,10 +214,10 @@ rpars.coef = coef;
 
 isrcip = 1;
 
+opts = [];
 start = tic;
 ilist=[];
-[M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opdims,glwts,ilist,...
-  xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
+[M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opts,opdims,glwts,ilist,logquad);
 if ~isrcip, M = M + eye(2*np); end
 t1 = toc(start);
 
@@ -228,7 +227,20 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 
 if isrcip
 start = tic;
+
+opts.quad = 'jhlog';
+hlocal1 = [0.5, 0.5, 1];
+hlocal0 = [1, 0.5, 0.5];
+isclose = 0;
+
+LogC0 = chnk.quadjh.setuplogquad(hlocal0,ngl,isclose,opdims);
+LogC1 = chnk.quadjh.setuplogquad(hlocal1,ngl,isclose,opdims);
+
+logquad.LogC0 = LogC0;
+logquad.LogC1 = LogC1;
+
 inds = [0, cumsum(nch)];
+% number of triple junctions
 ncorner = 2;
 
 nedge = 3;
@@ -270,14 +282,13 @@ for icorner=1:ncorner
   end
   h0 = h0*2; % note the factor of 2 here!!!!
 
-  nsub = 33; % level of dyadic refinement in the forward recursion for computing R
+  nsub = 32; % level of dyadic refinement in the forward recursion for computing R
 %   R{icorner} = rcip.Rcomp(ngl,nedge,ndim,Pbc,PWbc,nsub,...
 %     starL,circL,starS,circS,...
 %     h0,isstart,fcurvelocal,rparslocal);  
   R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
     starL,circL,starS,circS,ilist,...
-    h0,isstart,fcurvelocal,rparslocal,opdims,glnodes,glwts,...
-    xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
+    h0,isstart,fcurvelocal,rparslocal,opts,opdims,glnodes,glwts,logquad);
 
   starind = [];
   for i=1:nedge

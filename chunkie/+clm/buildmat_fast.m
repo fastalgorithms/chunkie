@@ -1,5 +1,5 @@
-function [M,np,alpha1,alpha2] = buildmat_fast(chnkr,rpars,opdims,glwts,iglist,...
-  xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
+function [M,np,alpha1,alpha2] = buildmat_fast(chnkr,rpars,opts,opdims,...
+  glwts,iglist,logquad)
 % build the system matrix for the interface problem
 % inputs: 
 % rpars.k - array of wave numbers for each domain
@@ -15,8 +15,10 @@ function [M,np,alpha1,alpha2] = buildmat_fast(chnkr,rpars,opdims,glwts,iglist,..
 % outputs:
 % M - the system matrix
 %
+
 ncurve = length(chnkr);
 nch = zeros(1,ncurve);
+
 
 k = rpars.k;
 c = rpars.c;
@@ -45,14 +47,17 @@ np = sum(nch(1:ncurve))*ngl;
 % now build the system matrix
 M = zeros(2*np);
 
-opts = [];
-
 % diagonal constant for each curve
 alpha1 = zeros(1,ncurve);
 alpha2 = zeros(1,ncurve);
 for i=1:ncurve
   alpha1(i) = 2/(coef(c(1,i))+coef(c(2,i)));
   alpha2(i) = 2/(1/coef(c(1,i))+1/coef(c(2,i)));
+end
+
+quad = [];
+if isfield(opts, 'quad')
+  quad = opts.quad;
 end
 
 for i=1:ncurve % target curve id
@@ -76,18 +81,22 @@ for i=1:ncurve % target curve id
       if ~isempty(iglist)
         jlist = iglist(:,j);
       end
-      M1  = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,...
-        xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
-      M2  = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,...
-        xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
       
-      M(indi1,indi1) =  alpha1(i)*(c2*M2(ni1,ni1)-c1*M1(ni1,ni1));
-      M(indi1,indi2) =  alpha1(i)*(M2(ni1,ni2)-M1(ni1,ni2));
+      if strcmpi(quad,'jhlog')
+        logquad.omega = k1(i);
+      end
+      M1  = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,logquad);
       
-      M(indi2,indi1) = -alpha2(i)*(M2(ni2,ni1)-M1(ni2,ni1));
-      M(indi2,indi2) = -alpha2(i)*(1/c2*M2(ni2,ni2)-1/c1*M1(ni2,ni2));
+      if strcmpi(quad,'jhlog')
+        logquad.omega = k2(i);
+      end
+      M2  = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,logquad);
       
+      M(indi1,indi1) =  alpha1(i)*(c2*M2(ni1,ni1)-c1*M1(ni1,ni1)); % D
+      M(indi1,indi2) =  alpha1(i)*(M2(ni1,ni2)-M1(ni1,ni2)); % S
       
+      M(indi2,indi1) = -alpha2(i)*(M2(ni2,ni1)-M1(ni2,ni1)); % D'
+      M(indi2,indi2) = -alpha2(i)*(1/c2*M2(ni2,ni2)-1/c1*M1(ni2,ni2)); % S'  
     else
       indj1 = sum(nch(1:j-1))*2*ngl+(1:2:2*nch(j)*ngl);
       indj2 = sum(nch(1:j-1))*2*ngl+(2:2:2*nch(j)*ngl);

@@ -1,7 +1,6 @@
   function [R]=Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
     starL,circL,starS,circS,ilist,...
-    h0,isstart,fcurve,rparslocal, opdims,glxs,glwts,...
-    xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
+    h0,isstart,fcurve,rparslocal,opts,opdims,glxs,glwts,logquad)
   % carry out the forward recursion for computing the preconditioner R 
   % in the RCIP method
   
@@ -41,8 +40,8 @@
     else
       ilistl = ilist;
     end
-    [MAT,~,~,~] = clm.buildmat_fast(chnkrlocal,rparslocal,opdims,glwts,ilistl,...
-      xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
+    [MAT,~,~,~] = clm.buildmat_fast(chnkrlocal,rparslocal,opts,opdims,...
+      glwts,ilistl,logquad);
     %
     MAT = eye(nsys) + MAT;
     if level==1    %  Dumb and lazy initializer for R, for now

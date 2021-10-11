@@ -1,5 +1,4 @@
-function [sysmat] = chunkermat_fast(chnkr,kern,opts,glwts,ilist,...
-  xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron)
+function [sysmat] = chunkermat_fast(chnkr,kern,opts,glwts,ilist,logquad)
 %CHUNKERMAT build matrix for given kernel and chunker description of 
 % boundary. This is a wrapper for various quadrature routines. Optionally,
 % return only those interactions which do not use the smooth integration
@@ -88,40 +87,43 @@ end
 
 % call requested routine
 
-if strcmpi(quad,'ggqlog')
-    
-    type = 'log';
-    if nonsmoothonly
-        sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
-    else
-        sysmat = chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,...
-          xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
+if strcmpi(quad,'ggqlog')   
+  type = 'log';
+  if nonsmoothonly
+      sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
+  else
+      sysmat = chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad);
+  end
+elseif strcmpi(quad,'jhlog')
+  type = 'log';
+  if nonsmoothonly
+    sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
+  else
+    sysmat = chnk.quadjh.buildmat(chnkr,kern,opdims,glwts,logquad);
+  end
+elseif strcmpi(quad,'native')      
+  if nonsmoothonly
+    sysmat = sparse(chnkr.npt,chnkr.npt);
+  else
+    if (quadorder ~= chnkr.k)
+      warning(['native rule: quadorder', ...
+        ' must equal chunker order (%d)'],chnkr.k)
     end
-    
-elseif strcmpi(quad,'native')
-        
-    if nonsmoothonly
-        sysmat = sparse(chnkr.npt,chnkr.npt);
-    else
-        if (quadorder ~= chnkr.k)
-            warning(['native rule: quadorder', ... 
-                ' must equal chunker order (%d)'],chnkr.k)
-        end
-        sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims);
-    end
+    sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims);
+  end
 else
-    warning('specified quadrature method not available');
-    sysmat = [];
-    return;
+  warning('specified quadrature method not available');
+  sysmat = [];
+  return;
 end
 	 
 if l2scale
-    wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
-    wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
-    wtscol = wtscol.';
-    wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
-    sysmat = bsxfun(@times,wtsrow,sysmat);
-    sysmat = bsxfun(@rdivide,sysmat,wtscol);
+  wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
+  wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:);
+  wtscol = wtscol.';
+  wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
+  sysmat = bsxfun(@times,wtsrow,sysmat);
+  sysmat = bsxfun(@rdivide,sysmat,wtscol);
 end
 
 end

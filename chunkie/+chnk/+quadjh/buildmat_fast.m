@@ -1,5 +1,5 @@
 function [sysmat] = buildmat_fast(chnkr,kern,opdims,type,wts,ilist,logquad)
-%CHNK.QUADGGQ.BUILDMAT build matrix for given kernel and chnkr 
+%CHNK.QUADJH.BUILDMAT build matrix for given kernel and chnkr 
 % description of boundary, using special quadrature for self
 % and neighbor panels.
 %
@@ -19,12 +19,8 @@ h = chnkr.h;
 
 xs1 = logquad.xs1;
 wts1 = logquad.wts1;
-xs0 = logquad.xs0;
-wts0 = logquad.wts0;
 ainterp1 = logquad.ainterp1;
 ainterp1kron = logquad.ainterp1kron;
-ainterps0 = logquad.ainterps0;
-ainterps0kron = logquad.ainterps0kron;
 
 %[~,wts] = lege.exps(k);
 % do smooth weight for all
@@ -43,7 +39,7 @@ for j = 1:nch
 
     if ibefore > 0
       if ~isempty(ilist) && ismember(ibefore,ilist) && ismember(j,ilist) 
-        % skip construction if both chunks are in the "bad" chunk list
+        % skip correction if both chunks are in the "bad" chunk list        
       else
         submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,ibefore,j, ...
             kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
@@ -57,7 +53,7 @@ for j = 1:nch
     
     if iafter > 0
       if ~isempty(ilist) && ismember(iafter,ilist) && ismember(j,ilist) 
-        % skip construction if both chunks are in the "bad" chunk list
+        % skip correction if both chunks are in the "bad" chunk list        
       else      
         submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,iafter,j, ...
             kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
@@ -71,10 +67,9 @@ for j = 1:nch
     
     % self
     if ~isempty(ilist) && ismember(j,ilist) 
-      % skip construction if the chunk is in the "bad" chunk list  
+      % skip correction if the chunk is in the "bad" chunk list        
     else
-      submat = chnk.quadggq.diagbuildmat(r,d,n,d2,h,j,kern,opdims,...
-          xs0,wts0,ainterps0kron,ainterps0);
+      submat = chnk.quadjh.diagbuildmat(r,d,n,d2,h,j,kern,opdims,wts,logquad);
 
       imat = 1 + (j-1)*k*opdims(1);
       imatend = j*k*opdims(1);
