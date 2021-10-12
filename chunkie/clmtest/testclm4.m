@@ -190,7 +190,7 @@ for icurve=1:ncurve
   fcurve{icurve} = @(t) clm.funcurve(t,icurve,cpars(:,icurve));
 end
 
-% discretization the boundary
+% discretize the boundary
 start = tic; 
 
 for icurve=1:ncurve
@@ -204,7 +204,7 @@ fprintf('%5.2e s : time to build geo\n',t1)
 % plot geometry
 figure(1)
 clf
-plot(chnkr,'r.')
+plot(chnkr,'r--')
 axis equal
 
 % figure(2)
@@ -220,6 +220,7 @@ rpars.coef = coef;
 
 isrcip = 1;
 
+% build the system matrix
 opts = [];
 start = tic;
 ilist=[];
@@ -232,89 +233,121 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 % compute the preconditioner R in the RCIP method for triple junctions
 
 if isrcip
-start = tic;
-
-opts.quad = 'jhlog';
-hlocal1 = [0.5, 0.5, 1];
-hlocal0 = [1, 0.5, 0.5];
-
-LogC0 = chnk.quadjh.setuplogquad(hlocal0,ngl,isclosed,opdims);
-LogC1 = chnk.quadjh.setuplogquad(hlocal1,ngl,isclosed,opdims);
-
-logquad.LogC0 = LogC0;
-logquad.LogC1 = LogC1;
-
-inds = [0, cumsum(nch)];
-% number of triple junctions
-ncorner = 2;
-
-nedge = 3;
-ndim = opdims(2);
-nplocal = 2*ngl*nedge*ndim;
-
-R = cell(1,ncorner);
-
-RG = speye(2*np);
-
-for icorner=1:ncorner
-  if icorner==1
-    clist = [1, 3, 4];
-    isstart = [0, 0, 1];
-  else
-    clist = [2, 3, 4];
-    isstart = [1, 1, 0];
-  end
-  rparslocal = [];
-  rparslocal.k = k;
-  rparslocal.c = c(:,clist);
-  rparslocal.coef = coef;
   
-  cparslocal = [cpars(:,clist); isstart];
-  fcurvelocal = cell(1,nedge);
-  for i=1:nedge
-    fcurvelocal{i} = @(t) clm.funcurve(t,clist(i),cparslocal(:,i));
-  end
+  start = tic;
 
-  [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
+  issymmetric = 1;
+  
+  opts.quad = 'jhlog';
+  hlocal1 = [0.5, 0.5, 1];
+  hlocal0 = [1, 0.5, 0.5];
 
-  h0 = zeros(1,nedge); % chunk size at the coarsest level
-  for i=1:nedge
-    if isstart(i)
-      h0(i) = chnkr(clist(i)).h(1);
+  LogC0 = chnk.quadjh.setuplogquad(hlocal0,ngl,isclosed,opdims);
+  LogC1 = chnk.quadjh.setuplogquad(hlocal1,ngl,isclosed,opdims);
+
+  logquad.LogC0 = LogC0;
+  logquad.LogC1 = LogC1;
+
+  inds = [0, cumsum(nch)];
+  % number of triple junctions
+  ncorner = 2;
+
+  nedge = 3;
+  ndim = opdims(2);
+  nplocal = 2*ngl*nedge*ndim;
+
+  R = cell(1,ncorner);
+
+  RG = speye(2*np);
+
+  for icorner=1:ncorner
+    if icorner==1
+      clist = [1, 3, 4];
+      isstart = [0, 0, 1];
     else
-      h0(i) = chnkr(clist(i)).h(end);
+      clist = [2, 3, 4];
+      isstart = [1, 1, 0];
+    end
+    
+    if issymmetric && icorner == 2
+      
+    else
+      rparslocal = [];
+      rparslocal.k = k;
+      rparslocal.c = c(:,clist);
+      rparslocal.coef = coef;
+
+      cparslocal = [cpars(:,clist); isstart];
+      fcurvelocal = cell(1,nedge);
+      for i=1:nedge
+        fcurvelocal{i} = @(t) clm.funcurve(t,clist(i),cparslocal(:,i));
+      end
+
+      [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
+
+      h0 = zeros(1,nedge); % chunk size at the coarsest level
+      for i=1:nedge
+        if isstart(i)
+          h0(i) = chnkr(clist(i)).h(1);
+        else
+          h0(i) = chnkr(clist(i)).h(end);
+        end
+      end
+      h0 = h0*2; % note the factor of 2 here!!!!
+
+      nsub = 32; % level of dyadic refinement in the forward recursion for computing R
+
+      R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
+        starL,circL,starS,circS,ilist,...
+        h0,isstart,fcurvelocal,rparslocal,opts,opdims,glnodes,glwts,logquad);
+    end
+    
+    starind = [];
+    for i=1:nedge
+      if isstart(i)
+        starind = [starind inds(clist(i))*ngl*ndim+(1:2*ngl*ndim)];
+      else
+        starind = [starind inds(clist(i)+1)*ngl*ndim-fliplr(0:2*ngl*ndim-1)];
+      end
+    end
+
+    M(starind,starind) = zeros(nplocal);
+        
+    if issymmetric && icorner == 2
+      % due to pointwise block structure, need to reverse the order for
+      % each edge, while keeping the same order of 2x2 blocks.
+      R11 = R{1}(1:2:end,1:2:end);
+      R12 = R{1}(1:2:end,2:2:end);
+      R21 = R{1}(2:2:end,1:2:end);
+      R22 = R{1}(2:2:end,2:2:end);
+      
+      indinv = [];
+      n0 = 2*ngl;
+      for i=1:nedge
+        indinv = [indinv (i-1)*n0+(n0:-1:1)];
+      end
+      
+      R11 = R11(indinv,indinv);
+      R12 = R12(indinv,indinv);
+      R21 = R21(indinv,indinv);
+      R22 = R22(indinv,indinv);
+      
+      R2 = zeros(2*ngl*nedge*ndim);
+      
+      R2(1:2:end,1:2:end) = R11;
+      R2(1:2:end,2:2:end) = R12;
+      R2(2:2:end,1:2:end) = R21;
+      R2(2:2:end,2:2:end) = R22;
+      
+      RG(starind,starind) = R2;
+    else
+      RG(starind,starind) = R{icorner};
     end
   end
-  h0 = h0*2; % note the factor of 2 here!!!!
 
-  nsub = 32; % level of dyadic refinement in the forward recursion for computing R
-%   R{icorner} = rcip.Rcomp(ngl,nedge,ndim,Pbc,PWbc,nsub,...
-%     starL,circL,starS,circS,...
-%     h0,isstart,fcurvelocal,rparslocal);  
-  R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
-    starL,circL,starS,circS,ilist,...
-    h0,isstart,fcurvelocal,rparslocal,opts,opdims,glnodes,glwts,logquad);
+  t1 = toc(start);
 
-  starind = [];
-  for i=1:nedge
-    if isstart(i)
-      starind = [starind inds(clist(i))*ngl*ndim+(1:2*ngl*ndim)];
-    else
-      starind = [starind inds(clist(i)+1)*ngl*ndim-fliplr(0:2*ngl*ndim-1)];
-    end
-  end
-  
-%   for i=1:ndim-1
-%     starind = [starind starind+np];
-%   end
-
-  M(starind,starind) = zeros(nplocal);
-  RG(starind,starind) = R{icorner};
-end
-
-t1 = toc(start);
-
-fprintf('%5.2e s : time to compute R\n',t1)
+  fprintf('%5.2e s : time to compute R\n',t1)
 end
 
 % src(:,~i) are sources for the ith domain
@@ -381,8 +414,8 @@ targ3 = [0; 0]; % target point in domain #3
 
 targ = [targ1, targ2, targ3]
 
-sol1 = sol(1:2:2*np); % double layer density
-sol2 = sol(2:2:2*np); % single layer density
+%sol1 = sol(1:2:2*np); % double layer density
+%sol2 = sol(2:2:2*np); % single layer density
 %[abs(sol1(1));abs(sol2(1))]
 
 
@@ -399,22 +432,83 @@ for i=1:ndomain
   uexact(i) = uexact(i) + chnk.helm2d.green(k(i),src(:,j),targ(:,i));
 end
 
+chnkrtotal = merge(chnkr);
+
 % compute the numerical solution
 for i=1:ndomain
-  skern =  @(s,t) chnk.helm2d.kern(k(i),s,t,'s',1);
-  dkern =  @(s,t) chnk.helm2d.kern(k(i),s,t,'d',1);
-  
-  for j=1:ncurve    
-    ind = sum(nch(1:j-1))*ngl+(1:nch(j)*ngl);
-    
-    dlp = chunkerkerneval(chnkr(j),dkern,sol1(ind),targ(:,i));
-    slp = chunkerkerneval(chnkr(j),skern,sol2(ind),targ(:,i));
-    
-    ucomp(i) = ucomp(i) + coef(i)*dlp + slp;
-  end
+  evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(i));
+  ucomp(i) = chunkerkerneval(chnkrtotal,evalkern,sol,targ(:,i));
+%   skern =  @(s,t) chnk.helm2d.kern(k(i),s,t,'s',1);
+%   dkern =  @(s,t) chnk.helm2d.kern(k(i),s,t,'d',1);
+%   
+%   for j=1:ncurve    
+%     ind = sum(nch(1:j-1))*ngl+(1:nch(j)*ngl);
+%     
+%     dlp = chunkerkerneval(chnkr(j),dkern,sol1(ind),targ(:,i));
+%     slp = chunkerkerneval(chnkr(j),skern,sol2(ind),targ(:,i));
+%     
+%     ucomp(i) = ucomp(i) + coef(i)*dlp + slp;
+%   end
 end
 
 uerror = abs(ucomp-uexact)./abs(uexact);
 
 [ucomp.'; uexact.'; real(uerror)']
 
+% evaluate the field in the second domain at 10000 points and record time
+ngr = 100;       % field evaluation at ngr^2 points
+xylim=[-10 10 -80 -50];  % computational domain
+[xg,yg,targs,ngrtot] = targinit(xylim,ngr);
+
+start = tic; 
+evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(2));
+u = chunkerkerneval(chnkrtotal,evalkern,sol,targs);
+t1 = toc(start);
+
+fprintf('%5.2e s : time to evaluate the field at 10000 points\n',t1)
+
+% plot out the field
+fieldplot(u,1,xg,yg,xylim,ngr)
+
+function [xg,yg,targs,ngrtot]=targinit(xylim,ngr)
+xg=linspace(xylim(1),xylim(2),ngr);
+yg=linspace(xylim(3),xylim(4),ngr);
+ngrtot=ngr^2;
+targs=zeros(2,ngrtot);
+for k=1:ngr
+  targs(1,(k-1)*ngr+(1:ngr)) = xg(k);
+  targs(2,(k-1)*ngr+(1:ngr)) = yg; 
+end
+
+function fieldplot(u,z,xg,yg,xylim,ngr)
+F1=zeros(ngr);
+for k=1:ngr
+  F1(1:ngr,k)=u((k-1)*ngr+(1:ngr));
+end
+fh =  findobj('type','figure');
+nf = length(fh);
+figure(nf+1)
+imagesc(xg,yg,real(F1));      
+colormap(jet)
+axis xy
+axis equal
+colorbar
+figure(nf+2)
+imagesc(xg,yg,imag(F1));      
+colormap(jet)
+axis xy
+axis equal
+colorbar
+
+% hold on
+% np=length(z)/2;
+% xy=1.1*xylim;
+% zext=[xy(1);0;z(1:np);1;xy(2);xy(2)+1i*xy(3);xy(1)+1i*xy(3);xy(1)];
+% fill(real(zext),imag(zext),'w','EdgeColor','w')  
+% zext=[xy(2);1;z(np+1:2*np);0;xy(1);xy(1)+1i*xy(4);xy(2)+1i*xy(4);xy(2)];
+% fill(real(zext),imag(zext),'w','EdgeColor','w')  
+% title('Field $u({\bf x})$','Interpreter','LaTeX')
+% xlabel('$x_1$','Interpreter','LaTeX')
+% ylabel('$x_2$','Interpreter','LaTeX')
+% axis(xylim)
+% axis equal

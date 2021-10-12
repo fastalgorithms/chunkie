@@ -127,3 +127,21 @@ if strcmpi(type,'all')
   submat(2:2:2*nt,1:2:2*ns) = submatdp;
   submat(2:2:2*nt,2:2:2*ns) = submatsp;
 end
+
+if strcmpi(type,'eval')
+  coef = varargin{1};
+  
+  srcnorm = srcinfo.n;
+  
+  submat = zeros(nt,2*ns);
+  % S
+  [submats,grad] = chnk.helm2d.green(zk,src,targ);
+
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  % D
+  submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+    
+  submat(:,1:2:2*ns) = coef*submatd;
+  submat(:,2:2:2*ns) = submats;
+end

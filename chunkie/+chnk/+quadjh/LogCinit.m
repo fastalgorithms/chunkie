@@ -1,4 +1,4 @@
-function M1=LogCinit(sinterdiff,T,W,isclose)
+function M1=LogCinit(sinterdiff,T,W,isclosed)
 % *** Corrections to Logarithmic potential log(|tau-z|) ***   
 % *** block-tri-diagonal output ***
 % *** iper=0,1 (0 is open arc, 1 is closed contour) ***
@@ -10,7 +10,7 @@ A=ones(ngl);
 for k=2:ngl
   A(:,k)=T.*A(:,k-1);
 end
-if isclose
+if isclosed
   kstart=1;
   kend=npan;  
 else
@@ -51,6 +51,6 @@ for k=1:kend
   end
   M1(mi,myinds)=M1(mi,myinds)+TMP./W(:,ones(1,na))';
 end
-if isclose
+if isclosed
   M1=sparse(M1);
 end

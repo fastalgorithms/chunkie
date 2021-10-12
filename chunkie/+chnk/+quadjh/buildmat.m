@@ -91,6 +91,7 @@ tmp = 1i/2-(log(omega/2)+gamma)/pi;
 inds = N+1:2*(N+1):N^2;
 %submat(inds) = 0.5*(tmp-(LogC(inds)+log(hs*dsnrms))/pi).*dsdt.';
 submat(inds) = 0.5*(tmp-(LogC(inds)+log(hds))/pi).*dsdt.';
+
 % 3. diagonal corrections for D'. Note well: this is only correct for the
 % difference kernel D'_{k1}-D'_{k2}!!!
 inddp = 2:2*(N+1):N^2;
