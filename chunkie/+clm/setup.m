@@ -19,7 +19,8 @@ lambda0 = 0.55/4; % green light wavelength in nm
 k = rn/lambda0;
 
 % coefficients in the boundary conditions on normal derivatives
-coef = 1./rn.^2;
+coef = rn.^2; % TM polarization
+%coef = ones(size(rn)); % TE polarization
 
 % domain indices for each curve
 c = zeros(2,ncurve);

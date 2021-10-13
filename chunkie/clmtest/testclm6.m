@@ -420,7 +420,8 @@ for i=1:ndomain
   list{i} = find(targdomain==i);
 end
 
-disp('Step 2: evaluate the total field')
+if 1==1
+disp('Step 2: evaluate the total field for point sources')
 u = zeros(ntarg,1);
 uexact = zeros(ntarg,1);
 
@@ -455,4 +456,89 @@ clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
 title('Numerical solution','Interpreter','LaTeX','FontSize',fontsize)
 clm.fieldplot(uexact,chnkr,xg,yg,xylim,ngr,fontsize)
 title('Exact solution','Interpreter','LaTeX','FontSize',fontsize)
+end
+
+% the incident wave is a plane wave
+rhs = zeros(2*np,1);
+
+alpha = 3*pi/4;
+disp(' ')
+disp(['Now calculate the field when the incident wave is a plane wave'])
+disp(['incident angle = ', num2str(alpha)])
+for i=1:ncurve
+  d1 = c(1,i); % interior domain index
+  d2 = c(2,i); % exterior domain index
+   
+  c1 = coef(d1);
+  c2 = coef(d2);
+  
+  ind1 = sum(nch(1:i-1))*ngl*2+(1:2:2*nch(i)*ngl);
+  ind2 = sum(nch(1:i-1))*ngl*2+(2:2:2*nch(i)*ngl);
+  
+  targnorm = chnkr(i).n;
+  nx = targnorm(1,:,:); nx=nx(:);
+  ny = targnorm(2,:,:); ny=ny(:);
+
+  if d1==1 || d1 == 2
+    [u1,gradu1]=clm.planewavetotal(k(1),alpha,k(2),chnkr(i).r,d1,coef);
+    du1dn = gradu1(:,1).*nx + gradu1(:,2).*ny;
+    rhs(ind1) = rhs(ind1) + alpha1(i)*u1(:);
+    rhs(ind2) = rhs(ind2) - alpha2(i)/c1*du1dn(:);
+  end
+  
+  if d2==1 || d2==2
+    [u2,gradu2]=clm.planewavetotal(k(1),alpha,k(2),chnkr(i).r,d2,coef);
+    du2dn = gradu2(:,1).*nx + gradu2(:,2).*ny;
+    rhs(ind1) = rhs(ind1) - alpha1(i)*u2(:);
+    rhs(ind2) = rhs(ind2) + alpha2(i)/c2*du2dn(:);
+  end
+%  rhs(ind1) = -alpha1(i)*(u1-u2);
+%  rhs(ind2) =  alpha2(i)*(1/c1*du1dn-1/c2*du2dn);
+end
+
+rhs = rhs(:);
+
+% solve the linear system using gmres
+disp(' ')
+disp('Step 3: solve the linear system via GMRES.')
+start = tic; 
+if isrcip
+  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,1000,eps*20);
+  sol = RG*soltilde;
+  disp(['GMRES iterations = ',num2str(it)])
+else
+  sol = gmres(M,rhs,[],1e-13,100);
+end
+dt = toc(start);
+disp(['Time on GMRES = ', num2str(dt), ' seconds'])
+
+disp('Step 4: evaluate the total field for incident plane wave')
+u = zeros(ntarg,1);
+
+start = tic; 
+for i=1:ndomain
+  if ~isempty(list{i})
+    evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(i));
+    u(list{i}) = chunkerkerneval(chnkrtotal,evalkern,sol,targs(:,list{i}));
+  end
+  disp(['domain ', num2str(i)])
+  if i==1 || i==2
+    u(list{i}) = u(list{i}) + clm.planewavetotal(k(1),alpha,k(2),targs(:,list{i}),i,coef);
+  end
+end
+
+for i=1:ntarg
+  if targdomain(i)==0
+    u(i) = (u(i-1)+u(i+1))/2;
+  end
+end
+dt = toc(start);
+
+
+disp(['Evaluation time = ', num2str(dt), ' seconds'])
+%fprintf('%5.2e s : time to evaluate the field at 10000 points\n',t1)
+
+% plot out the field
+clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
+title('Total field, incident plane wave angle = $\frac{3\pi}{4}$','Interpreter','LaTeX','FontSize',fontsize)
 
