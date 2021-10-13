@@ -40,6 +40,8 @@ function npxy = nproxy_square(kern,width,opts)
   srcinfo.r = [-0.5;-0.5]*width + rand(2,nsrc)*width;
   
   srcinfo.d = randn(2,nsrc);
+  theta = randn(1,nsrc);
+  srcinfo.n = [cos(theta); sin(theta)];
   srcinfo.d2 = randn(2,nsrc);
 
   npxy = 16;

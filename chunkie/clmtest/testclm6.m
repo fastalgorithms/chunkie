@@ -1,4 +1,4 @@
-function testclm4
+function testclm6
 %% This program solves the following layered medium problem.
 %
 %              Omega_1
@@ -65,103 +65,29 @@ close all
 format long e
 format compact
 
-ndomain = 3; % number of domains
-ncurve = 4; % number of curve segments
+% obtain physical and geometric parameters
+clmparams = clm.setup();
+
+k = clmparams.k;
+c = clmparams.c;
+k1 = clmparams.k1;
+k2 = clmparams.k2;
+coef = clmparams.coef;
+cpars = clmparams.cpars;
+cparams = clmparams.cparams;
+ncurve = clmparams.ncurve;
+ndomain = clmparams.ndomain;
+ncorner = clmparams.ncorner;
+corners = clmparams.corners;
+issymmetric = clmparams.issymmetric;
+
 chnkr(1,ncurve) = chunker();
 
-rn = zeros(ndomain,1); 
-% rn(i) is the index of refraction of the ith domain
-rn(1) = 1.0;
-rn(2) = 1.2;
-rn(3) = 1.4;
-
-% k0 is the wave number in vacuum
-k0 = 4;
-
-% k(i) is the wave number for the ith domain
-k = k0*rn;
-
-
-% coefficients in the boundary conditions on normal derivatives
-coef = 1./rn.^2;
-
-% domain indices for each curve
-c = zeros(2,ncurve);
-% interior domain for the ith curve
-c(1,1:2) = 1; c(1,3:4) = 3;
-% exterior domain for the ith curve 
-c(2,1:2) = 2; c(2,3) = 1; c(2,4) = 2;
-
-
-k1 = zeros(1,ncurve); % wave numbers for the interior domain
-k2 = zeros(1,ncurve); % wave numbers for the exterior domain
-
-for i=1:ncurve
-  k1(i) = k(c(1,i));
-  k2(i) = k(c(2,i));
+% define functions for curves
+fcurve = cell(1,ncurve);
+for icurve=1:ncurve
+  fcurve{icurve} = @(t) clm.funcurve6(t,icurve,cpars{icurve});
 end
-
-% two circular arcs for the center eye for now
-theta = zeros(1,ncurve);
-% upper curve opening angle
-theta(3) = pi/2.4;
-% lower curve opening angle
-theta(4) = pi/2.2;
-
-% parameters for the complexification of left and right flat parts.
-c1 = log(1d-2/eps)/min(k(1:2))
-c2 = c1/2.5
-
-% curve parameters
-% center eye range on the real x-axis [a,b]
-a = -1d1;
-b = 1d1;
-% length for complexification
-C = 6*c2
-% left flat curve [-L(1),a]
-L(1) = C-a;
-% right flat curve [b,L(2)]
-L(2) = b+C;
-
-% number of chunks on each curve
-% should be proportional to the length*wavenumber
-nch = zeros(1,ncurve);
-
-n0 = 6;
-fac = 1.2;
-
-lambda = 2*pi/max(abs(k(1)),abs(k(2)));
-nch(1) = round(fac*(a+L(1))/lambda) + n0;
-nch(2) = round(fac*(L(2)-b)/lambda) + n0;
-
-n0 = 16;
-lambda = 2*pi/max(abs(k(1)),abs(k(3)));
-nch(3) = round(fac*(b-a)/2/sin(theta(3)/2)/lambda) + n0;
-lambda = 2*pi/max(abs(k(2)),abs(k(3)));
-nch(4) = round(fac*(b-a)/2/sin(theta(4)/2)/lambda) + n0;
-
-nch
-% discretize the boundary
-tab = zeros(2,ncurve);
-tab(:,1) = [-L(1);a];
-tab(:,2) = [b;L(2)];
-for i=3:4
-  tab(:,i) = [-theta(i)/2;theta(i)/2];
-end
-
-cparams = cell(1,ncurve);
-
-for i=1:ncurve
-  cparams{i}.ta = tab(1,i);
-  cparams{i}.tb = tab(2,i);
-  cparams{i}.ifclosed = false;
-end
-
-cpars = zeros(3,ncurve);
-cpars(:,1) = [L(1),c1,c2];
-cpars(:,2) = [L(2),c1,c2];
-cpars(:,3) = [a, b, theta(3)];
-cpars(:,4) = [a, b, theta(4)];
 
 % number of Gauss-Legendre nodes on each chunk
 ngl = 16;
@@ -169,6 +95,58 @@ ngl = 16;
 
 pref = []; 
 pref.k = ngl;
+
+% number of chunks on each curve
+% should be proportional to the length*wavenumber
+nch = zeros(1,ncurve);
+
+n0 = 12;
+fac = 1.2/2/pi;
+
+for i=1:ncurve
+  if i==1 || i==2
+    L = cparams{i}.tb-cparams{i}.ta;
+  elseif i==3 || i==10
+    L = sqrt(sum((cpars{i}.v1-cpars{i}.v0).^2,1))/2/sin(cpars{i}.theta/2);
+  elseif i==4
+    L = cpars{4}.n*7.64/2;
+  else
+    L = sqrt(sum((cpars{icurve}.v0-cpars{icurve}.v1).^2,1));
+  end
+  
+  lambda = 1/max(abs(k1(i)),abs(k2(i)));
+  
+  nch(i) = round(fac*L/lambda) + n0;
+end
+
+nch
+disp(['Total number of unknowns = ',num2str(sum(nch)*ngl*2)])
+
+% discretize the boundary
+start = tic; 
+
+for icurve=1:ncurve
+  chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
+end
+
+t1 = toc(start);
+
+%fprintf('%5.2e s : time to build geo\n',t1)
+
+% plot geometry
+fontsize = 20;
+figure(1)
+clf
+plot(chnkr,'r-','LineWidth',2)
+axis equal
+title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
+xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
+ylabel('$x_2$','Interpreter','LaTeX','FontSize',fontsize)
+drawnow
+% figure(2)
+% clf
+% quiver(chnkr)
+% axis equal
 
 % Treat the representation as if it were a 2x2 operator so that four layer 
 % potentials D, S, D', S' can be evaluated together. This will avoid 
@@ -184,59 +162,32 @@ hlocal = [1];
 LogC = chnk.quadjh.setuplogquad(hlocal,ngl,isclosed,opdims);
 logquad.LogC  = LogC;
 
-% define functions for curves
-fcurve = cell(1,ncurve);
-for icurve=1:ncurve
-  fcurve{icurve} = @(t) clm.funcurve(t,icurve,cpars(:,icurve));
-end
+isrcip = 1;
 
-% discretize the boundary
-start = tic; 
-
-for icurve=1:ncurve
-  chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
-end
-
-t1 = toc(start);
-
-fprintf('%5.2e s : time to build geo\n',t1)
-
-% plot geometry
-figure(1)
-clf
-plot(chnkr,'r-','LineWidth',2)
-axis equal
-
-% figure(2)
-% clf
-% quiver(chnkr)
-% axis equal
-% pause
-
+% build the system matrix
 rpars = [];
 rpars.k = k;
 rpars.c = c;
 rpars.coef = coef;
-
-isrcip = 1;
-
-% build the system matrix
 opts = [];
+
+disp(' ')
+disp('Step 1: build the system matrix directly. Please be patient ...')
 start = tic;
 ilist=[];
 [M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opts,opdims,glwts,ilist,logquad);
 if ~isrcip, M = M + eye(2*np); end
-t1 = toc(start);
+dt = toc(start);
 
-fprintf('%5.2e s : time to assemble matrix\n',t1)
+disp(['System matrix construction time = ', num2str(dt), ' seconds'])
+%fprintf('%5.2f seconds : time to assemble matrix\n',t1)
 
 % compute the preconditioner R in the RCIP method for triple junctions
 
-if isrcip
-  
+if isrcip && ncorner>0
+  disp(' ')
+  disp('Step 2: compute the preconditioners for corners.')
   start = tic;
-
-  issymmetric = 1;
   
   opts.quad = 'jhlog';
   hlocal1 = [0.5, 0.5, 1];
@@ -249,27 +200,19 @@ if isrcip
   logquad.LogC1 = LogC1;
 
   inds = [0, cumsum(nch)];
-  % number of triple junctions
-  ncorner = 2;
 
-  nedge = 3;
   ndim = opdims(2);
-  nplocal = 2*ngl*nedge*ndim;
-
+ 
   R = cell(1,ncorner);
 
   RG = speye(2*np);
 
   for icorner=1:ncorner
-    if icorner==1
-      clist = [1, 3, 4];
-      isstart = [0, 0, 1];
-    else
-      clist = [2, 3, 4];
-      isstart = [1, 1, 0];
-    end
+    clist = corners{icorner}.clist;
+    isstart = corners{icorner}.isstart;
+    nedge = corners{icorner}.nedge;
     
-    if issymmetric && icorner == 2
+    if issymmetric && mod(icorner,2)==0
       
     else
       rparslocal = [];
@@ -277,10 +220,15 @@ if isrcip
       rparslocal.c = c(:,clist);
       rparslocal.coef = coef;
 
-      cparslocal = [cpars(:,clist); isstart];
+      cparslocal = cell(1,nedge);
+      for i=1:nedge
+        cparslocal{i} = cpars{clist(i)};
+        cparslocal{i}.islocal = isstart(i);
+      end
+      
       fcurvelocal = cell(1,nedge);
       for i=1:nedge
-        fcurvelocal{i} = @(t) clm.funcurve(t,clist(i),cparslocal(:,i));
+        fcurvelocal{i} = @(t) clm.funcurve6(t,clist(i),cparslocal{i});
       end
 
       [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
@@ -295,7 +243,7 @@ if isrcip
       end
       h0 = h0*2; % note the factor of 2 here!!!!
 
-      nsub = 32; % level of dyadic refinement in the forward recursion for computing R
+      nsub = 40; % level of dyadic refinement in the forward recursion for computing R
 
       R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
         starL,circL,starS,circS,ilist,...
@@ -311,15 +259,15 @@ if isrcip
       end
     end
 
-    M(starind,starind) = zeros(nplocal);
+    M(starind,starind) = 0;
         
-    if issymmetric && icorner == 2
+    if issymmetric && mod(icorner,2)==0
       % due to pointwise block structure, need to reverse the order for
       % each edge, while keeping the same order of 2x2 blocks.
-      R11 = R{1}(1:2:end,1:2:end);
-      R12 = R{1}(1:2:end,2:2:end);
-      R21 = R{1}(2:2:end,1:2:end);
-      R22 = R{1}(2:2:end,2:2:end);
+      R11 = R{icorner-1}(1:2:end,1:2:end);
+      R12 = R{icorner-1}(1:2:end,2:2:end);
+      R21 = R{icorner-1}(2:2:end,1:2:end);
+      R22 = R{icorner-1}(2:2:end,2:2:end);
       
       indinv = [];
       n0 = 2*ngl;
@@ -345,16 +293,24 @@ if isrcip
     end
   end
 
-  t1 = toc(start);
-
-  fprintf('%5.2e s : time to compute R\n',t1)
+  dt = toc(start);
+  disp(['Preconditioner construction time = ', num2str(dt), ' seconds'])
+  %fprintf('%5.2f seconds : time to compute R\n',t1)
 end
 
-% src(:,~i) are sources for the ith domain
+% src(:,i+1) are sources for the ith domain
 nsrc = ndomain;
-src = [-1, 1.3, 0; max(chnkr(3).r(2,:),[],'all')*1.3,...
-  min(chnkr(4).r(2,:),[],'all')*1.3, 0];
-hold on;plot(src(1,:),src(2,:),'r*')
+%src = [-1, 1.3, 0, 0, 0; max(chnkr(3).r(2,:),[],'all')*1.3,...
+%  min(chnkr(4).r(2,:),[],'all')*1.3, 0];
+src = zeros(2,ndomain);
+src(2,1) = max(chnkr(3).r(2,:),[],'all')*2;
+src(2,3) = max(chnkr(3).r(2,:),[],'all')*0.5;
+src(2,4) = chnkr(7).r(2,1,1)+1;
+src(2,5) = chnkr(7).r(2,1,1)-1.5;
+src(2,2) = min(chnkr(10).r(2,:),[],'all')*2;
+
+%hold on; plot(src(1,:),src(2,:),'r*')
+
 
 % construct artificial boundary data for testing purpose
 rhs = zeros(2*np,1);
@@ -378,7 +334,7 @@ for i=1:ncurve
   ind1 = sum(nch(1:i-1))*ngl*2+(1:2:2*nch(i)*ngl);
   ind2 = sum(nch(1:i-1))*ngl*2+(2:2:2*nch(i)*ngl);
   
-  targnorm = chnk.normal2d(chnkr(i));
+  targnorm = chnkr(i).n;
   nx = targnorm(1,:); nx=nx.';
   ny = targnorm(2,:); ny=ny.';
    
@@ -395,28 +351,30 @@ end
 rhs = rhs(:);
 
 % solve the linear system using gmres
+disp(' ')
+disp('Step 3: solve the linear system via GMRES.')
 start = tic; 
 if isrcip
-  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,200,eps*20);
+  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,1000,eps*20);
   sol = RG*soltilde;
-  disp(['GMRES iter = ',num2str(it)])
+  disp(['GMRES iterations = ',num2str(it)])
 else
   sol = gmres(M,rhs,[],1e-13,100);
 end
-t1 = toc(start);
+dt = toc(start);
+disp(['Time on GMRES = ', num2str(dt), ' seconds'])
 
-fprintf('%5.2e s : time for dense gmres\n',t1)
+%fprintf('%5.2f seconds : time for dense gmres\n',t1)
 
 % compute the solution at one target point in each domain
-targ1 = [-1; 500]; % target point in domain #1
-targ2 = [1.1; -100]; % target point in domain #2
-targ3 = [0; 0]; % target point in domain #3
-
-targ = [targ1, targ2, targ3]
-
+% targ1 = [-1; 500]; % target point in domain #1
+% targ2 = [1.1; -100]; % target point in domain #2
+% targ3 = [0; 0]; % target point in domain #3
+% targ = [targ1, targ2, targ3]
+targ = src;
 %sol1 = sol(1:2:2*np); % double layer density
 %sol2 = sol(2:2:2*np); % single layer density
-%[abs(sol1(1));abs(sol2(1))]
+%abs(sol(1))
 
 
 uexact = zeros(ndomain,1);
@@ -438,77 +396,63 @@ chnkrtotal = merge(chnkr);
 for i=1:ndomain
   evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(i));
   ucomp(i) = chunkerkerneval(chnkrtotal,evalkern,sol,targ(:,i));
-%   skern =  @(s,t) chnk.helm2d.kern(k(i),s,t,'s',1);
-%   dkern =  @(s,t) chnk.helm2d.kern(k(i),s,t,'d',1);
-%   
-%   for j=1:ncurve    
-%     ind = sum(nch(1:j-1))*ngl+(1:nch(j)*ngl);
-%     
-%     dlp = chunkerkerneval(chnkr(j),dkern,sol1(ind),targ(:,i));
-%     slp = chunkerkerneval(chnkr(j),skern,sol2(ind),targ(:,i));
-%     
-%     ucomp(i) = ucomp(i) + coef(i)*dlp + slp;
-%   end
 end
 
 uerror = abs(ucomp-uexact)./abs(uexact);
+disp(' ')
+disp('Now check the accuracy of numerical solutions')
+disp('Exact value               Numerical value           Error')  
+fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(uerror)'])
 
-[ucomp.'; uexact.'; real(uerror)']
 
 % evaluate the field in the second domain at 10000 points and record time
-ngr = 300;       % field evaluation at ngr^2 points
-xylim=[-10 10 -80 -50];  % computational domain
-[xg,yg,targs,ngrtot] = targinit(xylim,ngr);
+ngr = 220;       % field evaluation at ngr^2 points
+xylim=[-8 8 -12 4];  % computational domain
+[xg,yg,targs,ntarg] = clm.targinit(xylim,ngr);
+
+disp(' ')
+disp(['Evaluate the field at ', num2str(ntarg), ' points'])
+disp('Step 1: identify the domain for each point')
+clist = clmparams.clist;
+targdomain = clm.finddomain(chnkr,clist,targs);
+list = cell(1,ndomain);
+for i=1:ndomain
+  list{i} = find(targdomain==i);
+end
+
+disp('Step 2: evaluate the total field')
+u = zeros(ntarg,1);
+uexact = zeros(ntarg,1);
 
 start = tic; 
-evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(2));
-u = chunkerkerneval(chnkrtotal,evalkern,sol,targs);
-t1 = toc(start);
+for i=1:ndomain
+  if ~isempty(list{i})
+    evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(i));
+    u(list{i}) = chunkerkerneval(chnkrtotal,evalkern,sol,targs(:,list{i}));
+      
+    j=i+1;
+    if j > ndomain
+      j = j - ndomain;
+    end
+    disp(['domain ', num2str(i)])
+    uexact(list{i}) = chnk.helm2d.green(k(i),src(:,j),targs(:,list{i}));
+  end
+end
 
-fprintf('%5.2e s : time to evaluate the field at 10000 points\n',t1)
+for i=1:ntarg
+  if targdomain(i)==0
+    u(i) = (u(i-1)+u(i+1))/2;
+  end
+end
+dt = toc(start);
+
+
+disp(['Evaluation time = ', num2str(dt), ' seconds'])
+%fprintf('%5.2e s : time to evaluate the field at 10000 points\n',t1)
 
 % plot out the field
-fieldplot(u,1,xg,yg,xylim,ngr)
+clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
+title('Numerical solution','Interpreter','LaTeX','FontSize',fontsize)
+clm.fieldplot(uexact,chnkr,xg,yg,xylim,ngr,fontsize)
+title('Exact solution','Interpreter','LaTeX','FontSize',fontsize)
 
-function [xg,yg,targs,ngrtot]=targinit(xylim,ngr)
-xg=linspace(xylim(1),xylim(2),ngr);
-yg=linspace(xylim(3),xylim(4),ngr);
-ngrtot=ngr^2;
-targs=zeros(2,ngrtot);
-for k=1:ngr
-  targs(1,(k-1)*ngr+(1:ngr)) = xg(k);
-  targs(2,(k-1)*ngr+(1:ngr)) = yg; 
-end
-
-function fieldplot(u,z,xg,yg,xylim,ngr)
-F1=zeros(ngr);
-for k=1:ngr
-  F1(1:ngr,k)=u((k-1)*ngr+(1:ngr));
-end
-fh =  findobj('type','figure');
-nf = length(fh);
-figure(nf+1)
-imagesc(xg,yg,real(F1));      
-colormap(jet)
-axis xy
-axis equal
-colorbar
-figure(nf+2)
-imagesc(xg,yg,imag(F1));      
-colormap(jet)
-axis xy
-axis equal
-colorbar
-
-% hold on
-% np=length(z)/2;
-% xy=1.1*xylim;
-% zext=[xy(1);0;z(1:np);1;xy(2);xy(2)+1i*xy(3);xy(1)+1i*xy(3);xy(1)];
-% fill(real(zext),imag(zext),'w','EdgeColor','w')  
-% zext=[xy(2);1;z(np+1:2*np);0;xy(1);xy(1)+1i*xy(4);xy(2)+1i*xy(4);xy(2)];
-% fill(real(zext),imag(zext),'w','EdgeColor','w')  
-% title('Field $u({\bf x})$','Interpreter','LaTeX')
-% xlabel('$x_1$','Interpreter','LaTeX')
-% ylabel('$x_2$','Interpreter','LaTeX')
-% axis(xylim)
-% axis equal

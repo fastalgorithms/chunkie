@@ -92,10 +92,10 @@ if strcmpi(quad,'ggqlog')
   if nonsmoothonly
     sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
   else
-    if ~isreal(chnkr.r(1,:,:))
-      sysmat = chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad);
+    if isreal(chnkr.r(1,:,:)) && isreal(logquad.omega)
+      sysmat = chnk.quadjh.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad);
     else
-      sysmat =  chnk.quadjh.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad); 
+      sysmat =  chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad); 
     end
   end
 elseif strcmpi(quad,'jhlog')
