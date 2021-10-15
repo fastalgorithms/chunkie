@@ -35,64 +35,30 @@ if islocal == -1
   xpp = zeros(size(tt));
   ypp = -lambda^2*ys;
 
-elseif islocal == 1 % series expansion around t=0
-  if max(abs(tt))>0.1
-    xs = (b-a)/lambda0*tt;
-    ys = A*sin(lambda*tt);
-
-    xp = (b-a)/lambda0*ones(size(tt));
-    yp = A*lambda*cos(lambda*tt);
-
-    xpp = zeros(size(tt));
-    ypp = -lambda^2*ys;
-  else
-    t = lambda*tt;
-
-    t2 = t.*t;
-    t3 = t2.*t;
-    t4 = t3.*t;
-    t5 = t4.*t;
-    t6 = t5.*t;
-    t7 = t6.*t;
-    t8 = t7.*t;
-    t9 = t8.*t;
-    t10 = t9.*t;  
-
-    ct = -t2/2 + t4/24 - t6/720 + t8/40320 - t10/3628800;
-    st =  t - t3/6 + t5/120 - t7/5040 + t9/362880;
-
-    xs = (b-a)/lambda0*tt;
-    ys = A*st;
-
-    xp = (b-a)/lambda0*ones(size(tt));
-    yp = A*lambda*(1+ct);
-
-    xpp = zeros(size(tt));
-    ypp =  -lambda^2*ys;
-  end
-elseif islocal == 0 % series expansion around t=1
-  
+elseif islocal == 1 % use stable and accurate forms to evaluate functions
+% when the argument is close to 0. Note: series expansions are not always
+% the best option.
   t = lambda*tt;
-  
-  t2 = t.*t;
-  t3 = t2.*t;
-  t4 = t3.*t;
-  t5 = t4.*t;
-  t6 = t5.*t;
-  t7 = t6.*t;
-  t8 = t7.*t;
-  t9 = t8.*t;
-  t10 = t9.*t;  
+  st = sin(t);
 
-  ct = -t2/2 + t4/24 - t6/720 + t8/40320 - t10/3628800;
-  st =  t - t3/6 + t5/120 - t7/5040 + t9/362880;
+  xs = (b-a)/lambda0*tt;
+  ys = A*st;
+
+  xp = (b-a)/lambda0*ones(size(tt));
+  yp = A*lambda*cos(t);
+
+  xpp = zeros(size(tt));
+  ypp =  -lambda^2*ys;
+elseif islocal == 0 
+  t = lambda*tt;
+  st = sin(t);
   
   mon = (-1)^n;
   xs = (b-a)/lambda0*tt;
   ys = A*mon*st;
   
   xp = (b-a)/lambda0*ones(size(tt));
-  yp = A*mon*lambda*(1+ct);
+  yp = A*mon*lambda*cos(t);
 
   xpp = zeros(size(tt));
   ypp =  -mon*lambda^2*ys;

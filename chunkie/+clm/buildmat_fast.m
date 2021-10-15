@@ -35,6 +35,7 @@ for i=1:ncurve
   k1(i) = k(c(1,i));
   k2(i) = k(c(2,i));
 end
+logquad.k = k;
 
 % total number of discretization points
 ngl = chnkr(1).k;
@@ -84,7 +85,7 @@ for i=1:ncurve % target curve id
       
       logquad.omega = k1(i);
       M1 = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,logquad);
-     
+      
       logquad.omega = k2(i);
       M2 = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,logquad);
       

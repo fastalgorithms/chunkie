@@ -71,24 +71,36 @@ else
     end   
   end
 
-  t2 = t.*t;
-  t3 = t2.*t;
-  t4 = t3.*t;
-  t5 = t4.*t;
-  t6 = t5.*t;
-  t7 = t6.*t;
-  t8 = t7.*t;
-  t9 = t8.*t;
-  t10 = t9.*t;
+%   t2 = t.*t;
+%   t3 = t2.*t;
+%   t4 = t3.*t;
+%   t5 = t4.*t;
+%   t6 = t5.*t;
+%   t7 = t6.*t;
+%   t8 = t7.*t;
+%   t9 = t8.*t;
+%   t10 = t9.*t;
+%   
+% 
+%   ct = -t2/2 + t4/24 - t6/720 + t8/40320 - t10/3628800;
+%   st =  t - t3/6 + t5/120 - t7/5040 + t9/362880;
+
+% better to use sin(t) directly instead of its series expansion because
+% 1. the evaluation of sin(t) is accurate at t=0;
+% 2. one needs to determine how many terms are needed in series expansion,
+% which looks simple but it could be either inefficient or inaccurate
+% depending on the value of t; 3. if we write "if" statements, it's
+% difficult to vectorize the evaluation.
+
+% same reason that we should use -2*sin(t/2).^2 instead of its Taylor
+% expansion, but of course one should NOT use cos(t)-1.
+  ct = -2*sin(t/2).^2;
+  st = sin(t);
   
-
-  ct = -t2/2 + t4/24 - t6/720 + t8/40320 - t10/3628800;
-  st =  t - t3/6 + t5/120 - t7/5040 + t9/362880;
-
   ctp = -st;
-  stp = 1+ct;
+  stp = cos(t);
   
-  ctpp = -(1+ct);
+  ctpp = -stp;
   stpp = -st;
   
   xs = -sx*st + cx*ct;

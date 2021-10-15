@@ -3,15 +3,15 @@ close all
 format long
 format compact
 % target point
-xtarg = -500;
-ytarg = 600;
+xtarg = -5;
+ytarg = 6;
 ztarg = xtarg+1i*ytarg;
 % source point
 xsource = 0;
 ysource = -2;
 zsource = xsource + 1i*ysource;
 % wave number
-omega = 5.5;
+omega = 5.5+1i*1e-1;
 
 
 % integration domain [-L,L]

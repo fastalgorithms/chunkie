@@ -72,7 +72,7 @@ chnkr(1,ncurve) = chunker();
 rn = zeros(ndomain,1); 
 % rn(i) is the index of refraction of the ith domain
 rn(1) = 1.0;
-rn(2) = 1.2;
+rn(2) = 1.6;
 rn(3) = 1.4;
 
 % k0 is the wave number in vacuum
@@ -118,6 +118,7 @@ a = -1d1;
 b = 1d1;
 % length for complexification
 C = 6*c2
+
 % left flat curve [-L(1),a]
 L(1) = C-a;
 % right flat curve [b,L(2)]
@@ -187,7 +188,7 @@ logquad.LogC  = LogC;
 % define functions for curves
 fcurve = cell(1,ncurve);
 for icurve=1:ncurve
-  fcurve{icurve} = @(t) clm.funcurve(t,icurve,cpars(:,icurve));
+  fcurve{icurve} = @(t) clm.funcurve4(t,icurve,cpars(:,icurve));
 end
 
 % discretize the boundary
@@ -280,7 +281,7 @@ if isrcip
       cparslocal = [cpars(:,clist); isstart];
       fcurvelocal = cell(1,nedge);
       for i=1:nedge
-        fcurvelocal{i} = @(t) clm.funcurve(t,clist(i),cparslocal(:,i));
+        fcurvelocal{i} = @(t) clm.funcurve4(t,clist(i),cparslocal(:,i));
       end
 
       [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
@@ -354,6 +355,7 @@ end
 nsrc = ndomain;
 src = [-1, 1.3, 0; max(chnkr(3).r(2,:),[],'all')*1.3,...
   min(chnkr(4).r(2,:),[],'all')*1.3, 0];
+src
 hold on;plot(src(1,:),src(2,:),'r*')
 
 % construct artificial boundary data for testing purpose
@@ -416,7 +418,7 @@ targ = [targ1, targ2, targ3]
 
 %sol1 = sol(1:2:2*np); % double layer density
 %sol2 = sol(2:2:2*np); % single layer density
-%[abs(sol1(1));abs(sol2(1))]
+%[abs(sol(1:10));abs(sol(2*ngl*(nch(1)+nch(2))+(-10:0)))]
 
 
 uexact = zeros(ndomain,1);
@@ -456,7 +458,7 @@ uerror = abs(ucomp-uexact)./abs(uexact);
 [ucomp.'; uexact.'; real(uerror)']
 
 % evaluate the field in the second domain at 10000 points and record time
-ngr = 300;       % field evaluation at ngr^2 points
+ngr = 30;       % field evaluation at ngr^2 points
 xylim=[-10 10 -80 -50];  % computational domain
 [xg,yg,targs,ngrtot] = targinit(xylim,ngr);
 

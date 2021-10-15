@@ -1,6 +1,5 @@
 function mat = chunkermat_smooth(chnkrsrc,chnkrtarg,kern,opdims,glwts,slist,tlist)
 
-
   targinfo = []; targinfo.r = chnkrtarg.r(:,:); targinfo.n = chnkrtarg.n(:,:);
   targinfo.d = chnkrtarg.d(:,:); targinfo.d2 = chnkrtarg.d2(:,:);
 
@@ -73,4 +72,5 @@ function mat = chunkermat_smooth(chnkrsrc,chnkrtarg,kern,opdims,glwts,slist,tlis
   else
     mat = bsxfun(@times,mat,(wts2(:)).');
   end
+  %max(mat,[],'all')
 end
