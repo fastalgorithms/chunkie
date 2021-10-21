@@ -1,0 +1,49 @@
+function [u] = postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol)
+    [~,ntarg] = size(targs);
+    u = zeros(ntarg,1);
+    
+
+    if isfield(clmparams,'k')
+      k = clmparams.k;
+    end
+    if isfield(clmparams,'ndomain')
+      ndomain = clmparams.ndomain;
+    end
+    if isfield(clmparams,'coef')
+        coef = clmparams.coef;
+    end
+
+    list = cell(1,ndomain);
+    for i=1:ndomain
+        list{i} = find(targdomain==i);
+    end
+    
+    chnkrtotal = merge(chnkr);
+    for i=1:ndomain
+        if ~isempty(list{i})
+            r = chnkrtotal.r;
+            npts = chnkrtotal.k*chnkrtotal.nch;
+            r = reshape(r,[2,npts]);
+            wts = weights(chnkrtotal);
+            wts = wts(:);
+            rnorms = normals(chnkrtotal);
+
+            dens_d = sol(1:2:2*npts);
+            dens_c = sol(2:2:2*npts);
+            srcinfo.sources = r;
+            srcinfo.dipvec = rnorms;
+            srcinfo.charges = dens_c.*wts;
+            srcinfo.dipstr = dens_d.*wts*coef(i);
+            u(list{i}) = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));  
+            j=i+1;
+            if j > ndomain
+              j = j - ndomain;
+            end
+        end
+    end
+    for i=1:ntarg
+        if targdomain(i)==0
+            u(i) = (u(i-1)+u(i+1))/2;
+        end
+    end
+end

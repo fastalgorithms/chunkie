@@ -72,15 +72,6 @@ clmparams = clm.setup(icase);
 if isfield(clmparams,'k')
   k = clmparams.k;
 end
-if isfield(clmparams,'c')
-  c = clmparams.c;
-end
-if isfield(clmparams,'k1')
-  k1 = clmparams.k1;
-end
-if isfield(clmparams,'k2')
-  k2 = clmparams.k2;
-end
 if isfield(clmparams,'coef')
   coef = clmparams.coef;
 end
@@ -101,15 +92,6 @@ vert = [];
 if isfield(clmparams,'vert')
   vert = clmparams.vert;
 end
-if isfield(clmparams,'ncorner')
-  ncorner = clmparams.ncorner;
-end
-if isfield(clmparams,'corners')
-  corners = clmparams.corners;
-end
-if isfield(clmparams,'issymmetric')
-  issymmetric = clmparams.issymmetric;
-end
 
 if isfield(clmparams, 'nch')
   nch = clmparams.nch;
@@ -129,14 +111,9 @@ end
 
 % number of Gauss-Legendre nodes on each chunk
 ngl = 16;
-[glnodes,glwts] = lege.exps(ngl);
 
 pref = []; 
 pref.k = ngl;
-
-
-
-nch
 disp(['Total number of unknowns = ',num2str(sum(nch)*ngl*2)])
 
 % discretize the boundary
@@ -248,101 +225,42 @@ clist = clmparams.clist;
 targdomain = clm.finddomain(chnkr,clist,targs,icase);
 list = cell(1,ndomain);
 for i=1:ndomain
-  list{i} = find(targdomain==i);
+    list{i} = find(targdomain==i);
 end
 
 if 1==1
-disp('Step 2: evaluate the total field for point sources')
-u = zeros(ntarg,1);
-uexact = zeros(ntarg,1);
+    disp('Step 2: evaluate the total field for point sources')
 
-
-
-start = tic; 
-for i=1:ndomain
-  if ~isempty(list{i})
-    r = chnkrtotal.r;
-    npts = chnkrtotal.k*chnkrtotal.nch;
-    r = reshape(r,[2,npts]);
-    wts = weights(chnkrtotal);
-    wts = wts(:);
-    rnorms = normals(chnkrtotal);
     eps0 = 1e-7;
-    dens_d = sol(1:2:2*npts);
-    dens_c = sol(2:2:2*npts);
-    srcinfo.sources = r;
-    srcinfo.dipvec = rnorms;
-    srcinfo.charges = dens_c.*wts;
-    srcinfo.dipstr = dens_d.*wts*coef(i);
-    u(list{i}) = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));  
-    j=i+1;
-    if j > ndomain
-      j = j - ndomain;
-    end
-    disp(['domain ', num2str(i)])
-    uexact(list{i}) = chnk.helm2d.green(k(i),src(:,j),targs(:,list{i}));
-  end
-end
-
-%err1 = norm(u2-u)/norm(u);
-%fprintf('err = %5.2f\n',err1);
-for i=1:ntarg
-  if targdomain(i)==0
-    u(i) = (u(i-1)+u(i+1))/2;
-  end
-end
-dt = toc(start);
+    start = tic;
+    uexact = clm.postprocess_uexact_gui(clmparams,targs,targdomain);
+    u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
+    dt = toc(start);
 
 
-disp(['Evaluation time = ', num2str(dt), ' seconds'])
-%fprintf('%5.2e s : time to evaluate the field at 10000 points\n',t1)
+    disp(['Evaluation time = ', num2str(dt), ' seconds'])
+    %fprintf('%5.2e s : time to evaluate the field at 10000 points\n',t1)
 
-% plot out the field
-clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
-title('Numerical solution','Interpreter','LaTeX','FontSize',fontsize)
-clm.fieldplot(uexact,chnkr,xg,yg,xylim,ngr,fontsize)
-title('Exact solution','Interpreter','LaTeX','FontSize',fontsize)
+    % plot out the field
+    clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
+    title('Numerical solution','Interpreter','LaTeX','FontSize',fontsize)
+    clm.fieldplot(uexact,chnkr,xg,yg,xylim,ngr,fontsize)
+    title('Exact solution','Interpreter','LaTeX','FontSize',fontsize)
 end
 
 % the incident wave is a plane wave
-rhs = zeros(2*np,1);
 
 alpha = 3*pi/4;
+opts_rhs = [];
+opts_rhs.itype = 2;
+opts_rhs.alpha = alpha;
+
+
+
 disp(' ')
 disp(['Now calculate the field when the incident wave is a plane wave'])
-disp(['incident angle = ', num2str(alpha)])
-for i=1:ncurve
-  d1 = c(1,i); % interior domain index
-  d2 = c(2,i); % exterior domain index
-   
-  c1 = coef(d1);
-  c2 = coef(d2);
-  
-  ind1 = sum(nch(1:i-1))*ngl*2+(1:2:2*nch(i)*ngl);
-  ind2 = sum(nch(1:i-1))*ngl*2+(2:2:2*nch(i)*ngl);
-  
-  targnorm = chnkr(i).n;
-  nx = targnorm(1,:,:); nx=nx(:);
-  ny = targnorm(2,:,:); ny=ny(:);
-
-  if d1==1 || d1 == 2
-    [u1,gradu1]=clm.planewavetotal(k(1),alpha,k(2),chnkr(i).r,d1,coef);
-    du1dn = gradu1(:,1).*nx + gradu1(:,2).*ny;
-    rhs(ind1) = rhs(ind1) + alpha1(i)*u1(:);
-    rhs(ind2) = rhs(ind2) - alpha2(i)/c1*du1dn(:);
-  end
-  
-  if d2==1 || d2==2
-    [u2,gradu2]=clm.planewavetotal(k(1),alpha,k(2),chnkr(i).r,d2,coef);
-    du2dn = gradu2(:,1).*nx + gradu2(:,2).*ny;
-    rhs(ind1) = rhs(ind1) - alpha1(i)*u2(:);
-    rhs(ind2) = rhs(ind2) + alpha2(i)/c2*du2dn(:);
-  end
-%  rhs(ind1) = -alpha1(i)*(u1-u2);
-%  rhs(ind2) =  alpha2(i)*(1/c1*du1dn-1/c2*du2dn);
-end
-
-rhs = rhs(:);
+disp(['incident angle = ', num2str(opts_rhs.alpha)])
+rhs = clm.get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
 
 % solve the linear system using gmres
 disp(' ')
@@ -359,38 +277,19 @@ dt = toc(start);
 disp(['Time on GMRES = ', num2str(dt), ' seconds'])
 
 disp('Step 4: evaluate the total field for incident plane wve')
-u = zeros(ntarg,1);
+eps0 = 1e-7;
+start = tic;
+u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
 
 start = tic; 
 for i=1:ndomain
   if ~isempty(list{i})
-    
-    r = chnkrtotal.r;
-    npts = chnkrtotal.k*chnkrtotal.nch;
-    r = reshape(r,[2,npts]);
-    wts = weights(chnkrtotal);
-    wts = wts(:);
-    rnorms = normals(chnkrtotal);
-    eps0 = 1e-7;
-    dens_d = sol(1:2:2*npts);
-    dens_c = sol(2:2:2*npts);
-    srcinfo.sources = r;
-    srcinfo.dipvec = rnorms;
-    srcinfo.charges = dens_c.*wts;
-    srcinfo.dipstr = dens_d.*wts*coef(i);
-    u(list{i}) = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));
-  end
-  disp(['domain ', num2str(i)])
-  if i==1 || i==2
-    u(list{i}) = u(list{i}) + clm.planewavetotal(k(1),alpha,k(2),targs(:,list{i}),i,coef);
+    if i==1 || i==2
+        u(list{i}) = u(list{i}) + clm.planewavetotal(k(1),alpha,k(2),targs(:,list{i}),i,coef);
+    end
   end
 end
 
-for i=1:ntarg
-  if targdomain(i)==0
-    u(i) = (u(i-1)+u(i+1))/2;
-  end
-end
 dt = toc(start);
 
 
