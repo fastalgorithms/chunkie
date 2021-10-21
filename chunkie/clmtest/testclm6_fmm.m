@@ -1,10 +1,10 @@
-function testclm6
+function testclm6_fmm
 %% This program solves the following layered medium problem.
 %
 %              Omega_1
 %
 %                 ___  ________
-%                /   \/        \ 
+%                /   \/        \    
 %               /               \
 %  -------------     Omega_3     ---------------------
 %               \               /
@@ -66,27 +66,65 @@ format long e
 format compact
 
 % obtain physical and geometric parameters
-clmparams = clm.setup();
+icase = 6;
+clmparams = clm.setup(icase);
 
-k = clmparams.k;
-c = clmparams.c;
-k1 = clmparams.k1;
-k2 = clmparams.k2;
-coef = clmparams.coef;
-cpars = clmparams.cpars;
-cparams = clmparams.cparams;
-ncurve = clmparams.ncurve;
-ndomain = clmparams.ndomain;
-ncorner = clmparams.ncorner;
-corners = clmparams.corners;
-issymmetric = clmparams.issymmetric;
+if isfield(clmparams,'k')
+  k = clmparams.k;
+end
+if isfield(clmparams,'c')
+  c = clmparams.c;
+end
+if isfield(clmparams,'k1')
+  k1 = clmparams.k1;
+end
+if isfield(clmparams,'k2')
+  k2 = clmparams.k2;
+end
+if isfield(clmparams,'coef')
+  coef = clmparams.coef;
+end
+if isfield(clmparams,'cpars')
+  cpars = clmparams.cpars;
+end
+if isfield(clmparams,'cparams')
+  cparams = clmparams.cparams;
+end
+if isfield(clmparams,'ncurve')
+  ncurve = clmparams.ncurve;
+end
+if isfield(clmparams,'ndomain')
+  ndomain = clmparams.ndomain;
+end
+
+vert = [];
+if isfield(clmparams,'vert')
+  vert = clmparams.vert;
+end
+if isfield(clmparams,'ncorner')
+  ncorner = clmparams.ncorner;
+end
+if isfield(clmparams,'corners')
+  corners = clmparams.corners;
+end
+if isfield(clmparams,'issymmetric')
+  issymmetric = clmparams.issymmetric;
+end
+
+if isfield(clmparams, 'nch')
+  nch = clmparams.nch;
+end
+
+if isfield(clmparams, 'src')
+  src = clmparams.src;
+end
 
 chnkr(1,ncurve) = chunker();
 
 % define functions for curves
 fcurve = cell(1,ncurve);
 for icurve=1:ncurve
-  fcurve{icurve} = @(t) clm.funcurve6(t,icurve,cpars{icurve});
+  fcurve{icurve} = @(t) clm.funcurve(t,icurve,cpars{icurve},icase);
 end
 
 % number of Gauss-Legendre nodes on each chunk
@@ -96,28 +134,7 @@ ngl = 16;
 pref = []; 
 pref.k = ngl;
 
-% number of chunks on each curve
-% should be proportional to the length*wavenumber
-nch = zeros(1,ncurve);
 
-n0 = 12;
-fac = 1.2/2/pi;
-
-for i=1:ncurve
-  if i==1 || i==2
-    L = cparams{i}.tb-cparams{i}.ta;
-  elseif i==3 || i==10
-    L = sqrt(sum((cpars{i}.v1-cpars{i}.v0).^2,1))/2/sin(cpars{i}.theta/2);
-  elseif i==4
-    L = cpars{4}.n*7.64/2;
-  else
-    L = sqrt(sum((cpars{icurve}.v0-cpars{icurve}.v1).^2,1));
-  end
-  
-  lambda = 1/max(abs(k1(i)),abs(k2(i)));
-  
-  nch(i) = round(fac*L/lambda) + n0;
-end
 
 nch
 disp(['Total number of unknowns = ',num2str(sum(nch)*ngl*2)])
@@ -129,7 +146,10 @@ for icurve=1:ncurve
   chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
 end
 
+
 t1 = toc(start);
+
+[chnkr,clmparams] = clm.get_geom_gui(icase);
 
 %fprintf('%5.2e s : time to build geo\n',t1)
 
@@ -138,6 +158,10 @@ fontsize = 20;
 figure(1)
 clf
 plot(chnkr,'r-','LineWidth',2)
+hold on
+if ~isempty(vert)
+  plot(vert(1,:),vert(2,:),'k.','MarkerSize',20)
+end
 axis equal
 title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
 xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
@@ -148,208 +172,15 @@ drawnow
 % quiver(chnkr)
 % axis equal
 
-% Treat the representation as if it were a 2x2 operator so that four layer 
-% potentials D, S, D', S' can be evaluated together. This will avoid 
-% redundant evaluation of Hankel functions.
-opdims(1)=2;opdims(2)=2;
-
-% set up GGQ machinery
-[logquad] = chnk.quadggq.setuplogquad(ngl,opdims);
-
-% log correction for self interaction in kernel-split style
-isclosed = 0;
-hlocal = [1];
-LogC = chnk.quadjh.setuplogquad(hlocal,ngl,isclosed,opdims);
-logquad.LogC  = LogC;
-
 isrcip = 1;
 
-% build the system matrix
-rpars = [];
-rpars.k = k;
-rpars.c = c;
-rpars.coef = coef;
-opts = [];
 
-disp(' ')
-disp('Step 1: build the system matrix directly. Please be patient ...')
-start = tic;
-ilist=[];
-[M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opts,opdims,glwts,ilist,logquad);
-if ~isrcip, M = M + eye(2*np); end
-dt = toc(start);
+[M,np,alpha1,alpha2,RG] = clm.get_mat_gui(chnkr,clmparams,icase);
 
-disp(['System matrix construction time = ', num2str(dt), ' seconds'])
-%fprintf('%5.2f seconds : time to assemble matrix\n',t1)
-
-% compute the preconditioner R in the RCIP method for triple junctions
-
-if isrcip && ncorner>0
-  disp(' ')
-  disp('Step 2: compute the preconditioners for corners.')
-  start = tic;
-  
-  opts.quad = 'jhlog';
-  hlocal1 = [0.5, 0.5, 1];
-  hlocal0 = [1, 0.5, 0.5];
-
-  LogC0 = chnk.quadjh.setuplogquad(hlocal0,ngl,isclosed,opdims);
-  LogC1 = chnk.quadjh.setuplogquad(hlocal1,ngl,isclosed,opdims);
-
-  logquad.LogC0 = LogC0;
-  logquad.LogC1 = LogC1;
-
-  inds = [0, cumsum(nch)];
-
-  ndim = opdims(2);
- 
-  R = cell(1,ncorner);
-
-  RG = speye(2*np);
-
-  for icorner=1:ncorner
-    clist = corners{icorner}.clist;
-    isstart = corners{icorner}.isstart;
-    nedge = corners{icorner}.nedge;
-    
-    if issymmetric && mod(icorner,2)==0
-      
-    else
-      rparslocal = [];
-      rparslocal.k = k;
-      rparslocal.c = c(:,clist);
-      rparslocal.coef = coef;
-
-      cparslocal = cell(1,nedge);
-      for i=1:nedge
-        cparslocal{i} = cpars{clist(i)};
-        cparslocal{i}.islocal = isstart(i);
-      end
-      
-      fcurvelocal = cell(1,nedge);
-      for i=1:nedge
-        fcurvelocal{i} = @(t) clm.funcurve6(t,clist(i),cparslocal{i});
-      end
-
-      [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
-
-      h0 = zeros(1,nedge); % chunk size at the coarsest level
-      for i=1:nedge
-        if isstart(i)
-          h0(i) = chnkr(clist(i)).h(1);
-        else
-          h0(i) = chnkr(clist(i)).h(end);
-        end
-      end
-      h0 = h0*2; % note the factor of 2 here!!!!
-
-      nsub = 40; % level of dyadic refinement in the forward recursion for computing R
-
-      R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
-        starL,circL,starS,circS,ilist,...
-        h0,isstart,fcurvelocal,rparslocal,opts,opdims,glnodes,glwts,logquad);
-    end
-    
-    starind = [];
-    for i=1:nedge
-      if isstart(i)
-        starind = [starind inds(clist(i))*ngl*ndim+(1:2*ngl*ndim)];
-      else
-        starind = [starind inds(clist(i)+1)*ngl*ndim-fliplr(0:2*ngl*ndim-1)];
-      end
-    end
-
-    M(starind,starind) = 0;
-        
-    if issymmetric && mod(icorner,2)==0
-      % due to pointwise block structure, need to reverse the order for
-      % each edge, while keeping the same order of 2x2 blocks.
-      R11 = R{icorner-1}(1:2:end,1:2:end);
-      R12 = R{icorner-1}(1:2:end,2:2:end);
-      R21 = R{icorner-1}(2:2:end,1:2:end);
-      R22 = R{icorner-1}(2:2:end,2:2:end);
-      
-      indinv = [];
-      n0 = 2*ngl;
-      for i=1:nedge
-        indinv = [indinv (i-1)*n0+(n0:-1:1)];
-      end
-      
-      R11 = R11(indinv,indinv);
-      R12 = R12(indinv,indinv);
-      R21 = R21(indinv,indinv);
-      R22 = R22(indinv,indinv);
-      
-      R2 = zeros(2*ngl*nedge*ndim);
-      
-      R2(1:2:end,1:2:end) = R11;
-      R2(1:2:end,2:2:end) = R12;
-      R2(2:2:end,1:2:end) = R21;
-      R2(2:2:end,2:2:end) = R22;
-      
-      RG(starind,starind) = R2;
-    else
-      RG(starind,starind) = R{icorner};
-    end
-  end
-
-  dt = toc(start);
-  disp(['Preconditioner construction time = ', num2str(dt), ' seconds'])
-  %fprintf('%5.2f seconds : time to compute R\n',t1)
-end
-
-% src(:,i+1) are sources for the ith domain
-nsrc = ndomain;
-%src = [-1, 1.3, 0, 0, 0; max(chnkr(3).r(2,:),[],'all')*1.3,...
-%  min(chnkr(4).r(2,:),[],'all')*1.3, 0];
-src = zeros(2,ndomain);
-src(2,1) = max(chnkr(3).r(2,:),[],'all')*2;
-src(2,3) = max(chnkr(3).r(2,:),[],'all')*0.5;
-src(2,4) = chnkr(7).r(2,1,1)+1;
-src(2,5) = chnkr(7).r(2,1,1)-1.5;
-src(2,2) = min(chnkr(10).r(2,:),[],'all')*2;
-
-%hold on; plot(src(1,:),src(2,:),'r*')
-
-
-% construct artificial boundary data for testing purpose
-rhs = zeros(2*np,1);
-
-for i=1:ncurve
-  d1 = c(1,i); % interior domain index
-  d2 = c(2,i); % exterior domain index
-  
-  j1 = d1 + 1; % src index for the interior domain
-  if j1 > ndomain
-    j1 = j1 - ndomain;
-  end
-  j2 = d2 + 1; % src index for the exterior domain
-  if j2 > ndomain
-    j2 = j2 - ndomain;
-  end
-  
-  c1 = coef(d1);
-  c2 = coef(d2);
-  
-  ind1 = sum(nch(1:i-1))*ngl*2+(1:2:2*nch(i)*ngl);
-  ind2 = sum(nch(1:i-1))*ngl*2+(2:2:2*nch(i)*ngl);
-  
-  targnorm = chnkr(i).n;
-  nx = targnorm(1,:); nx=nx.';
-  ny = targnorm(2,:); ny=ny.';
-   
-  [u1,gradu1]=chnk.helm2d.green(k1(i),src(:,j1),chnkr(i).r(:,:));
-  du1dn = gradu1(:,1).*nx + gradu1(:,2).*ny;
-
-  [u2,gradu2]=chnk.helm2d.green(k2(i),src(:,j2),chnkr(i).r(:,:));
-  du2dn = gradu2(:,1).*nx + gradu2(:,2).*ny;
-  
-  rhs(ind1) = -alpha1(i)*(u1-u2);
-  rhs(ind2) =  alpha2(i)*(1/c1*du1dn-1/c2*du2dn);
-end
-
-rhs = rhs(:);
-
+opts_rhs = [];
+opts_rhs.itype = 1;
+rhs = clm.get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
+% 
 % solve the linear system using gmres
 disp(' ')
 disp('Step 3: solve the linear system via GMRES.')
@@ -359,7 +190,7 @@ if isrcip
   sol = RG*soltilde;
   disp(['GMRES iterations = ',num2str(it)])
 else
-  sol = gmres(M,rhs,[],1e-13,100);
+  sol = gmres(M,rhs,[],1e-13,1000);
 end
 dt = toc(start);
 disp(['Time on GMRES = ', num2str(dt), ' seconds'])
@@ -414,7 +245,7 @@ disp(' ')
 disp(['Evaluate the field at ', num2str(ntarg), ' points'])
 disp('Step 1: identify the domain for each point')
 clist = clmparams.clist;
-targdomain = clm.finddomain(chnkr,clist,targs);
+targdomain = clm.finddomain(chnkr,clist,targs,icase);
 list = cell(1,ndomain);
 for i=1:ndomain
   list{i} = find(targdomain==i);
@@ -423,13 +254,13 @@ end
 if 1==1
 disp('Step 2: evaluate the total field for point sources')
 u = zeros(ntarg,1);
-u2 = zeros(ntarg,1);
 uexact = zeros(ntarg,1);
+
+
 
 start = tic; 
 for i=1:ndomain
   if ~isempty(list{i})
-    evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(i));
     r = chnkrtotal.r;
     npts = chnkrtotal.k*chnkrtotal.nch;
     r = reshape(r,[2,npts]);
@@ -443,13 +274,6 @@ for i=1:ndomain
     srcinfo.dipvec = rnorms;
     srcinfo.charges = dens_c.*wts;
     srcinfo.dipstr = dens_d.*wts*coef(i);
-    size(dens_c)
-    size(srcinfo.charges)
-    size(srcinfo.dipstr)
-    size(wts)
-    size(dens_d)
-   
-    %u(list{i}) = chunkerkerneval(chnkrtotal,evalkern,sol,targs(:,list{i}));
     u(list{i}) = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));  
     j=i+1;
     if j > ndomain
@@ -478,7 +302,6 @@ clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
 title('Numerical solution','Interpreter','LaTeX','FontSize',fontsize)
 clm.fieldplot(uexact,chnkr,xg,yg,xylim,ngr,fontsize)
 title('Exact solution','Interpreter','LaTeX','FontSize',fontsize)
-return
 end
 
 % the incident wave is a plane wave
@@ -541,8 +364,21 @@ u = zeros(ntarg,1);
 start = tic; 
 for i=1:ndomain
   if ~isempty(list{i})
-    evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(i));
-    u(list{i}) = chunkerkerneval(chnkrtotal,evalkern,sol,targs(:,list{i}));
+    
+    r = chnkrtotal.r;
+    npts = chnkrtotal.k*chnkrtotal.nch;
+    r = reshape(r,[2,npts]);
+    wts = weights(chnkrtotal);
+    wts = wts(:);
+    rnorms = normals(chnkrtotal);
+    eps0 = 1e-7;
+    dens_d = sol(1:2:2*npts);
+    dens_c = sol(2:2:2*npts);
+    srcinfo.sources = r;
+    srcinfo.dipvec = rnorms;
+    srcinfo.charges = dens_c.*wts;
+    srcinfo.dipstr = dens_d.*wts*coef(i);
+    u(list{i}) = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));
   end
   disp(['domain ', num2str(i)])
   if i==1 || i==2
