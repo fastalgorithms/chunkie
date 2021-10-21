@@ -66,27 +66,65 @@ format long e
 format compact
 
 % obtain physical and geometric parameters
-clmparams = clm.setup();
+icase = 6;
+clmparams = clm.setup(icase);
 
-k = clmparams.k;
-c = clmparams.c;
-k1 = clmparams.k1;
-k2 = clmparams.k2;
-coef = clmparams.coef;
-cpars = clmparams.cpars;
-cparams = clmparams.cparams;
-ncurve = clmparams.ncurve;
-ndomain = clmparams.ndomain;
-ncorner = clmparams.ncorner;
-corners = clmparams.corners;
-issymmetric = clmparams.issymmetric;
+if isfield(clmparams,'k')
+  k = clmparams.k;
+end
+if isfield(clmparams,'c')
+  c = clmparams.c;
+end
+if isfield(clmparams,'k1')
+  k1 = clmparams.k1;
+end
+if isfield(clmparams,'k2')
+  k2 = clmparams.k2;
+end
+if isfield(clmparams,'coef')
+  coef = clmparams.coef;
+end
+if isfield(clmparams,'cpars')
+  cpars = clmparams.cpars;
+end
+if isfield(clmparams,'cparams')
+  cparams = clmparams.cparams;
+end
+if isfield(clmparams,'ncurve')
+  ncurve = clmparams.ncurve;
+end
+if isfield(clmparams,'ndomain')
+  ndomain = clmparams.ndomain;
+end
+
+vert = [];
+if isfield(clmparams,'vert')
+  vert = clmparams.vert;
+end
+if isfield(clmparams,'ncorner')
+  ncorner = clmparams.ncorner;
+end
+if isfield(clmparams,'corners')
+  corners = clmparams.corners;
+end
+if isfield(clmparams,'issymmetric')
+  issymmetric = clmparams.issymmetric;
+end
+
+if isfield(clmparams, 'nch')
+  nch = clmparams.nch;
+end
+
+if isfield(clmparams, 'src')
+  src = clmparams.src;
+end
 
 chnkr(1,ncurve) = chunker();
 
 % define functions for curves
 fcurve = cell(1,ncurve);
 for icurve=1:ncurve
-  fcurve{icurve} = @(t) clm.funcurve6(t,icurve,cpars{icurve});
+  fcurve{icurve} = @(t) clm.funcurve(t,icurve,cpars{icurve},icase);
 end
 
 % number of Gauss-Legendre nodes on each chunk
@@ -96,28 +134,7 @@ ngl = 16;
 pref = []; 
 pref.k = ngl;
 
-% number of chunks on each curve
-% should be proportional to the length*wavenumber
-nch = zeros(1,ncurve);
 
-n0 = 12;
-fac = 1.2/2/pi;
-
-for i=1:ncurve
-  if i==1 || i==2
-    L = cparams{i}.tb-cparams{i}.ta;
-  elseif i==3 || i==10
-    L = sqrt(sum((cpars{i}.v1-cpars{i}.v0).^2,1))/2/sin(cpars{i}.theta/2);
-  elseif i==4
-    L = cpars{4}.n*7.64/2;
-  else
-    L = sqrt(sum((cpars{icurve}.v0-cpars{icurve}.v1).^2,1));
-  end
-  
-  lambda = 1/max(abs(k1(i)),abs(k2(i)));
-  
-  nch(i) = round(fac*L/lambda) + n0;
-end
 
 nch
 disp(['Total number of unknowns = ',num2str(sum(nch)*ngl*2)])
@@ -138,6 +155,10 @@ fontsize = 20;
 figure(1)
 clf
 plot(chnkr,'r-','LineWidth',2)
+hold on
+if ~isempty(vert)
+  plot(vert(1,:),vert(2,:),'k.','MarkerSize',20)
+end
 axis equal
 title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
 xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
@@ -172,7 +193,7 @@ rpars.coef = coef;
 opts = [];
 
 disp(' ')
-disp('Step 1: build the system matrix directly. Please be patient ...')
+disp('Step 1: build the system matrix directly.')
 start = tic;
 ilist=[];
 [M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opts,opdims,glwts,ilist,logquad);
@@ -189,16 +210,18 @@ if isrcip && ncorner>0
   disp('Step 2: compute the preconditioners for corners.')
   start = tic;
   
-  opts.quad = 'jhlog';
-  hlocal1 = [0.5, 0.5, 1];
-  hlocal0 = [1, 0.5, 0.5];
+  if isreal(k)
+    opts.quad = 'jhlog';
+    hlocal1 = [0.5, 0.5, 1];
+    hlocal0 = [1, 0.5, 0.5];
 
-  LogC0 = chnk.quadjh.setuplogquad(hlocal0,ngl,isclosed,opdims);
-  LogC1 = chnk.quadjh.setuplogquad(hlocal1,ngl,isclosed,opdims);
+    LogC0 = chnk.quadjh.setuplogquad(hlocal0,ngl,isclosed,opdims);
+    LogC1 = chnk.quadjh.setuplogquad(hlocal1,ngl,isclosed,opdims);
 
-  logquad.LogC0 = LogC0;
-  logquad.LogC1 = LogC1;
-
+    logquad.LogC0 = LogC0;
+    logquad.LogC1 = LogC1;
+  end
+  
   inds = [0, cumsum(nch)];
 
   ndim = opdims(2);
@@ -228,7 +251,7 @@ if isrcip && ncorner>0
       
       fcurvelocal = cell(1,nedge);
       for i=1:nedge
-        fcurvelocal{i} = @(t) clm.funcurve6(t,clist(i),cparslocal{i});
+        fcurvelocal{i} = @(t) clm.funcurve(t,clist(i),cparslocal{i},icase);
       end
 
       [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
@@ -298,17 +321,6 @@ if isrcip && ncorner>0
   %fprintf('%5.2f seconds : time to compute R\n',t1)
 end
 
-% src(:,i+1) are sources for the ith domain
-nsrc = ndomain;
-%src = [-1, 1.3, 0, 0, 0; max(chnkr(3).r(2,:),[],'all')*1.3,...
-%  min(chnkr(4).r(2,:),[],'all')*1.3, 0];
-src = zeros(2,ndomain);
-src(2,1) = max(chnkr(3).r(2,:),[],'all')*2;
-src(2,3) = max(chnkr(3).r(2,:),[],'all')*0.5;
-src(2,4) = chnkr(7).r(2,1,1)+1;
-src(2,5) = chnkr(7).r(2,1,1)-1.5;
-src(2,2) = min(chnkr(10).r(2,:),[],'all')*2;
-
 %hold on; plot(src(1,:),src(2,:),'r*')
 
 
@@ -359,7 +371,7 @@ if isrcip
   sol = RG*soltilde;
   disp(['GMRES iterations = ',num2str(it)])
 else
-  sol = gmres(M,rhs,[],1e-13,100);
+  sol = gmres(M,rhs,[],1e-13,1000);
 end
 dt = toc(start);
 disp(['Time on GMRES = ', num2str(dt), ' seconds'])
@@ -400,9 +412,9 @@ end
 
 uerror = abs(ucomp-uexact)./abs(uexact);
 disp(' ')
-disp('Now check the accuracy of numerical solutions')
-disp('Exact value               Numerical value           Error')  
-fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(uerror)'])
+disp('Now check the accuracy of numerical solutions for point sources')
+disp(' Exact value                Numerical value           Error')  
+fprintf('%22.15e     %22.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(uerror)'])
 
 
 % evaluate the field in the second domain at 10000 points and record time
@@ -414,13 +426,13 @@ disp(' ')
 disp(['Evaluate the field at ', num2str(ntarg), ' points'])
 disp('Step 1: identify the domain for each point')
 clist = clmparams.clist;
-targdomain = clm.finddomain(chnkr,clist,targs);
+targdomain = clm.finddomain(chnkr,clist,targs,icase);
 list = cell(1,ndomain);
 for i=1:ndomain
   list{i} = find(targdomain==i);
 end
 
-if 1==1
+if 1==2
 disp('Step 2: evaluate the total field for point sources')
 u = zeros(ntarg,1);
 uexact = zeros(ntarg,1);
@@ -456,12 +468,15 @@ clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
 title('Numerical solution','Interpreter','LaTeX','FontSize',fontsize)
 clm.fieldplot(uexact,chnkr,xg,yg,xylim,ngr,fontsize)
 title('Exact solution','Interpreter','LaTeX','FontSize',fontsize)
+drawnow
 end
 
 % the incident wave is a plane wave
+
+if 1==2
 rhs = zeros(2*np,1);
 
-alpha = 3*pi/4;
+alpha = pi/3;
 disp(' ')
 disp(['Now calculate the field when the incident wave is a plane wave'])
 disp(['incident angle = ', num2str(alpha)])
@@ -540,5 +555,5 @@ disp(['Evaluation time = ', num2str(dt), ' seconds'])
 
 % plot out the field
 clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
-title('Total field, incident plane wave angle = $\frac{3\pi}{4}$','Interpreter','LaTeX','FontSize',fontsize)
-
+title(['Total field, incident plane wave angle = ', num2str(rats(alpha/pi)), '$\pi$'],'Interpreter','LaTeX','FontSize',fontsize)
+end

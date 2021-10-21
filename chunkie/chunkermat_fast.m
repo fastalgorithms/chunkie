@@ -92,10 +92,11 @@ if strcmpi(quad,'ggqlog')
   if nonsmoothonly
     sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
   else
-    if isreal(chnkr.r(1,:,:)) && isreal(logquad.omega)
+    if isreal(chnkr.r(1,:,:)) && isreal(logquad.k)
       sysmat = chnk.quadjh.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad);
     else
-      sysmat =  chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad); 
+%     sysmat = chnk.quadggq.buildmat(chnkr,kern,opdims,type);
+      sysmat = chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad);
     end
   end
 elseif strcmpi(quad,'jhlog')
@@ -103,16 +104,20 @@ elseif strcmpi(quad,'jhlog')
   if nonsmoothonly
     sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
   else
-    sysmat = chnk.quadjh.buildmat(chnkr,kern,opdims,glwts,ilist,logquad);
+%    if isreal(chnkr.r(1,:,:)) && isreal(logquad.omega)
+      sysmat = chnk.quadjh.buildmat(chnkr,kern,opdims,glwts,ilist,logquad);
+%    else
+%      sysmat =  chnk.quadggq.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad); 
+%    end
   end
 elseif strcmpi(quad,'native')      
   if nonsmoothonly
     sysmat = sparse(chnkr.npt,chnkr.npt);
   else
-    if (quadorder ~= chnkr.k)
-      warning(['native rule: quadorder', ...
-        ' must equal chunker order (%d)'],chnkr.k)
-    end
+%     if (quadorder ~= chnkr.k)
+%       warning(['native rule: quadorder', ...
+%         ' must equal chunker order (%d)'],chnkr.k)
+%     end
     sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims);
   end
 else

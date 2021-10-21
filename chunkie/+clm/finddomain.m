@@ -1,4 +1,4 @@
-function targdomain = finddomain(chnkr,clist,targs)
+function targdomain = finddomain(chnkr,clist,targs,icase)
 % use Cauchy's integral formula to determine which domain each target lies
 % in.
 ncurve = length(chnkr);
@@ -22,9 +22,23 @@ end
 ntarg = size(targs,2);
 targdomain = zeros(ntarg,1);
     
+cstart = 1;
+cend = ncurve;
+
+if icase == 6
+  dstart = 3;
+  dend = 5;
+elseif icase == 4
+  dstart = 3;
+  dend = 3;
+elseif icase == 2
+  dstart = 1;
+  dend = 0;
+end
+
 for i=1:ntarg
   zt = targs(1,i)+1i*targs(2,i);
-  for j=3:5
+  for j=dstart:dend
     n = 0;
     for k=1:length(clist{j})
       kcurve = abs(clist{j}(k));

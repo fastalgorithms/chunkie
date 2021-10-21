@@ -1,4 +1,4 @@
-function [r,d,d2] = funcurve(t,icurve,cpars,icase)
+function [r,d,d2] = funcurve4(t,icurve,cpars)
 %%funcurve
 % return position, first and second derivatives of four curve segments
 % in the embedded eye layered media problem.
@@ -11,12 +11,13 @@ function [r,d,d2] = funcurve(t,icurve,cpars,icase)
 % d - first derivatives w.r.t. t
 % d2 - second derivatives w.r.t. t
 
-if icase == 2
-  [r,d,d2] = clm.complexx(t,cpars.L,cpars.c1,cpars.c2);
-elseif icase == 4
-  [r,d,d2] = clm.funcurve4(t,icurve,cpars);  
-elseif icase == 6
-  [r,d,d2] = clm.funcurve6(t,icurve,cpars);
+
+if icurve == 1 || icurve == 2
+  [r,d,d2] = clm.complexx6(t,icurve,cpars);
+  %[r,d,d2] = clm.complexx1(t,icurve,cpars);
+elseif icurve == 3 || icurve == 4
+  [r,d,d2] = clm.circulararc(t,cpars);
+  %[r,d,d2] = clm.eyeshape(t,icurve,cpars);
 end
 
 end

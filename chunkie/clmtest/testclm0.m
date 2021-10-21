@@ -6,10 +6,8 @@ close all
 format long e
 format compact
 
-addpaths_loc();
-
 k1=4.5; % wavenumber for domain 1
-k2=4.2; % wavenumber for domain 2
+k2=4.2+1i*1e-1; % wavenumber for domain 2
 
 % curve parameters
 L = 10;
@@ -83,7 +81,7 @@ t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 % build Kleinman–Martin equations
-c = 1.22; % c is now the free parameter in Johan's paper. 
+c = 1; % c is now the free parameter in Johan's paper. 
 kappa = 3.0; % constant in the boundary condition on the normal derivatives
 
 alpha1 = 1/(1+kappa);

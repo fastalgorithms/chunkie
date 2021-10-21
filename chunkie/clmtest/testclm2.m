@@ -167,6 +167,7 @@ cpars(:,4) = [a, b, theta(4)];
 
 % number of Gauss-Legendre nodes on each chunk
 ngl = 16;
+[glnodes,glwts] = lege.exps(ngl);
 
 pref = []; 
 pref.k = ngl;
@@ -174,8 +175,7 @@ pref.k = ngl;
 opdims(1)=1;opdims(2)=1;
 
 % set up GGQ machinery
-[xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron] = ...
-  chnk.quadggq.setuplogquad(ngl,opdims);
+logquad = chnk.quadggq.setuplogquad(ngl,opdims);
 
 % define functions for curves
 fcurve = cell(1,ncurve);
@@ -212,9 +212,10 @@ rpars.k = k;
 rpars.c = c;
 rpars.coef = coef;
 
+opts = [];
+ilist = [];
 start = tic;
-[M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,...
-  xs1,wts1,xs0,wts0,ainterp1,ainterp1kron,ainterps0,ainterps0kron);
+[M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opts,opdims,glwts,ilist,logquad);
 %M = M + eye(2*np);
 t1 = toc(start);
 

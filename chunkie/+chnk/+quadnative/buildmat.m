@@ -25,9 +25,10 @@ h = chnkr.h;
 
 [dim,k,~] = size(r);
 rs = r(:,:,j); rt = r(:,:,i); ds = d(:,:,j); dt = d(:,:,i); ns = n(:,:,j);
-d2s = d2(:,:,j); d2t = d2(:,:,i); nt = n(:,:,j);
+d2s = d2(:,:,j); d2t = d2(:,:,i); nt = n(:,:,i);
 rs = reshape(rs,dim,k*length(j)); rt = reshape(rt,dim,k*length(i));
 ds = reshape(ds,dim,k*length(j)); dt = reshape(dt,dim,k*length(i));
+ns = reshape(ns,dim,k*length(j)); nt = reshape(nt,dim,k*length(i));
 d2s = reshape(d2s,dim,k*length(j)); d2t = reshape(d2t,dim,k*length(i));
 
 srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; srcinfo.d2 = d2s; srcinfo.n = ns;

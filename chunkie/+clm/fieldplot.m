@@ -19,7 +19,7 @@ colorbar
 % colorbar
 
 hold on
-plot(chnkr)
+plot(chnkr,'r','LineWidth',3)
 % np=length(z)/2;
 % xy=1.1*xylim;
 % zext=[xy(1);0;z(1:np);1;xy(2);xy(2)+1i*xy(3);xy(1)+1i*xy(3);xy(1)];

@@ -52,10 +52,10 @@ hs = h(j);
 rfine = (ainterp1*(rs.')).'; dfine = (ainterp1*(ds.')).'; 
 d2fine = (ainterp1*(d2s.')).'; nfine = (ainterp1*(ns.')).';
 
-srcinfo = []; srcinfo.r = rfine; srcinfo.d = dfine; 
+srcinfo = []; srcinfo.r = rfine; srcinfo.d = dfine; srcinfo.n = nfine;
 srcinfo.d2 = d2fine; srcinfo.n = nfine;
 
-targinfo = []; targinfo.r = rt; targinfo.d = dt; 
+targinfo = []; targinfo.r = rt; targinfo.d = dt; targinfo.n = nt;
 targinfo.d2 = d2t; targinfo.n = nt;
 
 dfinenrm = sqrt(sum(dfine.^2,1));
