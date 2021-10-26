@@ -13,6 +13,10 @@ d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
 h = chnkr.h;
+data = [];
+if(chnkr.hasdata)
+    data = chnkr.data;
+end
 
 [~,wts,u] = lege.exps(k);
 
@@ -58,7 +62,7 @@ for j = 1:nch
     % neighbors
     
     if ibefore > 0
-        submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,ibefore,j, ...
+        submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,data,ibefore,j, ...
             kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
     
         imat = 1 + (ibefore-1)*k*opdims(1);
@@ -68,7 +72,7 @@ for j = 1:nch
     end
     
     if iafter > 0
-        submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,iafter,j, ...
+        submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,data,iafter,j, ...
             kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
 
         imat = 1 + (iafter-1)*k*opdims(1);
@@ -79,7 +83,7 @@ for j = 1:nch
     
     % self
     
-    submat = chnk.quadggq.diagbuildmat(r,d,n,d2,h,j,kern,opdims,...
+    submat = chnk.quadggq.diagbuildmat(r,d,n,d2,h,data,j,kern,opdims,...
         xs0,wts0,ainterps0kron,ainterps0);
 
     imat = 1 + (j-1)*k*opdims(1);

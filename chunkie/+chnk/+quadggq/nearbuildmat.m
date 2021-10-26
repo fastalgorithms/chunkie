@@ -1,4 +1,4 @@
-function submat = nearbuildmat(r,d,n,d2,h,i,j,fkern,opdims,...
+function submat = nearbuildmat(r,d,n,d2,h,data,i,j,fkern,opdims,...
 				      xs1,whts1,ainterp1kron,ainterp1)
 %CHNKR.QUADGGQ.NEARBUILDMAT
 
@@ -7,7 +7,11 @@ function submat = nearbuildmat(r,d,n,d2,h,i,j,fkern,opdims,...
 rs = r(:,:,j); ds = d(:,:,j); d2s = d2(:,:,j); ns = n(:,:,j);
 rt = r(:,:,i); dt = d(:,:,i); d2t = d2(:,:,i); nt = n(:,:,i);
 hs = h(j);
-
+if(isempty(data))
+    dd = [];
+else
+    dd = data(:,:,i);
+end
 % interpolate boundary info
 
 % get relevant coefficients
@@ -56,7 +60,7 @@ srcinfo = []; srcinfo.r = rfine; srcinfo.d = dfine; srcinfo.n = nfine;
 srcinfo.d2 = d2fine; srcinfo.n = nfine;
 
 targinfo = []; targinfo.r = rt; targinfo.d = dt; targinfo.n = nt;
-targinfo.d2 = d2t; targinfo.n = nt;
+targinfo.d2 = d2t; targinfo.n = nt; targinfo.data = dd;
 
 dfinenrm = sqrt(sum(dfine.^2,1));
 %dfinenrm = dfine(1,:,:); % for complex contour, by SJ 09/30/21

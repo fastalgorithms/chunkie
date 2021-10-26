@@ -1,4 +1,4 @@
-function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase)
+function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase,opts)
 
     if isfield(clmparams,'k')
       k = clmparams.k;
@@ -56,18 +56,24 @@ function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase)
     rpars.k = k;
     rpars.c = c;
     rpars.coef = coef;
-    opts = [];
 
     disp(' ')
     disp('Step 1: build the system matrix directly.')
     start = tic;
     ilist=[];
+    disp(opts)
     [M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opts,opdims,glwts,ilist,logquad);
     if ~isrcip, M = M + eye(2*np); end
     dt = toc(start);
 
     disp(['System matrix construction time = ', num2str(dt), ' seconds'])
     %fprintf('%5.2f seconds : time to assemble matrix\n',t1)
+    
+    
+    nonsmoothonly = false;  
+    if isfield(opts,'nonsmoothonly')
+      nonsmoothonly = opts.nonsmoothonly;
+    end
 
     % compute the preconditioner R in the RCIP method for triple junctions
 
@@ -95,6 +101,7 @@ function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase)
       R = cell(1,ncorner);
 
       RG = speye(2*np);
+      opts_rcip =[];
 
       for icorner=1:ncorner
         clist = corners{icorner}.clist;
@@ -132,11 +139,11 @@ function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase)
           end
           h0 = h0*2; % note the factor of 2 here!!!!
 
-          nsub = 40; % level of dyadic refinement in the forward recursion for computing R
+          nsub = 20; % level of dyadic refinement in the forward recursion for computing R
 
           R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
             starL,circL,starS,circS,ilist,...
-            h0,isstart,fcurvelocal,rparslocal,opts,opdims,glnodes,glwts,logquad);
+            h0,isstart,fcurvelocal,rparslocal,opts_rcip,opdims,glnodes,glwts,logquad);
         end
 
         starind = [];
@@ -177,8 +184,14 @@ function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase)
           R2(2:2:end,2:2:end) = R22;
 
           RG(starind,starind) = R2;
+          if nonsmoothonly
+              M(starind,starind) = inv(R2) - eye(2*ngl*nedge*ndim);
+          end
         else
           RG(starind,starind) = R{icorner};
+          if nonsmoothonly
+              M(starind,starind) = inv(R{icorner}) - eye(2*ngl*nedge*ndim);
+          end 
         end
       end
 
@@ -186,4 +199,7 @@ function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase)
       disp(['Preconditioner construction time = ', num2str(dt), ' seconds'])
       %fprintf('%5.2f seconds : time to compute R\n',t1)
     end
+    
+    
+
 end

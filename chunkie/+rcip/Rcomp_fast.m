@@ -40,6 +40,7 @@
     else
       ilistl = ilist;
     end
+    disp(opts)
     [MAT,~,~,~] = clm.buildmat_fast(chnkrlocal,rparslocal,opts,opdims,...
       glwts,ilistl,logquad);
     %

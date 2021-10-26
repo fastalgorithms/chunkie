@@ -44,9 +44,16 @@ np = sum(nch(1:ncurve))*ngl;
 %[~,~,info] = sortinfo(chnkr);
 %assert(info.ier == 0);
 
+nonsmoothonly = false;
+if isfield(opts,'nonsmoothonly')
+  nonsmoothonly = opts.nonsmoothonly;
+end
+
 
 % now build the system matrix
-M = zeros(2*np);
+if ~nonsmoothonly
+    M = zeros(2*np);
+end
 
 % diagonal constant for each curve
 alpha1 = zeros(1,ncurve);
@@ -61,63 +68,135 @@ if isfield(opts, 'quad')
   quad = opts.quad;
 end
 
-for i=1:ncurve % target curve id
-  c1 = coef(c(1,i));
-  c2 = coef(c(2,i));
-  %
-  % define kernels
-  allk1 =  @(s,t) chnk.helm2d.kern(k1(i),s,t,'all',1);
-  allk2 =  @(s,t) chnk.helm2d.kern(k2(i),s,t,'all',1);
 
-  indi1 = sum(nch(1:i-1))*2*ngl+(1:2:2*nch(i)*ngl);
-  indi2 = sum(nch(1:i-1))*2*ngl+(2:2:2*nch(i)*ngl);
-  
-  ni1 = 1:2:2*nch(i)*ngl;
-  ni2 = 2:2:2*nch(i)*ngl;
-  
-  for j=1:ncurve % source curve id
-    if j==i
-      % build matrices for 8 layer potentials
-      jlist = [];
-      if ~isempty(iglist)
-        jlist = iglist(:,j);
+if ~nonsmoothonly
+    for i=1:ncurve % target curve id
+      c1 = coef(c(1,i));
+      c2 = coef(c(2,i));
+      %
+      % define kernels
+      allk1 =  @(s,t) chnk.helm2d.kern(k1(i),s,t,'all',1);
+      allk2 =  @(s,t) chnk.helm2d.kern(k2(i),s,t,'all',1);
+
+      indi1 = sum(nch(1:i-1))*2*ngl+(1:2:2*nch(i)*ngl);
+      indi2 = sum(nch(1:i-1))*2*ngl+(2:2:2*nch(i)*ngl);
+
+      ni1 = 1:2:2*nch(i)*ngl;
+      ni2 = 2:2:2*nch(i)*ngl;
+
+      for j=1:ncurve % source curve id
+        if j==i
+          % build matrices for 8 layer potentials
+          jlist = [];
+          if ~isempty(iglist)
+            jlist = iglist(:,j);
+          end
+
+          logquad.omega = k1(i);
+          M1 = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,logquad);
+
+          logquad.omega = k2(i);
+          M2 = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,logquad);
+
+          M(indi1,indi1) =  alpha1(i)*(c2*M2(ni1,ni1)-c1*M1(ni1,ni1)); % D
+          M(indi1,indi2) =  alpha1(i)*(M2(ni1,ni2)-M1(ni1,ni2)); % S
+
+          M(indi2,indi1) = -alpha2(i)*(M2(ni2,ni1)-M1(ni2,ni1)); % D'
+          M(indi2,indi2) = -alpha2(i)*(1/c2*M2(ni2,ni2)-1/c1*M1(ni2,ni2)); % S'  
+        else
+          indj1 = sum(nch(1:j-1))*2*ngl+(1:2:2*nch(j)*ngl);
+          indj2 = sum(nch(1:j-1))*2*ngl+(2:2:2*nch(j)*ngl);
+
+          nj1 = 1:2:2*nch(j)*ngl;
+          nj2 = 2:2:2*nch(j)*ngl;
+
+          ilist = [];
+          jlist = [];
+
+          M1 = chunkermat_smooth(chnkr(j),chnkr(i),allk1,opdims,glwts,jlist,ilist);
+          M2 = chunkermat_smooth(chnkr(j),chnkr(i),allk2,opdims,glwts,jlist,ilist);
+
+          M(indi1,indj1) =  alpha1(i)*(c2*M2(ni1,nj1)-c1*M1(ni1,nj1));
+          M(indi1,indj2) =  alpha1(i)*(M2(ni1,nj2)-M1(ni1,nj2));
+
+          M(indi2,indj1) = -alpha2(i)*(M2(ni2,nj1)-M1(ni2,nj1));
+          M(indi2,indj2) = -alpha2(i)*(1/c2*M2(ni2,nj2)-1/c1*M1(ni2,nj2));
+        end
       end
-      
-      logquad.omega = k1(i);
-      M1 = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,logquad);
-      
-      logquad.omega = k2(i);
-      M2 = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,logquad);
-      
-      M(indi1,indi1) =  alpha1(i)*(c2*M2(ni1,ni1)-c1*M1(ni1,ni1)); % D
-      M(indi1,indi2) =  alpha1(i)*(M2(ni1,ni2)-M1(ni1,ni2)); % S
-      
-      M(indi2,indi1) = -alpha2(i)*(M2(ni2,ni1)-M1(ni2,ni1)); % D'
-      M(indi2,indi2) = -alpha2(i)*(1/c2*M2(ni2,ni2)-1/c1*M1(ni2,ni2)); % S'  
-    else
-      indj1 = sum(nch(1:j-1))*2*ngl+(1:2:2*nch(j)*ngl);
-      indj2 = sum(nch(1:j-1))*2*ngl+(2:2:2*nch(j)*ngl);
-      
-      nj1 = 1:2:2*nch(j)*ngl;
-      nj2 = 2:2:2*nch(j)*ngl;
-
-      ilist = [];
-      jlist = [];
-%       if ~isempty(iglist)
-%         ilist = iglist(:,i);
-%         jlist = iglist(:,j);
-%       end
-      
-      M1 = chunkermat_smooth(chnkr(j),chnkr(i),allk1,opdims,glwts,jlist,ilist);
-      M2 = chunkermat_smooth(chnkr(j),chnkr(i),allk2,opdims,glwts,jlist,ilist);
-      
-      M(indi1,indj1) =  alpha1(i)*(c2*M2(ni1,nj1)-c1*M1(ni1,nj1));
-      M(indi1,indj2) =  alpha1(i)*(M2(ni1,nj2)-M1(ni1,nj2));
-      
-      M(indi2,indj1) = -alpha2(i)*(M2(ni2,nj1)-M1(ni2,nj1));
-      M(indi2,indj2) = -alpha2(i)*(1/c2*M2(ni2,nj2)-1/c1*M1(ni2,nj2));
     end
-  end
-end
+else
+   allt1 = @(s,t) chnk.helm2d.kern(k1(1),s,t,'trans1',1);
+   chnkrtotal = merge(chnkr);
+   jlist = [];
+   M = chunkermat_fast(chnkrtotal,allt1,opts,glwts,jlist,logquad);
+%    
+%    
+%     disp('Here')
+%    for i=1:ncurve % target curve id
+%       c1 = coef(c(1,i));
+%       c2 = coef(c(2,i));
+%       
+%       %
+%       % define kernels
+%       allk1 =  @(s,t) chnk.helm2d.kern(k1(i),s,t,'all',1);
+%       allk2 =  @(s,t) chnk.helm2d.kern(k2(i),s,t,'all',1);
+% 
+% %       indi1 = sum(nch(1:i-1))*2*ngl+(1:2:2*nch(i)*ngl);
+% %       indi2 = sum(nch(1:i-1))*2*ngl+(2:2:2*nch(i)*ngl);
+% % 
+% %       ni1 = 1:2:2*nch(i)*ngl;
+% %       ni2 = 2:2:2*nch(i)*ngl;
+%       jlist = [];
+%       if ~isempty(iglist)
+%         jlist = iglist(:,i);
+%       end
+% 
+%       logquad.omega = k1(i);
+%       M1 = chunkermat_fast(chnkr(i),allk1,opts,glwts,jlist,logquad);
+% 
+%       logquad.omega = k2(i);
+%       M2 = chunkermat_fast(chnkr(i),allk2,opts,glwts,jlist,logquad);
+%       disp('here1')
+%       disp(nnz(M1))
+%       disp(nnz(M2))
+%       [i1,j1,~] = find(M1);
+%       
+%       ni1 = i1(mod(i1,2)==1);
+%       ni2 = i1(mod(i1,2)==0);
+%       
+%       nj1 = j1(mod(j1,2)==1);
+%       nj2 = j1(mod(j1,2)==0);
+%       disp('here2')
+%       disp(i)
+%       disp(length(ni1))
+%       disp(length(ni2))
+%       disp(length(nj1))
+%       disp(length(nj2))
+%       disp(length(i1))
+%       disp(length(j1))
+%       
+%       
+%       
+%       istart = sum(nch(1:i-1))*2*ngl;
+%       
+%       indi1 = ni1 + istart;
+%       indj1 = nj1 + istart;
+%       indi2 = ni2 + istart;
+%       indj2 = nj2 + istart;
+%       
+%       
+%       disp('here2.0')
+%       M(indi1,indj1) =  alpha1(i)*(c2*M2(ni1,nj1)-c1*M1(ni1,nj1));
+%       disp('here2.1')
+%       M(indi1,indj2) =  alpha1(i)*(M2(ni1,nj2)-M1(ni1,nj2));
+%       disp('here2.2')
+%      
+% 
+%       M(indi2,indj1) = -alpha2(i)*(M2(ni2,nj1)-M1(ni2,nj1));
+%       disp('here2.3')
+%       M(indi2,indj2) = -alpha2(i)*(1/c2*M2(ni2,nj2)-1/c1*M1(ni2,nj2));
+%       disp('here2.4')
+%       disp('here3')
+%    end
 
 end

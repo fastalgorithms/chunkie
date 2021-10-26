@@ -1,4 +1,4 @@
-function submat = diagbuildmat(r,d,n,d2,h,i,fkern,opdims,...
+function submat = diagbuildmat(r,d,n,d2,h,data,i,fkern,opdims,...
 				      xs0,whts0,ainterps0kron,ainterps0)
 %CHNK.QUADGGQ.DIAGBUILDMAT                  
 
@@ -6,6 +6,11 @@ function submat = diagbuildmat(r,d,n,d2,h,i,fkern,opdims,...
                 
 rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i); hs = h(i); 
 ns = n(:,:,i);
+if(isempty(data))
+    dd = [];
+else
+    dd = data(:,:,i);
+end
 % interpolate boundary info
 
 % get relevant coefficients
@@ -77,6 +82,11 @@ for j = 1:k
   srcinfo.d2 = d2fine(:,:,j); srcinfo.n = nfine(:,:,j);
   targinfo.r = rs(:,j); targinfo.d = ds(:,j);
   targinfo.d2 = d2s(:,j); targinfo.n = ns(:,j);
+  if(isempty(dd))
+      targinfo.data = [];
+  else
+    targinfo.data = dd(:,j);
+  end
     
   smatbigi = fkern(srcinfo,targinfo);
   dsdtndim2 = repmat(dsdt(:,j).',opdims(2),1);

@@ -91,7 +91,7 @@ end
 quad = 'ggqlog';
 flamtype = 'rskelf';
 useproxy = true;
-occ = 200;
+occ = 40;
 rank_or_tol = 1e-14;
 
 
@@ -109,6 +109,9 @@ srcinfo.d2 = chnkr.d2(:,1);
 i2 = min(2,chnkr.npt);
 targinfo.r = chnkr.r(:,i2); targinfo.d = chnkr.d(:,i2); 
 targinfo.d2 = chnkr.d2(:,i2);
+if(chnkr.hasdata)
+    targinfo.data = chnkr.data(:,i2);
+end
 
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
@@ -162,7 +165,7 @@ else
     return;
 end
 
-sp = sp + spdiags(dval,0,chnkr.npt,chnkr.npt);
+sp = sp + spdiags(dval,0,chnkr.npt*opdims(1),chnkr.npt*opdims(1));
 
 % prep and call flam
 

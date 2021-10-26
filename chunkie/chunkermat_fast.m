@@ -69,6 +69,9 @@ srcinfo.n = chnkr.n(:,1);
 srcinfo.d2 = chnkr.d2(:,1);
 targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
 targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
+if(chnkr.hasdata)
+    targinfo.data = chnkr.data(:,2);
+end
 
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
@@ -90,7 +93,7 @@ end
 if strcmpi(quad,'ggqlog')   
   type = 'log';
   if nonsmoothonly
-    sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
+    sysmat = chnk.quadggq.buildmattd_fast(chnkr,kern,opdims,type,glwts,ilist,logquad);
   else
     if isreal(chnkr.r(1,:,:)) && isreal(logquad.k)
       sysmat = chnk.quadjh.buildmat_fast(chnkr,kern,opdims,type,glwts,ilist,logquad);

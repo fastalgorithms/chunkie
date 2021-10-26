@@ -15,6 +15,16 @@ if isfield(clmparams, 'nch')
   nch = clmparams.nch;
 end
 
+if isfield(clmparams,'k')
+  k = clmparams.k;
+end
+if isfield(clmparams,'c')
+  c = clmparams.c;
+end
+if isfield(clmparams,'coef')
+  coef = clmparams.coef;
+end
+
 chnkr(1,ncurve) = chunker();
 
 % define functions for curves
@@ -33,6 +43,11 @@ disp(['Total number of unknowns = ',num2str(sum(nch)*ngl*2)])
 
 for icurve=1:ncurve
   chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
+  chnkr(icurve) = chnkr(icurve).makedatarows(4);
+  chnkr(icurve).data(1,:,:) = k(c(1,icurve));
+  chnkr(icurve).data(2,:,:) = k(c(2,icurve));
+  chnkr(icurve).data(3,:,:) = coef(c(1,icurve));
+  chnkr(icurve).data(4,:,:) = coef(c(1,icurve));
 end
 
 end

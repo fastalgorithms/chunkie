@@ -151,8 +151,8 @@ drawnow
 
 isrcip = 1;
 
-
-[M,np,alpha1,alpha2,RG] = clm.get_mat_gui(chnkr,clmparams,icase);
+opts = []
+[M,np,alpha1,alpha2,RG] = clm.get_mat_gui(chnkr,clmparams,icase,opts);
 
 opts_rhs = [];
 opts_rhs.itype = 1;
