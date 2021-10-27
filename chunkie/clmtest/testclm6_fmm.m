@@ -144,9 +144,11 @@ axis equal
 title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
 xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
 ylabel('$x_2$','Interpreter','LaTeX','FontSize',fontsize)
+
+x = clm.get_region_pts_gui(chnkr,clmparams,2);
+plot(x(1,:),x(2,:),'g-','LineWidth',3)
 drawnow
-x = clm.get_region_pts_gui(chnkr,clmparams,1);
-fill(x(1,:),x(2,:),'g')
+return
 % figure(2)
 % clf
 % quiver(chnkr)

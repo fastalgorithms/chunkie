@@ -1,12 +1,24 @@
 function [x] = get_region_pts_gui(chnkr,clmparams,ireg)
     nch = 0;
     k = chnkr(1).k;
-    for i=1:length(clmparams.clist{ireg})
+    iregstart = 1;
+    iregend = length(clmparams.clist{ireg});
+    iextra = 1;
+    istart = 1;
+    if(ireg == 1 || ireg == 2)
+        iregstart = 2;
+        iregend = iregend - 1;
+        iextra = 3;
+        istart = 2;
+    end
+    for i=iregstart:iregend
         nch = nch + chnkr(abs(clmparams.clist{ireg}(i))).nch;
     end
-    x = zeros(2,nch*k+1);
-    istart = 1;
-    for i=1:length(clmparams.clist{ireg})
+    
+    
+    x = zeros(2,nch*k+iextra);
+    
+    for i=iregstart:iregend
         rtmp = chnkr(abs(clmparams.clist{ireg}(i))).r;
         nch0 = chnkr(abs(clmparams.clist{ireg}(i))).nch;
         rtmp = reshape(rtmp,[2,k*nch0]);
@@ -17,6 +29,18 @@ function [x] = get_region_pts_gui(chnkr,clmparams,ireg)
         x(:,istart:iend) = rtmp;
         istart = istart + nch0*k;
     end
-    x(:,nch*k+1) = x(:,1);
+    if(ireg>2)
+        x(:,nch*k+1) = x(:,1);
+    elseif(ireg == 1)
+        x(:,1) = [-25;0];
+        x(:,nch*k+iextra) = [0;Inf];
+        x(:,nch*k+iextra-1) = [25;0];
+    else
+        x(:,1) = [25;0];
+        x(:,nch*k+iextra) = [0;-Inf];
+        x(:,nch*k+iextra-1) = [-25;0];
+    end
+    
+    
 
 end
