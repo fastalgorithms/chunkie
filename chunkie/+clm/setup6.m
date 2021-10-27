@@ -7,11 +7,11 @@ ncurve = 10; % number of curve segments
 if(~isfield(opts,'rn'))
   rn = ones(ndomain,1); 
   % rn(i) is the index of refraction of the ith domain
-%   rn(1) = 1.0;
-%   rn(2) = 1.4+1i*1e-2;
-%   rn(3) = 1.9;
-%   rn(4) = 1.6;
-%   rn(5) = 1.5;
+  rn(1) = 1.0;
+  rn(2) = 1.4+1i*1e-2;
+  rn(3) = 1.9;
+  rn(4) = 1.6;
+  rn(5) = 1.5;
 else
   rn = opts.rn;
 end

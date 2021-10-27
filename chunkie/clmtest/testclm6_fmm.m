@@ -148,7 +148,7 @@ ylabel('$x_2$','Interpreter','LaTeX','FontSize',fontsize)
 x = clm.get_region_pts_gui(chnkr,clmparams,2);
 plot(x(1,:),x(2,:),'g-','LineWidth',3)
 drawnow
-return
+
 % figure(2)
 % clf
 % quiver(chnkr)
@@ -256,7 +256,7 @@ end
 
 % the incident wave is a plane wave
 
-alpha = 3*pi/4;
+alpha = pi/4;
 opts_rhs = [];
 opts_rhs.itype = 2;
 opts_rhs.alpha = alpha;
