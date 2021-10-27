@@ -16,9 +16,10 @@ else
   rn = opts.rn;
 end
 
+rscale = 0.55/4;
 % lambda0 is the wavelength of the incident light in vacuum
 if(~isfield(opts,'lambda0'))
-    lambda0 = 0.55/4;
+    lambda0 = 0.55;
 else
     lambda0 = opts.lambda0;
 end% green light wavelength in nm
@@ -81,7 +82,7 @@ c2 = c1/2;
 
 % curve parameters
 n0 = 50; % average number of wavelength of each curve 
-a = -lambda0*n0;
+a = -rscale*n0;
 b = -a;
 
 % length for complexification
@@ -103,7 +104,7 @@ vert = zeros(2,6);
 vert(:,1) = [a;0];
 vert(:,2) = [b;0];
 
-L(3) = lambda0*n0/2;
+L(3) = rscale*n0/2;
 theta(2) = pi/8;
 
 % curve #5 -- connect vert(:,1) and vert(:,3)
@@ -115,7 +116,7 @@ vert(1,4) = vert(1,2) + L(3)*cos(3*pi/2-theta(2));
 vert(2,4) = vert(2,2) + L(3)*sin(3*pi/2-theta(2));
 
 % curve #7 -- connect vert(:,3) and vert(:,4)
-L(4) = lambda0*n0;
+L(4) = rscale*n0;
 % curve #8 -- connect vert(:,3) and vert(:,5)
 vert(1,5) = vert(1,3) + L(4)*cos(3*pi/2+theta(2));
 vert(2,5) = vert(2,3) + L(4)*sin(3*pi/2+theta(2));
