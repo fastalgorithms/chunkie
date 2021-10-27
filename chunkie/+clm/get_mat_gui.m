@@ -1,4 +1,4 @@
-function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase,opts)
+function [M,RG] = get_mat_gui(chnkr,clmparams,icase,opts)
 
     if isfield(clmparams,'k')
       k = clmparams.k;
@@ -62,7 +62,7 @@ function [M,np,alpha1,alpha2,RG] = get_mat_gui(chnkr,clmparams,icase,opts)
     start = tic;
     ilist=[];
     disp(opts)
-    [M,np,alpha1,alpha2] = clm.buildmat_fast(chnkr,rpars,opts,opdims,glwts,ilist,logquad);
+    [M,np,~,~] = clm.buildmat_fast(chnkr,rpars,opts,opdims,glwts,ilist,logquad);
     if ~isrcip, M = M + eye(2*np); end
     dt = toc(start);
 

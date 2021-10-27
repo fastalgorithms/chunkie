@@ -1,22 +1,33 @@
-function [clmparams] = setup6()
+function [clmparams] = setup6(opts)
 clmparams = [];
 
 ndomain = 5; % number of domains
 ncurve = 10; % number of curve segments
 
-rn = zeros(ndomain,1); 
-% rn(i) is the index of refraction of the ith domain
-rn(1) = 1.0;
-rn(2) = 1.4+1i*1e-2;
-rn(3) = 1.9;
-rn(4) = 1.6;
-rn(5) = 1.5;
+if(~isfield(opts,'rn'))
+  rn = ones(ndomain,1); 
+  % rn(i) is the index of refraction of the ith domain
+%   rn(1) = 1.0;
+%   rn(2) = 1.4+1i*1e-2;
+%   rn(3) = 1.9;
+%   rn(4) = 1.6;
+%   rn(5) = 1.5;
+else
+  rn = opts.rn;
+end
 
 % lambda0 is the wavelength of the incident light in vacuum
-lambda0 = 0.55/4; % green light wavelength in nm
+if(~isfield(opts,'lambda0'))
+    lambda0 = 0.55/4;
+else
+    lambda0 = opts.lambda0;
+end% green light wavelength in nm
 
 % k(i) is the wave number for the ith domain
 k = rn/lambda0;
+clmparams.rn = rn;
+disp(lambda0)
+disp(rn)
 
 % coefficients in the boundary conditions on normal derivatives
 %coef = rn.^2; % TM polarization
@@ -31,16 +42,22 @@ c(2,1:2) = 2; c(2,3) = 1; c(2,4) = 4; c(2,[5,6,8,9,10]) = 2; c(2,7) = 5;
 
 
 clist = cell(1,ndomain);
-for i=1:ndomain
-  clist{i} = [];
-  for j=1:ncurve
-    if c(1,j)==i
-      clist{i} = [clist{i} j];
-    elseif c(2,j)==i
-      clist{i} = [clist{i} -j];
-    end
-  end
-end
+clist{1} = [1 -3 2];
+clist{2} = [-1 -5 -6 -10 -8 -9 -2];
+clist{3} = [3,4];
+clist{4} = [-4 5 7 6];
+clist{5} = [-7 8 10 9];
+% 
+% for i=1:ndomain
+%   clist{i} = [];
+%   for j=1:ncurve
+%     if c(1,j)==i
+%       clist{i} = [clist{i} j];
+%     elseif c(2,j)==i
+%       clist{i} = [clist{i} -j];
+%     end
+%   end
+% end
 clmparams.clist = clist;
 
 k1 = zeros(1,ncurve); % wave numbers for the interior domain
@@ -50,6 +67,8 @@ for i=1:ncurve
   k1(i) = k(c(1,i));
   k2(i) = k(c(2,i));
 end
+disp(k1)
+disp(k2)
 
 % two circular arcs for the center eye for now
 theta = zeros(1,3);
@@ -210,6 +229,7 @@ for i=1:ncurve
   
   nch(i) = round(fac*L/lambda) + n0;
 end
+disp(nch)
 
 % assign sources for point source test
 % src(:,i+1) are sources for the ith domain

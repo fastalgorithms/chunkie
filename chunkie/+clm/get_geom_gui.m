@@ -1,5 +1,5 @@
-function [chnkr,clmparams] = get_geom_gui(icase)
-clmparams = clm.setup(icase);
+function [chnkr,clmparams] = get_geom_gui(icase,opts)
+clmparams = clm.setup(icase,opts);
 
 if isfield(clmparams,'cpars')
   cpars = clmparams.cpars;

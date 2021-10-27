@@ -62,13 +62,13 @@
 %
 %
 close all
+clear
 format long e
 format compact
 
 % obtain physical and geometric parameters
 icase = 6;
-opts = [];
-clmparams = clm.setup(icase,opts);
+clmparams = clm.setup(icase);
 
 if isfield(clmparams,'k')
   k = clmparams.k;
@@ -121,13 +121,15 @@ disp(['Total number of unknowns = ',num2str(sum(nch)*ngl*2)])
 start = tic; 
 
 for icurve=1:ncurve
-  chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
+  chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve), ...
+    cparams{icurve},pref);
 end
 
 
 t1 = toc(start);
 
-[chnkr,clmparams] = clm.get_geom_gui(icase,opts);
+[chnkr,clmparams] = clm.get_geom_gui(icase);
+chnkrtotal = merge(chnkr);
 
 %fprintf('%5.2e s : time to build geo\n',t1)
 
@@ -145,22 +147,47 @@ title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
 xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
 ylabel('$x_2$','Interpreter','LaTeX','FontSize',fontsize)
 drawnow
-x = clm.get_region_pts_gui(chnkr,clmparams,1);
+x = clm.get_region_pts_gui(chnkr,clmparams,3);
 fill(x(1,:),x(2,:),'g')
+
 % figure(2)
 % clf
 % quiver(chnkr)
 % axis equal
 
 isrcip = 1;
-
-opts = []
-[np,alpha1,alpha2] = clm.get_alphas_np_gui(chnkr,clmparams);
-[M,RG] = clm.get_mat_gui(chnkr,clmparams,icase,opts);
+opts = [];
+opts.nonsmoothonly = true;
+[M,np,alpha1,alpha2,RG] = clm.get_mat_gui(chnkr,clmparams,icase,opts);
 
 opts_rhs = [];
 opts_rhs.itype = 1;
 rhs = clm.get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
+opdims(1) = 2;
+opdims(2) = 2;
+disp(np)
+nn = 2*np;
+M = M + speye(nn);
+allt1 = @(s,t) chnk.helm2d.kern(1.0,s,t,'trans1',1);
+wts = weights(chnkrtotal);
+matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrtotal,wts,allt1,opdims,M);
+% npxy = 100;
+% [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
+% ifaddtrans = true;
+% pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
+%        kern,opdims,pr,ptau,pw,pin,ifaddtrans);
+% xflam = chnkrtotal.r(:,:);
+% xflam=repelem(xflam,1,2);
+% rank_or_tol = 0.5e-8;
+% occ = 40;
+% pxyfun = [];
+% opts = [];
+% opts.lvlmax = 10;
+% opts.verb = 1;
+% tic, F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun,opts); toc;
+%tic, M1 = matfun(1:2*np,1:2*np); toc;
+
+if(1 == 0)
 % 
 % solve the linear system using gmres
 disp(' ')
@@ -175,6 +202,12 @@ else
 end
 dt = toc(start);
 disp(['Time on GMRES = ', num2str(dt), ' seconds'])
+end
+
+%sol = M1\rhs;
+
+
+sol = rskelf_sv(F,rhs);
 
 %fprintf('%5.2f seconds : time for dense gmres\n',t1)
 
@@ -202,7 +235,7 @@ for i=1:ndomain
   uexact(i) = uexact(i) + chnk.helm2d.green(k(i),src(:,j),targ(:,i));
 end
 
-chnkrtotal = merge(chnkr);
+
 
 % compute the numerical solution
 for i=1:ndomain
@@ -215,7 +248,7 @@ disp(' ')
 disp('Now check the accuracy of numerical solutions')
 disp('Exact value               Numerical value           Error')  
 fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(uerror)'])
-
+return
 
 % evaluate the field in the second domain at 10000 points and record time
 ngr = 220;       % field evaluation at ngr^2 points
