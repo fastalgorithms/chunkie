@@ -1,4 +1,4 @@
-function rhs = get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts)
+function rhs = get_rhs_gui_clm_cases(chnkr,clmparams,np,alpha1,alpha2,opts)
 
     ngl = 16;
     if isfield(clmparams,'k')
@@ -30,13 +30,8 @@ function rhs = get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts)
       nch = clmparams.nch;
     end
 
-    if isfield(clmparams, 'src_in')
-      src = clmparams.src_in;
-    end
-
-    
     if isfield(clmparams, 'src')
-      src = clmparams.src_in;
+      src = clmparams.src;
     end
 
     rhs = zeros(2*np,1);
@@ -79,8 +74,6 @@ function rhs = get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts)
 
     elseif (opts.itype == 2)
         alpha = opts.alpha;
-        idomup = find(clmparams.is_inf == 1);
-        idomdown = find(clmparams.is_inf == -1);
         for i=1:ncurve
             d1 = c(1,i); % interior domain index
             d2 = c(2,i); % exterior domain index
@@ -95,15 +88,15 @@ function rhs = get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts)
             nx = targnorm(1,:,:); nx=nx(:);
             ny = targnorm(2,:,:); ny=ny(:);
 
-            if d1==idomup || d1 == idomdown
-                [u1,gradu1]=clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),chnkr(i).r,clmparams.is_inf(d1),idomup,idomdown,coef);
+            if d1==1 || d1 == 2
+                [u1,gradu1]=clm.planewavetotal(k(1),alpha,k(2),chnkr(i).r,d1,coef);
                 du1dn = gradu1(:,1).*nx + gradu1(:,2).*ny;
                 rhs(ind1) = rhs(ind1) + alpha1(i)*u1(:);
                 rhs(ind2) = rhs(ind2) - alpha2(i)/c1*du1dn(:);
             end
 
-            if d2==idomup || d2==idomdown
-                [u2,gradu2]=clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),chnkr(i).r,clmparams.is_inf(d2),idomup,idomdown,coef);
+            if d2==1 || d2==2
+                [u2,gradu2]=clm.planewavetotal(k(1),alpha,k(2),chnkr(i).r,d2,coef);
                 du2dn = gradu2(:,1).*nx + gradu2(:,2).*ny;
                 rhs(ind1) = rhs(ind1) - alpha1(i)*u2(:);
                 rhs(ind2) = rhs(ind2) + alpha2(i)/c2*du2dn(:);

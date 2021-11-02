@@ -27,8 +27,7 @@ end% green light wavelength in nm
 % k(i) is the wave number for the ith domain
 k = rn/lambda0;
 clmparams.rn = rn;
-disp(lambda0)
-disp(rn)
+
 
 % coefficients in the boundary conditions on normal derivatives
 %coef = rn.^2; % TM polarization
@@ -68,8 +67,6 @@ for i=1:ncurve
   k1(i) = k(c(1,i));
   k2(i) = k(c(2,i));
 end
-disp(k1)
-disp(k2)
 
 % two circular arcs for the center eye for now
 theta = zeros(1,3);
@@ -230,7 +227,6 @@ for i=1:ncurve
   
   nch(i) = round(fac*L/lambda) + n0;
 end
-disp(nch)
 
 % assign sources for point source test
 % src(:,i+1) are sources for the ith domain

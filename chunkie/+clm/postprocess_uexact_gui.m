@@ -11,6 +11,9 @@ function uexact = postprocess_uexact_gui(clmparams,targs,targdomain)
     if isfield(clmparams, 'src')
       src = clmparams.src;
     end
+     if isfield(clmparams, 'src_in')
+      src = clmparams.src_in;
+    end
 
     list = cell(1,ndomain);
     for i=1:ndomain

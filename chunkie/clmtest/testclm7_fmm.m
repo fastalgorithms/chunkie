@@ -1,4 +1,3 @@
-
 %% This program solves the following layered medium problem.
 %
 %              Omega_1
@@ -65,69 +64,10 @@ close all
 format long e
 format compact
 
-% obtain physical and geometric parameters
-icase = 6;
-opts = [];
-clmparams = clm.setup(icase,opts);
+geom_class = clm.read_geom_clm6();
+clmparams = clm.setup_geom(geom_class);
 
-if isfield(clmparams,'k')
-  k = clmparams.k;
-end
-if isfield(clmparams,'coef')
-  coef = clmparams.coef;
-end
-if isfield(clmparams,'cpars')
-  cpars = clmparams.cpars;
-end
-if isfield(clmparams,'cparams')
-  cparams = clmparams.cparams;
-end
-if isfield(clmparams,'ncurve')
-  ncurve = clmparams.ncurve;
-end
-if isfield(clmparams,'ndomain')
-  ndomain = clmparams.ndomain;
-end
-
-vert = [];
-if isfield(clmparams,'vert')
-  vert = clmparams.vert;
-end
-
-if isfield(clmparams, 'nch')
-  nch = clmparams.nch;
-end
-
-if isfield(clmparams, 'src')
-  src = clmparams.src;
-end
-
-chnkr(1,ncurve) = chunker();
-
-% define functions for curves
-fcurve = cell(1,ncurve);
-for icurve=1:ncurve
-  fcurve{icurve} = @(t) clm.funcurve(t,icurve,cpars{icurve},icase);
-end
-
-% number of Gauss-Legendre nodes on each chunk
-ngl = 16;
-
-pref = []; 
-pref.k = ngl;
-disp(['Total number of unknowns = ',num2str(sum(nch)*ngl*2)])
-
-% discretize the boundary
-start = tic; 
-
-for icurve=1:ncurve
-  chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
-end
-
-
-t1 = toc(start);
-
-[chnkr,clmparams] = clm.get_geom_gui(icase,opts);
+chnkr = clm.get_geom_clmparams(clmparams);
 
 %fprintf('%5.2e s : time to build geo\n',t1)
 
@@ -137,8 +77,8 @@ figure(1)
 clf
 plot(chnkr,'r-','LineWidth',2)
 hold on
-if ~isempty(vert)
-  plot(vert(1,:),vert(2,:),'k.','MarkerSize',20)
+if ~isempty(clmparams.verts)
+  plot(clmparams.verts(1,:),clmparams.verts(2,:),'k.','MarkerSize',20)
 end
 axis equal
 title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
@@ -149,27 +89,22 @@ x = clm.get_region_pts_gui(chnkr,clmparams,2);
 plot(x(1,:),x(2,:),'g-','LineWidth',3)
 drawnow
 
-% figure(2)
-% clf
-% quiver(chnkr)
-% axis equal
-
 isrcip = 1;
 
 opts = [];
-[np,alpha1,alpha2] = clm.get_alphas_np_gui(chnkr,clmparams);
-[M,RG] = clm.get_mat_gui_clm_cases(chnkr,clmparams,icase,opts);
+icase = 6;
+[M,RG] = clm.get_mat_gui(chnkr,clmparams,opts);
 
 opts_rhs = [];
 opts_rhs.itype = 1;
-rhs = clm.get_rhs_gui_clm_cases(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
+rhs = clm.get_rhs_gui(chnkr,clmparams,clmparams.npts,clmparams.alpha1,clmparams.alpha2,opts_rhs);
 % 
 % solve the linear system using gmres
 disp(' ')
 disp('Step 3: solve the linear system via GMRES.')
 start = tic; 
 if isrcip
-  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,1000,eps*20);
+  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,clmparams.nsys,1000,eps*20);
   sol = RG*soltilde;
   disp(['GMRES iterations = ',num2str(it)])
 else
@@ -177,7 +112,7 @@ else
 end
 dt = toc(start);
 disp(['Time on GMRES = ', num2str(dt), ' seconds'])
-
+src = clmparams.src_in;
 %fprintf('%5.2f seconds : time for dense gmres\n',t1)
 
 % compute the solution at one target point in each domain
@@ -185,14 +120,16 @@ disp(['Time on GMRES = ', num2str(dt), ' seconds'])
 % targ2 = [1.1; -100]; % target point in domain #2
 % targ3 = [0; 0]; % target point in domain #3
 % targ = [targ1, targ2, targ3]
-targ = src;
+targ = clmparams.src_in;
 %sol1 = sol(1:2:2*np); % double layer density
 %sol2 = sol(2:2:2*np); % single layer density
 %abs(sol(1))
 
-
+ndomain = clmparams.ndomain;
 uexact = zeros(ndomain,1);
 ucomp = zeros(ndomain,1);
+k = clmparams.k;
+coef = clmparams.coef;
 
 % compute the exact solution
 for i=1:ndomain
@@ -201,10 +138,11 @@ for i=1:ndomain
     j = j - ndomain;
   end
   
-  uexact(i) = uexact(i) + chnk.helm2d.green(k(i),src(:,j),targ(:,i));
+  uexact(i) = uexact(i) + chnk.helm2d.green(k(i),clmparams.src_in(:,j),targ(:,i));
 end
 
 chnkrtotal = merge(chnkr);
+
 
 % compute the numerical solution
 for i=1:ndomain
@@ -221,14 +159,13 @@ fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(ue
 
 % evaluate the field in the second domain at 10000 points and record time
 ngr = 220;       % field evaluation at ngr^2 points
-xylim=[-8 8 -12 4];  % computational domain
+xylim=clmparams.xylim;  % computational domain
 [xg,yg,targs,ntarg] = clm.targinit(xylim,ngr);
 
 disp(' ')
 disp(['Evaluate the field at ', num2str(ntarg), ' points'])
 disp('Step 1: identify the domain for each point')
-clist = clmparams.clist;
-targdomain = clm.finddomain(chnkr,clist,targs,icase);
+targdomain = clm.finddomain_gui(chnkr,clmparams,targs);
 list = cell(1,ndomain);
 for i=1:ndomain
     list{i} = find(targdomain==i);
@@ -266,14 +203,14 @@ opts_rhs.alpha = alpha;
 disp(' ')
 disp(['Now calculate the field when the incident wave is a plane wave'])
 disp(['incident angle = ', num2str(opts_rhs.alpha)])
-rhs = clm.get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
+rhs = clm.get_rhs_gui(chnkr,clmparams,clmparams.npts,clmparams.alpha1,clmparams.alpha2,opts_rhs);
 
 % solve the linear system using gmres
 disp(' ')
 disp('Step 3: solve the linear system via GMRES.')
 start = tic; 
 if isrcip
-  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,1000,eps*20);
+  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,clmparams.nsys,1000,eps*20);
   sol = RG*soltilde;
   disp(['GMRES iterations = ',num2str(it)])
 else
@@ -286,12 +223,12 @@ disp('Step 4: evaluate the total field for incident plane wve')
 eps0 = 1e-7;
 start = tic;
 u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
-
-start = tic; 
+idomup = find(clmparams.is_inf == 1);
+idomdown = find(clmparams.is_inf == -1);
 for i=1:ndomain
   if ~isempty(list{i})
-    if i==1 || i==2
-        u(list{i}) = u(list{i}) + clm.planewavetotal(k(1),alpha,k(2),targs(:,list{i}),i,coef);
+    if i==idomup || i==idomdown
+        u(list{i}) = u(list{i}) + clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),targs(:,list{i}),clmparams.is_inf(i),idomup,idomdown,coef);
     end
   end
 end

@@ -1,4 +1,4 @@
-function [M,RG] = get_mat_gui(chnkr,clmparams,opts)
+function [M,RG] = get_mat_gui_clm_cases(chnkr,clmparams,icase,opts)
 
     if isfield(clmparams,'k')
       k = clmparams.k;
@@ -31,7 +31,7 @@ function [M,RG] = get_mat_gui(chnkr,clmparams,opts)
     
     
     % number of Gauss-Legendre nodes on each chunk
-    ngl = clmparams.ngl;
+    ngl = 16;
     [glnodes,glwts] = lege.exps(ngl);
 
 
@@ -123,17 +123,7 @@ function [M,RG] = get_mat_gui(chnkr,clmparams,opts)
 
           fcurvelocal = cell(1,nedge);
           for i=1:nedge
-            icurve = clist(i);
-            ctype = clmparams.cparams{icurve}.curvetype;
-            if(ctype == 0)
-                fcurvelocal{i} = @(t) clm.complexx6(t,clmparams.cparams{icurve}.ilr,cparslocal{i});
-            elseif(ctype == 1)
-                fcurvelocal{i} = @(t) clm.linesegment(t,cparslocal{i});
-            elseif(ctype == 2)
-                fcurvelocal{i} = @(t) clm.circulararc(t,cparslocal{i});
-            elseif(ctype == 3)
-                fcurvelocal{i} = @(t) clm.sinecurve(t,cparslocal{i});
-            end
+            fcurvelocal{i} = @(t) clm.funcurve(t,clist(i),cparslocal{i},icase);
           end
 
           [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
