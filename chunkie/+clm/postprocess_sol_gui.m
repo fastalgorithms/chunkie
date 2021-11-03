@@ -1,6 +1,7 @@
-function [u] = postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol)
+function [u,gradu] = postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol)
     [~,ntarg] = size(targs);
-    u = zeros(ntarg,1);
+    u = zeros(1,ntarg);
+    gradu = zeros(2,ntarg);
     
 
     if isfield(clmparams,'k')
@@ -34,7 +35,7 @@ function [u] = postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol)
             srcinfo.dipvec = rnorms;
             srcinfo.charges = dens_c.*wts;
             srcinfo.dipstr = dens_d.*wts*coef(i);
-            u(list{i}) = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));  
+            [u(list{i}),gradu(:,list{i})] = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));  
             j=i+1;
             if j > ndomain
               j = j - ndomain;
@@ -44,6 +45,7 @@ function [u] = postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol)
     for i=1:ntarg
         if targdomain(i)==0
             u(i) = (u(i-1)+u(i+1))/2;
+            gradu(:,i) = (gradu(:,i-1)+gradu(:,i+1))/2;
         end
     end
 end

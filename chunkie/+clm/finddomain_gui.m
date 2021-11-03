@@ -25,34 +25,43 @@ targdomain = zeros(ntarg,1);
     
 idomup = find(clmparams.is_inf == 1);
 idomdown = find(clmparams.is_inf == -1);
-for i=1:ntarg
-  zt = targs(1,i)+1i*targs(2,i);
-  for j=1:ndomain
+eps0 = 1e-3;
+for j=1:ndomain
     if(clmparams.is_inf(j) == 0)
-      n = 0;
+      srcinfo = [];
+      ns = 0;
       for k=1:length(clmparams.clist{j})
+          kcurve = abs(clmparams.clist{j}(k));
+          ns = ns + length(zsrc{kcurve});
+      end
+      srcinfo.sources = zeros(2,ns);
+      srcinfo.dipstr = complex(zeros(ns,1));
+      istart = 1;
+      for k=1:length(clmparams.clist{j})
+
+
         kcurve = abs(clmparams.clist{j}(k));
-        tmp = sum(wts{kcurve}./(zsrc{kcurve}-zt));
+        nc = length(zsrc{kcurve});
+        iend = istart + nc-1;
+
+        srcinfo.sources(1,istart:iend) = real(zsrc{kcurve});
+        srcinfo.sources(2,istart:iend) = imag(zsrc{kcurve});
         if clmparams.clist{j}(k) > 0
-          n = n + tmp;
+          srcinfo.dipstr(istart:iend) = -wts{kcurve};
         else
-          n = n - tmp;
+          srcinfo.dipstr(istart:iend) = wts{kcurve};
         end
+        istart = istart + nc;
       end
-      n = round(n/(2*pi*1i));
-      if n==1
-        targdomain(i) = j;
-        break;
-      end
+
+      pot = cfmm2d(eps0,srcinfo,targs);
+      pot = round(pot/(2*pi*1i));
+      targdomain(pot==1) = j;
     end
-  end
-  
-  if targs(2,i)>0 && targdomain(i)==0
-    targdomain(i) = idomup;
-  elseif targs(2,i)<0 && targdomain(i)==0
-    targdomain(i) = idomdown;
-  end
 end
+targdomain(targdomain(:) == 0 & (targs(2,:)>0)') = 1;
+targdomain(targdomain == 0 & (targs(2,:)<0)') = 2;
+
 
 for i=1:ntarg
   zt = targs(1,i)+1i*targs(2,i);

@@ -240,7 +240,7 @@ if 1==1
     eps0 = 1e-7;
     start = tic;
     uexact = clm.postprocess_uexact_gui(clmparams,targs,targdomain);
-    u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
+    [u,gradu] = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
     dt = toc(start);
 
 
@@ -266,7 +266,7 @@ opts_rhs.alpha = alpha;
 disp(' ')
 disp(['Now calculate the field when the incident wave is a plane wave'])
 disp(['incident angle = ', num2str(opts_rhs.alpha)])
-rhs = clm.get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
+rhs = clm.get_rhs_gui_clm_cases(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
 
 % solve the linear system using gmres
 disp(' ')
@@ -285,7 +285,8 @@ disp(['Time on GMRES = ', num2str(dt), ' seconds'])
 disp('Step 4: evaluate the total field for incident plane wve')
 eps0 = 1e-7;
 start = tic;
-u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
+[u,gradu] = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
+u = u.';
 
 start = tic; 
 for i=1:ndomain

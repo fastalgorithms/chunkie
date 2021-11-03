@@ -158,14 +158,14 @@ fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(ue
 
 
 % evaluate the field in the second domain at 10000 points and record time
-ngr = 220;       % field evaluation at ngr^2 points
+ngr = clmparams.ngr;% field evaluation at ngr^2 points
 xylim=clmparams.xylim;  % computational domain
 [xg,yg,targs,ntarg] = clm.targinit(xylim,ngr);
 
 disp(' ')
 disp(['Evaluate the field at ', num2str(ntarg), ' points'])
 disp('Step 1: identify the domain for each point')
-targdomain = clm.finddomain_gui(chnkr,clmparams,targs);
+tic, targdomain = clm.finddomain_gui(chnkr,clmparams,targs); toc;
 list = cell(1,ndomain);
 for i=1:ndomain
     list{i} = find(targdomain==i);
@@ -177,7 +177,7 @@ if 1==1
     eps0 = 1e-7;
     start = tic;
     uexact = clm.postprocess_uexact_gui(clmparams,targs,targdomain);
-    u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
+    [u,~] = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
     dt = toc(start);
 
 
@@ -222,7 +222,8 @@ disp(['Time on GMRES = ', num2str(dt), ' seconds'])
 disp('Step 4: evaluate the total field for incident plane wve')
 eps0 = 1e-7;
 start = tic;
-u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
+[u,~] = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
+u = u.';
 idomup = find(clmparams.is_inf == 1);
 idomdown = find(clmparams.is_inf == -1);
 for i=1:ndomain

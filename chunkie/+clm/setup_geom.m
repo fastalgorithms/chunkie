@@ -1,10 +1,38 @@
 function [clmparams] = setup_geom(geom_class)
     clmparams= [];
-    clmparams.xylim = geom_class.xylim;
+    if(isfield(geom_class,'xylim'))
+        clmparams.xylim = geom_class.xylim;
+    else
+        xmin = min(geom_class.verts(1,:));
+        xmax = max(geom_class.verts(1,:));
+        ymin = min(geom_class.verts(2,:));
+        ymax = max(geom_class.verts(2,:));
+        dx = xmax - xmin;
+        dy = ymax - ymin;
+        bs = max(dx,dy);
+        cx = 0.5*(xmin + xmax);
+        cy = 0.5*(ymin + ymax);
+        clmparams.xylim = [cx - bs, cx + bs, cy-bs, cy + bs];
+    end
     clmparams.ndomain = geom_class.ndomain;
-    clmparams.rn = geom_class.rn;
-    clmparams.lambda = geom_class.lambda;
+    if(isfield(geom_class,'rn'))
+       clmparams.rn = geom_class.rn;
+    else
+       clmparams.rn = ones(geom_class.ndomain,1);
+    end
+    
+    if(isfield(geom_class,'ngr'))
+        clmparams.ngr = geom_class.ngr;
+    else
+        clmparams.ngr = 300;
+    end
+    if(isfield(geom_class,'lambda'))
+       clmparams.lambda = geom_class.lambda;
+    else
+        clmparams.lambda = 0.38;
+    end
     ndomain = geom_class.ndomain;
+    
     rn = clmparams.rn;
     lambda = clmparams.lambda;
     
@@ -17,7 +45,7 @@ function [clmparams] = setup_geom(geom_class)
     verts = geom_class.verts;
     
     if(strcmpi(clmparams.mode,'te'))
-        coef = ones(geom_class.ndomain,1);
+        coef = ones(clmparams.ndomain,1);
     elseif(strcmpi(clmparams.mode,'tm'))
         coef = rn.^2;
     else
@@ -27,8 +55,11 @@ function [clmparams] = setup_geom(geom_class)
     clmparams.coef = coef;
     
     % Determine the extent to go out on either side
-    a = verts(1,geom_class.lvert);
-    b = verts(1,geom_class.rvert);
+    
+    clmparams.lvert = geom_class.lvert;
+    clmparams.rvert = geom_class.rvert;
+    a = verts(1,clmparams.lvert);
+    b = verts(1,clmparams.rvert);
     
     xmin = clmparams.xylim(1);
     xmax = clmparams.xylim(2);
@@ -37,8 +68,8 @@ function [clmparams] = setup_geom(geom_class)
     k = rn/lambda;
     kinf = inf*ones(1,ndomain);
     for i=1:ndomain
-        if(geom_class.region{i}.is_inf ~= 0)
-            is_inf(i) = geom_class.region{i}.is_inf;
+        if(geom_class.regions{i}.is_inf ~= 0)
+            is_inf(i) = geom_class.regions{i}.is_inf;
             kinf(i) = k(i); 
         end
     end
@@ -48,7 +79,7 @@ function [clmparams] = setup_geom(geom_class)
     d1 = a-xmin;
     d2 = xmax-b;
     d3 = 2*(b-a);
-    C = max([d1 d2 d3]);
+    C = 2*max([d1 d2 d3]);
     L(1) = C-a;
     L(2) = b+C;
     
@@ -117,7 +148,11 @@ function [clmparams] = setup_geom(geom_class)
                 icurve_cur = icurve_cur + 1;
             end
         elseif(ctype == 2)
-            thet = geom_class.curves{i}.theta;
+            if(isfield(geom_class.curves{i},'theta'))
+               thet = geom_class.curves{i}.theta;
+            else
+               thet = pi/2;
+            end
             cparams{icurve_cur}.ta = -thet/2;
             cparams{icurve_cur}.tb = thet/2;
             cparams{icurve_cur}.ifclosed = false;
@@ -126,12 +161,22 @@ function [clmparams] = setup_geom(geom_class)
             cpars{icurve_cur}.v0ind = geom_class.curves{i}.vert_list(1);
             cpars{icurve_cur}.v1 = verts(:,geom_class.curves{i}.vert_list(2));
             cpars{icurve_cur}.v1ind = geom_class.curves{i}.vert_list(2);
-            cpars{icurve_cur}.theta = geom_class.curves{i}.theta;
-            cpars{icurve_cur}.ifconvex = geom_class.curves{i}.ifconvex;
+            cpars{icurve_cur}.theta = thet;
+            if(isfield(geom_class.curves{i},'ifconvex'))
+               cpars{icurve_cur}.ifconvex = geom_class.curves{i}.ifconvex;
+            else
+               cpars{icurve_cur}.ifconvex = 0;
+            end
             icurve_cur = icurve_cur+1;
         elseif(ctype == 3)
-            nwig = geom_class.curves{i}.nwiggles;
-            amp = geom_class.curves{i}.amplitude;
+            nwig = 1;
+            if(isfield(geom_class.curves{i},'nwiggles'))
+              nwig = geom_class.curves{i}.nwiggles;
+            end
+            amp = 1.0;
+            if(isfield(geom_class.curves{i},'amplitude'))
+               amp = geom_class.curves{i}.amplitude;
+            end
             cparams{icurve_cur}.ta = 0;
             cparams{icurve_cur}.tb = nwig*pi;
             cparams{icurve_cur}.ifclosed = false;
@@ -153,16 +198,16 @@ function [clmparams] = setup_geom(geom_class)
     % Assemble new clist
     clist = cell(1,ndomain);
     for i=1:ndomain
-        for j=1:length(geom_class.region{i}.icurve_list)
-            if(geom_class.region{i}.icurve_list(j) < 0)
-                clist{i} = [clist{i} -icurve_list{abs(geom_class.region{i}.icurve_list(j))}]; 
+        for j=1:length(geom_class.regions{i}.icurve_list)
+            if(geom_class.regions{i}.icurve_list(j) < 0)
+                clist{i} = [clist{i} -icurve_list{abs(geom_class.regions{i}.icurve_list(j))}]; 
             else
-                clist{i} = [clist{i} icurve_list{abs(geom_class.region{i}.icurve_list(j))}]; 
+                clist{i} = [clist{i} icurve_list{abs(geom_class.regions{i}.icurve_list(j))}]; 
             end
         end 
-        if(geom_class.region{i}.is_inf == 1)
+        if(geom_class.regions{i}.is_inf == 1)
             clist{i} = [1 clist{i} 2];  
-        elseif(geom_class.region{i}.is_inf == -1)
+        elseif(geom_class.regions{i}.is_inf == -1)
             clist{i} = [-2 clist{i} -1];
         end      
     end
@@ -311,8 +356,8 @@ function [clmparams] = setup_geom(geom_class)
     src_in = zeros(2,ndomain);
     issrc_in = false(1,ndomain);
     for i=1:ndomain
-        if(isfield(geom_class.region{i},'src_in'))
-            src_in(:,i) = geom_class.region{i}.src_in(:);
+        if(isfield(geom_class.regions{i},'src_in'))
+            src_in(:,i) = geom_class.regions{i}.src_in(:);
             issrc_in(i) = true;
         end
     end

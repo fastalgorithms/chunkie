@@ -24,7 +24,7 @@ function [geom_class,ier] = hdf5_to_geom_class(fname)
        ier = 3;
        return
    end
-   [~,nverts] = size(geom_class.verts);
+   
    try
       rnr = h5readatt(fname,'/','rnr');
    catch
@@ -48,15 +48,32 @@ function [geom_class,ier] = hdf5_to_geom_class(fname)
    try
       geom_class.xylim = h5readatt(fname,'/','xylim');
    catch
-       fprintf('xylim not set.\n\n\n');
-       
+       fprintf('xylim not set.\n\n\n'); 
+       xmin = min(geom_class.verts(1,:));
+       xmax = max(geom_class.verts(1,:));
+       ymin = min(geom_class.verts(2,:));
+       ymax = max(geom_class.verts(2,:));
+       dx = xmax - xmin;
+       dy = ymax - ymin;
+       bs = max(dx,dy);
+       cx = (xmin + xmax)*0.5;
+       cy = (ymin + ymax)*0.5;
+       geom_class.xylim = [cx - bs, cx + bs, cy - bs, cy+bs];
+      
    end
    
+   try
+      geom_class.ngr = h5readatt(fname,'/','ngr');
+   catch
+       fprintf('ngr not set. Setting to default value of 300\n\n\n'); 
+       geom_class.ngr = 300;
+   end
    
    try
       geom_class.lambda = h5readatt(fname,'/','lambda');
    catch
        fprintf('lambda not set.\n\n\n');
+       geom_class.lambda = 0.38;
        
    end
    
@@ -132,16 +149,15 @@ function [geom_class,ier] = hdf5_to_geom_class(fname)
                curves{i}.amplitude = 1.0;
            end
        end
-%        H5G.close(gid1);
    end
    geom_class.curves = curves;
-   region = cell(1,ndomain)
+   regions = cell(1,ndomain);
    
    for i=1:ndomain
        str1 = int2str(i);
        str0 = ['/regions/' str1];
        try
-           region{i}.region_id = h5readatt(fname,str0,'region_id');
+           regions{i}.region_id = h5readatt(fname,str0,'region_id');
        catch
           fprintf('region id not specified.\n This error is fatal.\n exiting.\n\n\n');
           ier = 9;
@@ -149,7 +165,7 @@ function [geom_class,ier] = hdf5_to_geom_class(fname)
        end
        
        try
-           region{i}.icurve_list = h5readatt(fname,str0,'icurve_list')';
+           regions{i}.icurve_list = h5readatt(fname,str0,'icurve_list')';
        catch
           fprintf('icurve_list not specified.\n This error is fatal.\n exiting.\n\n\n');
           ier = 10;
@@ -157,15 +173,15 @@ function [geom_class,ier] = hdf5_to_geom_class(fname)
        end
        
        try
-           region{i}.is_inf = h5readatt(fname,str0,'is_inf');
+           regions{i}.is_inf = h5readatt(fname,str0,'is_inf');
        catch
            fprintf('is_inf not specified.\n Setting it to default value of 0');
-           region{i}.is_inf = 0;
+           regions{i}.is_inf = 0;
        end
        try
-           region{i}.src_in = h5readatt(fname,str0,'src_in');
+           regions{i}.src_in = h5readatt(fname,str0,'src_in');
        catch
        end
    end
-   geom_class.region = region;
+   geom_class.regions = regions;
 end

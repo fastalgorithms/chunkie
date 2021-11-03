@@ -158,11 +158,24 @@ for i=1:ncurve
   cparams{i}.ifclosed = false;
 end
 
-cpars = zeros(3,ncurve);
-cpars(:,1) = [L(1),c1,c2];
-cpars(:,2) = [L(2),c1,c2];
-cpars(:,3) = [a, b, theta(3)];
-cpars(:,4) = [a, b, theta(4)];
+cpars = cell(1,ncurve);
+cpars{1}.L = L(1);
+cpars{1}.c1 = c1;
+cpars{1}.c2 = c2;
+
+cpars{2}.L = L(2);
+cpars{2}.c1 = c1;
+cpars{2}.c2 = c2;
+
+cpars{3}.v0 = [a;0];
+cpars{3}.v1 = [b;0];
+cpars{3}.theta = theta(3);
+cpars{3}.ifconvex = 0;
+
+cpars{4}.v0 = [a;0];
+cpars{4}.v1 = [b;0];
+cpars{4}.theta = theta(4);
+cpars{4}.ifconvex = 1;
 
 % number of Gauss-Legendre nodes on each chunk
 ngl = 16;
@@ -188,7 +201,7 @@ logquad.LogC  = LogC;
 % define functions for curves
 fcurve = cell(1,ncurve);
 for icurve=1:ncurve
-  fcurve{icurve} = @(t) clm.funcurve4(t,icurve,cpars(:,icurve));
+  fcurve{icurve} = @(t) clm.funcurve4(t,icurve,cpars{icurve});
 end
 
 % discretize the boundary
@@ -207,6 +220,7 @@ figure(1)
 clf
 plot(chnkr,'r-','LineWidth',2)
 axis equal
+drawnow
 
 % figure(2)
 % clf
@@ -278,10 +292,15 @@ if isrcip
       rparslocal.c = c(:,clist);
       rparslocal.coef = coef;
 
-      cparslocal = [cpars(:,clist); isstart];
+      cparslocal = cell(1,nedge);
+      for i=1:nedge
+        cparslocal{i} = cpars{clist(i)};
+        cparslocal{i}.islocal = isstart(i);
+      end
+      
       fcurvelocal = cell(1,nedge);
       for i=1:nedge
-        fcurvelocal{i} = @(t) clm.funcurve4(t,clist(i),cparslocal(:,i));
+        fcurvelocal{i} = @(t) clm.funcurve4(t,clist(i),cparslocal{i});
       end
 
       [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim,nedge,isstart);
@@ -455,7 +474,9 @@ end
 
 uerror = abs(ucomp-uexact)./abs(uexact);
 
-[ucomp.'; uexact.'; real(uerror)']
+%[ucomp.'; uexact.'; real(uerror)'];
+fprintf('\n\n ===================\n\nerror=%d\n',norm(uerror(:)));
+return
 
 % evaluate the field in the second domain at 10000 points and record time
 ngr = 30;       % field evaluation at ngr^2 points

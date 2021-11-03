@@ -43,10 +43,10 @@ function [] = geom_class_to_hdf5(geom_class,fname)
        str1 = int2str(i);
        gid1 = H5G.create(gid,str1,plist,plist,plist);
        str0 = ['/regions/' str1];
-       h5writeatt(fname,str0,'region_id',geom_class.region{i}.region_id);
-       h5writeatt(fname,str0,'icurve_list',geom_class.region{i}.icurve_list);
-       h5writeatt(fname,str0,'is_inf',geom_class.region{i}.is_inf);
-       h5writeatt(fname,str0,'src_in',geom_class.region{i}.src_in);
+       h5writeatt(fname,str0,'region_id',geom_class.regions{i}.region_id);
+       h5writeatt(fname,str0,'icurve_list',geom_class.regions{i}.icurve_list);
+       h5writeatt(fname,str0,'is_inf',geom_class.regions{i}.is_inf);
+       h5writeatt(fname,str0,'src_in',geom_class.regions{i}.src_in);
        H5G.close(gid1);
    end
    H5F.close(fid);

@@ -15,7 +15,7 @@
     rn(4) = 1.6;
     rn(5) = 1.5;
     
-    lambda = 0.38/2;
+    lambda = 0.55;
     geom_class.rn = rn;
     geom_class.lambda = lambda;
     geom_class.mode = 'te';
@@ -106,23 +106,23 @@
     clist{3} = [1,2];
     clist{4} = [-2 3 5 4];
     clist{5} = [-5 6 8 7];
-    region = cell(1,ndomain);
+    regions = cell(1,ndomain);
     src = zeros(2,ndomain);
 
     src(2,:) = [4.67,  -1.5e1, 1.17, -2.18, -4.68];
 
     for i=1:ndomain
-        region{i}.region_id = 1;
-        region{i}.icurve_list = clist{i};
-        region{i}.is_inf = 0;
+        regions{i}.region_id = 1;
+        regions{i}.icurve_list = clist{i};
+        regions{i}.is_inf = 0;
         if(i == 1)
-            region{i}.is_inf = 1;
+            regions{i}.is_inf = 1;
         elseif (i==2)
-            region{i}.is_inf = -1;
+            regions{i}.is_inf = -1;
         end
-        region{i}.src_in = src(:,i);
+        regions{i}.src_in = src(:,i);
     end
-    geom_class.region = region;
+    geom_class.regions = regions;
     geom_class.lvert = 1;
     geom_class.rvert = 2;
     
