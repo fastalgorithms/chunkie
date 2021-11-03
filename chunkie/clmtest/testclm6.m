@@ -67,7 +67,8 @@ format compact
 
 % obtain physical and geometric parameters
 icase = 6;
-clmparams = clm.setup(icase);
+opts = [];
+clmparams = clm.setup(icase,opts);
 
 if isfield(clmparams,'k')
   k = clmparams.k;

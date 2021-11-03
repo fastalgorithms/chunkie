@@ -68,7 +68,8 @@ format compact
 
 % obtain physical and geometric parameters
 icase = 6;
-clmparams = clm.setup(icase);
+opts = [];
+clmparams = clm.setup(icase,opts);
 
 if isfield(clmparams,'k')
   k = clmparams.k;
@@ -128,7 +129,7 @@ end
 
 t1 = toc(start);
 
-[chnkr,clmparams] = clm.get_geom_gui(icase);
+[chnkr,clmparams] = clm.get_geom_gui(icase,opts);
 chnkrtotal = merge(chnkr);
 
 %fprintf('%5.2e s : time to build geo\n',t1)
@@ -158,11 +159,12 @@ fill(x(1,:),x(2,:),'g')
 isrcip = 1;
 opts = [];
 opts.nonsmoothonly = true;
-[M,np,alpha1,alpha2,RG] = clm.get_mat_gui(chnkr,clmparams,icase,opts);
+[np,alpha1,alpha2] = clm.get_alphas_np_gui(chnkr,clmparams);
+[M,RG] = clm.get_mat_gui_clm_cases(chnkr,clmparams,icase,opts);
 
 opts_rhs = [];
 opts_rhs.itype = 1;
-rhs = clm.get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
+rhs = clm.get_rhs_gui_clm_cases(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
 opdims(1) = 2;
 opdims(2) = 2;
 disp(np)
@@ -177,7 +179,7 @@ matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrtotal,wts,allt1,opdims,M);
 % pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
 %        kern,opdims,pr,ptau,pw,pin,ifaddtrans);
 % xflam = chnkrtotal.r(:,:);
-% xflam=repelem(xflam,1,2);
+% xflam = repelem(xflam,1,2);
 % rank_or_tol = 0.5e-8;
 % occ = 40;
 % pxyfun = [];
@@ -185,7 +187,7 @@ matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrtotal,wts,allt1,opdims,M);
 % opts.lvlmax = 10;
 % opts.verb = 1;
 % tic, F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun,opts); toc;
-%tic, M1 = matfun(1:2*np,1:2*np); toc;
+tic, M1 = matfun(1:2*np,1:2*np); toc;
 
 if(1 == 0)
 % 
@@ -204,10 +206,10 @@ dt = toc(start);
 disp(['Time on GMRES = ', num2str(dt), ' seconds'])
 end
 
-%sol = M1\rhs;
+sol = M1\rhs;
 
 
-sol = rskelf_sv(F,rhs);
+%sol = rskelf_sv(F,rhs);
 
 %fprintf('%5.2f seconds : time for dense gmres\n',t1)
 
