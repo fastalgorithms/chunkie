@@ -178,8 +178,8 @@ matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrtotal,wts,allt1,opdims,M);
 % ifaddtrans = true;
 % pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
 %        kern,opdims,pr,ptau,pw,pin,ifaddtrans);
-% xflam = chnkrtotal.r(:,:);
-% xflam = repelem(xflam,1,2);
+xflam = chnkrtotal.r(:,:);
+xflam = repelem(xflam,1,2);
 % rank_or_tol = 0.5e-8;
 % occ = 40;
 % pxyfun = [];

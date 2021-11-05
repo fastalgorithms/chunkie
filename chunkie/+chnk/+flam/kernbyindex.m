@@ -42,12 +42,12 @@ jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;
 ri = chnkr.r(:,iuni); rj = chnkr.r(:,juni);
 di = chnkr.d(:,iuni); dj = chnkr.d(:,juni);
 d2i = chnkr.d(:,iuni); d2j = chnkr.d2(:,juni);
-ni = chnkr.n(:,iuni); nj = chnkr.d2(:,juni);
+ni = chnkr.n(:,iuni); nj = chnkr.n(:,juni);
 if(chnkr.hasdata)
     dd = chnkr.data(:,iuni);
     ddj = chnkr.data(:,juni);
 end
-srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j; srcinfo.n = ni;
+srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j; srcinfo.n = nj;
 targinfo = []; targinfo.r = ri; targinfo.d = di; targinfo.d2 = d2i;
 targinfo.n = ni; 
 if(chnkr.hasdata)
