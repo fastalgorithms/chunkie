@@ -1,4 +1,4 @@
-function mat = kernbyindex(i,j,chnkr,whts,kern,opdims,spmat)
+function mat = kernbyindex(i_in,j_in,chnkr,whts,kern,opdims,spmat,op_perms)
 %% evaluate system matrix by entry index utility function for 
 % general kernels, with replacement for specific entries and the
 % ability to add a low-rank modification.
@@ -30,6 +30,26 @@ function mat = kernbyindex(i,j,chnkr,whts,kern,opdims,spmat)
 % see also 
 
 % find unique underlying points
+
+if (nargin > 7)
+   	if (isfield(op_perms,'n_offset'))
+       i = i_in + op_perms.n_offset;
+       j = j_in + op_perms.n_offset;
+    else
+       i = i_in;
+       j = j_in;
+    end
+    if (isfield(op_perms,'iperm'))
+        iperm = op_perms.iperm;
+        i = iperm(i(:));
+        i = reshape(i,size(i_in));
+        j = iperm(j(:));
+        j = reshape(j,size(j_in));
+    end
+else
+    i = i_in;
+    j = j_in;
+end
 
 ipts = idivide(int64(i(:)-1),int64(opdims(1)))+1;
 jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;

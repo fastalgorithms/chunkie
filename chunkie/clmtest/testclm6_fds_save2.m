@@ -178,6 +178,7 @@ opts_perm.iperm = iperm;
 invperm = 1:nn;
 invperm(iperm) = 1:nn;
 opts_perm.invperm = invperm;
+opts_perm.ns = [numel(i_real),numel(i_imag)];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 opts_rhs = [];
@@ -206,8 +207,47 @@ xflam = xflam(:,opts_perm.iperm);
  opts = [];
  opts.lvlmax = 10;
  opts.verb = 1;
- tic, F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun,opts); toc;
+ tic, Fskel = rskelf(matfun,xflam(:,1:opts_perm.ns(1)),occ,rank_or_tol,pxyfun,opts); toc;
+
+ opts_perm.n_offset = opts_perm.ns(1);
+ matfun2 = @(i,j) chnk.flam.kernbyindex(i,j,chnkrtotal,wts,allt1,opdims,M,...
+    opts_perm);
+ irange = (opts_perm.ns(1)+1):(opts_perm.ns(1)+opts_perm.ns(2));
+ xflam_i = [real(xflam(1,irange));imag(xflam(1,irange))];
+ %xflam_i = xflam(:,irange);
+ tic, Fskel2 = rskelf(matfun2,xflam_i,occ,rank_or_tol,pxyfun,opts); toc;
+ 
 %tic, M1 = matfun(1:2*np,1:2*np); toc;
+opts_perm.n_offset = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+tic, M1 = matfun(1:nn,1:nn); toc;
+n1 = opts_perm.ns(1);
+n2 = opts_perm.ns(2);
+
+A11 = M1(1:n1,1:n1);
+A12 = M1(1:n1,(n1+1):end);
+A21 = M1((n1+1):end,1:n1);
+A22 = M1((n1+1):end,(n1+1):end);
+
+B11 = inv(A11);
+B22 = inv(A22);
+iin1= eye(n1);
+iin2= eye(n2);
+
+F1 = iin1 -A12*B22*A21*B11;
+
+Z11= B11*inv(F1);
+Z12= -Z11*A12*B22;
+
+F2 = iin2 - A21*B11*A12*B22;
+Z22= B22*inv(F2);
+Z21= -Z22*A21*B11;
+
+tic;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if(1 == 0)
 % 
@@ -226,10 +266,12 @@ dt = toc(start);
 disp(['Time on GMRES = ', num2str(dt), ' seconds'])
 end
 
-%sol = M1\rhs;
+disp('solving')
+size(M1)
+tic; sol = M1\rhs(iperm); toc;
 
 
-sol = rskelf_sv(F,rhs(iperm));
+%sol = rskelf_sv(F,rhs(iperm));
 sol = sol(invperm);
 
 %fprintf('%5.2f seconds : time for dense gmres\n',t1)

@@ -1,0 +1,19 @@
+%------------------------------------------------------
+@function [h0,h1] = hankm103(z)
+%
+%     
+  asize = size(z);
+  tsize = numel(z);
+  
+  
+  h0 = complex(zeros(asize));
+  h1 = complex(zeros(asize));
+
+  # FORTRAN hank103_wrap( dcomplex[tsize] z, inout dcomplex[tsize] h0, inout dcomplex[tsize] h1, int[1] tsize);
+
+  h0 = reshape(h0,asize);
+  h1 = reshape(h1,asize);
+end
+%
+%
+%------------------------------------------------------

@@ -21,9 +21,10 @@ r2 = rx2+ry2;
 
 r = sqrt(r2);
 
+[h0,h1] = hankm103(k*r);
 
 if nargout > 0
-    h0 = besselh(0,1,k*r);
+    %h0 = besselh(0,1,k*r);
     val = 0.25*1i*h0;
 end
 
@@ -37,8 +38,8 @@ if nargout > 1
 %     grad(:,:,1) = -1i*k*0.25*h1.*rx./r;
 %     grad(:,:,2) = -1i*k*0.25*h1.*ry./r;
     
-    h1 = besselh(1,1,k*r)./r;
-    
+    %h1 = besselh(1,1,k*r)./r;
+    h1 = h1./r;
     grad = zeros(m,n,2);
     
     ck = 0.25*1i*k;
