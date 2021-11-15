@@ -1,8 +1,8 @@
-function [skel_struct] = skel_2by2blk(B11,B22,A12,A21,nmax,tol)
+function [skel_struct] = skel_2by2blk(FS1,FS2,A12,A21,nmax,tol)
 
 skel_struct = [];
 
-tic; atmp = rand_fft_transf(A12,nmax); toc;
+tic; atmp = chnk.flam.rand_fft_transf(A12,nmax); toc;
 tic; [SK,RD,T] = id(atmp,tol); toc;
 
 nskel = numel(SK);
@@ -17,7 +17,7 @@ R12 = A12(:,skel12);
 %%%%%%%%%%%%%%%%%%%%%%%%
 %% now the 2,1 block
 
-tic; atmp = rand_fft_transf(A21,nmax); toc;
+tic; atmp = chnk.flam.rand_fft_transf(A21,nmax); toc;
 tic; [SK,RD,T] = id(atmp,tol); toc;
 
 nskel = numel(SK);
@@ -34,8 +34,10 @@ R21 = A21(:,SK);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% creating F1 in factored form
 
-tic; V1 = transpose(transpose(B11)*transpose(T21)); toc;
-tic; U1 = transpose(transpose(B22)*transpose(T12)); toc;
+%tic; V1 = transpose(transpose(B11)*transpose(T21)); toc;
+tic; V1 = transpose(rskelf_sv(FS1,transpose(T21),'t')); toc;
+%tic; U1 = transpose(transpose(B22)*transpose(T12)); toc;
+tic; U1 = transpose(rskelf_sv(FS2,transpose(T12),'t')); toc;
 tic; U = U1*R21; toc;
 tic; U = R12*U; toc;
 V = V1;
@@ -48,8 +50,8 @@ toc;
 
 %F11 = eye(size(U,1))+U*V;
 
-tic; U = B11*U; toc;
-
+%tic; U = B11*U; toc;
+tic; U = rskelf_sv(FS1,U);
 %%%%%%%%%%%%  1st block done:
 %%%%%%%%%%%%  ZZ11 = B11 + U*V;
 skel_struct.U11 = U;
@@ -57,7 +59,7 @@ skel_struct.V11 = V;
 
 
 tic;
-W1 = -(B11*R12);
+W1 = -rskelf_sv(FS1,R12);
 C2 = V*R12;
 W2 = -U*C2;
 toc;
@@ -90,7 +92,8 @@ toc;
 %F22 = eye(size(P,1))+P*Q;
 
 
-tic; P = B22*P; toc;
+%tic; P = B22*P; toc;
+tic; P = rskelf_sv(FS2,P); toc;
 
 skel_struct.U22 = P;
 skel_struct.V22 = Q;
@@ -99,7 +102,7 @@ skel_struct.V22 = Q;
 
 
 tic;
-X1 = -(B22*R21);
+X1 = -rskelf_sv(FS2,R21);
 C2 = Q*R21;
 X2 = -P*C2;
 toc;

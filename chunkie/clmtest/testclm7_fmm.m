@@ -149,13 +149,28 @@ for i=1:ndomain
   evalkern = @(s,t) chnk.helm2d.kern(k(i),s,t,'eval',coef(i));
   ucomp(i) = chunkerkerneval(chnkrtotal,evalkern,sol,targ(:,i));
 end
+eps0 = 1e-7;
 
+targdomain = clm.finddomain_gui(chnkr,clmparams,targ); toc;
+list = cell(1,ndomain);
+for i=1:ndomain
+    list{i} = find(targdomain==i);
+end
+[ucomp2,~] = clm.postprocess_sol_gui(chnkr,clmparams,targ,targdomain,eps0,sol);
+
+ucomp2 = ucomp2.'
 uerror = abs(ucomp-uexact)./abs(uexact);
 disp(' ')
 disp('Now check the accuracy of numerical solutions')
 disp('Exact value               Numerical value           Error')  
 fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(uerror)'])
 
+
+uerror2 = abs(ucomp2-uexact)./abs(uexact);
+disp(' ')
+disp('Now check the accuracy of numerical solutions')
+disp('Exact value               Numerical value           Error')  
+fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp2).'; real(uerror2)'])
 
 % evaluate the field in the second domain at 10000 points and record time
 ngr = clmparams.ngr;% field evaluation at ngr^2 points
