@@ -192,6 +192,7 @@ if strcmpi(type,'trans1')
   harg = [harg1(:),harg2(:)];
   %szharg = size(harg)
   [h00,h11] = hankm103(harg);
+   %[h00,h11] = hankm103(harg);
   %szh00 = size(h00)
   h0 = reshape(h00(:,1),hargsz);
   h1 = reshape(h11(:,1),hargsz);

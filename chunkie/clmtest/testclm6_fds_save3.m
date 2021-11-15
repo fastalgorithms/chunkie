@@ -202,7 +202,7 @@ xflam = chnkrtotal.r(:,:);
 xflam = repelem(xflam,1,2);
 xflam = xflam(:,opts_perm.iperm);
  rank_or_tol = 0.5e-8;
- occ = 40;
+ occ = 400;
  pxyfun = [];
  opts = [];
  opts.lvlmax = 10;
@@ -215,6 +215,7 @@ xflam = xflam(:,opts_perm.iperm);
  irange = (opts_perm.ns(1)+1):(opts_perm.ns(1)+opts_perm.ns(2));
  xflam_i = [real(xflam(1,irange));imag(xflam(1,irange))];
  %xflam_i = xflam(:,irange);
+ occ = 400;
  tic, Fskel2 = rskelf(matfun2,xflam_i,occ,rank_or_tol,pxyfun,opts); toc;
  
 %tic, M1 = matfun(1:2*np,1:2*np); toc;
