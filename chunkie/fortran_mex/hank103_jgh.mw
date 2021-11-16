@@ -1,5 +1,5 @@
 %------------------------------------------------------
-@function [h0,h1] = hankm103(z)
+@function [h0,h1] = besselh01(z)
 %
 %     
   asize = size(z);

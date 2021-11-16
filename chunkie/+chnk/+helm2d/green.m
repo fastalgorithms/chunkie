@@ -21,7 +21,7 @@ r2 = rx2+ry2;
 
 r = sqrt(r2);
 
-[h0,h1] = hankm103(k*r);
+[h0,h1] = chnk.helm2d.besselh01(k*r);
 
 if nargout > 0
     %h0 = besselh(0,1,k*r);
