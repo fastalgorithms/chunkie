@@ -1,4 +1,4 @@
-function targdomain = finddomain_gui(chnkr,clmparams,targs)
+function [targdomain,varargout] = finddomain_gui(chnkr,clmparams,targs)
 % use Cauchy's integral formula to determine which domain each target lies
 % in.
 ncurve = clmparams.ncurve;
@@ -22,6 +22,7 @@ end
 
 ntarg = size(targs,2);
 targdomain = zeros(ntarg,1);
+targnear = zeros(ntarg,1);
     
 idomup = find(clmparams.is_inf == 1);
 idomdown = find(clmparams.is_inf == -1);
@@ -59,20 +60,28 @@ for j=1:ndomain
       targdomain(pot==1) = j;
     end
 end
-targdomain(targdomain(:) == 0 & (targs(2,:)>0)') = 1;
-targdomain(targdomain == 0 & (targs(2,:)<0)') = 2;
+targdomain(targdomain(:) == 0 & (targs(2,:)>0)') = idomup;
+targdomain(targdomain == 0 & (targs(2,:)<0)') = idomdown;
 
+chnkrtotal = merge(chnkr);
+flag = flagnear(chnkrtotal,targs);
 
-for i=1:ntarg
-  zt = targs(1,i)+1i*targs(2,i);
-  d0 = 1000;
-  for j=1:ncurve
-    d = min(abs(zt-zsrc{j}));
-    if d<d0
-      d0=d;
-    end
-  end
-  if d0<0.02
-    targdomain(i)=0;
-  end
-end
+[tind,sind,~] = find(flag);
+targs_test = targs(:,tind);
+src_test = chnkrtotal.r(:,:,sind);
+[~,m,n] = size(src_test);
+xt = targs_test(1,:);
+yt = targs_test(2,:);
+xt = repmat(xt,[chnkrtotal.k,1]);
+xt = xt(:).';
+
+yt = repmat(yt,[chnkrtotal.k,1]);
+yt = yt(:).';
+src_test2 = reshape(src_test,[2,m*n]);
+dist = (xt - src_test2(1,:)).^2 + (yt-src_test2(2,:)).^2;
+dist = reshape(dist,[m,n]);
+dmin = min(dist,[],1);
+iind = dmin < 0.02^2;
+targdomain(tind(iind))=0;
+varargout{1} = tind;
+varargout{2} = flag;
