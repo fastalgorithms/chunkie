@@ -2,6 +2,10 @@ function [atmp] = rand_fft_transf(amat,nout)
     sz = size(amat);
     nr = sz(1);
     nc = sz(2);
+    if (nr <= nout)
+        atmp = amat;
+        return
+    end
     dels = exp(1i*2*pi*rand([nr,1]));
     atmp = amat.*dels;
     %atmp = amat.*repmat(dels,[nr,1]);
