@@ -1,3 +1,4 @@
+# chunkie: a MATLAB integral equation toolbox
 
 A MATLAB package for prototyping integral equation
 methods in two dimensions.
