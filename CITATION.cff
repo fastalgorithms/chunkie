@@ -2,6 +2,6 @@ cff-version: 0.0.1
 message: "If you use this software, please cite it as below."
 authors:
   - name: chunkie team
-title: "chunkie"
+title: "chunkie: a MATLAB integral equation toolbox"
 version: 0.0.1-beta
 date-released: 2021-11-20
