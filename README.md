@@ -1,4 +1,3 @@
-# chunkie: CHUNK-based Integral Equations
 
 A MATLAB package for prototyping integral equation
 methods in two dimensions.
