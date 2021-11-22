@@ -67,6 +67,7 @@ format compact
 geom_class = clm.read_geom_clm7();
 clmparams = clm.setup_geom(geom_class);
 
+
 chnkr = clm.get_geom_clmparams(clmparams);
 
 %fprintf('%5.2e s : time to build geo\n',t1)
@@ -127,6 +128,7 @@ targ = clmparams.src_in;
 
 ndomain = clmparams.ndomain;
 uexact = zeros(ndomain,1);
+ugrad_exact = zeros(2,ndomain);
 ucomp = zeros(ndomain,1);
 k = clmparams.k;
 coef = clmparams.coef;
@@ -138,7 +140,10 @@ for i=1:ndomain
     j = j - ndomain;
   end
   
-  uexact(i) = uexact(i) + chnk.helm2d.green(k(i),clmparams.src_in(:,j),targ(:,i));
+  [pot,grad] = chnk.helm2d.green(k(i),clmparams.src_in(:,j),targ(:,i));
+  
+  uexact(i) = uexact(i) + pot;
+  ugrad_exact(:,i) = ugrad_exact(:,i) + grad(:);
 end
 
 chnkrtotal = merge(chnkr);
@@ -156,7 +161,7 @@ list = cell(1,ndomain);
 for i=1:ndomain
     list{i} = find(targdomain==i);
 end
-[ucomp2,~] = clm.postprocess_sol_gui(chnkr,clmparams,targ,targdomain,eps0,sol);
+[ucomp2,ugrad2] = clm.postprocess_sol_gui(chnkr,clmparams,targ,targdomain,eps0,sol);
 %[ucomp2,~] = clm.postprocess_sol_gui_fmmcorr_slower(chnkr,clmparams,targ,targdomain,eps0,sol)
 
 ucomp2 = ucomp2(:);
@@ -172,6 +177,18 @@ disp(' ')
 disp('Now check the accuracy of numerical solutions')
 disp('Exact value               Numerical value           Error')  
 fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp2).'; real(uerror2)'])
+
+
+uerror2 = abs(ugrad2-ugrad_exact)./abs(ugrad_exact);
+disp(' ')
+disp('Now check the accuracy of numerical solutions')
+disp('Exact value               Numerical value           Error')  
+
+aa = real(ugrad_exact(2,:));
+bb = real(ugrad2(2,:));
+cc = uerror2(2,:);
+
+fprintf('%0.15e     %0.15e     %7.1e\n', [aa; bb; cc])
 return
 
 % evaluate the field in the second domain at 10000 points and record time

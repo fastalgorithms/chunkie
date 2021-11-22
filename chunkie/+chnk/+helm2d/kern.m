@@ -147,6 +147,29 @@ if strcmpi(type,'eval')
 end
 
 
+if strcmpi(type,'evalg')
+  coef = varargin{1};
+  
+  srcnorm = srcinfo.n;
+  
+  submat = zeros(nt,ns,6);
+  % S
+  [submats,grad,hess] = chnk.helm2d.green(zk,src,targ);
+
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  % D
+  submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+    
+  submat(:,:,1) = coef*submatd;
+  submat(:,:,2) = submats;
+  submat(:,:,3) = -coef*(hess(:,:,1).*nxsrc + hess(:,:,2).*nysrc);
+  submat(:,:,4) = grad(:,:,1);
+  submat(:,:,5) = -coef*(hess(:,:,2).*nxsrc + hess(:,:,3).*nysrc);
+  submat(:,:,6) = grad(:,:,2);
+end
+
+
 
 if strcmpi(type,'trans1')
   %targnorm = chnk.normal2d(targinfo);
