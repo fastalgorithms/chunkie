@@ -86,9 +86,44 @@ title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
 xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
 ylabel('$x_2$','Interpreter','LaTeX','FontSize',fontsize)
 
-x = clm.get_region_pts_gui(chnkr,clmparams,2);
-%plot(x(1,:),x(2,:),'g-','LineWidth',3)
+[x,xdom] = clm.get_region_pts_gui_hannah2(chnkr,clmparams,2);
+plot(x(1,:),x(2,:),'g-','LineWidth',3)
+if(~isempty(xdom))
+    plot(xdom(1,:),xdom(2,:),'b-','LineWidth',3);
+end
+xlim([-10,10])
+ylim([-16,4])
 drawnow
+% 
+% xs = x;
+% 
+% ax = gca;
+% xlim = ax.XLim;
+% xdia = xlim(2)-xlim(1);
+% ylim = ax.YLim;
+% ydia = ylim(2)-ylim(1);
+% 
+% x0 = xlim(2)+xdia/10;
+% y0 = 0;
+% x1 = x0;
+% y1 = ylim(1)-ydia/10;
+% x2 = xlim(1)-xdia/10;
+% y2 = y1;
+% x3 = x2;
+% y3 = 0;
+% xbox = [x0,x1,x2,x3];
+% ybox = [y0,y1,y2,y3];
+% tbox = [xbox;ybox];
+% xs_mod = xs(:,1:(end-1));
+% xs_mod = [xs_mod,tbox];
+% usr_poly = polyshape(xs_mod(1,:),xs_mod(2,:));
+% usr_poly2 = polyshape(xdom(1,:),xdom(2,:));
+% usr_poly_plot = subtract(usr_poly,usr_poly2);
+% poly_handle = plot(ax,usr_poly_plot);
+% xylim = [-10,10, -16, 4];
+% axis(ax,xylim);
+
+
 
 isrcip = 1;
 
@@ -161,8 +196,10 @@ list = cell(1,ndomain);
 for i=1:ndomain
     list{i} = find(targdomain==i);
 end
-[ucomp2,ugrad2] = clm.postprocess_sol_gui(chnkr,clmparams,targ,targdomain,eps0,sol);
-%[ucomp2,~] = clm.postprocess_sol_gui_fmmcorr_slower(chnkr,clmparams,targ,targdomain,eps0,sol)
+
+[sk,~,exp_mat] = clm.get_compressed_postproc_im(chnkr,clmparams);
+%[ucomp2,ugrad2] = clm.postprocess_sol_gui(chnkr,clmparams,targ,targdomain,eps0,sol);
+[ucomp2,ugrad2] = clm.postprocess_sol_gui_fmmcorr_slower(chnkr,clmparams,targ,targdomain,eps0,sol,sk,exp_mat);
 
 ucomp2 = ucomp2(:);
 uerror = abs(ucomp-uexact)./abs(uexact);
@@ -189,7 +226,7 @@ bb = real(ugrad2(2,:));
 cc = uerror2(2,:);
 
 fprintf('%0.15e     %0.15e     %7.1e\n', [aa; bb; cc])
-return
+
 
 % evaluate the field in the second domain at 10000 points and record time
 ngr = clmparams.ngr;% field evaluation at ngr^2 points
@@ -200,6 +237,8 @@ disp(' ')
 disp(['Evaluate the field at ', num2str(ntarg), ' points'])
 disp('Step 1: identify the domain for each point')
 tic, [targdomain,tid] = clm.finddomain_gui(chnkr,clmparams,targs); toc;
+tid = unique(tid);
+ntid = setdiff(1:ntarg,tid);
 list = cell(1,ndomain);
 for i=1:ndomain
     list{i} = find(targdomain==i);
@@ -256,17 +295,18 @@ disp(['Time on GMRES = ', num2str(dt), ' seconds'])
 disp('Step 4: evaluate the total field for incident plane wve')
 eps0 = 1e-10;
 start = tic;
-%[u,~] = clm.postprocess_sol_gui_fmmcorr_slower(chnkr,clmparams,targs,targdomain,eps0,sol);
-[u1,~] = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
+[u,gradu] = clm.postprocess_sol_gui_fmmcorr_slower(chnkr,clmparams,targs,targdomain,eps0,sol,sk,exp_mat);
+%[u1,gradu1] = clm.postprocess_sol_gui_fmmcorr_slower_old(chnkr,clmparams,targs,targdomain,eps0,sol);
 u = u(:);
-u1 = u1(:);
+%u1 = u1(:);
+%return
 idomup = find(clmparams.is_inf == 1);
 idomdown = find(clmparams.is_inf == -1);
 for i=1:ndomain
   if ~isempty(list{i})
     if i==idomup || i==idomdown
-        %u(list{i}) = u(list{i}) + clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),targs(:,list{i}),clmparams.is_inf(i),idomup,idomdown,coef);
-        u1(list{i}) = u1(list{i}) + clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),targs(:,list{i}),clmparams.is_inf(i),idomup,idomdown,coef);
+        u(list{i}) = u(list{i}) + clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),targs(:,list{i}),clmparams.is_inf(i),idomup,idomdown,coef);
+        %u1(list{i}) = u1(list{i}) + clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),targs(:,list{i}),clmparams.is_inf(i),idomup,idomdown,coef);
     end
   end
 end
@@ -278,6 +318,6 @@ disp(['Evaluation time = ', num2str(dt), ' seconds'])
 %fprintf('%5.2e s : time to evaluate the field at 10000 points\n',t1)
 
 % plot out the field
-clm.fieldplot(u1,chnkr,xg,yg,xylim,ngr,fontsize)
+clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
 title('Total field, incident plane wave angle = $\frac{3\pi}{4}$','Interpreter','LaTeX','FontSize',fontsize)
 

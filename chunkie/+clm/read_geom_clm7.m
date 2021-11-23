@@ -1,6 +1,7 @@
+
 function geom_class = read_geom_clm7()
     geom_class = [];
-    geom_class.xylim = [-8 8 -25 4];
+    geom_class.xylim = [-15 15 -26 4];
     ndomain = 5;
     geom_class.ndomain = ndomain;
     ncurve = 11;
@@ -41,8 +42,8 @@ function geom_class = read_geom_clm7()
     vert = zeros(2,10);
     vert(:,1) = [a;0];
     vert(:,2) = [b;0];
-    vert(:,9) = [a-5;0];
-    vert(:,10) = [b+5;0];
+    vert(:,9) = [-17;0];
+    vert(:,10) = [17;0];
 
     L(3) = rscale*n0/2;
     theta(2) = pi/8;
