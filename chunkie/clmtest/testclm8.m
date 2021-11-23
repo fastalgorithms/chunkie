@@ -91,8 +91,6 @@ drawnow
 
 isrcip = 1;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 chnkrtotal = merge(chnkr);
 
 rs = chnkrtotal.r(:,:);

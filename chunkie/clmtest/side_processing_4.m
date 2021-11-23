@@ -91,7 +91,7 @@ exp_mat(:,RD) = T;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-zk = ks(3);
+zk = ks(2);
 x0 = rand(1)*(xmax-xmin) + xmin;
 y0 = rand(1)*(ymax-ymin) + ymin;
 
@@ -103,17 +103,17 @@ zz = sqrt((xs-x0).^2+(ys-y0).^2);
 h0 = besselh(0,1,zk*zz);
 h1 = besselh(1,1,zk*zz);
 
-h1 = h1./zz.*(cos(dan).*(xs-x0)+1i*sin(dan).*(ys-y0));
-
+%h1 = h1./zz.*(cos(dan).*(xs-x0)+1i*sin(dan).*(ys-y0));
+h1 = h1./zz.*((ys-y0));
 h0_eff = h0.*ds0;
 h1_eff = h1.*ds1;
 
-field_full = sum(h0_eff+h1_eff)
+field_full = sum(0*h0_eff+h1_eff)
 
 s0 = ds0;
 s1a= ds1.*cos(dan);
-s1b= 1i*ds1.*sin(dan);
-
+%s1b= 1i*ds1.*sin(dan);
+s1b= ds1;
 s_red_0 = exp_mat*transpose(s0);
 s_red_1a= exp_mat*transpose(s1a);
 s_red_1b= exp_mat*transpose(s1b);
@@ -131,7 +131,7 @@ h1_skel_1b = h1_skel.*(yskel-y0).*transpose(s_red_1b);
 
 h0_skel = h0_skel.*transpose(s_red_0);
 
-field_skel = sum(h0_skel+h1_skel_1a+h1_skel_1b)
+field_skel = sum(0*h0_skel+0*h1_skel_1a+h1_skel_1b)
 
 err = field_full -field_skel
 
