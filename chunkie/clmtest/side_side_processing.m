@@ -245,7 +245,7 @@ h0fu = besselh(0,1,zk*rrfull);
 h1fu = besselh(1,1,zk*rrfull);
 h2fu = besselh(2,1,zk*rrfull);
 
-hder = (h0fu-h2fu)/2./(rrfull.*rrfull) - h1fu./(rrfull.^3);
+hder = zk*(h0fu-h2fu)/2./(rrfull.*rrfull) - h1fu./(rrfull.^3);
 hderxx= hder.*(xdfull.^2);
 hderxy= hder.*(xdfull).*(ydfull);
 hderyy= hder.*(ydfull.^2);
@@ -262,7 +262,7 @@ h0sk = besselh(0,1,zk*rrs);
 h1sk = besselh(1,1,zk*rrs);
 h2sk = besselh(2,1,zk*rrs);
 
-hd_sk = (h0sk-h2sk)/2./(rrs.*rrs) - h1sk./(rrs.^3);
+hd_sk = zk*(h0sk-h2sk)/2./(rrs.*rrs) - h1sk./(rrs.^3);
 hdxx_sk = hd_sk.*(xds.^2);
 hdxy_sk = hd_sk.*(xds).*(yds);
 hdyy_sk = hd_sk.*(yds.^2);
