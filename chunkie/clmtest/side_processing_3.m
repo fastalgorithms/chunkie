@@ -61,27 +61,27 @@ xt = x_used;
 yt = y_used;
 
 zk = ks(1);
-[atmp] = get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
+[atmp] = clm.get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
 %tic; [SK,RD,T] = id(atmp,tol); toc;
 %size(SK)
 
 zk = ks(2);
-[atmp2] = get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
+[atmp2] = clm.get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
 %tic; [SK,RD,T] = id(atmp2,tol); toc;
 %size(SK)
 
 zk = ks(3);
-[atmp3] = get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
+[atmp3] = clm.get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
 %tic; [SK,RD,T] = id(atmp3,tol); toc;
 %size(SK)
 
 zk = ks(4);
-[atmp4] = get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
+[atmp4] = clm.get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
 %tic; [SK,RD,T] = id(atmp4,tol); toc;
 %size(SK)
 
 zk = ks(5);
-[atmp5] = get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
+[atmp5] = clm.get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
 %tic; [SK,RD,T] = id(atmp5,tol); toc;
 %size(SK)
 

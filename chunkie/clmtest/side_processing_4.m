@@ -1,5 +1,8 @@
 targs = clmparams.xylim;
 ks = clmparams.k;
+
+%ks = 1 + rand(100,1)*4;
+
 tol= 10^(-12);
 kmax = max(ks);
 r_re = rs(:,i_real);
@@ -66,7 +69,7 @@ atmp = [];
 
 for j=1:numel(ks)
     zk = ks(j);
-    [atmp_j] = get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
+    [atmp_j] = clm.get_kern_im2re(xs,ys,xt,yt,zk,opts_ki2r);
     atmp = [atmp;atmp_j];
     if (size(atmp,1)>size(atmp,2))
         sz = size(atmp,2);
@@ -77,7 +80,6 @@ end
 
 tic; btmp = chnk.flam.rand_fft_transf(atmp,nmax); toc;
 %tic; [SK,RD,T] = id(atmp_5f,tol); toc;
-%size(SK)
 tic; [SK,RD,T] = id(btmp,tol); toc;
 size(SK)
 

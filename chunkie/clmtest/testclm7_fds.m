@@ -66,71 +66,12 @@ clear
 format long e
 format compact
 
-% obtain physical and geometric parameters
-icase = 6;
-opts = [];
-clmparams = clm.setup(icase,opts);
 
-if isfield(clmparams,'k')
-  k = clmparams.k;
-end
-if isfield(clmparams,'coef')
-  coef = clmparams.coef;
-end
-if isfield(clmparams,'cpars')
-  cpars = clmparams.cpars;
-end
-if isfield(clmparams,'cparams')
-  cparams = clmparams.cparams;
-end
-if isfield(clmparams,'ncurve')
-  ncurve = clmparams.ncurve;
-end
-if isfield(clmparams,'ndomain')
-  ndomain = clmparams.ndomain;
-end
-
-vert = [];
-if isfield(clmparams,'vert')
-  vert = clmparams.vert;
-end
-
-if isfield(clmparams, 'nch')
-  nch = clmparams.nch;
-end
-
-if isfield(clmparams, 'src')
-  src = clmparams.src;
-end
-
-chnkr(1,ncurve) = chunker();
-
-% define functions for curves
-fcurve = cell(1,ncurve);
-for icurve=1:ncurve
-  fcurve{icurve} = @(t) clm.funcurve(t,icurve,cpars{icurve},icase);
-end
-
-% number of Gauss-Legendre nodes on each chunk
-ngl = 16;
-
-pref = []; 
-pref.k = ngl;
-disp(['Total number of unknowns = ',num2str(sum(nch)*ngl*2)])
-
-% discretize the boundary
-start = tic; 
-
-for icurve=1:ncurve
-  chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve), ...
-    cparams{icurve},pref);
-end
+geom_class = clm.read_geom_clm6();
+clmparams = clm.setup_geom(geom_class);
 
 
-t1 = toc(start);
-
-[chnkr,clmparams] = clm.get_geom_gui(icase,opts);
-chnkrtotal = merge(chnkr);
+chnkr = clm.get_geom_clmparams(clmparams);
 
 %fprintf('%5.2e s : time to build geo\n',t1)
 
@@ -140,121 +81,46 @@ figure(1)
 clf
 plot(chnkr,'r-','LineWidth',2)
 hold on
-if ~isempty(vert)
-  plot(vert(1,:),vert(2,:),'k.','MarkerSize',20)
+if ~isempty(clmparams.verts)
+  plot(clmparams.verts(1,:),clmparams.verts(2,:),'k.','MarkerSize',20)
 end
 axis equal
 title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
 xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
 ylabel('$x_2$','Interpreter','LaTeX','FontSize',fontsize)
-drawnow
-% x = clm.get_region_pts_gui(chnkr,clmparams,3);
-% fill(x(1,:),x(2,:),'g')
 
+[x,xdom] = clm.get_region_pts_gui_hannah2(chnkr,clmparams,2);
+plot(x(1,:),x(2,:),'g-','LineWidth',3)
+if(~isempty(xdom))
+    plot(xdom(1,:),xdom(2,:),'b-','LineWidth',3);
+end
+xlim([-10,10])
+ylim([-16,4])
+drawnow
 % figure(2)
 % clf
 % quiver(chnkr)
 % axis equal
 
-isrcip = 1;
-opts = [];
-opts.nonsmoothonly = true;
+chnkrtotal = merge(chnkr);
 [np,alpha1,alpha2] = clm.get_alphas_np_gui(chnkr,clmparams);
-[M,RG] = clm.get_mat_gui_clm_cases(chnkr,clmparams,icase,opts);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-nn = 2*np;
-
-rs = chnkrtotal.r(:,:);
-rs = repelem(rs,1,2);
-i_real = find((abs(imag(rs(1,:)))+abs(imag(rs(2,:)))) == 0);
-i_imag = find((abs(imag(rs(1,:)))+abs(imag(rs(2,:)))) > 0);
-iperm = [i_real,i_imag];
-
-opts_perm = [];
-%iperm = (2*np):(-1):1;
-%iperm = randperm(nn);
-opts_perm.iperm = iperm;
-invperm = 1:nn;
-invperm(iperm) = 1:nn;
-opts_perm.invperm = invperm;
-opts_perm.ns = [numel(i_real),numel(i_imag)];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 opts_rhs = [];
 opts_rhs.itype = 1;
-rhs = clm.get_rhs_gui_clm_cases(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
-opdims(1) = 2;
-opdims(2) = 2;
+rhs = clm.get_rhs_gui(chnkr,clmparams,clmparams.npts,clmparams.alpha1,clmparams.alpha2,opts_rhs);
+
 disp(np)
-nn = 2*np;
-M = M + speye(nn);
-allt1 = @(s,t) chnk.helm2d.kern(1.0,s,t,'trans1',1);
-wts = weights(chnkrtotal);
-matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrtotal,wts,allt1,opdims,M,...
-    opts_perm);
-% npxy = 100;
-% [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
-% ifaddtrans = true;
-% pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
-%        kern,opdims,pr,ptau,pw,pin,ifaddtrans);
-xflam = chnkrtotal.r(:,:);
-xflam = repelem(xflam,1,2);
-xflam = xflam(:,opts_perm.iperm);
- rank_or_tol = 0.5e-8;
- occ = 400;
- pxyfun = [];
- opts = [];
- opts.lvlmax = 10;
- opts.verb = 1;
- tic, Fskel = rskelf(matfun,xflam(:,1:opts_perm.ns(1)),occ,rank_or_tol,pxyfun,opts); toc;
-
- opts_perm.n_offset = opts_perm.ns(1);
- matfun2 = @(i,j) chnk.flam.kernbyindex(i,j,chnkrtotal,wts,allt1,opdims,M,...
-    opts_perm);
- irange = (opts_perm.ns(1)+1):(opts_perm.ns(1)+opts_perm.ns(2));
- xflam_i = [real(xflam(1,irange));imag(xflam(1,irange))];
- %xflam_i = xflam(:,irange);
- occ = 400;
- tic, Fskel2 = rskelf(matfun2,xflam_i,occ,rank_or_tol,pxyfun,opts); toc;
- 
-%tic, M1 = matfun(1:2*np,1:2*np); toc;
-opts_perm.n_offset = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%tic, M1 = matfun(1:nn,1:nn); toc;
-n1 = opts_perm.ns(1);
-n2 = opts_perm.ns(2);
-
-A12 = matfun(1:n1,(n1+1):nn);
-A21 = matfun((n1+1):nn,1:n1);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-nmax = 400;
-tol  = 10^(-12);
-[skel_struct] = chnk.flam.skel_2by2blk(Fskel,Fskel2,A12,A21,nmax,tol);
-
-if (1 == 0)
-% 
-% solve the linear system using gmres
-disp(' ')
-disp('Step 3: solve the linear system via GMRES.')
-start = tic; 
-if isrcip
-  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,1000,eps*20);
-  sol = RG*soltilde;
-  disp(['GMRES iterations = ',num2str(it)])
-else
-  sol = gmres(M,rhs,[],1e-13,1000);
-end
-dt = toc(start);
-disp(['Time on GMRES = ', num2str(dt), ' seconds'])
-end
 
 %disp('solving')
 %size(M1)
 %tic; sol = M1\rhs(iperm); toc;
+eps = 0.5e-8;
+[Fskel,Fskel2,skel_struct,opts_perm,M,RG] = clm.get_fds_gui(chnkr,clmparams,eps);
 
 
 %sol = rskelf_sv(F,rhs(iperm));
@@ -268,14 +134,17 @@ end
 % targ2 = [1.1; -100]; % target point in domain #2
 % targ3 = [0; 0]; % target point in domain #3
 % targ = [targ1, targ2, targ3]
-targ = src;
+targ = clmparams.src_in;
 %sol1 = sol(1:2:2*np); % double layer density
 %sol2 = sol(2:2:2*np); % single layer density
 %abs(sol(1))
 
-
+ndomain = clmparams.ndomain;
 uexact = zeros(ndomain,1);
 ucomp = zeros(ndomain,1);
+k = clmparams.k;
+coef = clmparams.coef;
+
 
 % compute the exact solution
 for i=1:ndomain
@@ -284,7 +153,7 @@ for i=1:ndomain
     j = j - ndomain;
   end
   
-  uexact(i) = uexact(i) + chnk.helm2d.green(k(i),src(:,j),targ(:,i));
+  uexact(i) = uexact(i) + chnk.helm2d.green(k(i),clmparams.src_in(:,j),targ(:,i));
 end
 
 

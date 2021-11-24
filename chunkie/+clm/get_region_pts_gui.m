@@ -5,7 +5,10 @@ function [x] = get_region_pts_gui(chnkr,clmparams,ireg)
     iregend = length(clmparams.clist{ireg});
     iextra = 1;
     istart = 1;
-    if(ireg == 1 || ireg == 2)
+    idomup = find(clmparams.is_inf == 1);
+    idomdown = find(clmparams.is_inf == -1);
+    
+    if(ireg == idomup || ireg == idomdown)
         iregstart = 2;
         iregend = iregend - 1;
         iextra = 3;
@@ -29,9 +32,9 @@ function [x] = get_region_pts_gui(chnkr,clmparams,ireg)
         x(:,istart:iend) = rtmp;
         istart = istart + nch0*k;
     end
-    if(ireg>2)
+    if(ireg~= idomup && ireg~= idomdown)
         x(:,nch*k+1) = x(:,1);
-    elseif(ireg == 1)
+    elseif(ireg == idomup)
         x(:,1) = [-25;0];
         x(:,nch*k+iextra) = [0;Inf];
         x(:,nch*k+iextra-1) = [25;0];
