@@ -17,22 +17,22 @@ function npxy = nproxy_square(kern,width,opts)
 %   npxy - number of points on perimeter of box to be sent to proxy routine
 %
 
-  nsrc = 200;
+  nsrc = 400;
   rank_or_tol = 1e-13;
 
   if nargin < 3
     opts = [];
   end
 
-  if isfield(opts,'eps')
-    rank_or_tol = opts.eps;
-  end
-  if isfield(opts,'rank_or_tol')
-    rank_or_tol = opts.rank_or_tol;
-  end
-  if isfield(opts,'nsrc')
-    nsrc = opts.nsrc;
-  end
+  %if isfield(opts,'eps')
+  %  rank_or_tol = opts.eps;
+  %end
+  %if isfield(opts,'rank_or_tol')
+  %  rank_or_tol = opts.rank_or_tol;
+  %end
+  %if isfield(opts,'nsrc')
+  %  nsrc = opts.nsrc;
+  %end
 
 		      % set up sources with randomly oriented d and d2
 
@@ -45,16 +45,19 @@ function npxy = nproxy_square(kern,width,opts)
   srcinfo.d2 = randn(2,nsrc);
 
   npxy = 16;
-
+  numel(srcinfo.r)
+  nsrc
 				% double until you get enough
   for i = 1:11
     [pr,ptau] = chnk.flam.proxy_square_pts(npxy);
     targinfo.r = pr*width;
     targinfo.d = ptau;
     targinfo.d2 = zeros(2,npxy);
-
     mat = kern(srcinfo,targinfo);
-
+    mat = permute(mat,[2,1,3]);
+    nr = size(mat,1);
+    nc = numel(mat)/nr;
+    mat = reshape(mat,[nr,nc]);
     [sk,~] = id(mat,rank_or_tol);
     
     if length(sk) < min(nsrc,npxy)
