@@ -1,4 +1,4 @@
-function mat = kernbyindex(i_in,j_in,chnkr,whts,kern,opdims,spmat,op_perms)
+function mat = kernbyindex_ell2(i_in,j_in,chnkr,whts,kern,opdims,spmat,op_perms)
 %% evaluate system matrix by entry index utility function for 
 % general kernels, with replacement for specific entries and the
 % ability to add a low-rank modification.
@@ -88,9 +88,9 @@ mat = matuni(iiuni2,ijuni2);
 
 % scale columns by weights
 
-wj = whts(jpts(:));
-%size(wj)
+wj = (whts(jpts(:)));
 mat = bsxfun(@times,mat,wj.');
+
 
 % overwrite any entries given as nonzeros in sparse matrix
 
@@ -99,5 +99,12 @@ if nargin > 6
     linsp = isp + (jsp-1)*length(i(:));
     mat(linsp) = vsp;
 end
+
+wj = 1./sqrt(whts(jpts(:)));
+wi = sqrt(whts(ipts(:)));
+%ipts(1:10)
+%(wi(1:20)).^2
+mat = bsxfun(@times,mat,wj.');
+mat = bsxfun(@times,mat,wi);
 
 end
