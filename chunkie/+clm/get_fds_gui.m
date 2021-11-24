@@ -40,12 +40,12 @@ function [Fskel,Fskel2,skel_struct,opts_perm,M,RG] = get_fds_gui(chnkr,clmparams
     xflam = repelem(xflam,1,2);
     xflam = xflam(:,opts_perm.iperm);
     rank_or_tol = eps;
-    occ = 400;
+    occ = 1000;
     pxyfun = [];
     opts = [];
     opts.lvlmax = 10;
     opts.verb = 1;
-    tic, Fskel = rskelf(matfun,xflam(:,1:opts_perm.ns(1)),occ,rank_or_tol,pxyfun,opts); toc;
+    Fskel = rskelf(matfun,xflam(:,1:opts_perm.ns(1)),occ,rank_or_tol,pxyfun,opts);
 
     opts_perm.n_offset = opts_perm.ns(1);
     matfun2 = @(i,j) chnk.flam.kernbyindex(i,j,chnkrtotal,wts,allt1,opdims,M,...
@@ -53,8 +53,8 @@ function [Fskel,Fskel2,skel_struct,opts_perm,M,RG] = get_fds_gui(chnkr,clmparams
     irange = (opts_perm.ns(1)+1):(opts_perm.ns(1)+opts_perm.ns(2));
     xflam_i = [real(xflam(1,irange));imag(xflam(1,irange))];
     %xflam_i = xflam(:,irange);
-    occ = 400;
-    tic, Fskel2 = rskelf(matfun2,xflam_i,occ,rank_or_tol,pxyfun,opts); toc;
+    occ = 1000;
+    Fskel2 = rskelf(matfun2,xflam_i,occ,rank_or_tol,pxyfun,opts);
     
     opts_perm.n_offset = 0;
 

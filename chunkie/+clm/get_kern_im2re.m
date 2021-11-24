@@ -15,8 +15,8 @@ function [aout] = get_kern_im2re(xs,ys,xt,yt,zk,opts)
     [Yt,Ys] = meshgrid(yt,ys);
 
     Z  = sqrt((Xt-Xs).^2+(Yt-Ys).^2);
-    disp('Calculating Hankel functions')
-    tic; [A1,A2] = hankm103(zk*Z); toc;
+    
+    [A1,A2] = chnk.helm2d.besselh01(zk*Z);
     %tic; A1 = besselh(0,1,zk*Z); toc;
     %tic; A2 = besselh(1,1,zk*Z); toc;
     
@@ -29,8 +29,7 @@ function [aout] = get_kern_im2re(xs,ys,xt,yt,zk,opts)
         aout = A12;
         return;
     end
-    size(A12)
-    tic; aout = chnk.flam.rand_fft_transf(A12,nmax); toc;
+    aout = chnk.flam.rand_fft_transf(A12,nmax); 
 
 end
 

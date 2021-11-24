@@ -1,70 +1,57 @@
-    function geom_class = read_geom_clm6()
+
+function geom_class = read_geom_clm8()
     geom_class = [];
-    geom_class.xylim = [-8 8 -12 4];
+    geom_class.xylim = [-15 15 -26 4];
     ndomain = 5;
     geom_class.ndomain = ndomain;
-    ncurve = 8;
+    ncurve = 11;
     geom_class.ncurve = ncurve;
     
 
     rn = ones(ndomain,1); 
   % rn(i) is the index of refraction of the ith domain
     rn(1) = 1.0;
-    rn(2) = 1.4+1i*1e-2;
-    rn(3) = 1.9;
-    rn(4) = 1.6;
-    rn(5) = 1.5;
+    rn(2) = 1.34+1i*1e-2;
+    rn(3) = 1.452;
+    rn(4) = 1.348;
+    rn(5) = 1.363;
     
-    lambda = 0.76;
+    lambda = 0.38;
     geom_class.rn = rn;
     geom_class.lambda = lambda;
     geom_class.mode = 'te';
     
-    rscale = 0.55/4;
-    %   Define vert info
+    a = 2.1426;
+    
+    verts = zeros(2,10);
+    verts(1,1) = -a;
+    verts(1,2) = a;
+    
+    verts(:,3) = [-0.72;-2.6061];
+    verts(:,4) = [0.72;-2.6061];
+    
+    verts(:,7) = [-0.9;-2.8468];
+    verts(:,8) = [0.9;-2.8468];
+    
+    verts(:,5) = [-0.09;-16.2665];
+    verts(:,6) = [0.09;-16.2665];
+    
+    
+    verts(1,9) = -5;
+    verts(1,10) = 5;
+    
     % two circular arcs for the center eye for now
     theta = zeros(1,3);
     % upper curve opening angle
-    theta(1) = pi/2.4;
-
-    
-    % curve parameters
-    n0 = 50; % average number of wavelength of each curve 
-    a = -rscale*n0;
-    b = -a;
+    theta(1) = pi/1.3;
+    theta(3) = pi/8;
 
 
     % curve #4 -- sine curve on [a,b]
-    n4 = 3; A4 = 0.5;
+    n4 = 3; A4 = 0.3;
 
-    % curve #5 - #9 -- line segments, specified by vertices
-    vert = zeros(2,6);
-    vert(:,1) = [a;0];
-    vert(:,2) = [b;0];
-
-    L(3) = rscale*n0/2;
-    theta(2) = pi/8;
-    theta(3) = 3*pi/4;
-
-    % curve #5 -- connect vert(:,1) and vert(:,3)
-    vert(1,3) = vert(1,1) + L(3)*cos(3*pi/2+theta(2));
-    vert(2,3) = vert(2,1) + L(3)*sin(3*pi/2+theta(2));
-
-    % curve #6 -- connect vert(:,4) and vert(:,2)
-    vert(1,4) = vert(1,2) + L(3)*cos(3*pi/2-theta(2));
-    vert(2,4) = vert(2,2) + L(3)*sin(3*pi/2-theta(2));
-
-    % curve #7 -- connect vert(:,3) and vert(:,4)
-    L(4) = rscale*n0;
-    % curve #8 -- connect vert(:,3) and vert(:,5)
-    vert(1,5) = vert(1,3) + L(4)*cos(3*pi/2+theta(2));
-    vert(2,5) = vert(2,3) + L(4)*sin(3*pi/2+theta(2));
-
-    % curve #9 -- connect vert(:,6) and vert(:,4)
-    vert(1,6) = vert(1,4) + L(4)*cos(3*pi/2-theta(2));
-    vert(2,6) = vert(2,4) + L(4)*sin(3*pi/2-theta(2));
     
-    geom_class.verts = vert;
+    geom_class.verts = verts;
 
     curves = cell(1,ncurve);
     curves{1}.curvetype = 2;
@@ -75,15 +62,22 @@
     curves{6}.curvetype = 1;
     curves{7}.curvetype = 1;
     curves{8}.curvetype = 2;
+    curves{9}.curvetype = 1;
+    curves{10}.curvetype = 1;
+    curves{11}.curvetype = 1;
     
     curves{1}.vert_list = [1 2];
     curves{2}.vert_list = [1 2];
     curves{3}.vert_list = [1 3];
     curves{4}.vert_list = [4 2];
     curves{5}.vert_list = [3 4];
-    curves{6}.vert_list = [3 5];
-    curves{7}.vert_list = [6 4];
+    curves{6}.vert_list = [7 5];
+    curves{7}.vert_list = [6 8];
     curves{8}.vert_list = [5 6];
+    curves{9}.vert_list = [7 8];
+    curves{10}.vert_list = [9,1];
+    curves{11}.vert_list = [2,10];
+    
     for i=1:ncurve
         curves{i}.curve_id = i;
     end
@@ -101,15 +95,15 @@
     
 %   Define region info    
     clist = cell(1,ndomain);
-    clist{1} = [-1];
-    clist{2} = [-4 -7 -8 -6 -3];
+    clist{1} = [10 -1 11];
+    clist{2} = [-11 -4 -5 -3 -10 -7 -8 -6 9];
     clist{3} = [1,2];
     clist{4} = [-2 3 5 4];
-    clist{5} = [-5 6 8 7];
+    clist{5} = [-9 6 8 7];
     regions = cell(1,ndomain);
     src = zeros(2,ndomain);
 
-    src(2,:) = [4.67,  -1.5e1, 1.17, -2.18, -4.68];
+    src(2,:) = [4.67,  -2.5e1, 0.7, -1.68, -4.68];
 
     for i=1:ndomain
         regions{i}.region_id = 1;
@@ -123,8 +117,8 @@
         regions{i}.src_in = src(:,i);
     end
     geom_class.regions = regions;
-    geom_class.lvert = 1;
-    geom_class.rvert = 2;
+    geom_class.lvert = 9;
+    geom_class.rvert = 10;
     
 
 end

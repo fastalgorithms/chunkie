@@ -22,7 +22,7 @@ function [clmparams_out] = update_clmparams(clmparams,opts)
     clmparams_out.coef = coef;
     
     
-    k = rn/lambda;
+    k = rn/lambda*2*pi;
     kinf = inf*ones(1,ndomain);
     for i=1:ndomain
         if(clmparams.is_inf(i) ~= 0)
@@ -69,6 +69,7 @@ function [clmparams_out] = update_clmparams(clmparams,opts)
 
     n0 = 12;
     fac = 1.2/2/pi;
+    ppw = 5;
 
     for i=1:clmparams.ncurve
       ctype = clmparams.cparams{i}.curvetype;
@@ -88,10 +89,9 @@ function [clmparams_out] = update_clmparams(clmparams,opts)
           L = integral(f,0,pi);
           
       end
-      
-      lambda = 1/max(abs(k1(i)),abs(k2(i)));
+      kmax= max(abs(k1(i)),abs(k2(i)));
 
-      nch(i) = round(fac*L/lambda) + n0;
+      nch(i) = round(ppw*L*kmax/32/pi) + n0;
     end
     clmparams_out.nch = nch;
     clmparams_out.npts = sum(nch)*clmparams_out.ngl;

@@ -2,18 +2,37 @@ function [clmparams] = setup_geom(geom_class)
     clmparams= [];
     if(isfield(geom_class,'xylim'))
         clmparams.xylim = geom_class.xylim;
+        
+        xmin = geom_class.xylim(1);
+        xmax = geom_class.xylim(2);
+        ymin = geom_class.xylim(3);
+        ymax = geom_class.xylim(4);
+        
+        xmin1 = min(geom_class.verts(1,:));
+        xmax1 = max(geom_class.verts(1,:));
+        ymin1 = min(geom_class.verts(2,:));
+        ymax1 = max(geom_class.verts(2,:));
+        
+        
+        xmin = min(xmin,xmin1);
+        xmax = max(xmax,xmax1);
+        ymin = min(ymin,ymin1);
+        ymax = max(ymax,ymax1);
+        
     else
         xmin = min(geom_class.verts(1,:));
         xmax = max(geom_class.verts(1,:));
         ymin = min(geom_class.verts(2,:));
         ymax = max(geom_class.verts(2,:));
-        dx = xmax - xmin;
-        dy = ymax - ymin;
-        bs = max(dx,dy);
-        cx = 0.5*(xmin + xmax);
-        cy = 0.5*(ymin + ymax);
-        clmparams.xylim = [cx - bs, cx + bs, cy-bs, cy + bs];
     end
+    
+    dx = xmax - xmin;
+    dy = ymax - ymin;
+    bs = max(dx,dy);
+    cx = 0.5*(xmin + xmax);
+    cy = 0.5*(ymin + ymax);
+    clmparams.xylim = [cx - 0.6*bs, cx + 0.6*bs, cy-0.6*bs, cy + 0.6*bs];
+    
     clmparams.ndomain = geom_class.ndomain;
     if(isfield(geom_class,'rn'))
        clmparams.rn = geom_class.rn;
@@ -21,11 +40,6 @@ function [clmparams] = setup_geom(geom_class)
        clmparams.rn = ones(geom_class.ndomain,1);
     end
     
-    if(isfield(geom_class,'ngr'))
-        clmparams.ngr = geom_class.ngr;
-    else
-        clmparams.ngr = 300;
-    end
     if(isfield(geom_class,'lambda'))
        clmparams.lambda = geom_class.lambda;
     else
@@ -41,8 +55,13 @@ function [clmparams] = setup_geom(geom_class)
     else
         clmparams.mode = 'te';
     end
-    clmparams.verts = geom_class.verts;
-    verts = geom_class.verts;
+    
+    [~,nverts] = size(geom_class.verts);
+    clmparams.verts = zeros(2,nverts+2);
+    clmparams.verts(:,1:nverts) = geom_class.verts;
+    clmparams.verts(1,nverts+1) = clmparams.xylim(1);
+    clmparams.verts(1,nverts+2) = clmparams.xylim(2);
+    verts = clmparams.verts;
     
     if(strcmpi(clmparams.mode,'te'))
         coef = ones(clmparams.ndomain,1);
@@ -56,16 +75,15 @@ function [clmparams] = setup_geom(geom_class)
     
     % Determine the extent to go out on either side
     
-    clmparams.lvert = geom_class.lvert;
-    clmparams.rvert = geom_class.rvert;
-    a = verts(1,clmparams.lvert);
-    b = verts(1,clmparams.rvert);
+    clmparams.lvert = nverts+1;
+    clmparams.rvert = nverts+2;
+    
     
     xmin = clmparams.xylim(1);
     xmax = clmparams.xylim(2);
     
     is_inf = zeros(1,ndomain);
-    k = rn/lambda;
+    k = rn/lambda*2*pi;
     kinf = inf*ones(1,ndomain);
     for i=1:ndomain
         if(geom_class.regions{i}.is_inf ~= 0)
@@ -73,18 +91,26 @@ function [clmparams] = setup_geom(geom_class)
             kinf(i) = k(i); 
         end
     end
-    c1 = log(1.0/eps)/min(kinf);
+    
+    
+    if(isfield(geom_class,'ngr'))
+        clmparams.ngr = geom_class.ngr;
+    else
+        clmparams.ngr = 300;
+    end
+    bs = xmax-xmin;
+    krmax = max(real(k(:)));
+    ngruse = ceil(bs*krmax/pi);
+    
+    clmparams.ngr = max(clmparams.ngr,ngruse);
+    
+    c1 = log(1.0/eps)/min(kinf)*2*pi;
     c2 = c1/2;
     
-    d1 = a-xmin;
-    d2 = xmax-b;
-    d3 = 2*(b-a);
-    C = 2*max([d1 d2 d3]);
-    L(1) = C-a;
-    L(2) = b+C;
     
-    
-    
+    C = 4*(xmax-xmin);
+    L(1) = C-xmin;
+    L(2) = xmax+C;
     
     % Determine the number of curves actually used
     % There are two additional curves corresponding to
@@ -94,7 +120,7 @@ function [clmparams] = setup_geom(geom_class)
     % curve
     
     ncurve = geom_class.ncurve;
-    ncurve_use = 2;
+    ncurve_use = 4;
     icurve_list = cell(1,ncurve);
     for i=1:ncurve    
         if(geom_class.curves{i}.curvetype == 1)
@@ -117,22 +143,41 @@ function [clmparams] = setup_geom(geom_class)
     
     % Populate all curve info
     cparams{1}.ta = -L(1);
-    cparams{1}.tb = a;
+    cparams{1}.tb = xmin;
     cparams{1}.curvetype = 0;
     cparams{1}.ilr = 1;
     cparams{1}.ifclosed = false;
-    cparams{2}.ta = b;
+    cpars{1}.L = L(1); cpars{1}.c1 = c1; cpars{1}.c2 = c2;
+    cpars{1}.lvert = clmparams.lvert;
+    
+    cparams{2}.ta = xmax;
     cparams{2}.tb = L(2);
     cparams{2}.curvetype = 0;
     cparams{2}.ilr = 2;
     cparams{2}.ifclosed = false;
-    cpars{1}.L = L(1); cpars{1}.c1 = c1; cpars{1}.c2 = c2;
-    cpars{1}.lvert = geom_class.lvert;
     cpars{2}.L = L(2); cpars{2}.c1 = c1; cpars{2}.c2 = c2;
-    cpars{2}.rvert = geom_class.rvert;
+    cpars{2}.rvert = clmparams.rvert;
+    
+    cparams{3}.ta = 0;
+    cparams{3}.tb = 1;
+    cparams{3}.curvetype = 1;
+    cparams{3}.ifclosed = false;
+    cpars{3}.v0 = clmparams.verts(:,nverts+1);
+    cpars{3}.v0ind = nverts+1;
+    cpars{3}.v1 = clmparams.verts(:,geom_class.lvert);
+    cpars{3}.v1ind = geom_class.lvert;
+    
+    cparams{4}.ta = 0;
+    cparams{4}.tb = 1;
+    cparams{4}.curvetype = 1;
+    cparams{4}.ifclosed = false;
+    cpars{4}.v0 = clmparams.verts(:,geom_class.rvert);
+    cpars{4}.v0ind = geom_class.rvert;
+    cpars{4}.v1 = clmparams.verts(:,nverts+2);
+    cpars{4}.v1ind = nverts+2;
     
     
-    icurve_cur = 3;
+    icurve_cur = 5;
     for i=1:ncurve
         ctype = geom_class.curves{i}.curvetype;
         if(ctype == 1)
@@ -206,9 +251,9 @@ function [clmparams] = setup_geom(geom_class)
             end
         end 
         if(geom_class.regions{i}.is_inf == 1)
-            clist{i} = [1 clist{i} 2];  
+            clist{i} = [1 3 clist{i} 4 2];  
         elseif(geom_class.regions{i}.is_inf == -1)
-            clist{i} = [-2 clist{i} -1];
+            clist{i} = [-2 -4 clist{i} -3 -1];
         end      
     end
     clmparams.clist = clist;
@@ -304,6 +349,7 @@ function [clmparams] = setup_geom(geom_class)
 
     n0 = 12;
     fac = 1.2/2/pi;
+    ppw = 5;
 
     for i=1:ncurve_use
       ctype = clmparams.cparams{i}.curvetype;
@@ -328,8 +374,10 @@ function [clmparams] = setup_geom(geom_class)
       end
       
       lambda = 1/max(abs(k1(i)),abs(k2(i)));
+      kmax= max(abs(k1(i)),abs(k2(i)));
 
-      nch(i) = round(fac*L/lambda) + n0;
+      nch(i) = round(ppw*L*kmax/32/pi) + n0;
+      %nch(i) = round(fac*L/lambda) + n0;
     end
     clmparams.fcurve = fcurve;
     clmparams.nch = nch;

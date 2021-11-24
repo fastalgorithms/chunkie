@@ -67,7 +67,7 @@ format long e
 format compact
 
 
-geom_class = clm.read_geom_clm6();
+geom_class = clm.read_geom_clm8();
 clmparams = clm.setup_geom(geom_class);
 
 
@@ -89,14 +89,17 @@ title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
 xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
 ylabel('$x_2$','Interpreter','LaTeX','FontSize',fontsize)
 
-[x,xdom] = clm.get_region_pts_gui_hannah2(chnkr,clmparams,2);
+x = clm.get_region_pts_gui(chnkr,clmparams,2);
 plot(x(1,:),x(2,:),'g-','LineWidth',3)
-if(~isempty(xdom))
-    plot(xdom(1,:),xdom(2,:),'b-','LineWidth',3);
-end
-xlim([-10,10])
-ylim([-16,4])
+% if(~isempty(xdom))
+%     plot(xdom(1,:),xdom(2,:),'b-','LineWidth',3);
+% end
+xlim(clmparams.xylim(1:2))
+ylim(clmparams.xylim(3:4))
 drawnow
+return
+
+
 % figure(2)
 % clf
 % quiver(chnkr)
@@ -119,7 +122,7 @@ disp(np)
 %disp('solving')
 %size(M1)
 %tic; sol = M1\rhs(iperm); toc;
-eps = 0.5e-8;
+eps = 0.5e-5;
 [Fskel,Fskel2,skel_struct,opts_perm,M,RG] = clm.get_fds_gui(chnkr,clmparams,eps);
 
 
@@ -169,27 +172,43 @@ disp(' ')
 disp('Now check the accuracy of numerical solutions')
 disp('Exact value               Numerical value           Error')  
 fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(uerror)'])
-return
+
+
 
 % evaluate the field in the second domain at 10000 points and record time
-ngr = 220;       % field evaluation at ngr^2 points
-xylim=[-8 8 -12 4];  % computational domain
+ngr = clmparams.ngr;       % field evaluation at ngr^2 points
+xylim=clmparams.xylim;  % computational domain
 [xg,yg,targs,ntarg] = clm.targinit(xylim,ngr);
 
 disp(' ')
 disp(['Evaluate the field at ', num2str(ntarg), ' points'])
 disp('Step 1: identify the domain for each point')
 clist = clmparams.clist;
-targdomain = clm.finddomain(chnkr,clist,targs,icase);
+[targdomain,tid] = clm.finddomain_gui(chnkr,clmparams,targs);
+
+
+tid = unique(tid);
+ntid = setdiff(1:ntarg,tid);
+
 list = cell(1,ndomain);
 for i=1:ndomain
     list{i} = find(targdomain==i);
 end
 
+[sk,~,exp_mat] = clm.get_compressed_postproc_im(chnkr,clmparams);
+opts = [];
+tic, [eva_mats,sktarg] = clm.get_evamat_postproc_im(chnkr,clmparams,targs, ...
+   targdomain,sk,eps,opts); toc
+
+
+
+
+
+
 if 1==1
     disp('Step 2: evaluate the total field for point sources')
 
-    eps0 = 1e-7;
+    eps0 = 1e-5;
     start = tic;
     uexact = clm.postprocess_uexact_gui(clmparams,targs,targdomain);
     u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
@@ -208,7 +227,7 @@ end
 
 % the incident wave is a plane wave
 
-alpha = 3*pi/4;
+alpha = pi/2;
 opts_rhs = [];
 opts_rhs.itype = 2;
 opts_rhs.alpha = alpha;
@@ -219,31 +238,26 @@ disp(' ')
 disp(['Now calculate the field when the incident wave is a plane wave'])
 disp(['incident angle = ', num2str(opts_rhs.alpha)])
 rhs = clm.get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts_rhs);
-
-% solve the linear system using gmres
-disp(' ')
-disp('Step 3: solve the linear system via GMRES.')
-start = tic; 
-if isrcip
-  [soltilde,it] = rcip.myGMRESR(M,RG,rhs,2*np,1000,eps*20);
-  sol = RG*soltilde;
-  disp(['GMRES iterations = ',num2str(it)])
-else
-  sol = gmres(M,rhs,[],1e-13,100);
-end
-dt = toc(start);
-disp(['Time on GMRES = ', num2str(dt), ' seconds'])
+[sol] = chnk.flam.solve_2by2blk(rhs,Fskel,Fskel2,skel_struct,opts_perm);
 
 disp('Step 4: evaluate the total field for incident plane wve')
-eps0 = 1e-7;
+eps0 = 1e-5;
 start = tic;
-u = clm.postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,sol);
 
+%tic, [u,~] = clm.postprocess_sol_gui_fmmcorr_slower(chnkr,clmparams,targs,targdomain,eps0,sol,sk,exp_mat); toc;
+tic, [u1,gradu1] = clm.postprocess_sol_gui_fmm_fds(chnkr,clmparams,targs,targdomain,eps0,sol,sk,exp_mat,eva_mats,sktarg); toc;
+
+
+u = u(:);
+u1 = u1(:);
 start = tic; 
+idomup = find(clmparams.is_inf == 1);
+idomdown = find(clmparams.is_inf == -1);
 for i=1:ndomain
   if ~isempty(list{i})
-    if i==1 || i==2
-        u(list{i}) = u(list{i}) + clm.planewavetotal(k(1),alpha,k(2),targs(:,list{i}),i,coef);
+    if i==idomup || i==idomdown
+        u(list{i}) = u(list{i}) + clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),targs(:,list{i}),clmparams.is_inf(i),idomup,idomdown,coef);
+        u1(list{i}) = u1(list{i}) + clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),targs(:,list{i}),clmparams.is_inf(i),idomup,idomdown,coef);
     end
   end
 end
@@ -255,6 +269,6 @@ disp(['Evaluation time = ', num2str(dt), ' seconds'])
 %fprintf('%5.2e s : time to evaluate the field at 10000 points\n',t1)
 
 % plot out the field
-clm.fieldplot(u,chnkr,xg,yg,xylim,ngr,fontsize)
+clm.fieldplot(abs(u1),chnkr,xg,yg,xylim,ngr,fontsize)
 title('Total field, incident plane wave angle = $\frac{3\pi}{4}$','Interpreter','LaTeX','FontSize',fontsize)
 

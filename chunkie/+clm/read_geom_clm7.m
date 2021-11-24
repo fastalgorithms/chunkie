@@ -16,7 +16,7 @@ function geom_class = read_geom_clm7()
     rn(4) = 1.6;
     rn(5) = 1.5;
     
-    lambda = 0.38;
+    lambda = 0.76;
     geom_class.rn = rn;
     geom_class.lambda = lambda;
     geom_class.mode = 'te';

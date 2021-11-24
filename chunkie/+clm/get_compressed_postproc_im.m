@@ -24,7 +24,6 @@ function [SK,RD,exp_mat] = get_compressed_postproc_im(chnkr,clmparams)
     x_used = [];
     y_used = [];
 
-    tstart = tic();
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     np = round((ymax-ymin)*kmax/(2*pi)*12);
@@ -81,14 +80,13 @@ function [SK,RD,exp_mat] = get_compressed_postproc_im(chnkr,clmparams)
         atmp = [atmp;atmp_j];
         if (size(atmp,1)>size(atmp,2))
             sz = size(atmp,2);
-            tic; atmp = chnk.flam.rand_fft_transf(atmp,sz); toc;
-            disp('here')
+            atmp = chnk.flam.rand_fft_transf(atmp,sz); 
         end    
     end
 
-    tic; btmp = chnk.flam.rand_fft_transf(atmp,nmax); toc;
-    %tic; [SK,RD,T] = id(atmp_5f,tol); toc;
-    tic; [SK,RD,T] = id(btmp,tol); toc;
+    btmp = chnk.flam.rand_fft_transf(atmp,nmax); 
+    
+    [SK,RD,T] = id(btmp,tol);
 
     exp_mat = zeros([numel(SK),numel(xs)]);
     exp_mat(:,SK) = eye(numel(SK));
