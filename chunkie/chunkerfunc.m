@@ -154,8 +154,8 @@ for ijk = 1:maxiter_res
             end
             
             coefs = u2*fvals;
-            errs0 = sum(coefs(1:k,:).^2,1);
-            errs = sum(coefs(k+1:k2,:).^2,1);
+            errs0 = sum(abs(coefs(1:k,:)).^2,1);
+            errs = sum(abs(coefs(k+1:k2,:)).^2,1);
             rmsemax = max(sqrt(errs./errs0/k));
             a=ab(1,ich);
             b=ab(2,ich);
@@ -340,7 +340,7 @@ if (nover > 0)
                 [rl1] = chunklength(fcurve,a,ab0,xs,ws);
                 
                 [out{:}] = fcurve(ab0);
-                dsdt = sqrt(sum((out{2}).^2));
+                dsdt = sqrt(sum((abs(out{2})).^2));
                 ab1=ab0-(rl1-rlhalf)/dsdt;
 
                 err=rl1-rlhalf;
@@ -406,6 +406,9 @@ end
 
 chnkr.adj = adjs(:,1:nch);
 
+% update normals
+chnkr.n = normals(chnkr);
+
 end
 
 
@@ -415,7 +418,7 @@ function [len] = chunklength(fcurve,a,b,xs,ws)
     out = cell(nout,1);
     ts = a+(b-a)*(xs+1)/2;
     [out{:}] = fcurve(ts);
-    dsdt = sqrt(sum(out{2}.^2,1));
+    dsdt = sqrt(sum(abs(out{2}).^2,1));
     len = dot(dsdt,ws)*(b-a)/2;
  end
 
