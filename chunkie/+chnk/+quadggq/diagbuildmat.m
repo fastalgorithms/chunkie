@@ -1,11 +1,16 @@
-function submat = diagbuildmat(r,d,d2,h,i,fkern,opdims,...
-				      u,xs0,whts0,ainterps0kron,ainterps0)
+function submat = diagbuildmat(r,d,n,d2,h,data,i,fkern,opdims,...
+				      xs0,whts0,ainterps0kron,ainterps0)
 %CHNK.QUADGGQ.DIAGBUILDMAT                  
 
 % grab specific boundary data
                 
 rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i); hs = h(i); 
-
+ns = n(:,:,i);
+if(isempty(data))
+    dd = [];
+else
+    dd = data(:,:,i);
+end
 % interpolate boundary info
 
 % get relevant coefficients
@@ -15,10 +20,12 @@ rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i); hs = h(i);
 [nq,~,nt] = size(ainterps0);
 rfine = zeros(dim,nq,nt);
 dfine = zeros(dim,nq,nt);
+nfine = zeros(dim,nq,nt);
 d2fine = zeros(dim,nq,nt);
 for i = 1:nt
     rfine(:,:,i) = (ainterps0(:,:,i)*(rs.')).';
     dfine(:,:,i) = (ainterps0(:,:,i)*(ds.')).';
+    nfine(:,:,i) = (ainterps0(:,:,i)*(ns.')).';
     d2fine(:,:,i) = (ainterps0(:,:,i)*(d2s.')).';    
 end
 
@@ -64,22 +71,30 @@ end
 % d2fine = permute(d2fine,[3,1,2]);
 
 dfinenrm = squeeze(sqrt(sum(dfine.^2,1)));
+%dfinenrm = squeeze(dfine(1,:,:)); % for complex contour, added by SJ 9/30/21
 dsdt = dfinenrm.*whts0*hs;
 
 srcinfo = [];
 targinfo = [];
 
 for j = 1:k
-    srcinfo.r = rfine(:,:,j); srcinfo.d = dfine(:,:,j); 
-    srcinfo.d2 = d2fine(:,:,j);
-    targinfo.r = rs(:,j); targinfo.d = ds(:,j); targinfo.d2 = d2s(:,j);
-    smatbigi = fkern(srcinfo,targinfo);
-    dsdtndim2 = repmat(dsdt(:,j).',opdims(2),1);
-    dsdtndim2 = dsdtndim2(:);
-    submat(opdims(1)*(j-1)+1:opdims(1)*j,:) = ...
-        smatbigi*diag(dsdtndim2)*ainterps0kron(:,:,j);
+  srcinfo.r = rfine(:,:,j); srcinfo.d = dfine(:,:,j);
+  srcinfo.d2 = d2fine(:,:,j); srcinfo.n = nfine(:,:,j);
+  targinfo.r = rs(:,j); targinfo.d = ds(:,j);
+  targinfo.d2 = d2s(:,j); targinfo.n = ns(:,j);
+  if(isempty(dd))
+      targinfo.data = [];
+  else
+    targinfo.data = dd(:,j);
+  end
+    
+  smatbigi = fkern(srcinfo,targinfo);
+  dsdtndim2 = repmat(dsdt(:,j).',opdims(2),1);
+  dsdtndim2 = dsdtndim2(:);
+  submat(opdims(1)*(j-1)+1:opdims(1)*j,:) = ...
+    smatbigi*diag(dsdtndim2)*ainterps0kron(:,:,j);
 end
 
- end
+end
    
 

@@ -11,7 +11,7 @@ addpaths_loc();
 
 % planewave vec
 
-kvec = 20*[1;-1.5];
+kvec = 5*[1;-1.5];
 
 %
 
