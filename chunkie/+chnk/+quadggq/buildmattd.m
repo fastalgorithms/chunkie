@@ -90,10 +90,23 @@ ainterps0kron = auxquads.ainterps0kron;
 % do smooth weight for all
 %sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims,1:nch,1:nch,wts);
 mmat = k*nch*opdims(1); nmat = k*nch*opdims(2);
-spmat = spalloc(mmat,nmat,k*nch*opdims(1)*k*3*opdims(2));
+
+nnz = k*nch*opdims(1)*k*3*opdims(2);
+nnz1 = k*opdims(1)*k*opdims(2);
+v = zeros(nnz,1);
+iind = zeros(nnz,1);
+jind = zeros(nnz,1);
+
+jmat = 0;
+jmatend = k*opdims(2)-1;
+
+imat = 0;
+imatend = k*opdims(1)-1;
+[jj1,ii1] = meshgrid(jmat:jmatend,imat:imatend);
 
 
 % overwrite nbor and self
+ict = 1;
 for j = 1:nch
 
     jmat = 1 + (j-1)*k*opdims(2);
@@ -101,6 +114,7 @@ for j = 1:nch
     
     ibefore = adj(1,j);
     iafter = adj(2,j);
+    
 
     % neighbors
     
@@ -112,9 +126,11 @@ for j = 1:nch
                 kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
     
             imat = 1 + (ibefore-1)*k*opdims(1);
-            imatend = ibefore*k*opdims(1);
-
-            spmat(imat:imatend,jmat:jmatend) = submat;
+            induse = ict:ict+nnz1-1;
+            iind(induse) = ii1(:)+imat;
+            jind(induse) = jj1(:)+jmat;
+            v(induse) = submat(:);
+            ict = ict + nnz1;
         end
     end
     
@@ -124,11 +140,14 @@ for j = 1:nch
       else      
         submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,data,iafter,j, ...
             kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
+        
 
         imat = 1 + (iafter-1)*k*opdims(1);
-        imatend = iafter*k*opdims(1);
-        
-        spmat(imat:imatend,jmat:jmatend) = submat;
+        induse = ict:ict+nnz1-1;
+        iind(induse) = ii1(:)+imat;
+        jind(induse) = jj1(:)+jmat;
+        v(induse) = submat(:);
+        ict = ict + nnz1;
       end
     end
     
@@ -140,12 +159,18 @@ for j = 1:nch
           xs0,wts0,ainterps0kron,ainterps0);
 
       imat = 1 + (j-1)*k*opdims(1);
-      imatend = j*k*opdims(1);
-
-      spmat(imat:imatend,jmat:jmatend) = submat;
+      
+      
+      induse = ict:(ict+nnz1-1);
+      iind(induse) = ii1(:)+imat;
+      jind(induse) = jj1(:)+jmat;
+      v(induse) = submat(:);
+      ict = ict + nnz1;
     end
     
 end
+
+spmat = sparse(iind,jind,v,mmat,nmat);
 	 
 
 end
