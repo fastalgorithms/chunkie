@@ -3,9 +3,35 @@ function [sysmat] = buildmat(chnkr,kern,opdims,type,auxquads,ilist)
 % description of boundary, using special quadrature for self
 % and neighbor panels.
 %
-%  
-
-% type: the type of singularity present in the kernel
+% Input:
+%   chnkr - chunker object describing boundary
+%   kern  - kernel function. By default, this should be a function handle
+%           accepting input of the form kern(srcinfo,targinfo), where srcinfo
+%           and targinfo are in the ptinfo struct format, i.e.
+%                ptinfo.r - positions (2,:) array
+%                ptinfo.d - first derivative in underlying
+%                     parameterization (2,:)
+%                ptinfo.n - unit normals (2,:)
+%                ptinfo.d2 - second derivative in underlying
+%                     parameterization (2,:)
+%   opdims - (2) dimension of the kernel, for scalar kernels opdims(1:2) = 1;
+%
+% Optional input: quantities in brackets indicate default settings
+%  type - string ('log'), type of singularity of kernel. Type
+%          can take on the following arguments:
+%             log => logarithmically singular kernels
+%             pv => principal value singular kernels
+%             hs => hypersingular kernels
+%  auxquads - struct (chnk.quadggq.setuplogquads), structure containing
+%             auxilliary quadrature nodes, weights and related
+%             interpolation matrices.
+%  ilist - cell array of integer arrays ([]), list of panel interactions that 
+%          should be ignored when constructing matrix entries or quadrature
+%          corrections. 
+%
+% Ouput:
+%   sysmat - the system matrix for discretizing integral operator whose kernel 
+%            is defined by kern with a density on the domain defined by chnkr
 % 
 % NB: if type and auxquads are both present then auxquads will be used 
 %       independent of type.
@@ -44,45 +70,14 @@ if (nargin<4)
      auxquads = chnk.quadggq.setuplogquad(k,opdims);
 end
 
-%if strcmpi(type,'log')
-
-    %qavail = chnk.quadggq.logavail();
-    %[~,i] = min(abs(qavail-k));
-    %assert(qavail(i) == k,'order %d not found, consider using order %d chunks', ...
-    %    k,qavail(i));
-    %[xs1,wts1,xs0,wts0] = chnk.quadggq.getlogquad(k);
     
-    xs1 = auxquads.xs1;
-    wts1 = auxquads.wts1;
-    xs0 = auxquads.xs0;
-    wts0 = auxquads.wts0;
+xs1 = auxquads.xs1;
+wts1 = auxquads.wts1;
+xs0 = auxquads.xs0;
+wts0 = auxquads.wts0;
 
-    
-    
-%%%else
-%%%%    error('type not available')
-%%%end
-
-%ainterp1 = lege.matrin(k,xs1);
 ainterp1 = auxquads.ainterp1;
-
-%temp = eye(opdims(2));
-%ainterp1kron = kron(ainterp1,temp);
 ainterp1kron = auxquads.ainterp1kron;
-
-%nquad0 = size(xs0,1);
-
-%%%%%ainterps0kron = zeros(opdims(2)*nquad0,opdims(2)*k,k);
-%%%%%ainterps0 = zeros(nquad0,k,k);
-%%%%%ainterps0 = logquad.ainterps0;
-%%%%ainterps0kron = logquad.ainterps0kron;
-
-%%%%%for j = 1:k
-%%%%%    xs0j = xs0(:,j);
-%%%%%    ainterp0_sm = lege.matrin(k,xs0j);
-%%%%%    ainterps0(:,:,j) = ainterp0_sm;
-%%%%%    ainterps0kron(:,:,j) = kron(ainterp0_sm,temp);
-%%%%%end
 
 ainterps0 = auxquads.ainterps0;
 ainterps0kron = auxquads.ainterps0kron;

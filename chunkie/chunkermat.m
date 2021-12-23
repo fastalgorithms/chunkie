@@ -14,19 +14,22 @@ function [sysmat,varargout] = chunkermat(chnkr,kern,opts,ilist)
 %                ptinfo.r - positions (2,:) array
 %                ptinfo.d - first derivative in underlying
 %                     parameterization (2,:)
+%                ptinfo.n - unit normals (2,:)
 %                ptinfo.d2 - second derivative in underlying
 %                     parameterization (2,:)
 %
 % Optional input:
 %   opts  - options structure. available options (default settings)
 %           opts.quad = string ('ggq'), specify quadrature routine to 
-%                       use. 
-%
-%                       - 'ggqlog' uses a generalized Gaussian quadrature 
-%                       designed for logarithmically singular kernels and 
-%                       smooth kernels with removable singularities
+%                       use. Other available options include
 %                       - 'native' selects standard scaled Gauss-Legendre 
 %                       quadrature for native functions
+%                       smooth kernels with removable singularities
+%           opts.type = string ('log'), type of singularity of kernel. Type
+%                       can take on the following arguments:
+%                         log => logarithmically singular kernels
+%                         pv => principal value singular kernels
+%                         hs => hypersingular kernels
 %
 %           opts.nonsmoothonly = boolean (false), if true, only compute the
 %                         entries for which a special quadrature is used
@@ -34,14 +37,42 @@ function [sysmat,varargout] = chunkermat(chnkr,kern,opts,ilist)
 %                         in a sparse array.
 %           opts.l2scale = boolean (false), if true scale rows by 
 %                           sqrt(whts) and columns by 1/sqrt(whts)
+%           opts.auxquads = struct, struct storing auxilliary nodes 
+%                     and weights which might be required for some of
+%                     the quadrature methods like ggq for example.
+%                     There is a different sub structure for each
+%                     quadrature and singularity type which should be named
+%                     as
+%
+%                     opts.auxquads.<opts.quad><opts.type> 
+%                     
+%                     For example, the structure for logarithmically
+%                     singular kernels integrated using ggq
+%                     quadrature, the relevant struct is
+%                     
+%                     opts.auxquads.ggqlog
+%
+%                     The specific precomputed variables and their values
+%                     will depend on the quadrature method used.
+%  ilist - cell array of integer arrays ([]), list of panel interactions that 
+%          should be ignored when constructing matrix entries or quadrature
+%          corrections. 
+%
 %
 % Output:
-%   sysmat - the system matrix for convolution of the kernel defined by
-%            kern with a density on the domain defined by chnkr
+%   sysmat - the system matrix for discretizing integral operator whose kernel 
+%            is defined by kern with a density on the domain defined by chnkr
+%
+% Optional output
+%   opts - with the updated opts structure which stores the relevant
+%          quantities in opts.auxquads.<opts.quad><opts.type>
 %
 % Examples:
 %   sysmat = chunkermat(chnkr,kern); % standard options
 %   sysmat = chunkermat(chnkr,kern,opts);
+%   sysmat = chunkermat(chnkr,kern,opts,ilist);
+%   [sysmat,opts] = chunkermat(chnkr,kern,opts);
+%   [sysmat,opts] = chunkermat(chnkr,kern,opts,ilist);
 %
 
 if length(chnkr) > 1
