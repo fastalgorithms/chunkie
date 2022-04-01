@@ -43,9 +43,10 @@ function mat = chunkerkernevalmat(chnkr,kern,targs,opts)
 
 srcinfo = []; targinfo = [];
 srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 
+srcinfo.n = chnkr.n(:,1);
 srcinfo.d2 = chnkr.d2(:,1);
 targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
-targinfo.d2 = chnkr.d2(:,2);
+targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
 
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
@@ -121,7 +122,7 @@ k = chnkr.k;
 nch = chnkr.nch;
 
 targinfo = []; targinfo.r = targs;
-srcinfo = []; srcinfo.r = chnkr.r(:,:); 
+srcinfo = []; srcinfo.r = chnkr.r(:,:); srcinfo.n = chnkr.n(:,:);
 srcinfo.d = chnkr.d(:,:); srcinfo.d2 = chnkr.d2(:,:);
 
 mat = kern(srcinfo,targinfo);
@@ -209,16 +210,18 @@ else
     bw = lege.barywts(k);
     r = chnkr.r;
     d = chnkr.d;
+    n = chnkr.n;
     d2 = chnkr.d2;
     h = chnkr.h;
     targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
+    targn = zeros(chnkr.dim,nt);
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
         [ji] = find(flag(:,i));
-        mat1 =  chnk.adapgausswts(r,d,d2,h,ct,bw,i,targs(:,ji), ...
-                    targd(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
+        mat1 =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+                    targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
                 
         js1 = jmat:jmatend;
         js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);

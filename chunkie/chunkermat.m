@@ -100,9 +100,9 @@ end
 
 srcinfo = []; targinfo = [];
 srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 
-srcinfo.d2 = chnkr.d2(:,1);
+srcinfo.d2 = chnkr.d2(:,1); srcinfo.n = chnkr.n(:,1);
 targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
-targinfo.d2 = chnkr.d2(:,2);
+targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
 
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);

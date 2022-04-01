@@ -57,10 +57,14 @@ if strcmpi(rc,'c')
 
     rslf = chnkr.r(:,slfuni);
     dslf = chnkr.d(:,slfuni);
+    nslf = chnkr.n(:,slfuni);
     %dslf = bsxfun(@rdivide,dslf,sqrt(sum(dslf.^2,1)));
     
-    srcinfo = []; srcinfo.r = rslf; srcinfo.d = dslf;
-    targinfo = []; targinfo.r = pxy; targinfo.d = ptau;
+    srcinfo = []; srcinfo.r = rslf; srcinfo.d = dslf; srcinfo.n = nslf;
+    targinfo = []; targinfo.r = pxy; targinfo.d = ptau; 
+    if (size(rslf,1) == 2) 
+        targinfo.n = chnk.perp(ptau);
+    end
 
     Kpxy = kern(srcinfo,targinfo);
 
@@ -90,7 +94,10 @@ else
     %dslf = bsxfun(@rdivide,dslf,sqrt(sum(dslf.^2,1)));
 
     targinfo = []; targinfo.r = rslf; targinfo.d = dslf;
-    srcinfo = []; srcinfo.r = pxy; srcinfo.d = ptau;
+    srcinfo = []; srcinfo.r = pxy; srcinfo.d = ptau; 
+    if (size(rslf,1) == 2)
+        srcinfo.n = chnk.perp(ptau);
+    end
     
     Kpxy = kern(srcinfo,targinfo);
 

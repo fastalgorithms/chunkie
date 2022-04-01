@@ -52,6 +52,7 @@ trap.r = rs;
 trap.d = ds;
 trap.d2 = d2s;
 trap.h = h;
+trap.n = normals(trap);
 
 end
 

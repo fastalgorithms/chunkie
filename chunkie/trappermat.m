@@ -45,8 +45,9 @@ end
 % determine operator dimensions using first two points
 
 srcinfo = []; srcinfo.r = trap.r(:,1); srcinfo.d = trap.d(:,1);
-srcinfo.d2 = trap.d2(:,1);
+srcinfo.d2 = trap.d2(:,1); srcinfo.n = trap.n(:,1);
 targinfo = []; targinfo.r = trap.r(:,2); targinfo.d = trap.d(:,2);
+targinfo.n = trap.n(:,2);
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
 

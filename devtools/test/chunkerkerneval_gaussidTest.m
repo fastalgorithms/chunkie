@@ -45,14 +45,11 @@ opts.flam = true;
 start=tic; d1 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
 toc(start)
 
-
-
 if doadap
     fprintf( ...
       'computing Gauss I.D. with adaptive quadrature (may be slow)...\n');
     opts.forcesmooth=false;
     opts.forceadap = false;
-    opts.quadkgparams = {'RelTol',1.0e-7,'AbsTol',1.0e-7};
     opts.fac = 1.0;
     opts.flam = true;
     start=tic; d12 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 

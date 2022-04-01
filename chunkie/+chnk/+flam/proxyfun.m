@@ -54,8 +54,9 @@ islfuni2 = (islfuni-1)*opdims(2) + mod(slf(:)-1,opdims(2))+1;
 
 srcinfo = []; srcinfo.r = chnkr.r(:,slfuni);
 srcinfo.d = chnkr.d(:,slfuni); srcinfo.d2 = chnkr.d2(:,slfuni);
+srcinfo.n = chnkr.n(:,slfuni);
 targinfo = []; targinfo.r = pxy; targinfo.d = ptau; 
-targinfo.d2 = [];
+targinfo.d2 = []; targinfo.n = chnk.perp(ptau);
 Kpxy = kern(srcinfo,targinfo);
 
 Kpxy = Kpxy(:,islfuni2);

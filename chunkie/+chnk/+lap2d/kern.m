@@ -10,7 +10,8 @@ targ = targinfo.r;
 [~,nt] = size(targ);
 
 if strcmpi(type,'d')
-    srcnorm = chnk.normal2d(srcinfo);
+    %srcnorm = chnk.normal2d(srcinfo);
+    srcnorm = srcinfo.n;
     [~,grad] = chnk.lap2d.green(src,targ);
     nx = repmat(srcnorm(1,:),nt,1);
     ny = repmat(srcnorm(2,:),nt,1);

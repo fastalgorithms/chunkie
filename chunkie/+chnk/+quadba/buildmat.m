@@ -20,12 +20,14 @@ if strcmpi(type,'smooth')
     r = trap.r;
     d = trap.d;
     d2 = trap.d2;
+    n = trap.n;
 
     wts = weights(trap);
     wts2 = repmat(wts,opdims(2),1);
     wts2 = wts2(:);
     
     srcinfo = []; srcinfo.r = r; srcinfo.d = d; srcinfo.d2 = d2;
+    srcinfo.n = n;
     sysmat = kern(srcinfo,srcinfo);
     sysmat = bsxfun(@times,sysmat,(wts2(:)).');
     return
@@ -75,6 +77,7 @@ r = trap.r;
 d = trap.d;
 d2 = trap.d2;
 ds = sqrt(sum(d.^2,1));
+n = trap.n;
 
 %% use conv routine to get interpolated values of r, d, ds
 
@@ -84,11 +87,13 @@ npt = trap.npt;
 endpad = (npt-(length(indrel)-1)/2+1):npt;
 startpad = 1:(length(indrel)-1)/2;
 rpad = [r(:,endpad), r, r(:,startpad)];
+npad = [n(:,endpad), n, n(:,startpad)];
 dpad = [d(:,endpad), d, d(:,startpad)];
 d2pad = [d2(:,endpad), d2, d2(:,startpad)];
 dspad = [ds(endpad), ds, ds(startpad)];
 
 rpad = rpad.';
+npad = npad.';
 dpad = dpad.';
 d2pad = d2pad.';
 dspad = dspad(:);
@@ -99,6 +104,7 @@ dspad = dspad(:);
 tmp = fliplr(interp_coeffs);
 dim = trap.dim;
 rinterp = zeros(npt,dim,length(xs));
+ninterp = zeros(npt,dim,length(xs));
 dinterp = zeros(npt,dim,length(xs));
 d2interp = zeros(npt,dim,length(xs));
 dsinterp = zeros(npt,length(xs));
@@ -106,12 +112,14 @@ dsinterp = zeros(npt,length(xs));
 for i = 1:length(xs)
     interpi = tmp(:,i);
     rinterp(:,:,i) = conv2(rpad,interpi,'valid');
+    ninterp(:,:,i) = conv2(npad,interpi,'valid');
     dinterp(:,:,i) = conv2(dpad,interpi,'valid');
     d2interp(:,:,i) = conv2(d2pad,interpi,'valid');    
     dsinterp(:,i) = conv2(dspad,interpi,'valid');
 end
 
 rinterp = permute(rinterp,[2 3 1]);
+ninterp = permute(ninterp,[2 3 1]);
 dinterp = permute(dinterp,[2 3 1]);
 d2interp = permute(d2interp,[2 3 1]);
 dsinterp = dsinterp.';
@@ -120,6 +128,7 @@ dsinterp = dsinterp.';
 
 r = trap.r;
 d = trap.d;
+n = trap.n;
 d2 = trap.d2;
 
 wts = weights(trap);
@@ -127,6 +136,7 @@ wts2 = repmat((wts(:)).',opdims(2),1);
 wts2 = wts2(:);
 
 srcinfo = []; srcinfo.r = r; srcinfo.d = d; srcinfo.d2 = d2;
+srcinfo.n = n;
 sysmat = bsxfun(@times,kern(srcinfo,srcinfo),(wts2(:)).');
 
 %% kill elements too close to diagonal (cyclically speaking)
@@ -157,6 +167,7 @@ else
 
         % spatial locations of support nodes and scaled weights
         ri = rinterp(:,:,i);
+        ni = ninterp(:,:,i);
         di = dinterp(:,:,i);
         d2i = d2interp(:,:,i);
         ds_i = dsinterp(:,i);
@@ -168,8 +179,9 @@ else
 
         % eval kernel and combine
         srcinfo.r = ri; srcinfo.d = di; srcinfo.d2 = d2i;
+        srcinfo.n = ni;
         targinfo.r = r(:,i); targinfo.d = d(:,i); 
-        targinfo.d2 = d2(:,i);
+        targinfo.d2 = d2(:,i); targinfo.n = n(:,i);
         kmat = kern(srcinfo,targinfo).*wh2;
         mattemp = sparse(kmat*interp_coeffs);
         [itemp,jtemp,vtemp] = find(mattemp);

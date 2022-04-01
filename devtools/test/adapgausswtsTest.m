@@ -78,7 +78,7 @@ ich = chnkr.adj(1,j);
 opdims = zeros(2,1);
 opdims(1) = 1; opdims(2) = 1;
 
-r = chnkr.r; d = chnkr.d; h = chnkr.h; d2 = chnkr.d2;
+r = chnkr.r; d = chnkr.d; h = chnkr.h; d2 = chnkr.d2; n =chnkr.n;
 k = chnkr.k; [t,w] = lege.exps(k);
 bw = lege.barywts(k);
 
@@ -88,6 +88,7 @@ k2 = max(27,k+1);
 rt = r(:,:,ich);
 dt = d(:,:,ich);
 d2t = d2(:,:,ich);
+nt = n(:,:,ich);
 dtlen = sqrt(sum(dt.^2,1));
 taut = dt./dtlen;
 
@@ -97,8 +98,8 @@ opts.eps = 1e-5;
 ntimes = 100;
 start = tic;
 for i = 1:ntimes
-    [mat,maxrecs,numints,iers] = chnk.adapgausswts(r,d,d2,h,t,bw,j, ...
-        rt,dt,d2t,fkern,opdims,t2,w2,opts);
+    [mat,maxrecs,numints,iers] = chnk.adapgausswts(r,d,n,d2,h,t,bw,j, ...
+        rt,dt,nt,d2t,fkern,opdims,t2,w2,opts);
 end
 t1 = toc(start);
 
@@ -115,6 +116,3 @@ jend = opdims(1)*j*k;
 matcomp = mat1(istart:iend,jstart:jend);
 
 assert(norm(matcomp-mat,'inf') < 1e-11);
-
-
-

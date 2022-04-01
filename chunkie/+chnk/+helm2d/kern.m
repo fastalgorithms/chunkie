@@ -53,6 +53,7 @@ targ = targinfo.r;
 
 if strcmpi(type,'d')
     srcnorm = chnk.normal2d(srcinfo);
+    srcnorm = srcinfo.n;
     [~,grad] = chnk.helm2d.green(zk,src,targ);
     nx = repmat(srcnorm(1,:),nt,1);
     ny = repmat(srcnorm(2,:),nt,1);
