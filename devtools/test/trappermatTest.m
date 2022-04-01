@@ -54,7 +54,7 @@ axis equal
 %
 
 kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
-%kerns = @(s,t) chnk.helm2d.kern(zk,s,t,'s');
+kerns = @(s,t) chnk.helm2d.kern(zk,s,t,'s');
 
 % eval u on bdry
 
@@ -76,8 +76,7 @@ utarg = kernmatstarg*strengths;
 % build laplace dirichlet matrix
 
 fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
-%fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'D');
-opdims(1) = 1; opdims(2) = 1;
+fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'D');
 
 %start = tic; D = chnk.quadba.buildmat(trap,fkern,quadorder,opdims,'log');
 opts = [];
@@ -106,7 +105,7 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 % evaluate at targets and compare
 
 Dsol = trapperkerneval(trap,fkern,sol,targets,[]);
-fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
+fprintf('%5.2e s : time to eval at targs (smooth rule only)\n',t1)
 
 %
 

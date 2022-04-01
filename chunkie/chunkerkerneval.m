@@ -92,6 +92,7 @@ end
 
 optsflag = []; optsflag.fac = fac;
 flag = flagnear(chnkr,targs,optsflag);
+
 fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens,targs, ...
     flag,opts);
 
@@ -206,7 +207,10 @@ else
 
     pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
         ctr,chnkr,wts,kern,opdims,pr,ptau,pw,pin);
-    F = ifmm(matfun,targsflam,xflam1,200,1e-14,pxyfun);
+    
+    optsifmm=[]; optsifmm.Tmax=Inf;
+    F = ifmm(matfun,targsflam,xflam1,200,1e-14,pxyfun,optsifmm);
+
     fints = ifmm_mv(F,dens(:),matfun);
 
     % delete interactions in flag array (possibly unstable approach)

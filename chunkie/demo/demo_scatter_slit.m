@@ -42,11 +42,6 @@ chnkr1.r = chnkr1.r - [3;0]; % left rectangle
 chnkr2 = chnkr;
 chnkr2.r = chnkr2.r + [3;0]; % right rectangle
 
-
-% OK, this is clunky. For now, using an array of chnkrs helps with
-% plotting reasonably... the merged chunker doesn't have the data about
-% which piece of the geometry each chunk belongs to.
-
 chnkrs = [chnkr1,chnkr2];
 chnkr = merge(chnkrs);
 

@@ -58,8 +58,6 @@ plot3(x(:),y(:),z(:))
 % build laplace dirichlet matrix
 
 fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
-opdims(1) = 1; opdims(2) = 1;
-intparams.intorder = chnkr.k;
 start = tic; D = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
