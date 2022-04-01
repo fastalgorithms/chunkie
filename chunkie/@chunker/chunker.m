@@ -12,6 +12,7 @@ classdef chunker
         d2stor
         adjstor
         hstor
+        nstor
         datastor
         verttol
         wstor
@@ -23,6 +24,7 @@ classdef chunker
         d2
         adj
         h
+        n
         data
     end
     properties(SetAccess=private)
@@ -58,6 +60,7 @@ classdef chunker
             obj.nch = 0;
             obj.rstor = zeros(dim,k,nchstor);
             obj.dstor = zeros(dim,k,nchstor);
+            obj.nstor = zeros(dim,k,nchstor);
             obj.d2stor = zeros(dim,k,nchstor);
             obj.adjstor = zeros(2,nchstor);
             obj.hstor = zeros(nchstor,1);
@@ -82,6 +85,9 @@ classdef chunker
         function h = get.h(obj)
             h = obj.hstor(1:obj.nch);
         end
+        function n = get.n(obj)
+            n = obj.nstor(:,:,1:obj.nch);
+        end
         function data = get.data(obj)
             data = obj.datastor(:,:,1:(obj.nch*obj.hasdata));
         end
@@ -94,6 +100,9 @@ classdef chunker
         function obj = set.d(obj,val)
             obj.dstor(:,:,1:obj.nch) = val;
         end
+        function obj = set.n(obj,val)
+            obj.nstor(:,:,1:obj.nch) = val;
+        end        
         function obj = set.d2(obj,val)
             obj.d2stor(:,:,1:obj.nch) = val;
         end
@@ -148,18 +157,21 @@ classdef chunker
                 'perhaps something went wrong. otherwise, increase nchmax']);
             rtemp = obj.r;
             dtemp = obj.d;
+            ntemp = obj.n;
             d2temp = obj.d2;
             adjtemp = obj.adj;
             htemp = obj.h;
             datatemp = obj.data;
             obj.rstor = zeros(obj.dim,obj.k,nchstornew);
             obj.dstor = zeros(obj.dim,obj.k,nchstornew);
+            obj.nstor = zeros(obj.dim,obj.k,nchstornew);
             obj.d2stor = zeros(obj.dim,obj.k,nchstornew);
             obj.adjstor = zeros(2,nchstornew);
             obj.hstor = zeros(nchstornew,1);
             obj.datastor = zeros(obj.datadim,obj.k,nchstornew);
             obj.r = rtemp;
             obj.d = dtemp;
+            obj.n = ntemp;
             obj.d2 = d2temp;
             obj.adj = adjtemp;
             obj.h = htemp;

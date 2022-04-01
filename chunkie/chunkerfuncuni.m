@@ -112,4 +112,7 @@ end
 
 chnkr.adj = adjs(:,1:nch);
 
+% Set normals
+chnkr.n = normals(chnkr);
+
 end

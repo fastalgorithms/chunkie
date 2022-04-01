@@ -1,9 +1,48 @@
-function [sysmat] = buildmat(chnkr,kern,opdims,type)
+function [sysmat] = buildmat(chnkr,kern,opdims,type,auxquads,ilist)
 %CHNK.QUADGGQ.BUILDMAT build matrix for given kernel and chnkr 
 % description of boundary, using special quadrature for self
 % and neighbor panels.
 %
-%  
+% Input:
+%   chnkr - chunker object describing boundary
+%   kern  - kernel function. By default, this should be a function handle
+%           accepting input of the form kern(srcinfo,targinfo), where srcinfo
+%           and targinfo are in the ptinfo struct format, i.e.
+%                ptinfo.r - positions (2,:) array
+%                ptinfo.d - first derivative in underlying
+%                     parameterization (2,:)
+%                ptinfo.n - unit normals (2,:)
+%                ptinfo.d2 - second derivative in underlying
+%                     parameterization (2,:)
+%   opdims - (2) dimension of the kernel, for scalar kernels opdims(1:2) = 1;
+%
+% Optional input: quantities in brackets indicate default settings
+%  type - string ('log'), type of singularity of kernel. Type
+%          can take on the following arguments:
+%             log => logarithmically singular kernels
+%             pv => principal value singular kernels
+%             hs => hypersingular kernels
+%  auxquads - struct (chnk.quadggq.setuplogquads), structure containing
+%             auxilliary quadrature nodes, weights and related
+%             interpolation matrices.
+%  ilist - cell array of integer arrays ([]), list of panel interactions that 
+%          should be ignored when constructing matrix entries or quadrature
+%          corrections. 
+%
+% Ouput:
+%   sysmat - the system matrix for discretizing integral operator whose kernel 
+%            is defined by kern with a density on the domain defined by chnkr
+% 
+% NB: if type and auxquads are both present then auxquads will be used 
+%       independent of type.
+
+if (nargin < 3)
+    error('not enough arguments in chnk.quadggq.buildmat');
+end
+
+if (nargin <6)
+    ilist = [];
+end
 
 k = chnkr.k;
 nch = chnkr.nch;
@@ -12,35 +51,36 @@ adj = chnkr.adj;
 d = chnkr.d;
 d2 = chnkr.d2;
 h = chnkr.h;
+n = chnkr.n;
 
-[~,wts,u] = lege.exps(k);
-
-if strcmpi(type,'log')
-
-    qavail = chnk.quadggq.logavail();
-    [~,i] = min(abs(qavail-k));
-    assert(qavail(i) == k,'order %d not found, consider using order %d chunks', ...
-        k,qavail(i));
-    [xs1,wts1,xs0,wts0] = chnk.quadggq.getlogquad(k);
-else
-    error('type not available')
+data = [];
+if (chnkr.hasdata)
+    data = chnkr.data;
 end
 
-ainterp1 = lege.matrin(k,xs1);
-temp = eye(opdims(2));
-ainterp1kron = kron(ainterp1,temp);
+[~,wts] = lege.exps(k);
 
-nquad0 = size(xs0,1);
+if (nargin == 4)
+    if strcmpi(type,'log')
+        auxquads = chnk.quadggq.setuplogquad(k,opdims);
+    end
+end 
 
-ainterps0kron = zeros(opdims(2)*nquad0,opdims(2)*k,k);
-ainterps0 = zeros(nquad0,k,k);
-
-for j = 1:k
-    xs0j = xs0(:,j);
-    ainterp0_sm = lege.matrin(k,xs0j);
-    ainterps0(:,:,j) = ainterp0_sm;
-    ainterps0kron(:,:,j) = kron(ainterp0_sm,temp);
+if (nargin<4)
+     auxquads = chnk.quadggq.setuplogquad(k,opdims);
 end
+
+    
+xs1 = auxquads.xs1;
+wts1 = auxquads.wts1;
+xs0 = auxquads.xs0;
+wts0 = auxquads.wts0;
+
+ainterp1 = auxquads.ainterp1;
+ainterp1kron = auxquads.ainterp1kron;
+
+ainterps0 = auxquads.ainterps0;
+ainterps0kron = auxquads.ainterps0kron;
 
 % do smooth weight for all
 sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims,1:nch,1:nch,wts);
@@ -57,34 +97,45 @@ for j = 1:nch
     % neighbors
     
     if ibefore > 0
-        submat = chnk.quadggq.nearbuildmat(r,d,d2,h,ibefore,j, ...
-            kern,opdims,u,xs1,wts1,ainterp1kron,ainterp1);
+        if ~isempty(ilist) && ismember(ibefore,ilist) && ismember(j,ilist) 
+        % skip construction if both chunks are in the "bad" chunk list
+        else
+            submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,data,ibefore,j, ...
+                kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
     
-        imat = 1 + (ibefore-1)*k*opdims(1);
-        imatend = ibefore*k*opdims(1);
+            imat = 1 + (ibefore-1)*k*opdims(1);
+            imatend = ibefore*k*opdims(1);
 
-        sysmat(imat:imatend,jmat:jmatend) = submat;
+            sysmat(imat:imatend,jmat:jmatend) = submat;
+        end
     end
     
     if iafter > 0
-        submat = chnk.quadggq.nearbuildmat(r,d,d2,h,iafter,j, ...
-            kern,opdims,u,xs1,wts1,ainterp1kron,ainterp1);
+      if ~isempty(ilist) && ismember(iafter,ilist) && ismember(j,ilist) 
+        % skip construction if both chunks are in the "bad" chunk list
+      else      
+        submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,data,iafter,j, ...
+            kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
 
         imat = 1 + (iafter-1)*k*opdims(1);
         imatend = iafter*k*opdims(1);
         
         sysmat(imat:imatend,jmat:jmatend) = submat;
+      end
     end
     
     % self
-    
-    submat = chnk.quadggq.diagbuildmat(r,d,d2,h,j,kern,opdims,...
-        u,xs0,wts0,ainterps0kron,ainterps0);
+    if ~isempty(ilist) && ismember(j,ilist) 
+      % skip construction if the chunk is in the "bad" chunk list  
+    else
+      submat = chnk.quadggq.diagbuildmat(r,d,n,d2,h,data,j,kern,opdims,...
+          xs0,wts0,ainterps0kron,ainterps0);
 
-    imat = 1 + (j-1)*k*opdims(1);
-    imatend = j*k*opdims(1);
+      imat = 1 + (j-1)*k*opdims(1);
+      imatend = j*k*opdims(1);
 
-    sysmat(imat:imatend,jmat:jmatend) = submat;
+      sysmat(imat:imatend,jmat:jmatend) = submat;
+    end
     
 end
 	 

@@ -349,6 +349,10 @@ if ifclosed
     chnkr.adj(1,1) = nch;
     chnkr.adj(2,nch) = 1;
 end
+
+% compute normals
+
+chnkr.n = normals(chnkr);
     
 end
 

@@ -38,7 +38,13 @@ for i = 1:length(obj)
             ys = [ys(:); ys(1)];
         end
 
-        plot(xs,ys,varargin{:})
+        if isreal(xs)
+            plot(xs,ys,varargin{:})
+        else
+            plot(real(xs),ys,varargin{:})
+            hold on;
+            plot(real(xs),imag(xs),'b-')
+        end
         hold on
         istart = istart+nchs(ii);
     end
