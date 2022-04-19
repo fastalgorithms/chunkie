@@ -33,6 +33,7 @@ chnkr.r = chnkr.r(:,:,inds);
 chnkr.d = chnkr.d(:,:,inds);
 chnkr.d2 = chnkr.d2(:,:,inds);
 chnkr.h = chnkr.h(inds);
+chnkr.n = chnkr.n(:,:,inds);
 
 indinv = 1:length(inds);
 indinv(inds) = 1:length(inds);

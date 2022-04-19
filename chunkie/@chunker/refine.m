@@ -315,6 +315,8 @@ for ijk = 1:nover
 
 end
 
+chnkr.n = normals(chnkr);
+
 end
 
 
