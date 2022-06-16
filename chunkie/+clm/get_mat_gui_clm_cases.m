@@ -139,10 +139,11 @@ function [M,RG] = get_mat_gui_clm_cases(chnkr,clmparams,icase,opts)
           h0 = h0*2; % note the factor of 2 here!!!!
 
           nsub = 20; % level of dyadic refinement in the forward recursion for computing R
-
-          R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
+          fkeruse = @(s,ilistl) clm.buildmat_fast(s,rparslocal,opts_rcip,opdims,...
+               glwts,ilistl,logquad);
+          R{icorner} = rcip.Rcomp_fast_general(ngl,nedge,ndim,Pbc,PWbc,nsub,...
             starL,circL,starS,circS,ilist,...
-            h0,isstart,fcurvelocal,rparslocal,opts_rcip,opdims,glnodes,glwts,logquad);
+            h0,isstart,fcurvelocal,glnodes,fkeruse);
         end
 
         starind = [];
@@ -156,7 +157,7 @@ function [M,RG] = get_mat_gui_clm_cases(chnkr,clmparams,icase,opts)
 
         M(starind,starind) = 0;
 
-        if issymmetric && mod(icorner,2)==0
+        if issymmetric && mod(icorner,2)==0 
           % due to pointwise block structure, need to reverse the order for
           % each edge, while keeping the same order of 2x2 blocks.
           R11 = R{icorner-1}(1:2:end,1:2:end);

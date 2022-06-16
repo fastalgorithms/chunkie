@@ -145,12 +145,12 @@ title('Boundary curves','Interpreter','LaTeX','FontSize',fontsize)
 xlabel('$x_1$','Interpreter','LaTeX','FontSize',fontsize)
 ylabel('$x_2$','Interpreter','LaTeX','FontSize',fontsize)
 
-x = clm.get_region_pts_gui(chnkr,clmparams,2);
-%plot(x(1,:),x(2,:),'g-','LineWidth',3)
-xlim([-8,8])
-ylim([-12,4])
-drawnow
-return
+% x = clm.get_region_pts_gui(chnkr,clmparams,2);
+% %plot(x(1,:),x(2,:),'g-','LineWidth',3)
+% xlim([-8,8])
+% ylim([-12,4])
+% drawnow
+
 
 % figure(2)
 % clf
@@ -256,6 +256,8 @@ if 1==1
     clm.fieldplot(uexact,chnkr,xg,yg,xylim,ngr,fontsize)
     title('Exact solution','Interpreter','LaTeX','FontSize',fontsize)
 end
+
+return
 
 % the incident wave is a plane wave
 
