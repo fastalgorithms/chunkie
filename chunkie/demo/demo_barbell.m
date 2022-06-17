@@ -16,7 +16,7 @@ addpaths_loc();
 % (vertices defined by another function)
 verts = chnk.demo.barbell(2.0,2.0,1.0,1.0);
 nv = size(verts,2);
-edgevals = rand(1,nv);
+edgevals = randn(1,nv);
 
 % parameters for curve rounding/chunking routine to oversample boundary
 cparams = [];
@@ -24,16 +24,11 @@ cparams.widths = 0.1*ones(size(verts,2),1);% width to cut about each corner
 cparams.eps = 1e-6; % tolerance at which to resolve curve
 cparams.rounded = true;
 
-% parameters for chunk discretization
-p.k = 16; p.dim = 2;
-
 % call smoothed-polygon chunking routine
 % a smoothed version of edgevals is returned in 
 % chnkr.data
-chnkr = chunkerpoly(verts,cparams,p,edgevals);
-chnkr = chnkr.refine(); chnkr = chnkr.sort();
-[~,~,info] = sortinfo(chnkr);
-assert(info.ier == 0);
+chnkr = chunkerpoly(verts,cparams,[],edgevals);
+chnkr = chnkr.refine();
 
 %
 % plot smoothed geometry and data
@@ -58,7 +53,8 @@ plot3(x(:),y(:),z(:))
 % build laplace dirichlet matrix
 
 fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
-start = tic; D = chunkermat(chnkr,fkern);
+opts = [];
+start = tic; D = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
