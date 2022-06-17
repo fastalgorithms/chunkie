@@ -1,4 +1,6 @@
-chunkie/+chnk/+helm2d/.DS_Store
-.DS_Store
-chunkie/.DS_Store
-chunkie/+chnk/.DS_Store
+# Mac OS files
+.DS_Store?
+
+# Matlab autosaves
+*.~
+*.asv
