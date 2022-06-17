@@ -1,4 +1,4 @@
-function [pot,varargout] = fmm(eps,zk,srcinfo,targinfo,type,sigma,pgt,varargin)
+function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 %CHNK.HELM2D.FMM fast multipole methods for evaluating helmholtz layer
 %potentials, their gradients, and hessians
 % 
@@ -45,25 +45,27 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targinfo,type,sigma,pgt,varargin)
 % see also CHNK.HELM2D.FMM
 %
    srcuse = [];
-   srcuse.sources = srcinfo.r(2,:);
+   srcuse.sources = srcinfo.r(1:2,:);
    if strcmpi(type,'s')
       srcuse.charges = sigma(:).';
    end
    if strcmpi(type,'d')
-      srcuse.dipstr = sigma(:).';;
-      srcuse.dipvec = srcinfo.n(2,:);
+      srcuse.dipstr = sigma(:).';
+      srcuse.dipvec = srcinfo.n(1:2,:);
    end
    if strcmpi(type,'c')
      eta = varargin{1};
-     srcuse.dipstr = sigma(:).';;
-     srcuse.dipvec = srcinfo.n(2,:);
+     srcuse.dipstr = sigma(:).';
+     srcuse.dipvec = srcinfo.n(1:2,:);
      srcuse.charges = eta*sigma(:).';
    end
-   targuse = targinfo.r(:);
-   [~,nt] = size(targ);
-   pg = 0
-   U = hfmm2d(eps,zk,srcuse,pg,targuse,pgt);
-   pot = U.pottarg;
-   if(pgt>=2) varargout{1} = U.gradtarg;
-   if(pgt==3) varargout{3} = U.hesstarg;
+   pg = 0;
+   U = hfmm2d(eps,zk,srcuse,pg,targ,pgt);
+   pot = U.pottarg.';
+   if(pgt>=2) 
+       varargout{1} = U.gradtarg; 
+   end
+   if(pgt==3) 
+       varargout{2} = U.hesstarg; 
+   end
 end
