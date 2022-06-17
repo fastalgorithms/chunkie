@@ -1,3 +1,7 @@
 [submodule "FLAM"]
 	path = chunkie/FLAM
 	url = https://github.com/klho/FLAM.git
+
+[submodule "chunkie/fmm2d"]
+	path = chunkie/fmm2d
+	url = https://github.com/flatironinstitute/fmm2d.git
