@@ -14,4 +14,4 @@ jobs:
       - name: Run commands
         uses: matlab-actions/run-command@v0
         with:
-          command: cd('./devtools/test'); res = runtest; assert(all([res.Passed]))
+          command: cd('./devtools/test'); res = runtests; assert(all([res.Passed]))
