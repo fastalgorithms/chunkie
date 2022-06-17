@@ -107,8 +107,14 @@ ifprocess = zeros(nchmax,1);
 %       as the interpolation/coefficients matrices
 
 k2 = 2*k;
-[xs,ws] = lege.exps(k);
-[xs2,~,u2] = lege.exps(k2);   
+[xs,ws,us,vs] = lege.exps(k);
+[xs2,ws2,u2] = lege.exps(k2);   
+
+xs2p = ((1:k2)-1)/(k2-1)*2-1;
+[polvals,~] = lege.pols(xs2p,k-1);
+interp_xs = reshape(polvals,[k,k2]).'*us; 
+
+
 
 %       . . . start chunking
 
@@ -127,44 +133,73 @@ end
 nchnew=nch;
 
 maxiter_res=10000;
+
+rad_curr = 0;
 for ijk = 1:maxiter_res
 
 %       loop through all existing chunks, if resolved store, if not split
-
+    xmin =  Inf;
+    xmax = -Inf;
+    ymin =  Inf;
+    ymax = -Inf;
+    
     ifdone=1;
     for ich=1:nchnew
 
         if (ifprocess(ich) ~= 1)
             ifprocess(ich)=1;
-            a=ab(1,ich);
-            b=ab(2,ich);
 
-            ts = a + (b-a)*(xs2+1)/2.0;
-            [out{:}] = fcurve(ts);
-            if nout > 1
-                ds = sqrt(sum(out{2}.^2,1));
-                ds = ds(:);
-            else
-                ds = zeros(k,1);
-            end
-            
-            fvals = ds;
-            for i = 1:nout
-                fvals = [fvals out{i}.'];
-            end
-            
-            coefs = u2*fvals;
-            errs0 = sum(abs(coefs(1:k,:)).^2,1);
-            errs = sum(abs(coefs(k+1:k2,:)).^2,1);
-            rmsemax = max(sqrt(errs./errs0/k));
             a=ab(1,ich);
             b=ab(2,ich);
             rlself = chunklength(fcurve,a,b,xs,ws);
+           
+            ts = a + (b-a)*(xs2+1)/2.0;
+            [r,d,d2] = fcurve(ts);
+            
+            zd = d(1,:)+1i*d(2,:);
+            vd = abs(zd);
+            zdd= d2(1,:)+1i*d2(2,:);
+            dkappa = imag(zdd.*conj(zd))./abs(zd).^2;
 
+            cfs = u2*vd.';
+            errs0 = sum(abs(cfs(1:k)).^2,1);
+            errs = sum(abs(cfs(k+1:k2)).^2,1);
+            err1 = sqrt(errs/errs0/k);
+            
+            resol_speed_test = err1>eps;
+            
+            xmax = max(xmax,max(r(1,:)));
+            ymax = max(ymax,max(r(2,:)));
+            xmin = min(xmin,min(r(1,:)));
+            ymin = min(ymin,min(r(2,:)));
+            
+            cfsx = u2*r(1,:).';
+            cfsy = u2*r(2,:).';
+            errx = sum(abs(cfsx(k+1:k2)).^2/k,1);
+            erry = sum(abs(cfsy(k+1:k2)).^2/k,1);
+            errx = sqrt(errx);
+            erry = sqrt(erry);
+            
+            resol_curve_test = true;
+            
+            if (ijk >1)
+                if (errx/rad_curr<eps && erry/rad_curr<eps)
+                    resol_curve_test = false;
+                end
+            end    
+
+
+           total_curve = (b-a)/2*sum(abs(dkappa).*ws2.');
+           total_curve_test = total_curve >= (2*pi)/3;
+
+           
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
 
      %       . . . mark as processed and resolved if less than eps
 
-            if (rmsemax > eps || rlself > maxchunklen || ...
+            if (resol_speed_test || resol_curve_test  || ... 
+                   total_curve_test || rlself > maxchunklen || ...
                     and(or(adjs(1,ich) <= 0, adjs(2,ich) <= 0), ...
                 rlself > chsmall))
               %       . . . if here, not resolved
@@ -216,7 +251,10 @@ for ijk = 1:maxiter_res
         break;
     end
     nchnew=nch;
+    
+    rad_curr = max(xmax-xmin,ymax-ymin);
 end
+
 
 %       the curve should be resolved to precision eps now on
 %       each interval ab(,i)
