@@ -102,17 +102,19 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 wchnkr = weights(chnkr);
 
 % evaluate at targets using FMM and compare
-    
-sol_use = sol2.*wchnkr(:);
-eps = 1e-6;
-pgt = 1;
-pot = chnk.helm2d.fmm(eps,zk,chnkr,targets,'D',sol_use,pgt);
+iffmm = 0;
 
-relerr = norm(utarg-pot,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
-relerr2 = norm(utarg-pot,'inf')/dot(abs(sol(:)),wchnkr(:));
-fprintf('relative frobenius error %5.2e\n',relerr);
-fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
+if(iffmm)
+    sol_use = sol2.*wchnkr(:);
+    eps = 1e-6;
+    pgt = 1;
+    pot = chnk.helm2d.fmm(eps,zk,chnkr,targets,'D',sol_use,pgt);
 
-assert(relerr < eps);
+    relerr = norm(utarg-pot,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
+    relerr2 = norm(utarg-pot,'inf')/dot(abs(sol(:)),wchnkr(:));
+    fprintf('relative frobenius error %5.2e\n',relerr);
+    fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
+    assert(relerr < eps);
+end
 
