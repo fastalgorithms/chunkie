@@ -50,23 +50,24 @@ in the distribution (see chunkie/LICENSE.md)
 - The fmm2d mex installation is currently not supported on Windows, to
   complete the mex installation, follow instructions on the [fmm2d documentation](https://fmm2d.readthedocs.io/en/latest/install.html) 
 - fmm2d mex installation depends on gfortran. In case a compiler is not
-  found, the installation will be skipped. To obtain gfortran on MacOS,
-  get Xcode, and command line tools using
-
-    xcode-select --install
+  found, the installation will be skipped. 
+  
+  * Installing dependencies on MacOS
+    Get xcode, command line tools by running
     
-  Then install Homebrew from https://brew.sh, and finally install
-  gfortran using
+        xcode-select --install
     
-    brew install gcc
+    Then install Homebrew from https://brew.sh, and finally install gfortran using
+  
+        brew install gcc
 
-  On ubuntu linux run
+  * Ubuntu linux
 
-    sudo apt-get install make build-essential gfortran
+        sudo apt-get install make build-essential gfortran
 
-  On fedora/centOS linux run
+  * Fedora/centOS linux
 
-    sudo yum install make gcc gcc-c++ gcc-gfortran libgomp
+        sudo yum install make gcc gcc-c++ gcc-gfortran libgomp
 
 - If installing without submodules, chunkie depends on [FLAM](https://github.com/klho/FLAM), 
 and optionally on the
