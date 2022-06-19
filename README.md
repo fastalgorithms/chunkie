@@ -50,9 +50,10 @@ in the distribution (see chunkie/LICENSE.md)
 - The fmm2d mex installation is currently not supported on Windows, to
   complete the mex installation, follow instructions on the [fmm2d documentation](https://fmm2d.readthedocs.io/en/latest/install.html) 
 - fmm2d mex installation depends on gfortran. In case a compiler is not
-  found, the installation will be skipped. 
+  found, the installation will be skipped. To install dependencies follow the procedure below based on your OS
   
-  * Installing dependencies on MacOS
+  * MacOS
+  
     Get xcode, command line tools by running
     
         xcode-select --install
