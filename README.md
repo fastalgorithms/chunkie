@@ -54,6 +54,7 @@ in the distribution (see chunkie/LICENSE.md)
   get Xcode, and command line tools using
 
     xcode-select --install
+    
   Then install Homebrew from https://brew.sh, and finally install
   gfortran using
     
