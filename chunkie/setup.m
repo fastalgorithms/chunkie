@@ -1,2 +1,0 @@
-addpath('.')
-addpath(genpath('FLAM'))
