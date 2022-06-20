@@ -1,2 +1,6 @@
-*.DS_Store
+# Mac OS files
+.DS_Store?
+
+# Matlab autosaves
+*.~
 *.asv
