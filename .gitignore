@@ -4,3 +4,4 @@
 # Matlab autosaves
 *.~
 *.asv
+*.DS_STORE
