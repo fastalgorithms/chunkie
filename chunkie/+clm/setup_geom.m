@@ -339,7 +339,11 @@ function [clmparams] = setup_geom(geom_class)
         corners{i}.isstart = isstart{i};
         corners{i}.nedge = length(clist{i});
     end
-    clmparams.issymmetric = 1;
+
+    clmparams.issymmetric = 0;
+    if(isfield(geom_class,'issymmetric'))
+       clmparams.issymmetric = geom_class.issymmetric
+    end
     clmparams.corners = corners;
     clmparams.ncorner = ncorner;
     
