@@ -21,24 +21,12 @@ function quiver(obj,varargin)
 
 ifhold = ishold();
 
-for i = 1:length(obj)
-    tmp = obj(i);
-    assert(tmp.dim == 2,'for quiver plot must be 2D chunker');
+hold on
 
-    tmp = sort(tmp);
-    xs = tmp.r(1,:,:); xs = xs(:);
-    ys = tmp.r(2,:,:); ys = ys(:);
-
-    rnorms = normals(tmp);
-
-    u = rnorms(1,:,:); u = u(:);
-    v = rnorms(2,:,:); v = v(:);
-
-    quiver(xs,ys,u,v,varargin{:});
-    hold on
+for i=1:numel(obj.echnks)
+    quiver(obj.echnks(i),varargin{:});
+end    
     
-end
-
 hold off
 
 if ifhold
