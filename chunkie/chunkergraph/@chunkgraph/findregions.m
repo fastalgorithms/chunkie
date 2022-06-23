@@ -1,6 +1,10 @@
 function [regions] = findregions(obj)
 
-vstruc = procverts(obj);
+if (isfield(obj,'vstruc'))
+    vstruc = obj.vstruc;
+else
+    vstruc = procverts(obj);
+end    
 nedge  = size(obj.edge2verts,1);
 e2v    = obj.edge2verts;
 
@@ -42,7 +46,9 @@ while (numel(edges)>0)
     end  
     
     nregions = nregions + 1;
-    regions{nregions} = ecycle;
+    rcurr = {};
+    rcurr{1} = ecycle;
+    regions{nregions} = rcurr;
     
     
 end

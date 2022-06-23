@@ -1,4 +1,4 @@
-function obj = skew(obj,r0,r1,trotat,scale)
+function obj = move(obj,r0,r1,trotat,scale)
 
     
 rsize   = size(obj.r);

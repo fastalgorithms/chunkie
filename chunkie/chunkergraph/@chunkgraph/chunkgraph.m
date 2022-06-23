@@ -4,6 +4,8 @@ classdef chunkgraph
         verts
         edge2verts
         echnks
+        regions
+        vstruc
     end
 
     properties(Dependent,SetAccess=private)

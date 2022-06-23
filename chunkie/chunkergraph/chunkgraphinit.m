@@ -26,8 +26,12 @@ function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs)
             i2 = find(edge2verts(i,:)==1);
             v1 = verts(:,i1);
             v2 = verts(:,i2);
+            v1
+            v2
             fcurve = @(t) linefunc(t,v1,v2);
             chnkr = chunkerfunc(fcurve,cparams,pref);
+            chnkr.h
+            %chnkr.vert = [v1,v2];
             echnks(i) = chnkr;
         elseif (~isempty(fchnks{i}) && isa(fchnks{i},'function_handle'))
             [vs,~,~] =fchnks{i}([0,1]);
@@ -45,11 +49,14 @@ function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs)
             tini = atan2(ydini,xdini);
             trotat = tfin - tini;
             
-            chnkr = skew(chnkr,r0,r1,trotat,scale);
-            
+            chnkr = move(chnkr,r0,r1,trotat,scale);
+            %chnkr.vert = [vfin0,vfin1];
             echnks(i) = chnkr;
         end   
     end    
     cgrph.echnks = echnks;
+    cgrph.vstruc = procverts(cgrph);
+    [regions] = findregions(cgrph);
+    cgrph.regions = regions;
 end
 
