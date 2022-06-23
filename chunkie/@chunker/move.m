@@ -15,7 +15,7 @@ d2new = scale*rotmat*(obj.d2(:,:));
 obj.d2 = reshape(d2new,rsize);
 
 if (isfield(obj,'n'))
-    nnew = scale*rotmat*(obj.n(:,:));
+    nnew = rotmat*(obj.n(:,:));
     obj.n = reshape(nnew,rsize);
 end
 
