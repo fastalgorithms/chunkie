@@ -1,4 +1,4 @@
-function [regions] = findregions(obj)
+function [regions] = findregions(obj,iverts)
 
 if (isfield(obj,'vstruc'))
     vstruc = obj.vstruc;
@@ -9,6 +9,13 @@ nedge  = size(obj.edge2verts,1);
 e2v    = obj.edge2verts;
 
 edges = [1:nedge,-(1:nedge)];
+
+if (nargin >1)
+    e2vtmp = e2v(:,iverts);
+    [iinds,jinds] = find(e2vtmp ~= 0);
+    iinds = unique(iinds);
+    edges = [iinds,-iinds];
+end    
 
 regions = {};
 nregions = 0;

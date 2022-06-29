@@ -9,12 +9,7 @@ classdef chunkgraph
     end
 
     properties(Dependent,SetAccess=private)
-        k
-        dim
-        npt
-        datadim
-        nvert
-        vertdeg
+
     end
     
     methods

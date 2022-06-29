@@ -39,15 +39,14 @@ function [obj] = balance(obj)
         else
             wleg = wleg16;
         end    
-        size(ds(1,:))
-        size(wleg)
+
         arc = sum(sqrt(ds(1,:).^2+ds(2,:).^2).*wleg'*h);
         parcl(ii) = arc;
           
     end    
     
-    amin = min(parcl)
-    [amax,ind] = max(parcl)
+    amin = min(parcl);
+    [amax,ind] = max(parcl);
     ind = ind(1);
     n2ref = floor(log(amax/amin)/log(2));
     
@@ -56,7 +55,6 @@ function [obj] = balance(obj)
         opts = [];
         opts.lvlrfac = 'a';
         for ilev = 1:n2ref
-            'refine'
             opts.splitchunks=([pinds(ind)]);
             if (pinds(ind)>1)
                 pinds(ind) = pinds(ind)+1;
