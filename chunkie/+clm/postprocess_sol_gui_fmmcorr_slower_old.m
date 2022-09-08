@@ -35,12 +35,17 @@ function [u,gradu] = postprocess_sol_gui_fmmcorr_slower_old(chnkr,clmparams,targ
     dens_c = sol(2:2:2*npts).*wts;
     srcinfo.sources = r(:,irind);
     srcinfo.dipvec = rnorms(:,irind);
-    srcinfo.charges = dens_c(irind);
+    srcinfo.charges = dens_c(irind).';
     
+    pg = 0;
+    pgt = 2;
     for i=1:ndomain
         if ~isempty(list{i})
-            srcinfo.dipstr = dens_d(irind)*coef(i);
-            [u(list{i}),gradu(:,list{i})] = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));
+            srcinfo.dipstr = (dens_d(irind)*coef(i)).';
+            [UU] = hfmm2d(eps0,k(i),srcinfo,pg,targs(:,list{i}),pgt);
+            u(list{i}) = UU.pottarg;
+            gradu(:,list{i}) = UU.gradtarg;
+
             srcinfo.r = r(:,iiind);
             srcinfo.n = rnorms(:,iiind);
             targinfo.r = targs(:,list{i});

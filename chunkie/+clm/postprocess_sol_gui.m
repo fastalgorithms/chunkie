@@ -20,6 +20,8 @@ function [u,gradu] = postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,s
     end
     
     chnkrtotal = merge(chnkr);
+    pg = 0;
+    pgt = 2;
     for i=1:ndomain
         if ~isempty(list{i})
             r = chnkrtotal.r;
@@ -33,9 +35,11 @@ function [u,gradu] = postprocess_sol_gui(chnkr,clmparams,targs,targdomain,eps0,s
             dens_c = sol(2:2:2*npts);
             srcinfo.sources = r;
             srcinfo.dipvec = rnorms;
-            srcinfo.charges = dens_c.*wts;
-            srcinfo.dipstr = dens_d.*wts*coef(i);
-            [u(list{i}),gradu(:,list{i})] = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));  
+            srcinfo.charges = (dens_c.*wts).';
+            srcinfo.dipstr = (dens_d.*wts*coef(i)).';
+            UU = hfmm2d(eps0,k(i),srcinfo,pg,targs(:,list{i}),pgt);  
+            u(list{i}) = UU.pottarg;
+            gradu(:,list{i}) = UU.gradtarg;
             j=i+1;
             if j > ndomain
               j = j - ndomain;

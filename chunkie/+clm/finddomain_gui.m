@@ -36,7 +36,7 @@ for j=1:ndomain
           ns = ns + length(zsrc{kcurve});
       end
       srcinfo.sources = zeros(2,ns);
-      srcinfo.dipstr = complex(zeros(ns,1));
+      srcinfo.dipstr = complex(zeros(1,ns));
       istart = 1;
       for k=1:length(clmparams.clist{j})
 
@@ -54,9 +54,10 @@ for j=1:ndomain
         end
         istart = istart + nc;
       end
-
-      pot = cfmm2d(eps0,srcinfo,targs);
-      pot = round(pot/(2*pi*1i));
+      pg = 0;
+      pgt = 1;
+      U = cfmm2d(eps0,srcinfo,pg,targs,pgt);
+      pot = round(real(U.pottarg/(2*pi*1i)));
       targdomain(pot==1) = j;
     end
 end

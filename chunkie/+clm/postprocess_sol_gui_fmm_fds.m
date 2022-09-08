@@ -35,7 +35,7 @@ function [u,gradu] = postprocess_sol_gui_fmm_fds(chnkr,clmparams,targs,targdomai
     dens_c = sol(2:2:2*npts).*wts;
     srcinfo.sources = r(:,irind);
     srcinfo.dipvec = rnorms(:,irind);
-    srcinfo.charges = dens_c(irind);
+    srcinfo.charges = dens_c(irind).';
     
     r_im = r(:,iiind);
     rnorms_im = rnorms(:,iiind);
@@ -48,11 +48,14 @@ function [u,gradu] = postprocess_sol_gui_fmm_fds(chnkr,clmparams,targs,targdomai
     dens_d_im = dens_d(iiind);
     dens_d_skel = exp_mat*dens_d_im;
     
-    
+    pg = 0;
+    pgt = 2;
     for i=1:ndomain
         if ~isempty(list{i})
-            srcinfo.dipstr = dens_d(irind)*coef(i);
-            [u(list{i}),gradu(:,list{i})] = hfmm2d(eps0,k(i),srcinfo,targs(:,list{i}));
+            srcinfo.dipstr = dens_d(irind).'*coef(i);
+            [UU] = hfmm2d(eps0,k(i),srcinfo,pg,targs(:,list{i}),pgt);
+            u(list{i}) = UU.pottarg;
+            gradu(:,list{i}) = UU.gradtarg;
             srcinfo.r = r_skel_im;
             srcinfo.n = rnorms_skel_im;
             
