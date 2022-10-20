@@ -9,7 +9,7 @@
 
 clearvars; close all;
 iseed = 8675309;
-rng(iseed);
+rng(iseed,'twister');
 addpaths_loc();
 
 % define geometry and boundary conditions
@@ -43,10 +43,7 @@ axis equal
 figure(2)
 clf
 nchplot = 1:chnkr.nch;
-x = chnkr.r(1,:,nchplot);
-y =chnkr.r(2,:,nchplot);
-z = chnkr.data(1,:,nchplot);
-plot3(x(:),y(:),z(:))
+plot3(chnkr,1)
 
 % solve and visualize the solution
 
