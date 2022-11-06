@@ -67,7 +67,7 @@ format long e
 format compact
 
 
-geom_class = clm.read_geom_clm8();
+geom_class = clm.read_geom_clm9();
 clmparams = clm.setup_geom(geom_class);
 
 
@@ -97,7 +97,7 @@ plot(x(1,:),x(2,:),'g-','LineWidth',3)
 xlim(clmparams.xylim(1:2))
 ylim(clmparams.xylim(3:4))
 drawnow
-return
+
 
 
 % figure(2)
@@ -173,7 +173,7 @@ disp('Now check the accuracy of numerical solutions')
 disp('Exact value               Numerical value           Error')  
 fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(uerror)'])
 
-
+return
 
 % evaluate the field in the second domain at 10000 points and record time
 ngr = clmparams.ngr;       % field evaluation at ngr^2 points

@@ -1,7 +1,7 @@
 
-function geom_class = read_geom_clm8()
+function geom_class = read_geom_clm10()
     geom_class = [];
-    geom_class.xylim = [-15 15 -26 4];
+    geom_class.xylim = [-6 6 -9 3];
     ndomain = 5;
     geom_class.ndomain = ndomain;
     ncurve = 11;
@@ -33,8 +33,8 @@ function geom_class = read_geom_clm8()
     verts(:,7) = [-0.9;-2.8468];
     verts(:,8) = [0.9;-2.8468];
     
-    verts(:,5) = [-0.09;-16.2665];
-    verts(:,6) = [0.09;-16.2665];
+    verts(:,5) = [-0.6;-8.2665];
+    verts(:,6) = [0.6;-8.2665];
     
     
     verts(1,9) = -5;

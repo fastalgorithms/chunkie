@@ -1,4 +1,5 @@
-function [u,gradu] = postprocess_sol_gui_fmm_fds(chnkr,clmparams,targs,targdomain,eps0,sol,sk,exp_mat,eva_mats,sk_targ)
+function [u,gradu] = postprocess_sol_gui_fmm_fds(chnkr,clmparams,targs, ...
+             targdomain,eps0,sol,sk,exp_mat,eva_mats,sk_targ)
     [~,ntarg] = size(targs);
     u = zeros(1,ntarg);
     gradu = zeros(2,ntarg);

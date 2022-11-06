@@ -16,7 +16,7 @@ function geom_class = read_geom_clm9()
     rn(4) = 1.348;
     
     
-    lambda = 0.38;
+    lambda = 0.76;
     geom_class.rn = rn;
     geom_class.lambda = lambda;
     geom_class.mode = 'te';
@@ -80,7 +80,7 @@ function geom_class = read_geom_clm9()
     regions = cell(1,ndomain);
     src = zeros(2,ndomain);
 
-    src(2,:) = [4.67,  -2.5e1, 0.7, -1.68];
+    src(2,:) = [4.67,  -4.0, 0.7, -1.68];
 
     for i=1:ndomain
         regions{i}.region_id = 1;

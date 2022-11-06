@@ -1,6 +1,11 @@
-function [targdomain,varargout] = finddomain_gui(chnkr,clmparams,targs)
+function [targdomain,varargout] = finddomain_gui(chnkr,clmparams,targs,opts)
 % use Cauchy's integral formula to determine which domain each target lies
 % in.
+
+if(nargin == 3)
+    opts = [];
+end
+
 ncurve = clmparams.ncurve;
 ndomain = clmparams.ndomain;
 k = clmparams.ngl;
@@ -62,10 +67,12 @@ for j=1:ndomain
     end
 end
 targdomain(targdomain(:) == 0 & (targs(2,:)>0)') = idomup;
-targdomain(targdomain == 0 & (targs(2,:)<0)') = idomdown;
+targdomain(targdomain(:) == 0 & (targs(2,:)<0)') = idomdown;
 
 chnkrtotal = merge(chnkr);
-flag = flagnear(chnkrtotal,targs);
+
+
+flag = flagnear(chnkrtotal,targs,opts);
 
 [tind,sind,~] = find(flag);
 targs_test = targs(:,tind);

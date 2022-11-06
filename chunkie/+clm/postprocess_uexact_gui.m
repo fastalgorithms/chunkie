@@ -1,6 +1,7 @@
-function uexact = postprocess_uexact_gui(clmparams,targs,targdomain)
+function [uexact,varargout] = postprocess_uexact_gui(clmparams,targs,targdomain)
     [~,ntarg] = size(targs);
     uexact = zeros(ntarg,1);
+    graduexact = zeros(2,ntarg);
     
     if isfield(clmparams,'k')
       k = clmparams.k;
@@ -27,8 +28,11 @@ function uexact = postprocess_uexact_gui(clmparams,targs,targdomain)
             if j > ndomain
                 j = j - ndomain;
             end
-            uexact(list{i}) = chnk.helm2d.green(k(i),src(:,j),targs(:,list{i}));
+            [uexact(list{i}),gtmp] = chnk.helm2d.green(k(i),src(:,j),targs(:,list{i}));
+            graduexact(1,list{i}) = reshape(gtmp(:,:,1),[1,length(list{i})]);
+            graduexact(2,list{i}) = reshape(gtmp(:,:,2),[1,length(list{i})]);
+            
         end
     end
-
+    varargout{1} = graduexact;
 end

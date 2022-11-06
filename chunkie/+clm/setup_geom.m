@@ -108,7 +108,7 @@ function [clmparams] = setup_geom(geom_class)
     c2 = c1/2;
     
     
-    C = 4*(xmax-xmin);
+    C = 6*(xmax-xmin);
     L(1) = C-xmin;
     L(2) = xmax+C;
     
@@ -354,6 +354,9 @@ function [clmparams] = setup_geom(geom_class)
     n0 = 12;
     fac = 1.2/2/pi;
     ppw = 5;
+    if(isfield(geom_class,'ppw'))
+        ppw = geom_class.ppw;
+    end
 
     for i=1:ncurve_use
       ctype = clmparams.cparams{i}.curvetype;
