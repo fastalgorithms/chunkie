@@ -20,7 +20,7 @@ zk = norm(kvec);
 % discretize domain
 
 cparams = [];
-cparams.eps = 1.0e-10;
+cparams.eps = 1.0e-6;
 cparams.nover = 0;
 cparams.maxchunklen = 4.0/zk; % setting a chunk length helps when the
                               % frequency is known
@@ -33,9 +33,6 @@ start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
-
-[~,~,info] = sortinfo(chnkr);
-assert(info.ier == 0);
 
 % plot geometry and data
 
@@ -54,9 +51,7 @@ axis equal
 % build CFIE
 
 fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'c',1);
-opdims(1) = 1; opdims(2) = 1;
-opts = [];
-start = tic; sysmat = chunkermat(chnkr,fkern,opts);
+start = tic; sysmat = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)

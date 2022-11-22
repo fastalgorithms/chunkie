@@ -174,6 +174,7 @@ if isempty(flag)
     bw = lege.barywts(k);
     r = chnkr.r;
     d = chnkr.d;
+    n = chnkr.n;
     d2 = chnkr.d2;
     h = chnkr.h;
     targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);    
@@ -181,7 +182,7 @@ if isempty(flag)
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
-        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,d2,h,ct,bw,i,targs, ...
+        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs, ...
                     targd,targd2,kern,opdims,t,w,opts);
                 
         js1 = jmat:jmatend;

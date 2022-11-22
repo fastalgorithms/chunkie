@@ -4,3 +4,7 @@
 # Matlab autosaves
 *.~
 *.asv
+*~
+chunkie/demo-ignore/*
+*#
+*.save

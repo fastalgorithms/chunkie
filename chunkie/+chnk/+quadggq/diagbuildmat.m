@@ -92,7 +92,7 @@ for j = 1:k
   dsdtndim2 = repmat(dsdt(:,j).',opdims(2),1);
   dsdtndim2 = dsdtndim2(:);
   submat(opdims(1)*(j-1)+1:opdims(1)*j,:) = ...
-    smatbigi*diag(dsdtndim2)*ainterps0kron(:,:,j);
+    (smatbigi.*dsdtndim2.')*ainterps0kron(:,:,j);
 end
 
 end
