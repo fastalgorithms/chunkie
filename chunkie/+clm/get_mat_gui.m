@@ -149,6 +149,9 @@ function [M,RG] = get_mat_gui(chnkr,clmparams,opts)
           h0 = h0*2; % note the factor of 2 here!!!!
 
           nsub = 20; % level of dyadic refinement in the forward recursion for computing R
+          if(isfield(opts,'nsub'))
+              nsub = opts.nsub;
+          end
 
           R{icorner} = rcip.Rcomp_fast(ngl,nedge,ndim,Pbc,PWbc,nsub,...
             starL,circL,starS,circS,ilist,...
