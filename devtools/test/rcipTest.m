@@ -16,7 +16,7 @@ zk = 1.1;
 
 
 
-nch = 20*ones(1,ncurve);
+nch = 5*ones(1,ncurve);
 
 a = -1.0;
 b = 1.0;
@@ -50,7 +50,7 @@ end
 
 inds = [0, cumsum(nch)];
 
-[glxs,glwts] = lege.exps(ngl);
+[glxs,glwts,glu,glv] = lege.exps(ngl);
 
 fcurve = cell(1,ncurve);
 figure(1)
@@ -61,6 +61,20 @@ for icurve = 1:ncurve
     plot(chnkr(icurve)); quiver(chnkr(icurve));
 end
 
+iedgechunks = [1 2; 1 chnkr(2).nch];
+isstart = [1 0];
+nedge = 2;
+ndim=1;
+[Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim, ...
+      nedge,isstart);
+
+fkern = @(s,t) -2*chnk.helm2d.kern(zk,s,t,'D');
+nsub=100;
+R = rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
+    Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,...
+    glxs);
+
+%%
 
 % sources
 
@@ -128,10 +142,12 @@ R = cell(1,ncorner);
 corners{1}.clist = [1,2];
 corners{1}.isstart = [1,0];
 corners{1}.nedge = 2;
+corners{1}.iedgechunks = [1 2; 1 chnkr(2).nch];
 
 corners{2}.clist = [1,2];
 corners{2}.isstart = [0 1];
 corners{2}.nedge = 2;
+corners{2}.iedgechunks = [1 2; chnkr(1).nch 1];
 
 ndim = 1;
 
@@ -164,10 +180,17 @@ for icorner=1:ncorner
     [Pbc,PWbc,starL,circL,starS,circS,ilist] = rcip.setup(ngl,ndim, ...
       nedge,isstart);
     opts_use = [];
-    R{icorner} = rcip.Rcomp(ngl,nedge,ndim,Pbc, ...
+    tic; R{icorner} = rcip.Rcomp(ngl,nedge,ndim,Pbc, ...
       PWbc,nsub,starL,circL, ...
       starS,circS,ilist,h0,isstart,fcurvelocal,glxs,fkern);
-    
+    toc
+    iedgechunks = corners{icorner}.iedgechunks;
+    tic; R2 = rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
+        Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,... 
+        glxs);
+    toc
+    norm(R{icorner}-R2)
+
     RG(starind,starind) = R{icorner};
     sysmat(starind,starind) = 0;
 end
@@ -190,6 +213,9 @@ relerr = norm(utarg-Dsol,'fro')/(sqrt(chnkrtotal.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
+
+
+%%
 
 
 %%
