@@ -15,8 +15,8 @@ function [nearinfo,varargout] = interp2rel(chnkinfo,intstruc)
     if (nargin <2 || ~isfield(intstruc,'v2cmat') || ... 
        ~isfield(intstruc,'vcint') )
         
-        [xl,wl,ul,vl]     = lege.exps(n);
-        [xl2,wl2,ul2,vl2] = lege.exps(n-1);
+        [xl,~,ul,~]     = lege.exps(n);
+        [xl2,~,ul2,vl2] = lege.exps(n-1);
 
         [pols,~] = lege.pols(-1,n-1);
         [vfns,~] = lege.pols(xl2,n-1);
@@ -52,10 +52,10 @@ function [nearinfo,varargout] = interp2rel(chnkinfo,intstruc)
 	y   = intstruc.vcint*dy';
 	nearinfo.r = [x';y'];
     
-    xx  = chnkinfo.r(1,:);
-    yy  = chnkinfo.r(2,:);
-    %x   = intstruc.v2cmat*xx';
-    %y   = intstruc.v2cmat*yy';
+    % xx  = chnkinfo.r(1,:);
+    % yy  = chnkinfo.r(2,:);
+    % x   = intstruc.v2cmat*xx';
+    % y   = intstruc.v2cmat*yy';
     %nearinfo.r = [x';y'];
     
 	dxt = intstruc.vvmat*dx';
