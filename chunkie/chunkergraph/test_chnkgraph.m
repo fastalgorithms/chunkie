@@ -1,4 +1,4 @@
-clear all
+%clear all
 
 verts = [0,0;0,1;1,1;1,0;0.8,0.1;0.8,0.2;0.9,0.2]';
 edge2verts = [-1, 1, 0, 0, 0, 0, 0; ...
@@ -23,9 +23,13 @@ fchnks    = {};
 fchnks{4} = @(t) fsine(t,0.2,5,0); 
 
 prefs      = [];
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks);
+prefs.chsmall = 1d-3;
+[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
 
 [inc,isgn] = vertextract(3,cgrph);
 vstruc = procverts(cgrph);
 
 rgns = findregions(cgrph);
+cgrph = balance(cgrph);
+
+

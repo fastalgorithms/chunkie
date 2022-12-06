@@ -20,6 +20,15 @@ function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams)
         cploc.ta = 0;
         cploc.tb = 1; 
         cploc.ifclosed = 0;
+        if (~isfield(cparams,'lvlr'))
+            cploc.lvlr = 'a';
+        end
+        if (~isfield(cparams,'eps'))
+            cploc.eps = 1.0d-10;
+        end
+        if (~isfield(cparams,'nover'))
+            cploc.nover = 1;
+        end
     end
     
    

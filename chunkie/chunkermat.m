@@ -1,4 +1,4 @@
-function [sysmat,varargout] = chunkermat(chnkr,kern,opts,ilist)
+function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %CHUNKERMAT build matrix for given kernel and chunker description of 
 % boundary. This is a wrapper for various quadrature routines. Optionally,
 % return only those interactions which do not use the smooth integration
@@ -74,6 +74,15 @@ function [sysmat,varargout] = chunkermat(chnkr,kern,opts,ilist)
 %   [sysmat,opts] = chunkermat(chnkr,kern,opts);
 %   [sysmat,opts] = chunkermat(chnkr,kern,opts,ilist);
 %
+
+if (class(chnkobj) == "chunker")
+    chnkr = chnkobj;
+elseif(class(chnkobj) == "chunkgraph")
+    chnkr = merge(chnkobj.echnks);
+else
+    msg = "Unsupported object in chunkermat";
+    error(msg)
+end
 
 if length(chnkr) > 1
     chnkr = merge(chnkr);

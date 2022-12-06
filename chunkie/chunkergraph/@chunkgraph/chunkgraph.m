@@ -9,7 +9,10 @@ classdef chunkgraph
     end
 
     properties(Dependent,SetAccess=private)
-
+        r
+        d
+        d2
+        adj
     end
     
     methods
@@ -31,6 +34,22 @@ classdef chunkgraph
             validateattributes(val,classes,{})
             obj.echnks = val;
         end  
+        function r = get.r(obj)
+            chnk = merge(obj.echnks);
+            r = chnk.r;
+        end
+        function d = get.d(obj)
+            chnk = merge(obj.echnks);
+            d = chnk.d;
+        end
+        function d2 = get.d2(obj)
+            chnk = merge(obj.echnks);
+            d2 = chnk.d2;
+        end
+        function adj = get.adj(obj)
+            chnk = merge(obj.echnks);
+            adj = chnk.adj;
+        end
     end   
     methods(Static)
         
