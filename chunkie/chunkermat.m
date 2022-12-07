@@ -174,10 +174,6 @@ if (~nonsmoothonly)
 
                 if (l2scale)
                     wts = sqrt(wts);
-                    wts_row = weights(chnkri);
-                    wts2_row = repmat( (wts_row(:)).', opdims(1), 1);
-                    wts2_row = ( wts2_row(:) ).';
-                    wts2_row = wts2_row;
                 end
 
                 if (size(kern) == 1)
@@ -187,6 +183,12 @@ if (~nonsmoothonly)
                 end 
 
                 sysmat_tmp = ftmp(chnkrj,chnkri).*wts;
+                
+                if (l2scale)
+                    wts = weights(chnkri);
+                    wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
+                    sysmat_tmp = bsxfun(@times,wtsrow,sysmat_tmp);
+                end
                 irowinds = irowlocs(i):(irowlocs(i+1)-1);
                 icolinds = icollocs(j):(icollocs(j+1)-1);
                 sysmat(irowinds,icolinds) = sysmat_tmp;
@@ -196,7 +198,11 @@ if (~nonsmoothonly)
     end    
 else
     sysmat = sparse(nrows,ncols);
+    isysmat = [];
+    jsysmat = [];
+    vsysmat = [];
 end    
+
 for i=1:nchunkers
 
     opdims = reshape(opdims_mat(:,i,i),[2,1]);
@@ -246,12 +252,21 @@ for i=1:nchunkers
         sysmat_tmp = bsxfun(@rdivide,sysmat_tmp,wtscol);
     end
  
-    irowinds = irowlocs(i):(irowlocs(i+1)-1);
-  	icolinds = icollocs(i):(icollocs(i+1)-1);
-	sysmat(irowinds,icolinds) = sysmat_tmp;
-
+    if (~nonsmoothonly)
+        irowinds = irowlocs(i):(irowlocs(i+1)-1);
+        icolinds = icollocs(i):(icollocs(i+1)-1);
+        sysmat(irowinds,icolinds) = sysmat_tmp;
+    else
+        [isys,jsys,vsys] = find(sysmat_tmp);
+        isysmat = [isysmat;isys+irowlocs(i)-1];
+        jsysmat = [jsysmat;jsys+icollocs(i)-1];
+        vsysmat = [vsysmat;vsys];
+    end    
 end
 
+if (nonsmoothonly)
+    sysmat = sparse(isysmat,jsysmat,vsysmat,nrows,ncols);
+end
 
 
 if (nargout >1) 

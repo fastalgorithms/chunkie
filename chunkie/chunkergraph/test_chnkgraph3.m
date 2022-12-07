@@ -32,6 +32,7 @@ zk = 1.0;
 fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'d');
 
 opts = [];
+opts.nonsmoothonly = true;
 [sysmat] = chunkermat(cgrph,fkern,opts);
 sysmat = sysmat - eye(size(sysmat,2))/2;
 
