@@ -1,16 +1,16 @@
-function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
-%CHNK.HELM2D.FMM fast multipole methods for evaluating helmholtz layer
+function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
+%CHNK.LAP2D.FMM fast multipole methods for evaluating Laplace layer
 %potentials, their gradients, and hessians
 % 
-% Syntax: pot = chnk.helm2d.fmm(zk,srcinfo,targinfo,sigma,type,pg,varargin)
-% [pot,grad] = chnk.helm2d.fmm(zk,srcinfo,targinfo,sigma,type,pg,varargin)
-% [pot,grad,hess] = chnk.helm2d.fmm(zk,srcinfo,targinfo,sigma,type,pg,varargin)
+% Syntax: pot = chnk.lap2d.fmm(srcinfo,targinfo,sigma,type,pg,varargin)
+% [pot,grad] = chnk.lap2d.fmm(srcinfo,targinfo,sigma,type,pg,varargin)
+% [pot,grad,hess] = chnk.helm2d.fmm(srcinfo,targinfo,sigma,type,pg,varargin)
 %
 % Let x be targets and y be sources for these formulas, with
 % n_x and n_y the corresponding unit normals at those points
 % (if defined). 
 %  
-% Kernels based on G(x,y) = i/4 H_0^{(1)}(zk |x-y|)
+% Kernels based on G(x,y) = -1/2\pi \log{|x-y|}
 %
 % D(x,y) = \nabla_{n_y} G(x,y)
 % S(x,y) = G(x,y)
@@ -19,7 +19,6 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 %
 % Input:
 %   eps - precision requested
-%   zk - complex number, Helmholtz wave number
 %   srcinfo - description of sources in ptinfo struct format, i.e.
 %                ptinfo.r - positions (2,:) array
 %                ptinfo.d - first derivative in underlying
@@ -32,7 +31,7 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 %   type - string, determines kernel type
 %                type == 'd', double layer kernel D
 %                type == 's', single layer kernel S
-%                type == 'c', combined layer kernel D + i eta S
+%                type == 'c', combined layer kernel D + eta S
 %   varargin{1} - eta in the combined layer formula, otherwise
 %                does nothing
 %
@@ -45,22 +44,23 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 %
 %
    srcuse = [];
+   mover2pi = -1.0/2/pi;
    srcuse.sources = srcinfo.r(1:2,:);
    if strcmpi(type,'s')
-      srcuse.charges = sigma(:).';
+      srcuse.charges = mover2pi*sigma(:).';
    end
    if strcmpi(type,'d')
-      srcuse.dipstr = sigma(:).';
+      srcuse.dipstr = mover2pi*sigma(:).';
       srcuse.dipvec = srcinfo.n(1:2,:);
    end
    if strcmpi(type,'c')
      eta = varargin{1};
-     srcuse.dipstr = sigma(:).';
+     srcuse.dipstr = mover2pi*sigma(:).';
      srcuse.dipvec = srcinfo.n(1:2,:);
-     srcuse.charges = 1i*eta*sigma(:).';
+     srcuse.charges = mover2pi*eta*sigma(:).';
    end
    pg = 0;
-   U = hfmm2d(eps,zk,srcuse,pg,targ,pgt);
+   U = rfmm2d(eps,srcuse,pg,targ,pgt);
    pot = U.pottarg.';
    if(pgt>=2) 
        varargout{1} = U.gradtarg; 
