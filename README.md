@@ -23,24 +23,14 @@ potentials and functions defined on chunkers
 
 ## Installing chunkie
 
-Add the chunkie subfolder to your matlab path.
-For some features, you will need to also add the
-FLAM library to your path. This is included as
-a submodule. You can either clone with the submodules
+Clone the repository with the submodules 
 
     git clone --recurse-submodules https://github.com/fastalgorithms/chunkie.git
 
-or initialize the submodules after a git pull.
-Once the submodules are initialized, you can
-run the setup script (setup.m) from the
-chunkie subfolder.
-
-Alternatively, it should work if you already have
-a reasonably up-to-date copy of FLAM on your path
-see [the FLAM GitHub page](https://github.com/klho/FLAM).
-Be sure to add recursively (see MATLAB's genpath
-function) to include FLAM's subfolders.
-
+and run startup.m in the install directory. 
+This will download the FLAM and fmm2d submodules, include FLAM in 
+the matlab path, and generate the fmm2d mex file if a fortran compiler
+exists. 
 
 ## Using chunkie
 
@@ -55,12 +45,45 @@ folder) is available under the terms of the
 BSD 3-clause license, which should have been included
 in the distribution (see chunkie/LICENSE.md)
 
+## Installation notes
+
+- The fmm2d mex installation is currently not supported on Windows, to
+  complete the mex installation, follow instructions on the [fmm2d documentation](https://fmm2d.readthedocs.io/en/latest/install.html) 
+- fmm2d mex installation depends on gfortran. In case a compiler is not
+  found, the installation will be skipped. To install dependencies follow the procedure below based on your OS
+  
+  * MacOS
+  
+    Get xcode, command line tools by running
+    
+        xcode-select --install
+    
+    Then install Homebrew from https://brew.sh, and finally install gfortran using
+  
+        brew install gcc
+
+  * Ubuntu linux
+
+        sudo apt-get install make build-essential gfortran
+
+  * Fedora/centOS linux
+
+        sudo yum install make gcc gcc-c++ gcc-gfortran libgomp
+
+- If installing without submodules, chunkie depends on [FLAM](https://github.com/klho/FLAM), 
+and optionally on the
+[fmm2d](https://github.com/flatironinstitute/fmm2d) repository. Parts of
+the library will not function without FLAM and its subdirectories included in the matlab path.
+
+
 ## chunkie team
 
 chunkers:
 - Travis Askham
 - Manas Rachh
 - Michael O'Neil
+- Jeremy Hoskins
+- Dan Fortunato
 
 James Bremer provided generalized Gaussian quadrature rules (chunkie/+chnk/+quad/+brem)
 

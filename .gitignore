@@ -1,9 +1,12 @@
-chunkie/+chnk/+helm2d/.DS_Store
-.DS_Store
-chunkie/.DS_Store
-chunkie/+chnk/.DS_Store
+
 *~
 *#
 chunkie/demo-ignore/*
 *.save
 dev/*
+
+# Mac OS files
+*.DS_Store*
+
+# Matlab autosaves
+*.asv

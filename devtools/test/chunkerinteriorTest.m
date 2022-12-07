@@ -39,17 +39,28 @@ targs = bsxfun(@times,starfish(tr,narms,amp),scal);
 
 opts = [];
 opts.flam = false;
+opts.fmm = false;
 start = tic; in = chunkerinterior(chnkr,targs,opts); t1 = toc(start);
+
 opts = [];
+opts.fmm = false;
 opts.flam = true;
 start = tic; in2 = chunkerinterior(chnkr,targs,opts); t2 = toc(start);
 
+opts = [];
+opts.fmm = true;
+opts.flam = false;
+start = tic; in3 = chunkerinterior(chnkr,targs,opts); t3 = toc(start);
+
+
 fprintf('%5.2e s : time for chunkerinterior (no flam)\n',t1);
 fprintf('%5.2e s : time for chunkerinterior (with flam)\n',t2);
+fprintf('%5.2e s : time for chunkerinterior (with fmm)\n',t3);
 
 ifail = in2(:) ~= (scal(:) < 1);
 assert(all(in(:) == (scal(:) < 1)));
 assert(all(in2(:) == (scal(:) < 1)));
+assert(all(in3(:) == (scal(:) < 1)));
 
 %
 % 

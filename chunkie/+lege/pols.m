@@ -21,6 +21,9 @@ pols(:,1)=ones(length(xs),1);
 ders(:,1)=zeros(length(xs),1);
 
 if (n<=0)
+    
+    pols = reshape(pols.',[n+1, szx]);
+    ders = reshape(ders.',[n+1, szx]);
     return
 end
 
@@ -28,6 +31,9 @@ pols(:,2)=xs(:);
 ders(:,2)=ones(length(xs),1);
 
 if (n==1)
+
+    pols = reshape(pols.',[n+1, szx]);
+    ders = reshape(ders.',[n+1, szx]);    
     return
 end
 
