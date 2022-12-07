@@ -1,58 +1,49 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   .  .  .  builds a simple pentagonal chunkergraph 
-%            and tests the Helmholtz transmission problem
+%            and tests the interior Helmholtz Dirichlet problem
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear all
 
-verts = exp(1i*2*pi*(0:4)/5);
-verts = [real(verts);imag(verts)];
+vertsx = [0,1,1,-1,-1,-1/sqrt(2),0,1/sqrt(2)];
+vertsy = [0,0,2, 2, 0, 1/sqrt(2),2/sqrt(2),1/sqrt(2)];
+verts = [vertsx;vertsy];
 
-edge2verts = [-1, 1, 0, 0, 0; ...
-               0,-1, 1, 0, 0; ...
-               0, 0,-1, 1, 0; ...
-               0, 0, 0,-1, 1; ...
-               1, 0, 0, 0,-1];
+edge2verts = [-1, 1, 0, 0, 0, 0, 0, 0; ...
+               0,-1, 1, 0, 0, 0, 0, 0; ...
+               0, 0,-1, 1, 0, 0, 0, 0; ...
+               0, 0, 0,-1, 1, 0, 0, 0; ...
+               1, 0, 0, 0,-1, 0, 0, 0; ...
+              -1, 0, 0, 0, 0, 1, 0, 0; ...
+               0, 0, 0, 0, 0,-1, 1, 0; ...
+               0, 0, 0, 0, 0, 0,-1, 1; ...
+               1, 0, 0, 0, 0, 0, 0,-1];
 edge2verts = sparse(edge2verts);
 
 
 fchnks    = {};
 
 prefs      = [];
-prefs.chsmall = 1d-3;
+prefs.chsmall = 1d-4;
 [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
 
 vstruc = procverts(cgrph);
 rgns = findregions(cgrph);
 cgrph = balance(cgrph);
 
-zk_in = 2.0;
-zk_ou = 1.0;
-
-fkernd = @(s,t) chnk.helm2d.kern(zk_ou,s,t,'d')-...
-    chnk.helm2d.kern(zk_in,s,t,'d');
-fkerns = @(s,t) chnk.helm2d.kern(zk_ou,s,t,'s')-...
-    chnk.helm2d.kern(zk_in,s,t,'s');
-fkerndp = @(s,t) chnk.helm2d.kern(zk_ou,s,t,'dprime')-...
-    chnk.helm2d.kern(zk_in,s,t,'dprime');
-fkernsp = @(s,t) chnk.helm2d.kern(zk_ou,s,t,'sprime')-...
-    chnk.helm2d.kern(zk_in,s,t,'sprime');
-
-fkernmat = @(s,t,i,j)[fkernd(s,t), fkerns(s,t);fkerndp(s,t), fkernsp(s,t)];
+zk = 1.0;
+fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'d');
 
 opts = [];
-[sysmat] = chunkgraphmat(cgrph.echnks,fkernmat,opts)
-
-opts = [];
-[sysmat] = chunkermat(cgrph,fkernmat,opts);
+[sysmat] = chunkermat(cgrph,fkern,opts);
 sysmat = sysmat - eye(size(sysmat,2))/2;
 
 % generate some targets...
 
 xs = -1:0.01:1;
-ys = -1:0.01:1;
+ys =  0:0.01:2;
 [X,Y] = meshgrid(xs,ys);
 targs = [X(:).';Y(:).'];
 

@@ -169,7 +169,11 @@ for i = 1:nchunkers
             wts2 = repmat( (wts(:)).', opdims(2), 1);
             wts2 = ( wts2(:) ).';
             wts = wts2;
-
+            
+            if (l2scale)
+                wts = sqrt(wts);
+            end
+            
             if (size(kern) == 1)
                 ftmp = kern;
             else
