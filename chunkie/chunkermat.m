@@ -151,43 +151,52 @@ end
 nrows = irowlocs(end)-1;
 ncols = icollocs(end)-1;
 
-sysmat = zeros(nrows,ncols);
+if (~nonsmoothonly)
+    
+    sysmat = zeros(nrows,ncols);
 
-for i = 1:nchunkers
-    chnkri = chnkrs(i);
-    for j = 1:nchunkers
-        chnkrj = chnkrs(j);
-        if (chnkri.nch < 1 || chnkri.k < 1 || chnkrj.nch<1 || chnkri.k<1)
-            sysmat_tmp = [];
-            break
-        end
-        
-       if (i~=j)
-
-            opdims = reshape(opdims_mat(:,i,j),[2,1]);
-            wts = weights(chnkrj);
-            wts2 = repmat( (wts(:)).', opdims(2), 1);
-            wts2 = ( wts2(:) ).';
-            wts = wts2;
-            
-            if (l2scale)
-                wts = sqrt(wts);
+    for i = 1:nchunkers
+        chnkri = chnkrs(i);
+        for j = 1:nchunkers
+            chnkrj = chnkrs(j);
+            if (chnkri.nch < 1 || chnkri.k < 1 || chnkrj.nch<1 || chnkri.k<1)
+                sysmat_tmp = [];
+                break
             end
-            
-            if (size(kern) == 1)
-                ftmp = kern;
-            else
-                ftmp = kern(i,j);
-            end 
-            sysmat_tmp = ftmp(chnkrj,chnkri).*wts;
-            irowinds = irowlocs(i):(irowlocs(i+1)-1);
-            icolinds = icollocs(j):(icollocs(j+1)-1);
-            sysmat(irowinds,icolinds) = sysmat_tmp;
 
-       end
-    end
+           if (i~=j)
+
+                opdims = reshape(opdims_mat(:,i,j),[2,1]);
+                wts = weights(chnkrj);
+                wts2 = repmat( (wts(:)).', opdims(2), 1);
+                wts2 = ( wts2(:) ).';
+                wts = wts2;
+
+                if (l2scale)
+                    wts = sqrt(wts);
+                    wts_row = weights(chnkri);
+                    wts2_row = repmat( (wts_row(:)).', opdims(1), 1);
+                    wts2_row = ( wts2_row(:) ).';
+                    wts2_row = wts2_row;
+                end
+
+                if (size(kern) == 1)
+                    ftmp = kern;
+                else
+                    ftmp = kern(i,j);
+                end 
+
+                sysmat_tmp = ftmp(chnkrj,chnkri).*wts;
+                irowinds = irowlocs(i):(irowlocs(i+1)-1);
+                icolinds = icollocs(j):(icollocs(j+1)-1);
+                sysmat(irowinds,icolinds) = sysmat_tmp;
+
+           end
+        end
+    end    
+else
+    sysmat = sparse(nrows,ncols);
 end    
-
 for i=1:nchunkers
 
     opdims = reshape(opdims_mat(:,i,i),[2,1]);
