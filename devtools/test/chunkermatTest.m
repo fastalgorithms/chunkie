@@ -10,10 +10,10 @@ rng(iseed);
 addpaths_loc();
 
 cparams = [];
-cparams.eps = 1.0e-10;
+cparams.eps = 1.0e-6;
 cparams.nover = 1;
 pref = []; 
-pref.k = 30;
+pref.k = 36;
 narms = 3;
 amp = 0.25;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
