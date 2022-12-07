@@ -63,7 +63,8 @@ icont = false;
 if usefmm_final
    try
        eps_local = 1e-3;
-       dens1_fmm = ones(chnkr.k*chnkr.nch,1);
+       wchnkr = weights(chnkr);
+       dens1_fmm = ones(chnkr.k*chnkr.nch,1).*wchnkr(:);
        pgt = 1;
        vals1 = chnk.lap2d.fmm(eps_local,chnkr,pts,'d',dens1_fmm,pgt);
    catch
