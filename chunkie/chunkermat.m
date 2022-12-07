@@ -75,19 +75,6 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %   [sysmat,opts] = chunkermat(chnkr,kern,opts,ilist);
 %
 
-if (class(chnkobj) == "chunker")
-    chnkr = chnkobj;
-elseif(class(chnkobj) == "chunkgraph")
-    chnkr = merge(chnkobj.echnks);
-else
-    msg = "Unsupported object in chunkermat";
-    error(msg)
-end
-
-if length(chnkr) > 1
-    chnkr = merge(chnkr);
-end
-
 if nargin < 3
     opts = [];
 end
@@ -99,22 +86,6 @@ end
 quad = 'ggq';
 nonsmoothonly = false;
 l2scale = false;
-
-if or(chnkr.nch < 1,chnkr.k < 1)
-    sysmat = [];
-    return
-end
-
-% determine operator dimensions using first two points
-
-srcinfo = []; targinfo = [];
-srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 
-srcinfo.d2 = chnkr.d2(:,1); srcinfo.n = chnkr.n(:,1);
-targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
-targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
-
-ftemp = kern(srcinfo,targinfo);
-opdims = size(ftemp);
 
 % get opts from struct if available
 
@@ -128,51 +99,150 @@ if isfield(opts,'nonsmoothonly')
     nonsmoothonly = opts.nonsmoothonly;
 end
 
-% call requested routine
 
-if strcmpi(quad,'ggq')
-    if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
-        auxquads = opts.auxquads.ggqlog;
-    else
-        k = chnkr.k;
-        auxquads = chnk.quadggq.setuplogquad(k,opdims);
-        opts.auxquads.ggqlog = auxquads;
-    end    
-    type = 'log';
-    if nonsmoothonly
-        sysmat = chnk.quadggq.buildmattd(chnkr,kern,opdims,type,auxquads,ilist);
-    else
-        sysmat = chnk.quadggq.buildmat(chnkr,kern,opdims,type,auxquads,ilist);
-    end
-    
-elseif strcmpi(quad,'native')
-        
-    if nonsmoothonly
-        sysmat = sparse(chnkr.npt,chnkr.npt);
-    else
-        if (quadorder ~= chnkr.k)
-            warning(['native rule: quadorder', ... 
-                ' must equal chunker order (%d)'],chnkr.k)
-        end
-        sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims);
-    end
+if (class(chnkobj) == "chunker")
+    chnkrs = chnkobj;
+elseif(class(chnkobj) == "chunkgraph")
+    chnkrs = chnkobj.echnks;
 else
-    warning('specified quadrature method not available');
-    sysmat = [];
-    return;
+    msg = "Unsupported object in chunkermat";
+    error(msg)
 end
-	 
-if l2scale
-    wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
-    wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
-    wtscol = wtscol.';
-    wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
-    sysmat = bsxfun(@times,wtsrow,sysmat);
-    sysmat = bsxfun(@rdivide,sysmat,wtscol);
+
+nchunkers = length(chnkrs);
+
+opdims_mat = zeros(2,nchunkers,nchunkers);
+lchunks    = zeros(nchunkers,1);
+
+for i=1:nchunkers
+    
+    targinfo = [];
+   	targinfo.r = chnkrs(i).r(:,2); targinfo.d = chnkrs(i).d(:,2); 
+   	targinfo.d2 = chnkrs(i).d2(:,2); targinfo.n = chnkrs(i).n(:,2);
+    lchunks(i) = size(chnkrs(i).r(:,:),2);
+    
+    for j=1:nchunkers
+        
+        % determine operator dimensions using first two points
+
+        srcinfo = []; 
+        srcinfo.r = chnkrs(j).r(:,1); srcinfo.d = chnkrs(j).d(:,1); 
+        srcinfo.d2 = chnkrs(j).d2(:,1); srcinfo.n = chnkrs(j).n(:,1);
+
+        if (size(kern) == 1)
+            ftemp = kern(srcinfo,targinfo);
+        else
+            ktmp = kern(i,j);
+            ftemp = ktmp(srcinfo,targinfo);
+        end   
+        opdims = size(ftemp);
+        opdims_mat(:,i,j) = opdims;
+    end
+end    
+
+irowlocs = [1];
+icollocs = [1];
+
+for i=1:nchunkers
+   icollocs(i+1) = icollocs(i) + lchunks(i)*opdims_mat(2,1,i);
+   irowlocs(i+1) = irowlocs(i) + lchunks(i)*opdims_mat(1,i,1);
+end    
+
+nrows = irowlocs(end)-1;
+ncols = icollocs(end)-1;
+
+sysmat = zeros(nrows,ncols);
+
+for i = 1:nchunkers
+    chnkri = chnkrs(i);
+    for j = 1:nchunkers
+        chnkrj = chnkrs(j);
+        if (chnkri.nch < 1 || chnkri.k < 1 || chnkrj.nch<1 || chnkri.k<1)
+            sysmat_tmp = [];
+            break
+        end
+        
+       if (i~=j)
+
+            opdims = reshape(opdims_mat(:,i,j),[2,1]);
+            wts = weights(chnkrj);
+            wts2 = repmat( (wts(:)).', opdims(2), 1);
+            wts2 = ( wts2(:) ).';
+            wts = wts2;
+
+            if (size(kern) == 1)
+                ftmp = kern;
+            else
+                ftmp = kern(i,j);
+            end 
+            sysmat_tmp = ftmp(chnkrj,chnkri).*wts;
+            irowinds = irowlocs(i):(irowlocs(i+1)-1);
+            icolinds = icollocs(j):(icollocs(j+1)-1);
+            sysmat(irowinds,icolinds) = sysmat_tmp;
+
+       end
+    end
+end    
+
+for i=1:nchunkers
+
+    opdims = reshape(opdims_mat(:,i,i),[2,1]);
+
+    chnkr = chnkrs(i);
+    
+    % call requested routine
+
+    if strcmpi(quad,'ggq')
+        if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
+            auxquads = opts.auxquads.ggqlog;
+        else
+            k = chnkr.k;
+            auxquads = chnk.quadggq.setuplogquad(k,opdims);
+            opts.auxquads.ggqlog = auxquads;
+        end    
+        type = 'log';
+        if nonsmoothonly
+            sysmat_tmp = chnk.quadggq.buildmattd(chnkr,kern,opdims,type,auxquads,ilist);
+        else
+            sysmat_tmp = chnk.quadggq.buildmat(chnkr,kern,opdims,type,auxquads,ilist);
+        end
+
+    elseif strcmpi(quad,'native')
+
+        if nonsmoothonly
+            sysmat_tmp = sparse(chnkr.npt,chnkr.npt);
+        else
+            if (quadorder ~= chnkr.k)
+                warning(['native rule: quadorder', ... 
+                    ' must equal chunker order (%d)'],chnkr.k)
+            end
+            sysmat_tmp = chnk.quadnative.buildmat(chnkr,kern,opdims);
+        end
+    else
+        warning('specified quadrature method not available');
+        sysmat_tmp = [];
+        return;
+    end
+
+    if l2scale
+        wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
+        wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
+        wtscol = wtscol.';
+        wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
+        sysmat_tmp = bsxfun(@times,wtsrow,sysmat_tmp);
+        sysmat_tmp = bsxfun(@rdivide,sysmat_tmp,wtscol);
+    end
+ 
+    irowinds = irowlocs(i):(irowlocs(i+1)-1);
+  	icolinds = icollocs(i):(icollocs(i+1)-1);
+	sysmat(irowinds,icolinds) = sysmat_tmp;
+
 end
+
+
 
 if (nargout >1) 
-   varargout{1} = opts;
-end   
+	varargout{1} = opts;
+end  
 
 end

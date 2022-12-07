@@ -35,9 +35,18 @@ fkernd = @(s,t) chnk.helm2d.kern(zk_ou,s,t,'d')-...
     chnk.helm2d.kern(zk_in,s,t,'d');
 fkerns = @(s,t) chnk.helm2d.kern(zk_ou,s,t,'s')-...
     chnk.helm2d.kern(zk_in,s,t,'s');
+fkerndp = @(s,t) chnk.helm2d.kern(zk_ou,s,t,'dprime')-...
+    chnk.helm2d.kern(zk_in,s,t,'dprime');
+fkernsp = @(s,t) chnk.helm2d.kern(zk_ou,s,t,'sprime')-...
+    chnk.helm2d.kern(zk_in,s,t,'sprime');
+
+fkernmat = @(s,t,i,j)[fkernd(s,t), fkerns(s,t);fkerndp(s,t), fkernsp(s,t)];
 
 opts = [];
-[sysmat] = chunkermat(cgrph,fkern,opts);
+[sysmat] = chunkgraphmat(cgrph.echnks,fkernmat,opts)
+
+opts = [];
+[sysmat] = chunkermat(cgrph,fkernmat,opts);
 sysmat = sysmat - eye(size(sysmat,2))/2;
 
 % generate some targets...

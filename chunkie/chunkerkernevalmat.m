@@ -68,6 +68,7 @@ if isfield(opts,'eps'); eps = opts.eps; end
 
 [dim,~] = size(targs);
 
+
 if (dim ~= 2); warning('only dimension two tested'); end
 
 optssmooth = []; 
