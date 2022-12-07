@@ -50,8 +50,21 @@ dim = chnkr.dim;
 % bernstein ellipses
 
 ells = ellipses(chnkr,rho);
-[rects,rectinfo] = bounding_rects(ells);
 
+[~,~,u] = lege.exps(k);
+p0 = lege.pols(0,k-1);
+val0 = (p0(:)).'*u;
+dperm = permute(chnkr.d,[2,1,3]); dperm = dperm(:,:);
+d0 = val0*dperm;
+d0 = reshape(d0,chnkr.dim,chnkr.nch);
+d0nrm = sqrt(sum(d0.^2,1));
+d0 = d0./d0nrm;
+d1s = d0;
+d2s = flipud(d1s);
+d2s(2,:) = -d2s(2,:);
+
+%[rects,rectinfo] = bounding_rects(ells);
+[rects,rectinfo] = bounding_rects_cheap(ells,d1s,d2s);
 
 % make a "bounding volume hierarchy" of the regions
 % needing special quadrature.
@@ -208,6 +221,38 @@ for i = 1:n
     
     d1j = d1i(:,j);
     d2j = d2i(:,j);
+    
+    rects(:,:,i) = [d1jmax*d1j+d2jmax*d2j, d1jmin*d1j+d2jmax*d2j, ...
+        d1jmin*d1j+d2jmin*d2j, d1jmax*d1j+d2jmin*d2j];
+    
+    rectinfo(:,:,i) = [d1j,d2j,[d1jmin;d1jmax],[d2jmin;d2jmax]];
+    
+end
+
+end
+
+function [rects,rectinfo] = bounding_rects_cheap(convreg,d1s,d2s)
+% find minimal area bounding rectangle for each region
+
+[dim,m,n] = size(convreg);
+xreg = reshape(convreg(1,:,:),m,n);
+yreg = reshape(convreg(2,:,:),m,n);
+
+rects = zeros(2,4,n);
+rectinfo = zeros(2,4,n);
+
+for i = 1:n
+    d1i = d1s(:,i);
+    d2i = d2s(:,i);
+    pts = convreg(:,:,i).';
+    d1c = pts*d1i;
+    d2c = pts*d2i;
+    d1jmax = max(d1c);
+    d1jmin = min(d1c);
+    d2jmax = max(d2c);
+    d2jmin = min(d2c);
+    d1j = d1i;
+    d2j = d2i;
     
     rects(:,:,i) = [d1jmax*d1j+d2jmax*d2j, d1jmin*d1j+d2jmax*d2j, ...
         d1jmin*d1j+d2jmin*d2j, d1jmax*d1j+d2jmin*d2j];
