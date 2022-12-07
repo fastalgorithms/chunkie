@@ -1,10 +1,10 @@
-function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
+function [pot,varargout] = fmm(eps,zk,chnkinfo,targ,type,sigma,pgt,varargin)
 %CHNK.HELM2D.FMM fast multipole methods for evaluating helmholtz layer
 %potentials, their gradients, and hessians
 % 
-% Syntax: pot = chnk.helm2d.fmm(zk,srcinfo,targinfo,sigma,type,pg,varargin)
-% [pot,grad] = chnk.helm2d.fmm(zk,srcinfo,targinfo,sigma,type,pg,varargin)
-% [pot,grad,hess] = chnk.helm2d.fmm(zk,srcinfo,targinfo,sigma,type,pg,varargin)
+% Syntax: pot = chnk.helm2d.fmm(zk,chnkinfo,targinfo,sigma,type,pg,varargin)
+% [pot,grad] = chnk.helm2d.fmm(zk,chnkinfo,targinfo,sigma,type,pg,varargin)
+% [pot,grad,hess] = chnk.helm2d.fmm(zk,chnkinfo,targinfo,sigma,type,pg,varargin)
 %
 % Let x be targets and y be sources for these formulas, with
 % n_x and n_y the corresponding unit normals at those points
@@ -20,7 +20,7 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 % Input:
 %   eps - precision requested
 %   zk - complex number, Helmholtz wave number
-%   srcinfo - description of sources in ptinfo struct format, i.e.
+%   chnkinfo - description of sources in ptinfo struct format, i.e.
 %                ptinfo.r - positions (2,:) array
 %                ptinfo.d - first derivative in underlying
 %                     parameterization (2,:)
@@ -45,19 +45,22 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 %
 %
    srcuse = [];
-   srcuse.sources = srcinfo.r(1:2,:);
+   srcuse.sources = chnkinfo.r(1:2,:);
+   wchnkr = weights(chnkinfo);
+   sigmause = sigma(:).*wchnkr(:);
+
    if strcmpi(type,'s')
-      srcuse.charges = sigma(:).';
+      srcuse.charges = sigmause(:).';
    end
    if strcmpi(type,'d')
-      srcuse.dipstr = sigma(:).';
-      srcuse.dipvec = srcinfo.n(1:2,:);
+      srcuse.dipstr = sigmause(:).';
+      srcuse.dipvec = chnkinfo.n(1:2,:);
    end
    if strcmpi(type,'c')
      eta = varargin{1};
-     srcuse.dipstr = sigma(:).';
-     srcuse.dipvec = srcinfo.n(1:2,:);
-     srcuse.charges = 1i*eta*sigma(:).';
+     srcuse.dipstr = sigmause(:).';
+     srcuse.dipvec = chnkinfo.n(1:2,:);
+     srcuse.charges = 1i*eta*sigmause(:).';
    end
    pg = 0;
    U = hfmm2d(eps,zk,srcuse,pg,targ,pgt);
