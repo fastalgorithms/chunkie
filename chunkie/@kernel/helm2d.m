@@ -1,6 +1,6 @@
 function obj = helm2d(type, zk, eta)
 %KERNEL.HELM2D   Construct the Helmholtz kernel.
-%   KERNEL.HELM2D('s', ZK) or KERNEL.HELM2D('single', ZK, ) constructs the
+%   KERNEL.HELM2D('s', ZK) or KERNEL.HELM2D('single', ZK) constructs the
 %   single-layer Helmholtz kernel with wavenumber ZK.
 %
 %   KERNEL.HELM2D('d', ZK) or KERNEL.HELM2D('double', ZK) constructs the

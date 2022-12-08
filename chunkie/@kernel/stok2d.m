@@ -48,32 +48,26 @@ switch lower(type)
     case {'svel', 'svelocity', 's', 'single'}
         obj.type = 'svel';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'svel');
-        % mu in denominator
 
     case {'spres', 'spressure'}
         obj.type = 'svel';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'spres');
-        % no mu
 
     case {'strac', 'straction'}
         obj.type = 'svel';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'strac');
-        % no mu
 
     case {'dvel', 'dvelocity', 'd', 'double'}
         obj.type = 'dvel';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'dvel');
-        % no mu
 
     case {'dpres', 'dpressure'}
         obj.type = 'dpres';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'dpres');
-        % mu in numerator
 
     case {'dtrac', 'dtraction'}
         obj.type = 'dtrac';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'dtrac');
-        % mu in numerator
 
     otherwise
         error('Unknown Stokes kernel type ''%s''.', type);
