@@ -13,6 +13,8 @@ classdef chunkgraph
         d
         d2
         adj
+        sourceinfo
+        npts
     end
     
     methods
@@ -49,6 +51,36 @@ classdef chunkgraph
         function adj = get.adj(obj)
             chnk = merge(obj.echnks);
             adj = chnk.adj;
+        end
+        function npts = get.npts(obj)
+            npts = 0;
+            for iedge = numel(obj.echnks)
+            	n = size(obj.echnks(iedge).r(:,:),2);
+                npts = n + npts;
+            end
+        end
+        function sourceinfo = get.sourceinfo(obj)
+            sourceinfo = [];
+            ntot = obj.npts;
+            rs = zeros(2,ntot);
+            ds = zeros(2,ntot);
+            d2s= zeros(2,ntot);
+            ws = zeros(ntot,1);
+            ind = 0;
+            for iedge = 1:numel(obj.echnks)
+                chnk = obj.echnks(iedge);
+                n = chnk.npt;
+                w = weights(chnk);
+                ws(ind+(1:n))    = w;
+                rs(:,ind+(1:n))  = chnk.r(:,:);
+                ds(:,ind+(1:n))  = chnk.d(:,:);
+                d2s(:,ind+(1:n)) = chnk.d2(:,:);
+                ind = ind + n;
+            end   
+            sourceinfo.r = rs;
+            sourceinfo.d = ds;
+            sourceinfo.d2= d2s;
+            sourceinfo.w = ws;
         end
     end   
     methods(Static)

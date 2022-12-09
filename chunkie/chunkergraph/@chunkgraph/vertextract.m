@@ -10,7 +10,7 @@ end
 
 dlefts = [];
 for i=1:numel(ilefts)
-dlefts = [dlefts,cgrph.echnks(ilefts(i)).d(:,end,end)];
+dlefts = [dlefts,cgrph.echnks(ilefts(i)).d(:,1,1)];
 end
 
 ds = [drights,dlefts];
