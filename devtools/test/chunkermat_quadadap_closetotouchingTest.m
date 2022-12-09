@@ -84,15 +84,22 @@ fprintf('%5.2e s : time to assemble matrix (adaptive)\n',t1)
 start = tic; mato = chunkermat(chnkr,fkern);
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix (original GGQ)\n',t1)
+start = tic; 
+opts.forcepquad = true; targs_bd = [chnkr.r(1,:);chnkr.r(2,:)];
+matho = chunkerkernevalmat(chnkr,fkern,targs_bd,opts); 
+t1 = toc(start);
+fprintf('%5.2e s : time to assemble matrix (Helsing-Ojala)\n',t1)
 
 sysa = 0.5*eye(chnkr.k*chnkr.nch) + mata;
 syso = 0.5*eye(chnkr.k*chnkr.nch) + mato;
+sysho = matho;
 
 %
 
 rhs = ubdry(:); 
 start = tic; sola = sysa\rhs; t1 = toc(start);
 start = tic; solo = syso\rhs; t1 = toc(start);
+start = tic; solho = sysho\rhs; t1 = toc(start);
 
 fprintf('%5.2e s : time for dense backslash solve\n',t1)
 
@@ -100,16 +107,23 @@ err = norm(sola-solo,'fro')/norm(sola,'fro');
 
 fprintf('difference between adaptive and non-adaptive %5.2e\n',err)
 
+err = norm(sola-solho,'fro')/norm(sola,'fro');
+
+fprintf('difference between adaptive and Helsing-Ojala %5.2e\n',err)
+
 % evaluate at targets and compare
 
 opts.usesmooth=false;
 opts.verb=false;
+opts.forcepquad = false;
 opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
 start=tic; layersola = chunkerkerneval(chnkr,fkern,sola,targs,opts); 
 t1 = toc(start);
 start=tic; layersolo = chunkerkerneval(chnkr,fkern,solo,targs,opts); 
 t1 = toc(start);
-
+opts.forcepquad = true;
+start=tic; layersolho = chunkerkerneval(chnkr,fkern,solho,targs,opts); 
+t1 = toc(start);
 %
 
 wchnkr = weights(chnkr);
@@ -125,6 +139,11 @@ relerr = norm(utarg-layersolo,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-layersolo,'inf')/dot(abs(solo(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e (no adap)\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e (no adap)\n',relerr2);
+
+relerr = norm(utarg-layersolho,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
+relerr2 = norm(utarg-layersolho,'inf')/dot(abs(solho(:)),wchnkr(:));
+fprintf('relative frobenius error %5.2e (Helsing-Ojala)\n',relerr);
+fprintf('relative l_inf/l_1 error %5.2e (Helsing-Ojala)\n',relerr2);
 
 % plot density
 % 

@@ -57,12 +57,14 @@ end
 
 forcesmooth = false;
 forceadap = false;
+forcepquad = false;
 flam = true;
 fac = 1.0;
 quadgkparams = {};
 eps = 1e-12;
 if isfield(opts,'forcesmooth'); forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); forceadap = opts.forceadap; end
+if isfield(opts,'forcepquad'); forcepquad = opts.forcepquad; end
 if isfield(opts,'flam'); flam = opts.flam; end
 if isfield(opts,'quadgkparams'); quadgkparams = opts.quadgkparams; end
 if isfield(opts,'fac'); fac = opts.fac; end
@@ -88,6 +90,19 @@ if forceadap
     return
 end
 
+
+if forcepquad
+    optsflag = []; optsflag.fac = fac;
+    flag = flagnear(chnkr,targs,optsflag);
+    fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens,targs, ...
+        flag,opts);
+
+    fints = fints + chunkerkerneval_ho(chnkr,kern,opdims,dens, ...
+        targs,flag,optsadap);
+
+    return
+end
+
 % smooth for sufficiently far, adaptive otherwise
 
 optsflag = []; optsflag.fac = fac;
@@ -102,6 +117,41 @@ fints = fints + chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
 
 end
 
+function fints = chunkerkerneval_ho(chnkr,kern,opdims,dens, ...
+    targs,flag,opts)
+
+% target
+[~,nt] = size(targs);
+fints = zeros(opdims(1)*nt,1);
+k = size(chnkr.r,2);
+[t,w] = lege.exps(2*k);
+ct = lege.exps(k);
+bw = lege.barywts(k);
+r = chnkr.r;
+d = chnkr.d;
+n = chnkr.n;
+d2 = chnkr.d2;
+h = chnkr.h;
+
+% interpolation matrix
+intp = lege.matrin(k,t);          % interpolation from k to 2*k
+intp_ab = lege.matrin(k,[-1;1]);  % interpolation from k to end points
+targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
+targn = zeros(chnkr.dim,nt);
+for j=1:size(chnkr.r,3)
+    [ji] = find(flag(:,j));
+    if(~isempty(ji))
+        idxjmat = (j-1)*k+(1:k);
+
+
+        % Helsing-Ojala (interior/exterior?)
+        mat1 = chnk.pquadwts(r,d,n,d2,h,ct,bw,j,targs(:,ji), ...
+            targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
+
+        fints(ji) = fints(ji) + mat1*dens(idxjmat);
+    end
+end
+end
 
 
 function fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
@@ -305,4 +355,3 @@ else % do only those flagged
 end
 
 end
-
