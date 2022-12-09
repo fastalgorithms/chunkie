@@ -38,7 +38,7 @@ function [R]=Rcomp(ngl,nedge,ndim,Pbc,PWbc,nsub,...
     end
     % construct local chunks around the corner
     for i=1:nedge
-      chnkrlocal(i) = rcip.chunkerfunclocal(fcurve{i},ts(:,i),pref,glxs);
+      chnkrlocal(i) = chnk.rcip.chunkerfunclocal(fcurve{i},ts(:,i),pref,glxs);
     end
 %     figure
 %     clf
@@ -53,9 +53,8 @@ function [R]=Rcomp(ngl,nedge,ndim,Pbc,PWbc,nsub,...
     end
     
     opts = [];
-    % fix this later
-    opdims = [1,1];
-    MAT = rcip.buildmat(chnkrlocal,fkern,opts,opdims,ilistl);
+    % test for opdims ~= [1,1]
+    MAT = chunkermat(chnkrlocal,fkern,opts,ilistl);
     
     %
     MAT = eye(nsys) + MAT;
@@ -63,7 +62,7 @@ function [R]=Rcomp(ngl,nedge,ndim,Pbc,PWbc,nsub,...
       %R=eye(nR); 
       R = inv(MAT(starL,starL));
     end
-    R=rcip.SchurBana(Pbc,PWbc,MAT,R,starL,circL,starS,circS);   
+    R=chnk.rcip.SchurBana(Pbc,PWbc,MAT,R,starL,circL,starS,circS);   
   end
   
   end

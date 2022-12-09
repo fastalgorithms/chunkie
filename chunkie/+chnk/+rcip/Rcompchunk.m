@@ -18,7 +18,7 @@ k = chnkr.k;
 dim = chnkr.dim;
 
 if nargin < 14
-    [sbclmat,sbcrmat,lvmat,rvmat,u] = rcip.shiftedlegbasismats(k); 
+    [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k); 
 end
 
 nedge = size(iedgechunks,2);
@@ -108,7 +108,7 @@ for level=1:nsub
     end
     % construct local chunks around the corner
     for i=1:nedge
-        chnkrlocal(i) = rcip.chunkerfunclocal(@(t) shiftedcurve(t,rcs(:,:,i),dcs(:,:,i), ...
+        chnkrlocal(i) = chnk.rcip.chunkerfunclocal(@(t) shiftedcurve(t,rcs(:,:,i),dcs(:,:,i), ...
             dscal(i),d2cs(:,:,i),d2scal(i),ileftright(i)),ts{i},pref,glxs);
     end
     
@@ -145,9 +145,9 @@ for level=1:nsub
     end
 
     opts = [];
-% fix this later
-    opdims = [1,1];
-    MAT = rcip.buildmat(chnkrlocal,fkern,opts,opdims,ilistl);
+    % test for opdims ~= [1,1]
+    MAT = chunkermat(chnkrlocal,fkern,opts,ilistl);
+    
 
 %
     MAT = eye(nsys) + MAT;
@@ -155,7 +155,7 @@ for level=1:nsub
   %R=eye(nR); 
         R = inv(MAT(starL,starL));
     end
-    R=rcip.SchurBana(Pbc,PWbc,MAT,R,starL,circL,starS,circS);   
+    R=chnk.rcip.SchurBana(Pbc,PWbc,MAT,R,starL,circL,starS,circS);   
 end
 
 end

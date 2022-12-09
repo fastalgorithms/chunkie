@@ -138,12 +138,12 @@ R = cell(1,ncorner);
 corners{1}.clist = [1,2];
 corners{1}.isstart = [1,0];
 corners{1}.nedge = 2;
-corners{1}.iedgechunks = [1 2; 1 chnkr(2).nch];
+
 
 corners{2}.clist = [1,2];
 corners{2}.isstart = [0 1];
 corners{2}.nedge = 2;
-corners{2}.iedgechunks = [1 2; chnkr(1).nch 1];
+
 
 ndim = 1;
 
@@ -155,32 +155,32 @@ for icorner=1:ncorner
     clist = corners{icorner}.clist;
     isstart = corners{icorner}.isstart;
     nedge = corners{icorner}.nedge;
-    
-    
-    starind = zeros(1,2*ngl*ndim*nedge);
+    cparslocal = cell(1,nedge);
+    fcurvelocal = cell(1,nedge);
+    h0 = zeros(1,nedge);
+    starind = [];
     for i=1:nedge
-        i1 = (i-1)*2*ngl*ndim+1;
-        i2 = i*2*ngl*ndim;
+        cparslocal{i} = cpars{clist(i)};
+        cparslocal{i}.islocal = isstart(i);
+        fcurvelocal{i} = @(t) circulararc(t,cparslocal{i});
         if(isstart(i))
-            
-            starind(i1:i2) = inds(clist(i))*ngl*ndim+(1:2*ngl*ndim);
+            h0(i) = chnkr(clist(i)).h(1);
+            starind = [starind inds(clist(i))*ngl*ndim+(1:2*ngl*ndim)];
         else
-            
-            starind(i1:i2) = inds(clist(i)+1)*ngl*ndim-fliplr(0:2*ngl*ndim-1);
+            h0(i) = chnkr(clist(i)).h(end);
+            starind = [starind inds(clist(i)+1)*ngl*ndim-fliplr(0:2*ngl*ndim-1)];
         end
     end
-    
+    h0 = h0*2;
     
     [Pbc,PWbc,starL,circL,starS,circS,ilist] = chnk.rcip.setup(ngl,ndim, ...
       nedge,isstart);
     opts_use = [];
-    
-    iedgechunks = corners{icorner}.iedgechunks;
-    tic; R{icorner} = chnk.rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
-        Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,... 
-        glxs);
+    tic; R{icorner} = chnk.rcip.Rcomp(ngl,nedge,ndim,Pbc, ...
+      PWbc,nsub,starL,circL, ...
+      starS,circS,ilist,h0,isstart,fcurvelocal,glxs,fkern);
     toc
-    
+
     sysmat(starind,starind) = inv(R{icorner}) - eye(2*ngl*nedge*ndim);
 end
 sysmat = sysmat + eye(np);

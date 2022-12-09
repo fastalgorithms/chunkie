@@ -21,7 +21,7 @@ edge2verts = sparse(edge2verts);
 fchnks    = {};
 
 prefs      = [];
-prefs.chsmall = 1d-4;
+% prefs.chsmall = 1d-4;
 [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
 
 vstruc = procverts(cgrph);
@@ -29,12 +29,13 @@ rgns = findregions(cgrph);
 cgrph = balance(cgrph);
 
 zk = 1.0;
-fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'d');
+fkern = @(s,t) -2*chnk.helm2d.kern(zk,s,t,'d');
 
 opts = [];
-opts.nonsmoothonly = true;
+opts.nonsmoothonly = false;
+opts.rcip = true;
 [sysmat] = chunkermat(cgrph,fkern,opts);
-sysmat = sysmat - eye(size(sysmat,2))/2;
+sysmat = sysmat + eye(size(sysmat,2));
 
 % generate some targets...
 
@@ -76,6 +77,7 @@ t = [];
 t.r = cgrph.r(:,:);
 rhs = chnk.helm2d.kern(zk,s,t,'s');
 dens = sysmat\rhs;
+dens = -2*dens;
 
 srcinfo.dipstr = (w(:).*dens(:)).';
 srcinfo.dipvec = n(:,:); 
@@ -90,3 +92,4 @@ usol(inds) = fints.pottarg;
 uerr(inds) = usol(inds)-true_sol;
 usol = reshape(usol,size(X));
 uerr = reshape(uerr,size(X));
+pcolor(log10(abs(uerr)))

@@ -22,7 +22,7 @@
       H(k+1,it)=-sn(k)*H(k,it)+cs(k)*H(k+1,it);
       H(k,it)  = temp;
     end
-    [cs(it),sn(it)] = rcip.rotmatc(H(it,it),wnrm2);     
+    [cs(it),sn(it)] = chnk.rcip.rotmatc(H(it,it),wnrm2);     
     H(it,it)= cs(it)*H(it,it)+conj(sn(it))*wnrm2;
     s(it1) =-sn(it)*s(it);                      
     s(it)  = cs(it)*s(it);                         

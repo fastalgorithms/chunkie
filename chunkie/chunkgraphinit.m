@@ -47,7 +47,7 @@ function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams)
             i2 = find(edge2verts(i,:)==1);
             v1 = verts(:,i1);
             v2 = verts(:,i2);
-            fcurve = @(t) linefunc(t,v1,v2);
+            fcurve = @(t) chnk.curves.linefunc(t,v1,v2);
             chnkr = chunkerfunc(fcurve,cploc,pref);
             chnkr = sort(chnkr);
             %chnkr.vert = [v1,v2];

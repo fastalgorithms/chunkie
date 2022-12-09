@@ -18,9 +18,9 @@
   % starS, circS - bad and good indices for the preconditioner R
   %
   [T,W] = lege.exps(ngl);  
-  [IP,IPW]=rcip.IPinit(T,W);
-  Pbc = rcip.Pbcinit(IP,nedge,ndim);
-  PWbc = rcip.Pbcinit(IPW,nedge,ndim);
+  [IP,IPW]=chnk.rcip.IPinit(T,W);
+  Pbc = chnk.rcip.Pbcinit(IP,nedge,ndim);
+  PWbc = chnk.rcip.Pbcinit(IPW,nedge,ndim);
   
   ilist = zeros(2,nedge);
   % starL - bad indices for the system matrix M

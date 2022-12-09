@@ -20,7 +20,7 @@ edge2verts(12,10) = -1;
 edge2verts(12,8) =   1;
 
 fchnks    = {};
-fchnks{4} = @(t) fsine(t,0.2,5,0); 
+fchnks{4} = @(t) chnk.curves.fsine(t,0.2,5,0); 
 
 prefs      = [];
 prefs.chsmall = 1d-3;

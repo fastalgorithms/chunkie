@@ -54,6 +54,12 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %
 %                     The specific precomputed variables and their values
 %                     will depend on the quadrature method used.
+%           opts.rcip = boolean (true), flag for whether to include rcip
+%                      corrections for near corners if input chnkobj is
+%                      of type chunkergraph
+%           opts.nsub_or_tol = (40) specify the level of refinements in rcip
+%                    or a tolerance where the number of levels is given by
+%                    ceiling(log_{2}(1/tol^2);
 %  ilist - cell array of integer arrays ([]), list of panel interactions that 
 %          should be ignored when constructing matrix entries or quadrature
 %          corrections. 
@@ -86,6 +92,8 @@ end
 quad = 'ggq';
 nonsmoothonly = false;
 l2scale = false;
+isrcip = true;
+nsub = 40;
 
 % get opts from struct if available
 
@@ -99,10 +107,27 @@ if isfield(opts,'nonsmoothonly')
     nonsmoothonly = opts.nonsmoothonly;
 end
 
+if(isfield(opts,'rcip'))
+    isrcip = opts.rcip;
+end
+
+if(isfield(opts,'nsub_or_tol'))
+    if(opts.nsub_or_tol <1)
+        tol = opts.nsub_or_tol;
+        nsub = max(ceil(log2(1/tol^2)),200);
+    else
+        nsub = ceil(opts.nsub_or_tol);
+    end
+    
+end
+
+% Flag for determining whether input object is a chunkergraph
+icgrph = 0;
 
 if (class(chnkobj) == "chunker")
     chnkrs = chnkobj;
 elseif(class(chnkobj) == "chunkgraph")
+    icgrph = 1;
     chnkrs = chnkobj.echnks;
 else
     msg = "Unsupported object in chunkermat";
@@ -140,9 +165,11 @@ for i=1:nchunkers
     end
 end    
 
-irowlocs = [1];
-icollocs = [1];
+irowlocs = zeros(nchunkers+1,1);
+icollocs = zeros(nchunkers+1,1);
 
+irowlocs(1) = 1;
+icollocs(1) = 1;
 for i=1:nchunkers
    icollocs(i+1) = icollocs(i) + lchunks(i)*opdims_mat(2,1,i);
    irowlocs(i+1) = irowlocs(i) + lchunks(i)*opdims_mat(1,i,1);
@@ -206,6 +233,10 @@ end
 for i=1:nchunkers
 
     opdims = reshape(opdims_mat(:,i,i),[2,1]);
+    jlist = [];
+    if ~isempty(ilist)
+        jlist = ilist(:,i);
+    end
 
     chnkr = chnkrs(i);
     
@@ -221,9 +252,9 @@ for i=1:nchunkers
         end    
         type = 'log';
         if nonsmoothonly
-            sysmat_tmp = chnk.quadggq.buildmattd(chnkr,kern,opdims,type,auxquads,ilist);
+            sysmat_tmp = chnk.quadggq.buildmattd(chnkr,kern,opdims,type,auxquads,jlist);
         else
-            sysmat_tmp = chnk.quadggq.buildmat(chnkr,kern,opdims,type,auxquads,ilist);
+            sysmat_tmp = chnk.quadggq.buildmat(chnkr,kern,opdims,type,auxquads,jlist);
         end
 
     elseif strcmpi(quad,'native')
@@ -263,6 +294,76 @@ for i=1:nchunkers
         vsysmat = [vsysmat;vsys];
     end    
 end
+
+
+
+if(icgrph && isrcip)
+    nch_all = horzcat(chnkobj.echnks.nch);
+    [~,nv] = size(chnkobj.verts);
+    ngl = chnkrs(1).k;
+    glxs = lege.exps(k);
+    
+    
+    for ivert=1:nv
+        clist = chnkobj.vstruc{ivert}{1};
+        isstart = chnkobj.vstruc{ivert}{2};
+        isstart(isstart==1) = 0;
+        isstart(isstart==-1) = 1;
+        nedge = length(isstart);
+        iedgechunks = zeros(2,nedge);
+        iedgechunks(1,:) = clist;
+        iedgechunks(2,:) = 1;
+        iedgechunks(2,isstart==0) = nch_all(isstart==0);
+        
+        
+        % since opdims mat for all chunkers meeting at the same 
+        % vertex should be the same 
+        
+        % Todo: have a check that fails with error if this is not the case
+        ndim = opdims_mat(1,clist(1),clist(1));
+        
+        opdims_test = opdims_mat(1:2,clist,clist);
+        
+        if(norm(opdims_test(:)-ndim)>=0.5) 
+            fprintf('in chunkermat: rcip: opdims did not match up for for vertex =%d\n',ivert)
+            fprtinf('returning without doing any rcip correction\m');
+            break
+        end
+        starind = zeros(1,2*ngl*ndim*nedge);
+        for i=1:nedge
+            i1 = (i-1)*2*ngl*ndim+1;
+            i2 = i*2*ngl*ndim;
+            if(isstart(i))
+                starind(i1:i2) = irowlocs(clist(i))+(1:2*ngl*ndim)-1;
+            else
+                starind(i1:i2) = irowlocs(clist(i)+1)-fliplr(0:2*ngl*ndim-1)-1;
+            end
+        end
+        
+
+        [Pbc,PWbc,starL,circL,starS,circS,ilist] = chnk.rcip.setup(ngl,ndim, ...
+          nedge,isstart);
+        
+        % this might need to be fixed in triple junction case
+        tic; R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
+            Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,... 
+            glxs);
+        toc
+        sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
+        if (~nonsmoothonly)
+            
+            sysmat(starind,starind) = sysmat_tmp;
+        else
+            
+            isysmat = [isysmat;starind];
+            jsysmat = [jsysmat;starind];
+            vsysmat = [vsysmat;sysmat_tmp(:)];
+        end    
+    end
+    
+end
+
+
 
 if (nonsmoothonly)
     sysmat = sparse(isysmat,jsysmat,vsysmat,nrows,ncols);

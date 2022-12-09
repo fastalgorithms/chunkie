@@ -37,7 +37,7 @@
   VA=K(circL,starL)*A;
   PTA=PW'*A;
   PTAU=PTA*K(starL,circL);
-  DVAUI=rcip.myinv(K(circL,circL)-VA*K(starL,circL));
+  DVAUI=chnk.rcip.myinv(K(circL,circL)-VA*K(starL,circL));
   DVAUIVAP=DVAUI*(VA*P);
   A(starS,starS)=PTA*P+PTAU*DVAUIVAP;
   A(circS,circS)=DVAUI;
