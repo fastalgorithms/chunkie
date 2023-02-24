@@ -12,6 +12,7 @@ classdef chunkgraph
         r
         d
         d2
+        n
         adj
         sourceinfo
         npts
@@ -47,6 +48,10 @@ classdef chunkgraph
         function d2 = get.d2(obj)
             chnk = merge(obj.echnks);
             d2 = chnk.d2;
+        end
+     	function n = get.n(obj)
+            chnk = merge(obj.echnks);
+            n = normals(chnk);
         end
         function adj = get.adj(obj)
             chnk = merge(obj.echnks);
