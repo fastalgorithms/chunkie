@@ -1,5 +1,5 @@
 
-function submat= kern(zk,srcinfo,targinfo,type,varargin)
+function submat= kern_sym(zk,srcinfo,targinfo,type,varargin)
 %CHNK.HELM2D.KERN standard Helmholtz layer potential kernels in 2D
 % 
 % Syntax: submat = chnk.heml2d.kern(zk,srcinfo,targingo,type,varargin)
@@ -53,15 +53,20 @@ targ = targinfo.r;
 
 if strcmpi(type,'d')
   srcnorm = srcinfo.n;
-  [~,grad] = chnk.helm2d.green(zk,src,targ);
+  [~,grad] = green_sym(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
   ny = repmat(srcnorm(2,:),nt,1);
   submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+  src(2,:) = - src(2,:);
+  [~,grad] = green_sym(zk,src,targ);
+  nx = repmat(srcnorm(1,:),nt,1);
+  ny = repmat(srcnorm(2,:),nt,1);
+  submat =submat -(grad(:,:,1).*nx - grad(:,:,2).*ny);
 end
 
 if strcmpi(type,'sprime')
   targnorm = targinfo.n;
-  [~,grad] = chnk.helm2d.green(zk,src,targ);
+  [~,grad] = green_sym(zk,src,targ);
   nx = repmat((targnorm(1,:)).',1,ns);
   ny = repmat((targnorm(2,:)).',1,ns);
 
@@ -70,7 +75,7 @@ end
 
 if strcmpi(type,'sdtau')
   targtan = targinfo.d;
-  [~,grad] = chnk.helm2d.green(zk,src,targ);
+  [~,grad] = green_sym(zk,src,targ);
   dx = repmat((targtan(1,:)).',1,ns);
   dy = repmat((targtan(2,:)).',1,ns);
   dn = sqrt(dx.*dx+dy.*dy);
@@ -78,13 +83,13 @@ if strcmpi(type,'sdtau')
 end
 
 if strcmpi(type,'s')
-  submat = chnk.helm2d.green(zk,src,targ);
+  submat = green_sym(zk,src,targ);
 end
 
 if strcmpi(type,'dprime')
   targnorm = targinfo.n;
   srcnorm = srcinfo.n;
-  [~,~,hess] = chnk.helm2d.green(zk,src,targ);
+  [~,~,hess] = green_sym(zk,src,targ);
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
   nxtarg = repmat((targnorm(1,:)).',1,ns);
@@ -96,7 +101,7 @@ end
 if strcmpi(type,'c')
   srcnorm = srcinfo.n;
   eta = varargin{1};
-  [s,grad] = chnk.helm2d.green(zk,src,targ);
+  [s,grad] = green_sym(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
   ny = repmat(srcnorm(2,:),nt,1);
   submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny) + 1i*eta*s;
@@ -111,8 +116,8 @@ if strcmpi(type,'all')
   
   submat = zeros(2*nt,2*ns);
   % S
-  [submats,grad,hess] = chnk.helm2d.green(zk,src,targ);
-  %[submat(1:2:2*nt,2:2:2*ns),grad,hess] = chnk.helm2d.green(zk,src,targ);
+  [submats,grad,hess] = green_sym(zk,src,targ);
+  %[submat(1:2:2*nt,2:2:2*ns),grad,hess] = green_sym(zk,src,targ);
 
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
@@ -144,7 +149,7 @@ if strcmpi(type,'eval')
   
   submat = zeros(nt,2*ns);
   % S
-  [submats,grad] = chnk.helm2d.green(zk,src,targ);
+  [submats,grad] = green_sym(zk,src,targ);
 
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
@@ -163,7 +168,7 @@ if strcmpi(type,'evalg')
   
   submat = zeros(nt,ns,6);
   % S
-  [submats,grad,hess] = chnk.helm2d.green(zk,src,targ);
+  [submats,grad,hess] = green_sym(zk,src,targ);
 
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
@@ -253,7 +258,7 @@ if strcmpi(type,'trans1')
     
   hess1(:,:,3) = ck.*(-tmp1 - ry2.*tmp2);
 
-  %[submat(1:2:2*nt,2:2:2*ns),grad,hess] = chnk.helm2d.green(zk,src,targ);
+  %[submat(1:2:2*nt,2:2:2*ns),grad,hess] = green_sym(zk,src,targ);
   % D'
   %submat(2:2:2*nt,1:2:2*ns) = -(hess(:,:,1).*nxsrc.*nxtarg ... 
   submatdp1 = -(hess1(:,:,1).*nxsrc.*nxtarg ...
@@ -293,7 +298,7 @@ if strcmpi(type,'trans1')
     
   hess2(:,:,3) = ck.*(-tmp1 - ry2.*tmp2);
 
-  %[submat(1:2:2*nt,2:2:2*ns),grad,hess] = chnk.helm2d.green(zk,src,targ);
+  %[submat(1:2:2*nt,2:2:2*ns),grad,hess] = green_sym(zk,src,targ);
   % D'
   %submat(2:2:2*nt,1:2:2*ns) = -(hess(:,:,1).*nxsrc.*nxtarg ... 
   submatdp2 = -(hess2(:,:,1).*nxsrc.*nxtarg ...
