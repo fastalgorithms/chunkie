@@ -32,7 +32,7 @@ function [obj] = balance(obj)
             pinds(ii) = size(obj.echnks(vedge(ii)).r,3);
         end    
         
-        h  =  obj.echnks(vedge(ii)).h(pinds(ii))
+        h  =  obj.echnks(vedge(ii)).h(pinds(ii));
         k  =  obj.echnks(vedge(ii)).k;
         if (k ~=16)
              [xleg,wleg,~,~] = lege.exps(k);

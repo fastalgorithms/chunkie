@@ -157,7 +157,7 @@ for i=1:nchunkers
         if (size(kern) == 1)
             ftemp = kern(srcinfo,targinfo);
         else
-            ktmp = kern(i,j);
+            ktmp = kern{i,j};
             ftemp = ktmp(srcinfo,targinfo);
         end   
         opdims = size(ftemp);
@@ -206,7 +206,7 @@ if (~nonsmoothonly)
                 if (size(kern) == 1)
                     ftmp = kern;
                 else
-                    ftmp = kern(i,j);
+                    ftmp = kern{i,j};
                 end 
 
                 sysmat_tmp = ftmp(chnkrj,chnkri).*wts;
@@ -239,6 +239,12 @@ for i=1:nchunkers
     end
 
     chnkr = chnkrs(i);
+    if (size(kern) == 1)
+        ftmp = kern;
+    else
+        ftmp = kern{i,i};
+    end 
+    
     
     % call requested routine
 
@@ -252,9 +258,9 @@ for i=1:nchunkers
         end    
         type = 'log';
         if nonsmoothonly
-            sysmat_tmp = chnk.quadggq.buildmattd(chnkr,kern,opdims,type,auxquads,jlist);
+            sysmat_tmp = chnk.quadggq.buildmattd(chnkr,ftmp,opdims,type,auxquads,jlist);
         else
-            sysmat_tmp = chnk.quadggq.buildmat(chnkr,kern,opdims,type,auxquads,jlist);
+            sysmat_tmp = chnk.quadggq.buildmat(chnkr,ftmp,opdims,type,auxquads,jlist);
         end
 
     elseif strcmpi(quad,'native')
@@ -266,7 +272,7 @@ for i=1:nchunkers
                 warning(['native rule: quadorder', ... 
                     ' must equal chunker order (%d)'],chnkr.k)
             end
-            sysmat_tmp = chnk.quadnative.buildmat(chnkr,kern,opdims);
+            sysmat_tmp = chnk.quadnative.buildmat(chnkr,ftmp,opdims);
         end
     else
         warning('specified quadrature method not available');

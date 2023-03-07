@@ -33,6 +33,20 @@ d2cs = zeros(k,dim,nedge);
 dscal = zeros(nedge,1);
 d2scal = zeros(nedge,1);
 ctr = zeros(dim,nedge);
+if(size(fkern)==1)
+    fkernlocal = fkern;
+else
+    fkernlocal = cell(nedge,nedge);
+    for i=1:nedge
+        ici = iedgechunks(1,i);
+        for j=1:nedge
+            icj = iedgechunks(1,j);
+            fkernlocal{i,j} = fkern{ici,icj};
+        end
+    end
+
+end
+
 
 for i = 1:nedge
     ic = iedgechunks(1,i);
@@ -146,7 +160,7 @@ for level=1:nsub
 
     opts = [];
     % test for opdims ~= [1,1]
-    MAT = chunkermat(chnkrlocal,fkern,opts,ilistl);
+    MAT = chunkermat(chnkrlocal,fkernlocal,opts,ilistl);
     
 
 %

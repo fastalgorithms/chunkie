@@ -108,6 +108,7 @@ if strcmpi(type,'all')
   % added by Shidong Jiang to avoid O(N^2) calculation of normals
   targnorm = targinfo.n;
   srcnorm = srcinfo.n;
+  cc = varargin{1};
   
   submat = zeros(2*nt,2*ns);
   % S
@@ -131,10 +132,10 @@ if strcmpi(type,'all')
   submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
   
   
-  submat(1:2:2*nt,1:2:2*ns) = submatd;
-  submat(1:2:2*nt,2:2:2*ns) = submats;
-  submat(2:2:2*nt,1:2:2*ns) = submatdp;
-  submat(2:2:2*nt,2:2:2*ns) = submatsp;
+  submat(1:2:2*nt,1:2:2*ns) = submatd*cc(1,1);
+  submat(1:2:2*nt,2:2:2*ns) = submats*cc(1,2);
+  submat(2:2:2*nt,1:2:2*ns) = submatdp*cc(2,1);
+  submat(2:2:2*nt,2:2:2*ns) = submatsp*cc(2,2);
 end
 
 if strcmpi(type,'eval')
