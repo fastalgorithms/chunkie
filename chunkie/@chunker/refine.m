@@ -222,11 +222,13 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
                 if (i2 > 0)
                     rl2 = chunklens(i2);
                 end
+                if (numel(vert) ~= 0)
                 if (i1 < 0)
                     rl1 = min(chunklens(vert{-i1}));
                 end
                 if (i2 < 0)
                     rl2 = min(chunklens(vert{-i2}));
+                end
                 end
             end
 

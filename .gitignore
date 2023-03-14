@@ -1,10 +1,21 @@
+
+*~
+*#
+chunkie/demo-ignore/*
+*.save
+dev/*
+
 # Mac OS files
-.DS_Store?
+*.DS_Store*
 
 # Matlab autosaves
-*.~
 *.asv
+*.DS_STORE
+chunkie/FLAM
+chunkie/FLAM
+
 *~
-chunkie/demo-ignore/*
 *#
-*.save
+chunkie/chunkergraph/test_chnkgraph_local.m
+chunkie/chunkergraph/local_tests/test_chnkgraph_local.m
+chunkie/chunkergraph/local_tests/test_chnkgraph_local2.m

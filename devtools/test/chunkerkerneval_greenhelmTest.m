@@ -63,6 +63,7 @@ opdims = [1 1];
 srcinfo = []; srcinfo.r = sources;
 targinfo = []; targinfo.r = chnkr.r(:,:); 
 targinfo.d = chnkr.d(:,:);
+targinfo.n = chnkr.n(:,:);
 kernmats = kerns(srcinfo,targinfo);
 kernmatsprime = kernsprime(srcinfo,targinfo);
 densu = kernmats*strengths;

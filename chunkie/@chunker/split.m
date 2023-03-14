@@ -149,7 +149,8 @@ chnkr.adjstor(2,nch+1)=i2;
 if i2 > 0
     chnkr.adjstor(1,i2)=nch+1;
 end
-if i2 < 0
+
+if (i2 < 0 && numel(chnkr.vert)~=0)
     ii = (chnkr.vert{-i2} == ich);
     chnkr.vert{-i2}(ii) = nch+1;
 end

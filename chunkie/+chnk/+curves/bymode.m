@@ -1,12 +1,18 @@
 
-function [r,d,d2] = bymode(t,modes,ctr)
+function [r,d,d2] = bymode(t,modes,ctr,sc)
 %CHNK.CURVES.BYMODE evaluate the position, and first and second derivatives
 % of the position described by r(t) = ctr + (modes(1) + modes(2)*cos(t) +
 % modes(3)*sin(t) + modes(4)*cos(2t) + modes(5)*sin(2t) ...)[cos(t),sin(t)]
 
   if nargin < 3
     ctr = zeros(2,1);
+    sc = [1;1];
   end
+  if(nargin < 4)
+      sc = [1,1];
+  end
+  
+  
 
   x0 = ctr(1); y0 = ctr(2);
   
@@ -27,8 +33,8 @@ function [r,d,d2] = bymode(t,modes,ctr)
     end
   end
 
-  xs = x0+r.*real(eit);
-  ys = y0+r.*imag(eit);
+  xs = x0+r.*real(eit)*sc(1);
+  ys = y0+r.*imag(eit)*sc(2);
   dxdr = real(eit);
   dydr = imag(eit);
 
@@ -47,8 +53,8 @@ function [r,d,d2] = bymode(t,modes,ctr)
   d2ys = dydr.*rpp+(dydrdth*2.0d0).*rp+dydth2;
   
   r = [(xs(:)).'; (ys(:)).'];
-  d = [(dxs(:)).'; (dys(:)).'];
-  d2 = [(d2xs(:)).'; (d2ys(:)).'];  
+  d = [(sc(1)*dxs(:)).'; (sc(2)*dys(:)).'];
+  d2 = [(sc(1)*d2xs(:)).'; (sc(2)*d2ys(:)).'];  
 
 end
 

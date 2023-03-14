@@ -193,6 +193,9 @@ classdef chunker
             end
         end
         
+        function obj = clearverts(obj)
+            obj.vert = {};
+        end
         function obj = addvert(obj,newvert,toleft)
         %ADDVERT add vertex label to chunker object 
         %
@@ -231,7 +234,7 @@ classdef chunker
                 if (errvertends > tol)
                     warning('chunkie:badvertchunks', ...
                      [sprintf('chunkends far from centroid %5.2e\n',...
-                     errvertends),
+                     errvertends),...
                      'consider resetting verttol for chunker']);
                 end
                 

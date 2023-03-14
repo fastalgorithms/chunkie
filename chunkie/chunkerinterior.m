@@ -10,7 +10,11 @@ function in = chunkerinterior(chnkr,pts,opts)
 %
 % Optional input:
 %   opts - options structure with entries:
-%       opts.flam = boolean, use FLAM routines (true)
+%       opts.fmm = boolean, use FMM 
+%       opts.flam = boolean, use FLAM routines
+%  Note on the default behavior: 
+%    by default it tries to use the fmm if it exists, if it doesn't
+%    then unless explicitly set to false, it tries to use flam
 %
 % Output:
 %   in - logical array, if in(i) is true, then pts(:,i) is inside the
@@ -30,31 +34,67 @@ if nargin < 3
     opts = [];
 end
 
+usefmm = true;
+if isfield(opts,'fmm')
+    usefmm = opts.fmm;
+end
+
 useflam = true;
 if isfield(opts,'flam')
     useflam = opts.flam;
 end
 
-kernd = @(s,t) chnk.lap2d.kern(s,t,'d');
-dens1 = ones(chnkr.k,chnkr.nch);
-wts = weights(chnkr);
+usefmm_final = false;
+useflam_final = false;
 
-opdims = [1 1];
-
-if useflam
-    xflam1 = chnkr.r(:,:);
-    matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr,wts,kernd,opdims);
-    [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
-
-    pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-        ctr,chnkr,wts,kernd,opdims,pr,ptau,pw,pin);
-    F = ifmm(matfun,pts,xflam1,200,1e-14,pxyfun);
-    vals1 = ifmm_mv(F,dens1(:),matfun);
+if usefmm
+    s = which('fmm2d');
+    if(~isempty(s))
+        usefmm_final = true;
+    else
+        useflam_final = useflam;
+    end
 else
-    optskerneval = []; optskerneval.usesmooth = 1;
-    vals1 = chunkerkerneval(chnkr,kernd,dens1,pts,optskerneval);
+   useflam_final = useflam;
 end
 
+
+icont = false;
+if usefmm_final
+   try
+       eps_local = 1e-3;
+       wchnkr = weights(chnkr);
+       dens1_fmm = ones(chnkr.k*chnkr.nch,1).*wchnkr(:);
+       pgt = 1;
+       vals1 = chnk.lap2d.fmm(eps_local,chnkr,pts,'d',dens1_fmm,pgt);
+   catch
+       fprintf('using fmm failed due to incompatible mex, try regenrating mex\n');
+       useflam_final = useflam;
+       icont = true;
+   end
+end
+
+if ~usefmm_final || icont
+    kernd = @(s,t) chnk.lap2d.kern(s,t,'d');
+    dens1 = ones(chnkr.k,chnkr.nch);
+    wts = weights(chnkr);
+
+    opdims = [1 1];
+
+    if useflam_final
+        xflam1 = chnkr.r(:,:);
+        matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr,wts,kernd,opdims);
+        [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
+
+        pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
+            ctr,chnkr,wts,kernd,opdims,pr,ptau,pw,pin);
+        F = ifmm(matfun,pts,xflam1,200,1e-14,pxyfun);
+        vals1 = ifmm_mv(F,dens1(:),matfun);
+    else
+        optskerneval = []; optskerneval.usesmooth = 1;
+        vals1 = chunkerkerneval(chnkr,kernd,dens1,pts,optskerneval);
+    end
+end
 in = abs(vals1+1) < abs(vals1);
 
 % find nearest neighbors at certain level of refinement (here chosen
