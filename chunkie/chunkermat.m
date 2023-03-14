@@ -351,10 +351,10 @@ if(icgrph && isrcip)
           nedge,isstart);
         
         % this might need to be fixed in triple junction case
-        tic; R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
+        R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
             Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,... 
             glxs);
-        toc
+       
         sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
         if (~nonsmoothonly)
             
