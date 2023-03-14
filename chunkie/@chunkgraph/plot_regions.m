@@ -1,4 +1,4 @@
-function plot(obj,varargin)
+function plot_regions(obj,varargin)
 
 
 ifhold = ishold();
