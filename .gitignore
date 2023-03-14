@@ -10,3 +10,12 @@ dev/*
 
 # Matlab autosaves
 *.asv
+*.DS_STORE
+chunkie/FLAM
+chunkie/FLAM
+
+*~
+*#
+chunkie/chunkergraph/test_chnkgraph_local.m
+chunkie/chunkergraph/local_tests/test_chnkgraph_local.m
+chunkie/chunkergraph/local_tests/test_chnkgraph_local2.m

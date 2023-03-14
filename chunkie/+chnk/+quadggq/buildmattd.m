@@ -60,6 +60,7 @@ ainterps0kron = auxquads.ainterps0kron;
 mmat = k*nch*opdims(1); nmat = k*nch*opdims(2);
 
 nnz = k*nch*opdims(1)*k*3*opdims(2);
+nz_found = 0;
 nnz1 = k*opdims(1)*k*opdims(2);
 v = zeros(nnz,1);
 iind = zeros(nnz,1);
@@ -97,6 +98,7 @@ for j = 1:nch
             induse = ict:ict+nnz1-1;
             iind(induse) = ii1(:)+imat;
             jind(induse) = jj1(:)+jmat;
+            nz_found = nz_found + numel(induse);
             v(induse) = submat(:);
             ict = ict + nnz1;
         end
@@ -114,6 +116,7 @@ for j = 1:nch
         induse = ict:ict+nnz1-1;
         iind(induse) = ii1(:)+imat;
         jind(induse) = jj1(:)+jmat;
+        nz_found = nz_found + numel(induse);
         v(induse) = submat(:);
         ict = ict + nnz1;
       end
@@ -132,12 +135,16 @@ for j = 1:nch
       induse = ict:(ict+nnz1-1);
       iind(induse) = ii1(:)+imat;
       jind(induse) = jj1(:)+jmat;
+      nz_found = nz_found + numel(induse);
       v(induse) = submat(:);
       ict = ict + nnz1;
     end
     
 end
 
+iind = iind(1:nz_found);
+jind = jind(1:nz_found);
+v    = v(1:nz_found);
 spmat = sparse(iind,jind,v,mmat,nmat);
 	 
 
