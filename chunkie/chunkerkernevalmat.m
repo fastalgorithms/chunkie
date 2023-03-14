@@ -51,17 +51,19 @@ targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
 
-if nargin < 5
+if nargin < 4
     opts = [];
 end
 
 forcesmooth = false;
 forceadap = false;
+forcepqud = false;
 nonsmoothonly = false;
 fac = 1.0;
 eps = 1e-12;
 if isfield(opts,'forcesmooth'); forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); forceadap = opts.forceadap; end
+if isfield(opts,'forcepquad'); forcepqud = opts.forcepquad; end
 if isfield(opts,'nonsmoothonly'); nonsmoothonly = opts.nonsmoothonly; end
 if isfield(opts,'fac'); fac = opts.fac; end
 if isfield(opts,'eps'); eps = opts.eps; end
@@ -84,6 +86,17 @@ end
 if forceadap
     mat = chunkerkernevalmat_adap(chnkr,kern,opdims, ...
         targs,[],optsadap);
+    return
+end
+
+if forcepqud
+    optsflag = []; optsflag.fac = fac;
+    flag = flagnear(chnkr,targs,optsflag);
+    spmat = chunkerkernevalmat_ho(chnkr,kern,opdims, ...
+        targs,flag,optsadap);
+    mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targs, ...
+        flag,opts);
+    mat = mat + spmat;
     return
 end
 
@@ -175,6 +188,7 @@ if isempty(flag)
     bw = lege.barywts(k);
     r = chnkr.r;
     d = chnkr.d;
+    n = chnkr.n;
     d2 = chnkr.d2;
     h = chnkr.h;
     targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);    
@@ -182,7 +196,7 @@ if isempty(flag)
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
-        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,d2,h,ct,bw,i,targs, ...
+        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs, ...
                     targd,targd2,kern,opdims,t,w,opts);
                 
         js1 = jmat:jmatend;
@@ -245,3 +259,72 @@ end
 
 end
 
+function mat = chunkerkernevalmat_ho(chnkr,kern,opdims, ...
+    targs,flag,opts)
+
+k = chnkr.k;
+nch = chnkr.nch;
+
+if nargin < 5
+    flag = [];
+end
+if nargin < 6
+    opts = [];
+end
+
+[~,nt] = size(targs);
+
+% using Helsing-Ojala quadrature
+if isempty(flag) % figure out what is this flag for in adaptive routine
+    keyboard
+else
+    is = zeros(nnz(flag)*opdims(1)*opdims(2)*k,1);
+    js = is;
+    vs = is;
+    istart = 1;
+
+    [t,w] = lege.exps(2*k);
+    ct = lege.exps(k);
+    bw = lege.barywts(k);
+    r = chnkr.r;
+    d = chnkr.d;
+    n = chnkr.n;
+    d2 = chnkr.d2;
+    h = chnkr.h;
+
+    % interpolation matrix 
+    intp = lege.matrin(k,t);          % interpolation from k to 2*k
+    intp_ab = lege.matrin(k,[-1;1]);  % interpolation from k to end points
+    targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
+    targn = zeros(chnkr.dim,nt);
+    for i = 1:nch
+        jmat = 1 + (i-1)*k*opdims(2);
+        jmatend = i*k*opdims(2);
+                        
+        [ji] = find(flag(:,i));
+
+        % Helsing-Ojala (interior/exterior?)
+        mat1 = chnk.pquadwts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+                    targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
+                
+        js1 = jmat:jmatend;
+        js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);
+        
+        
+        indji = (ji-1)*opdims(1);
+        indji = repmat( (indji(:)).', opdims(1),1) + ( (1:opdims(1)).');
+        indji = indji(:);
+        
+        indji = repmat(indji,1,opdims(2)*k);
+        
+        iend = istart+numel(mat1)-1;
+        is(istart:iend) = indji(:);
+        js(istart:iend) = js1(:);
+        vs(istart:iend) = mat1(:);
+        istart = iend+1;
+    end
+    mat = sparse(is,js,vs,opdims(1)*nt,opdims(2)*chnkr.npt);
+    
+end
+
+end

@@ -13,7 +13,7 @@ cparams = [];
 cparams.eps = 1.0e-10;
 cparams.nover = 5;
 pref = []; 
-pref.k = 30;
+pref.k = 32;
 narms = 3;
 amp = 0.25;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 

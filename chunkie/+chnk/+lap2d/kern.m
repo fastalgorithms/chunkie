@@ -11,16 +11,13 @@ targ = targinfo.r;
 
 if strcmpi(type,'d')
     %srcnorm = chnk.normal2d(srcinfo);
-    srcnorm = srcinfo.n;
-    [~,grad] = chnk.lap2d.green(src,targ);
-    nx = repmat(srcnorm(1,:),nt,1);
-    ny = repmat(srcnorm(2,:),nt,1);
-    submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+    [~,grad] = chnk.lap2d.green(src,targ,true);
+    submat = -(grad(:,:,1).*srcinfo.n(1,:) + grad(:,:,2).*srcinfo.n(2,:));
 end
 
 if strcmpi(type,'sprime')
     targnorm = chnk.normal2d(targinfo);
-    [~,grad] = chnk.lap2d.green(src,targ);
+    [~,grad] = chnk.lap2d.green(src,targ,true);
     nx = repmat((targnorm(1,:)).',1,ns);
     ny = repmat((targnorm(2,:)).',1,ns);
 

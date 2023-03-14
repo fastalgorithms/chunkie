@@ -32,11 +32,6 @@ k2 = max(27,k+1);
 [t2,w2] = lege.exps(k2);
 
 if strcmpi(type,'log')
-
-    qavail = chnk.quadggq.logavail();
-    [~,i] = min(abs(qavail-k));
-    assert(qavail(i) == k,'order %d not found, consider using order %d chunks', ...
-        k,qavail(i));
     [~,~,xs0,wts0] = chnk.quadggq.getlogquad(k);
 else
     error('type not available')
@@ -44,17 +39,14 @@ end
 
 nquad0 = size(xs0,1);
 
-ainterps0kron = zeros(opdims(2)*nquad0,opdims(2)*k,k);
-ainterps0 = zeros(nquad0,k,k);
+auxquads = chnk.quadggq.setuplogquad(k,opdims);
 
-temp = eye(opdims(2));
+xs0 = auxquads.xs0;
+wts0 = auxquads.wts0;
 
-for i = 1:k
-    xs0j = xs0(:,i);
-    ainterp0_sm = lege.matrin(k,xs0j);
-    ainterps0(:,:,i) = ainterp0_sm;
-    ainterps0kron(:,:,i) = kron(ainterp0_sm,temp);
-end
+ainterps0 = auxquads.ainterps0;
+ainterps0kron = auxquads.ainterps0kron;
+
 
 % do smooth weight for all
 sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims,1:nch,1:nch,wts);

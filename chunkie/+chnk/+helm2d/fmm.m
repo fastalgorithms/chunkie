@@ -37,12 +37,12 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 %                does nothing
 %
 % Output:
-%   submat - the evaluation of the selected kernel for the
-%            provided sources and targets. the number of
-%            rows equals the number of targets and the
-%            number of columns equals the number of sources  
+%   pot - potential corresponding to the kernel at the target locations
 %
-% see also CHNK.HELM2D.FMM
+% Optional output
+%   grad  - gradient at target locations
+%   hess - hessian at target locations
+%
 %
    srcuse = [];
    srcuse.sources = srcinfo.r(1:2,:);
@@ -57,7 +57,7 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
      eta = varargin{1};
      srcuse.dipstr = sigma(:).';
      srcuse.dipvec = srcinfo.n(1:2,:);
-     srcuse.charges = eta*sigma(:).';
+     srcuse.charges = 1i*eta*sigma(:).';
    end
    pg = 0;
    U = hfmm2d(eps,zk,srcuse,pg,targ,pgt);
