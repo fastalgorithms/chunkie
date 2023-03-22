@@ -82,10 +82,10 @@ else
     slfpts = idivide(int64(slf(:)-1),int64(opdims(1)))+1;
     [slfuni,~,islfuni] = unique(slfpts);
     islfuni2 = (islfuni-1)*opdims(1) + mod(slf(:)-1,opdims(1))+1;
-
+    slfuni_ind = (slfuni-1)*opdims(1)+1;
     % get matrix-valued entries of kernel for unique points
 
-    rslf = rx(:,slfuni);
+    rslf = rx(:,slfuni_ind);
     dslf = zeros(size(rslf));
     if nargin > 14
         dslf = rd(:,slfuni);
