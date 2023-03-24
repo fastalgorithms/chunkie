@@ -95,4 +95,3 @@ function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams)
     cgrph.regions = regions;
     
 end
-
