@@ -108,7 +108,7 @@ srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1);
 srcinfo.d2 = chnkr.d2(:,1); srcinfo.n = chnkr.n(:,1);
 i2 = min(2,chnkr.npt);
 targinfo.r = chnkr.r(:,i2); targinfo.d = chnkr.d(:,i2); 
-targinfo.d2 = chnkr.d2(:,i2); srcinfo.n = chnkr.n(:,i2);
+targinfo.d2 = chnkr.d2(:,i2); targinfo.n = chnkr.n(:,i2);
 
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
@@ -162,7 +162,8 @@ else
     return;
 end
 
-sp = sp + spdiags(dval,0,chnkr.npt,chnkr.npt);
+[m,n] = size(sp);
+sp = sp + spdiags(dval,0,m,n);
 
 % prep and call flam
 
