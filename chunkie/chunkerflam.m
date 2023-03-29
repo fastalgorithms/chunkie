@@ -112,6 +112,7 @@ targinfo.d2 = chnkr.d2(:,i2); targinfo.n = chnkr.n(:,i2);
 
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
+assert(opdims(1) == opdims(2), 'the opdim should be a square matrix')
 
 if (length(dval) == 1)
     dval = dval*ones(opdims(1)*chnkr.npt,1);
@@ -148,19 +149,15 @@ end
 
 % get nonsmooth quadrature
 
-if strcmpi(quad,'ggqlog')
-    
-    type = 'log';
-    sp = chnk.quadggq.buildmattd(chnkr,kern,opdims,type);
-    
+if strcmpi(quad,'ggqlog') 
+    chunkermatopt = struct('quad','ggq','type','log','nonsmoothonly',true);
 elseif strcmpi(quad,'native')
-        
-    sp = sparse(chnkr.npt,chnkr.npt);
-
+    chunkermatopt = struct('quad','native','nonsmoothonly',true);
 else
     warning('specified quadrature method not available');
     return;
 end
+sp = chunkermat(chnkr,kern,chunkermatopt);
 
 [m,n] = size(sp);
 sp = sp + spdiags(dval,0,m,n);
@@ -168,7 +165,12 @@ sp = sp + spdiags(dval,0,m,n);
 % prep and call flam
 
 wts = weights(chnkr);
-xflam = chnkr.r(:,:);
+% TODO: the xflam should be repeated... 
+% xflam = chnkr.r(:,:);
+xflam = zeros(2,chnkr.npt*opdims(2));
+for i=1:opdims(2)
+    xflam(:,i:opdims(2):end) = chnkr.r(:,:);
+end
 
 width = max(max(chnkr)-min(chnkr));
 optsnpxy = []; optsnpxy.rank_or_tol = rank_or_tol;
