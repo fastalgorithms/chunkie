@@ -1,4 +1,4 @@
-function mat = kernbyindex(i,j,chnkr,whts,kern,opdims,spmat)
+function mat = kernbyindex(i,j,chnkr,whts,kern,opdims,spmat,l2scale)
 %% evaluate system matrix by entry index utility function for 
 % general kernels, with replacement for specific entries and the
 % ability to add a low-rank modification.
@@ -28,6 +28,7 @@ function mat = kernbyindex(i,j,chnkr,whts,kern,opdims,spmat)
 %    non-zero (non-empty) entry in the matlab built-in sparse 
 %    (chnkr.sparse) matrix spmat is overwritten
 % see also 
+% l2scale = false
 
 % find unique underlying points
 
@@ -59,11 +60,15 @@ ijuni2 = (ijuni-1)*opdims(2) + mod(j(:)-1,opdims(2))+1;
 
 mat = matuni(iiuni2,ijuni2);
 
+whts = whts(:);
+
 % scale columns by weights
 
-wj = whts(jpts(:));
-mat = bsxfun(@times,mat,wj.');
-
+if l2scale
+    mat = sqrt(whts(ipts(:))) .* mat .* sqrt(whts(jpts(:)).');
+else
+    mat = mat .* whts(jpts(:)).';
+end
 % overwrite any entries given as nonzeros in sparse matrix
 
 if nargin > 6

@@ -1,6 +1,6 @@
 
 function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
-    pr,ptau,pw,pin,ifaddtrans)
+    pr,ptau,pw,pin,ifaddtrans,l2scale)
 %PROXYFUN proxy function utility for kernels defined on chunkers
 %
 % We assume that the kernel for a given source and target is an 
@@ -43,6 +43,7 @@ lmax = max(l);
 pxy = bsxfun(@plus,pr*lmax,ctr(:));
 pw = lmax*pw;
 pw2 = repmat(pw(:).',opdims(1),1); pw2 = pw2(:);
+pw3 = repmat(pw(:).',opdims(2),1); pw3 = pw3(:);
 
 % find unique underlying points corresponding to slf indices
 
@@ -57,15 +58,28 @@ srcinfo.d = chnkr.d(:,slfuni); srcinfo.d2 = chnkr.d2(:,slfuni);
 srcinfo.n = chnkr.n(:,slfuni);
 targinfo = []; targinfo.r = pxy; targinfo.d = ptau; 
 targinfo.d2 = []; targinfo.n = chnk.perp(ptau);
+
 Kpxy = kern(srcinfo,targinfo);
 
 Kpxy = Kpxy(:,islfuni2);
-Kpxy = bsxfun(@times,Kpxy,whts(slfpts).');
+
+whts = whts(:);
+
+if l2scale
+Kpxy = sqrt(pw2(:)).*Kpxy.*sqrt(whts(slfpts).');
+else
+Kpxy = Kpxy.*whts(slfpts).';
+end
+
 
 if ifaddtrans
     Kpxy2 = kern(targinfo,srcinfo);
     Kpxy2 = Kpxy2(islfuni2,:);
-    Kpxy2 = bsxfun(@times,Kpxy2,pw2(:).');
+    if l2scale
+    Kpxy2 = sqrt(whts(slfpts)).*Kpxy2.*sqrt(pw2(:).');
+    else    
+    Kpxy2 = Kpxy2.*pw2(:);
+    end
     Kpxy = [Kpxy; Kpxy2.'];
 end
 

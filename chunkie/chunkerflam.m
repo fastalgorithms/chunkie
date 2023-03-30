@@ -64,6 +64,9 @@ function [F] = chunkerflam(chnkr,kern,dval,opts)
 %           opts.rank_or_tol = integer or float "rank_or_tol" 
 %                   parameter (1e-14). Lower precision increases speed.
 %                   Sent to FLAM
+%           opts.verb = boolean (false), if true print out the process of
+%                   the compression of FLAM.
+%           opts.lvlmax = integer (inf), maximum level of compression
 %
 % Output:
 %   F - the requested FLAM compressed representation of the 
@@ -93,7 +96,8 @@ flamtype = 'rskelf';
 useproxy = true;
 occ = 200;
 rank_or_tol = 1e-14;
-
+verb = false;
+lvlmax = inf;
 
 if or(chnkr.nch < 1,chnkr.k < 1)
     warning('empty chunker, doing nothing')
@@ -139,6 +143,12 @@ end
 if isfield(opts,'rank_or_tol')
     rank_or_tol = opts.rank_or_tol;
 end
+if isfield(opts,'verb')
+    verb = opts.verb;
+end
+if isfield(opts,'lvlmax')
+    lvlmax = opts.lvlmax;
+end
 
 % check if chosen FLAM routine implemented before doing real work
 
@@ -150,9 +160,11 @@ end
 % get nonsmooth quadrature
 
 if strcmpi(quad,'ggqlog') 
-    chunkermatopt = struct('quad','ggq','type','log','nonsmoothonly',true);
+    chunkermatopt = struct('quad','ggq','type','log','nonsmoothonly',true, ...
+        'l2scale',l2scale);
 elseif strcmpi(quad,'native')
-    chunkermatopt = struct('quad','native','nonsmoothonly',true);
+    chunkermatopt = struct('quad','native','nonsmoothonly',true, ...
+        'l2scale',l2scale);
 else
     warning('specified quadrature method not available');
     return;
@@ -165,8 +177,7 @@ sp = sp + spdiags(dval,0,m,n);
 % prep and call flam
 
 wts = weights(chnkr);
-% TODO: the xflam should be repeated... 
-% xflam = chnkr.r(:,:);
+
 xflam = zeros(2,chnkr.npt*opdims(2));
 for i=1:opdims(2)
     xflam(:,i:opdims(2):end) = chnkr.r(:,:);
@@ -177,15 +188,20 @@ optsnpxy = []; optsnpxy.rank_or_tol = rank_or_tol;
 optsnpxy.nsrc = occ;
 
 npxy = chnk.flam.nproxy_square(kern,width,optsnpxy);
+if l2scale
+    %% TODO: this is a hack, need to fix
+    npxy = 2*npxy;
+end
 
-matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkr,wts,kern,opdims,sp);
+matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkr,wts,kern,opdims,sp,l2scale);
 [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
 if strcmpi(flamtype,'rskelf')
     ifaddtrans = true;
     pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
-        kern,opdims,pr,ptau,pw,pin,ifaddtrans);
-    F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun);
+        kern,opdims,pr,ptau,pw,pin,ifaddtrans,l2scale);
+    F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun,struct('verb',verb,...
+        'lvlmax',lvlmax));
 end
 
 if strcmpi(flamtype,'rskel') 

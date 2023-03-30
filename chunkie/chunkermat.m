@@ -178,6 +178,8 @@ end
 nrows = irowlocs(end)-1;
 ncols = icollocs(end)-1;
 
+%% Off diagonal interactions 
+
 if (~nonsmoothonly)
     
     sysmat = zeros(nrows,ncols);
@@ -229,6 +231,8 @@ else
     jsysmat = [];
     vsysmat = [];
 end    
+
+%% Diagonal Interaction. 
 
 for i=1:nchunkers
 
