@@ -43,7 +43,6 @@ lmax = max(l);
 pxy = bsxfun(@plus,pr*lmax,ctr(:));
 pw = lmax*pw;
 pw2 = repmat(pw(:).',opdims(1),1); pw2 = pw2(:);
-pw3 = repmat(pw(:).',opdims(2),1); pw3 = pw3(:);
 
 % find unique underlying points corresponding to slf indices
 
