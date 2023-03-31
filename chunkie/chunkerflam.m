@@ -135,7 +135,10 @@ if isfield(opts,'quad')
 end
 if isfield(opts,'l2scale')
     l2scale = opts.l2scale;
+else
+    l2scale = false;
 end
+
 
 if isfield(opts,'occ')
     occ = opts.occ;

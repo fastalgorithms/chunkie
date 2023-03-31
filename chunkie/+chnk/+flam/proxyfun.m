@@ -77,7 +77,7 @@ if ifaddtrans
     if l2scale
     Kpxy2 = sqrt(whts(slfpts)).*Kpxy2.*sqrt(pw2(:).');
     else    
-    Kpxy2 = Kpxy2.*pw2(:);
+    Kpxy2 = Kpxy2.*pw2(:).';
     end
     Kpxy = [Kpxy; Kpxy2.'];
 end
