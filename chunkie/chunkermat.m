@@ -235,7 +235,7 @@ end
 %% Diagonal Interaction. 
 
 for i=1:nchunkers
-
+    
     opdims = reshape(opdims_mat(:,i,i),[2,1]);
     jlist = [];
     if ~isempty(ilist)
@@ -246,6 +246,7 @@ for i=1:nchunkers
     if (size(kern) == 1)
         ftmp = kern;
     else
+        
         ftmp = kern{i,i};
     end 
     
@@ -256,10 +257,11 @@ for i=1:nchunkers
         if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
             auxquads = opts.auxquads.ggqlog;
         else
-            k = chnkr.k;
-            auxquads = chnk.quadggq.setuplogquad(k,opdims);
-            opts.auxquads.ggqlog = auxquads;
-        end    
+            
+        end   
+        k = chnkr.k;
+        auxquads = chnk.quadggq.setuplogquad(k,opdims);
+        opts.auxquads.ggqlog = auxquads;
         type = 'log';
         if nonsmoothonly
             sysmat_tmp = chnk.quadggq.buildmattd(chnkr,ftmp,opdims,type,auxquads,jlist);
@@ -315,6 +317,7 @@ if(icgrph && isrcip)
     
     
     for ivert=1:nv
+        fprintf('ivert=%d\n',ivert);
         clist = chnkobj.vstruc{ivert}{1};
         isstart = chnkobj.vstruc{ivert}{2};
         isstart(isstart==1) = 0;
@@ -323,7 +326,8 @@ if(icgrph && isrcip)
         iedgechunks = zeros(2,nedge);
         iedgechunks(1,:) = clist;
         iedgechunks(2,:) = 1;
-        iedgechunks(2,isstart==0) = nch_all(isstart==0);
+        nch_use = nch_all(clist);
+        iedgechunks(2,isstart==0) = nch_use(isstart==0);
         
         
         % since opdims mat for all chunkers meeting at the same 
