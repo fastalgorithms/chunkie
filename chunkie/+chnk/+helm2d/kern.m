@@ -201,8 +201,8 @@ if strcmpi(type,'eval')
   % D
   submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
     
-  submat(:,1:2:2*ns) = coef*submatd;
-  submat(:,2:2:2*ns) = submats;
+  submat(:,1:2:2*ns) = coef(1)*submatd;
+  submat(:,2:2:2*ns) = coef(2)*submats;
 end
 
 
