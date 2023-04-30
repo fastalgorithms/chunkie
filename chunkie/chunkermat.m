@@ -213,7 +213,7 @@ if (~nonsmoothonly)
                 
                 if (l2scale)
                     wts = weights(chnkri);
-                    wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
+                    wtsrow = repmat((wts(:))',opdims(1),1); wtsrow = sqrt(wtsrow(:));
                     sysmat_tmp = bsxfun(@times,wtsrow,sysmat_tmp);
                 end
                 irowinds = irowlocs(i):(irowlocs(i+1)-1);
@@ -286,7 +286,7 @@ for i=1:nchunkers
         wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
         wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
         wtscol = wtscol.';
-        wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
+        wtsrow = repmat((wts(:))',opdims(1),1); wtsrow = wtsrow(:);
         sysmat_tmp = bsxfun(@times,wtsrow,sysmat_tmp);
         sysmat_tmp = bsxfun(@rdivide,sysmat_tmp,wtscol);
     end
