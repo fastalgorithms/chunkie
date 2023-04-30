@@ -214,7 +214,7 @@ if (~nonsmoothonly)
                 sysmat_tmp = ftmp(chnkrj,chnkri).*wts;
                 
                 if (l2scale)
-                    wts = weights(chnkri);
+                    wts = weights(chnkri); wts = sqrt(wts(:))';
                     wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
                     sysmat_tmp = bsxfun(@times,wtsrow,sysmat_tmp);
                 end
