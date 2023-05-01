@@ -16,33 +16,25 @@ function npxy = nproxy_square(kern,width,opts)
 % Output:
 %   npxy - number of points on perimeter of box to be sent to proxy routine
 %
-
-  nsrc = 200;
-  rank_or_tol = 1e-13;
-
   if nargin < 3
     opts = [];
   end
 
-  if isfield(opts,'eps')
+  nsrc = 200;           if isfield(opts,'nsrc'), nsrc = opts.nsrc; end
+  rank_or_tol = 1e-13;  if isfield(opts,'rank_or_tol'), rank_or_tol = opts.rank_or_tol; end
+
+  if isfield(opts,'eps') % kept for backward compat
     rank_or_tol = opts.eps;
   end
-  if isfield(opts,'rank_or_tol')
-    rank_or_tol = opts.rank_or_tol;
-  end
-  if isfield(opts,'nsrc')
-    nsrc = opts.nsrc;
-  end
-
-		      % set up sources with randomly oriented d and d2
+	
+  % set up sources with randomly oriented d and d2
 
   srcinfo = [];
   srcinfo.r = [-0.5;-0.5]*width + rand(2,nsrc)*width;
   
   srcinfo.d = randn(2,nsrc);
-  srcinfo.n = randn(2,nsrc); srcinfo.n = ... 
-      (srcinfo.n)./(sum((srcinfo.n).^2,1));
   srcinfo.d2 = randn(2,nsrc);
+  srcinfo.n = [-srcinfo.d(2,:);srcinfo.d(1,:)] ./ sqrt(sum(srcinfo.d.^2,1));
 
   npxy = 16;
 
@@ -54,15 +46,40 @@ function npxy = nproxy_square(kern,width,opts)
     targinfo.d2 = zeros(2,npxy);
     targinfo.n = [-ptau(2,:);ptau(1,:)] ./ sqrt(sum(ptau.^2,1));
 
-    mat = kern(srcinfo,targinfo);
+    mat = proxy_square_mat(kern,srcinfo,targinfo);
 
     [sk,~] = id(mat,rank_or_tol);
     
     if length(sk) < min(nsrc,npxy)
-      npxy = (floor((length(sk)-1)/4+0.1)+1)*4;
-      break;
+      npxy = floor((length(sk)-1)/4+1.1)*4;
+      return;
     end
     npxy = 2*npxy;
   end
+
+  % npxy is never smaller than nsrc... so no compression is happening... 
+  npxy = -1;
+
+end
+
+function mat = proxy_square_mat(kern,srcinfo,targinfo)
   
+  if numel(kern) == 1
+    mat = kern(srcinfo,targinfo);
+    return;
+  end
+
+  % kern is a cellmat
+
+  [m,n] = size(kern);
+
+  mat = cell(m,n);
+  
+  for i=1:m
+    for j=1:n
+      mat{i,j} = kern{i,j}(srcinfo,targinfo);
+    end
+  end
+
+  mat = cell2mat(mat);
 end
