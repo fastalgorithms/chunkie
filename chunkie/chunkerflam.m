@@ -248,8 +248,8 @@ end
 
 if strcmpi(flamtype,'rskelf')
     ifaddtrans = true;
-    pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
-        kern,opdims,pr,ptau,pw,pin,ifaddtrans,l2scale);
+    pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkrs,wts, ...
+        kern,opdims_mat,pr,ptau,pw,pin,ifaddtrans,l2scale);
     F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun,struct('verb',verb,...
         'lvlmax',lvlmax));
 end
