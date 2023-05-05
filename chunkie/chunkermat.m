@@ -232,9 +232,8 @@ for i = 1:nchunkers
                     chnkri,flag,opts);
                 if (~nonsmoothonly)
                     [isys,jsys,vsys] = find(sysmat_tmp_adap);
-                    for i1 = 1:numel(isys)
-                        sysmat_tmp(isys(i1), jsys(i1)) = vsys(i);
-                    end
+                    ijsys = isys + (jsys-1)*size(sysmat_tmp_adap,1);
+                    sysmat_tmp(ijsys) = vsys(:);
                 else
                     sysmat_tmp = sysmat_tmp_adap;
                 end
@@ -316,13 +315,30 @@ for i=1:nchunkers
         return;
     end
 
+    if adaptive_correction
+        flag = flagnear(chnkr,chnkr.r(:,:));
+
+        % mark off the near and self interactions
+        for ich = 1:chnkr.nch
+            for jch = [ich,chnkr.adj(1,ich),chnkr.adj(2,ich)]
+                flag((jch - 1)*chnkr.k+(1:chnkr.k), ich) = 0;
+            end
+        end
+        
+        sysmat_tmp_adap = chunkermat_adap(chnkr,ftmp,opdims, chnkr,flag,opts);
+
+        [isys,jsys,vsys] = find(sysmat_tmp_adap);
+
+        ijsys = isys + (jsys-1)*size(sysmat_tmp_adap,1);
+        sysmat_tmp(ijsys) = vsys(:);
+    end
+
     if l2scale
         wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
         wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
         wtscol = wtscol.';
         wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
-        sysmat_tmp = bsxfun(@times,wtsrow,sysmat_tmp);
-        sysmat_tmp = bsxfun(@rdivide,sysmat_tmp,wtscol);
+        sysmat_tmp = wtsrow.*sysmat_tmp./wtscol;
     end
  
     if (~nonsmoothonly)
