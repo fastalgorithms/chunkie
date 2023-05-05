@@ -67,6 +67,8 @@ function [F] = chunkerflam(chnkobj,kern,dval,opts)
 %           opts.verb = boolean (false), if true print out the process of
 %                   the compression of FLAM.
 %           opts.lvlmax = integer (inf), maximum level of compression
+%           opts.adaptive_correction, boolean (false), see chunkermat
+% 
 %
 % Output:
 %   F - the requested FLAM compressed representation of the 
@@ -93,8 +95,13 @@ flamtype = 'rskelf';    if isfield(opts,'flamtype'),flamtype = opts.flamtype;end
 useproxy = true;        if isfield(opts,'useproxy'),useproxy = opts.useproxy;end
 occ = 200;              if isfield(opts,'occ'),     occ = opts.occ;end
 rank_or_tol = 1e-14;    if isfield(opts,'rank_or_tol'),rank_or_tol = opts.rank_or_tol;end
-verb = false;           if isfield(opts,'verb')verb = opts.verb;end
-lvlmax = inf;           if isfield(opts,'lvlmax'),lvlmax = opts.lvlmax;end
+verb = false;           if isfield(opts,'verb'),    verb = opts.verb;end
+lvlmax = inf;           if isfield(opts,'lvlmax'),  lvlmax = opts.lvlmax;end
+adaptive_correction = false; if isfield(opts,'adaptive_correction'), ...
+    adaptive_correction = opts.adaptive_correction;end
+
+eps = rem(rank_or_tol,1);
+
 
 % Flag for determining whether input object is a chunkergraph
 icgrph = 0;
@@ -180,10 +187,10 @@ end
 
 if strcmpi(quad,'ggqlog') 
     chunkermatopt = struct('quad','ggq','type','log','nonsmoothonly',true, ...
-        'l2scale',l2scale);
+        'l2scale',l2scale,'adaptive_correction',adaptive_correction,'eps',eps);
 elseif strcmpi(quad,'native')
     chunkermatopt = struct('quad','native','nonsmoothonly',true, ...
-        'l2scale',l2scale);
+        'l2scale',l2scale,'adaptive_correction',adaptive_correction,'eps',eps);
 else
     warning('specified quadrature method not available');
     return;
