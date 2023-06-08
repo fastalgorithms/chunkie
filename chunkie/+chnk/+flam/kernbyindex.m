@@ -26,7 +26,7 @@ function mat = kernbyindex(i,j,chnkrs,whts,kern,opdims_mat,spmat,l2scale)
 % j - array of col indices to compute
 % chnkr - chunker object describing boundary, 
 %         or chunkgraph.echunks, which is an array of chunker objects.
-% whts - smooth integration weights on chnkr
+% whts - smooth weights on chunker object (already repeated according to opdims)
 % kern - kernel function of the form kern(s,t,stau,ttau) where s and t 
 %    are source and target points and stau and ttau are the local unit
 %    tangents
@@ -35,12 +35,19 @@ function mat = kernbyindex(i,j,chnkrs,whts,kern,opdims_mat,spmat,l2scale)
 %    non-zero (non-empty) entry in the matlab built-in sparse 
 %    (chnkr.sparse) matrix spmat is overwritten
 % see also 
-% l2scale = false
+% l2scale - boolean type that determines if we should 
+%    rescale the matrix by l2scale. the default value is false. 
+
+if nargin < 8
+    l2scale = false;
+end
 
 % find unique underlying points
 
 
 nchunkers = length(chnkrs);
+
+
 irowlocs = zeros(nchunkers+1,1);
 icollocs = zeros(nchunkers+1,1);
 lchunks = zeros(nchunkers,1);
@@ -113,12 +120,14 @@ end
 
 % scale columns by weights
 
+whts = whts(:);
+
 if l2scale    
     
     mat = sqrt(whts(i)) .* mat .* sqrt(whts(j).');
     
 else
-    mat = mat .* whts(j).';
+    mat = mat .* whts(j).' ;
 end
 
 % overwrite any entries given as nonzeros in sparse matrix
@@ -131,49 +140,52 @@ end
 
 return;
 
-ipts = idivide(int64(i(:)-1),int64(opdims(1)))+1;
-jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;
 
-[iuni,~,iiuni] = unique(ipts);
-[juni,~,ijuni] = unique(jpts);
+% the original single chunker code
 
-% matrix-valued entries of kernel for unique points
+% ipts = idivide(int64(i(:)-1),int64(opdims(1)))+1;
+% jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;
 
-ri = chnkr.r(:,iuni); rj = chnkr.r(:,juni);
-di = chnkr.d(:,iuni); dj = chnkr.d(:,juni);
-nj = chnkr.n(:,juni); ni = chnkr.n(:,iuni);
-d2i = chnkr.d2(:,iuni); d2j = chnkr.d2(:,juni);
-srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
-srcinfo.n = nj;
-targinfo = []; targinfo.r = ri; targinfo.d = di; targinfo.d2 = d2i;
-targinfo.n = ni;
-%di = bsxfun(@rdivide,di,sqrt(sum(di.^2,1)));
-%dj = bsxfun(@rdivide,dj,sqrt(sum(dj.^2,1)));
+% [iuni,~,iiuni] = unique(ipts);
+% [juni,~,ijuni] = unique(jpts);
 
-matuni = kern(srcinfo,targinfo);
+% % matrix-valued entries of kernel for unique points
 
-% relevant rows and columns in matuni
+% ri = chnkr.r(:,iuni); rj = chnkr.r(:,juni);
+% di = chnkr.d(:,iuni); dj = chnkr.d(:,juni);
+% nj = chnkr.n(:,juni); ni = chnkr.n(:,iuni);
+% d2i = chnkr.d2(:,iuni); d2j = chnkr.d2(:,juni);
+% srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
+% srcinfo.n = nj;
+% targinfo = []; targinfo.r = ri; targinfo.d = di; targinfo.d2 = d2i;
+% targinfo.n = ni;
+% %di = bsxfun(@rdivide,di,sqrt(sum(di.^2,1)));
+% %dj = bsxfun(@rdivide,dj,sqrt(sum(dj.^2,1)));
 
-iiuni2 = (iiuni-1)*opdims(1) + mod(i(:)-1,opdims(1))+1;
-ijuni2 = (ijuni-1)*opdims(2) + mod(j(:)-1,opdims(2))+1;
+% matuni = kern(srcinfo,targinfo);
 
-mat = matuni(iiuni2,ijuni2);
+% % relevant rows and columns in matuni
 
-whts = whts(:);
+% iiuni2 = (iiuni-1)*opdims(1) + mod(i(:)-1,opdims(1))+1;
+% ijuni2 = (ijuni-1)*opdims(2) + mod(j(:)-1,opdims(2))+1;
 
-% scale columns by weights
+% mat = matuni(iiuni2,ijuni2);
 
-if l2scale
-    mat = sqrt(whts(ipts(:))) .* mat .* sqrt(whts(jpts(:)).');
-else
-    mat = mat .* whts(jpts(:)).';
-end
-% overwrite any entries given as nonzeros in sparse matrix
+% whts = whts(:);
 
-if nargin > 6
-    [isp,jsp,vsp] = find(spmat(i,j));
-    linsp = isp + (jsp-1)*length(i(:));
-    mat(linsp) = vsp;
-end
+% % scale columns by weights
 
-end
+% if l2scale
+%     mat = sqrt(whts(ipts(:))) .* mat .* sqrt(whts(jpts(:)).');
+% else
+%     mat = mat .* whts(jpts(:)).';
+% end
+% % overwrite any entries given as nonzeros in sparse matrix
+
+% if nargin > 6
+%     [isp,jsp,vsp] = find(spmat(i,j));
+%     linsp = isp + (jsp-1)*length(i(:));
+%     mat(linsp) = vsp;
+% end
+
+% end
