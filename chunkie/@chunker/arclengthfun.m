@@ -12,8 +12,6 @@ ncomp = info.ncomp;
 nchs = info.nchs;
 istart = 1;
 
-s = zeros(size(chnkr.r));
-
 A = lege.intmat(chnkr.k);
 [~,w] = lege.exps(chnkr.k);
 ds = arclengthdens(chnkr);

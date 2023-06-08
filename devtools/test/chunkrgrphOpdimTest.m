@@ -34,8 +34,8 @@ cgrph = balance(cgrph);
 
 zk0 = 1; % exterior
 zk1 = 3; % interior
-eta = -real(zk0);
-cc = [1 1; 1 1];
+eta = [1 -1j*real(zk0); 1 -1j*real(zk0)]; % this numbers might be wrong...
+cc = [1 1; 1 1]; % these numbers might be wrong... 
 
 fkern11 = @(s,t) chnk.helm2d.kern(zk0,s,t,'all',cc) - chnk.helm2d.kern(zk1,s,t,'all',cc);
 fkern12 = @(s,t) chnk.helm2d.kern(zk0,s,t,'c and cprime',eta);

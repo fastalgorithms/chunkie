@@ -69,7 +69,7 @@ rhs(1:2:nn) = -u_inc.*swts;
 rhs(2:2:nn) = -un_inc.*swts/(1j*zk0+1j*zk1)*2;
 
 
-%% constructing the matrix. 
+% % constructing the matrix. 
 
 % D0 - D1    |     ik1S1 - ik0S0
 % D0' - D1'  |     ik1S1' - ik0S0' /(1j*zk0+1j*zk1)*2;
@@ -83,7 +83,7 @@ fkern_dprime_diff = @(s,t) chnk.helm2d.kern(zk0,s,t,'dprime')...
                          - chnk.helm2d.kern(zk1,s,t,'dprime');
 kern_sprime_diff = @(s,t) -1j*zk0*chnk.helm2d.kern(zk0,s,t,'sprime') ...
                         + 1j*zk1*chnk.helm2d.kern(zk1,s,t,'sprime');
-%% Construct manually l2scaled matrices
+% % Construct manually l2scaled matrices
 
 A = zeros(2*npt,'like', 1j);
 
@@ -100,7 +100,7 @@ A(1:2:nn,2:2:nn) = dd*A12*ddinv;
 A(2:2:nn,1:2:nn) = dd*A21*ddinv;
 A(2:2:nn,2:2:nn) = dd*A22*ddinv;
 
-%% Use l2scale option of chunkermat
+% % Use l2scale option of chunkermat
 opts = [];
 opts.l2scale = 'true';
 Ac = zeros(2*npt,'like', 1j);
@@ -115,7 +115,7 @@ Ac(2:2:nn,2:2:nn) = A22;
 
 
 
-%% Compare the two matrices
+% % Compare the two matrices
 x = A\rhs;
 x2 = Ac\rhs;
 

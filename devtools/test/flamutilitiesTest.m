@@ -19,7 +19,7 @@ amp = 0.25;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
-wts = weights(chnkr);
+wts = weights(chnkr); wts = wts(:);
 
 fprintf('%5.2e s : time to build geo\n',t1)
 
@@ -90,7 +90,9 @@ spmat = spmat -0.5*speye(chnkr.k*chnkr.nch);
 
 % test matrix entry evaluator
 start = tic; 
-opdims = [1 1];
+% opdims = [1 1];
+opdims = ones([2,1,1]);
+
 sys2 = chnk.flam.kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,fkern,opdims,spmat);
 t1 = toc(start);
 
