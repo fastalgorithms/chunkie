@@ -28,9 +28,15 @@ function mat = kernbyindex(i,j,chnkr,whts,kern,opdims,spmat,l2scale)
 %    non-zero (non-empty) entry in the matlab built-in sparse 
 %    (chnkr.sparse) matrix spmat is overwritten
 % see also 
-% l2scale = false
+% l2scale - boolean type that determines if we should 
+%    rescale the matrix by l2scale. the default value is false. 
+
+if nargin < 8
+    l2scale = false;
+end
 
 % find unique underlying points
+
 
 ipts = idivide(int64(i(:)-1),int64(opdims(1)))+1;
 jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;

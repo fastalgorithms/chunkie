@@ -35,7 +35,14 @@ function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
 % pw - is a set of smooth integration weights for the proxy points
 % pin - function handle, takes in rescaled and recentered points in the 
 %       nbr array and determines if they're within the proxy surface
-%
+% l2scale - boolean type that determines if we should 
+%    rescale the matrix by l2scale. the default value is false. 
+% 
+
+
+if nargin < 14
+    l2scale = false;
+end
 
 % scaled proxy points and weights (no scaling necessary on tangents)
 
