@@ -43,7 +43,7 @@ function [Kpxy,nbr] = proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
 lmax = max(l);
 pxy = bsxfun(@plus,pr*lmax,ctr(:));
 pw = lmax*pw;
-pw2 = repmat(pw(:).',opdims(1),1); pw2 = pw2(:);
+pw2 = repmat(pw(:).',opdims(2),1); pw2 = pw2(:);
 
 if strcmpi(rc,'c')
 
