@@ -95,11 +95,12 @@ end
 
 if strcmpi(type,'c')
   srcnorm = srcinfo.n;
-  eta = varargin{1};
-  [s,grad] = chnk.helm2d.green(zk,src,targ);
+  coef = varargin{1};
+  [submats,grad] = chnk.helm2d.green(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
   ny = repmat(srcnorm(2,:),nt,1);
-  submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny) + 1i*eta*s;
+  submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+  submat = coef(1)*submatd + coef(2)*submats;
 end
 
 if strcmpi(type,'all')
@@ -138,6 +139,52 @@ if strcmpi(type,'all')
   submat(2:2:2*nt,2:2:2*ns) = submatsp*cc(2,2);
 end
 
+if strcmpi(type,'eval trans')
+
+  srcnorm = srcinfo.n;
+  [submats,grad] = chnk.helm2d.green(zk,src,targ);
+  nx = repmat(srcnorm(1,:),nt,1);
+  ny = repmat(srcnorm(2,:),nt,1);
+  submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+
+  submat = zeros(1*nt,2*ns);
+  submat(1:1:1*nt,1:2:2*ns) = submatd;
+  submat(1:1:1*nt,2:2:2*ns) = submats;
+end
+
+if strcmpi(type,'c and cprime')
+  targnorm = targinfo.n;
+  srcnorm = srcinfo.n;
+  coef = varargin{1};
+
+  submat = zeros(2*nt,1*ns);
+  % S
+  [submats,grad,hess] = chnk.helm2d.green(zk,src,targ);
+  %[submat(1:2:2*nt,2:2:2*ns),grad,hess] = chnk.helm2d.green(zk,src,targ);
+
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+  % D'
+  %submat(2:2:2*nt,1:2:2*ns) = -(hess(:,:,1).*nxsrc.*nxtarg ... 
+  submatdp = -(hess(:,:,1).*nxsrc.*nxtarg ...
+      + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+      + hess(:,:,3).*nysrc.*nytarg);
+  % S'
+%  submat(2:2:2*nt,2:2:2*ns) = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
+  submatsp = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
+  % D
+%  submat(1:2:2*nt,1:2:2*ns)  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+  submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+  
+  submatc      = coef(1,1) * submatd  + coef(1,2) * submats;
+  submatcprime = coef(2,1) * submatdp + coef(2,2) * submatsp;
+  
+  submat(1:2:2*nt,1:1:1*ns) = submatc;
+  submat(2:2:2*nt,1:1:1*ns) = submatcprime;
+end
+
 if strcmpi(type,'eval')
   coef = varargin{1};
   
@@ -152,8 +199,8 @@ if strcmpi(type,'eval')
   % D
   submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
     
-  submat(:,1:2:2*ns) = coef*submatd;
-  submat(:,2:2:2*ns) = submats;
+  submat(:,1:2:2*ns) = coef(1)*submatd;
+  submat(:,2:2:2*ns) = coef(2)*submats;
 end
 
 
@@ -317,4 +364,3 @@ if strcmpi(type,'trans1')
   submat(2:2:2*nt,1:2:2*ns) = -alpha2.*(submatdp2-submatdp1);
   submat(2:2:2*nt,2:2:2*ns) = -alpha2.*(1./c2.*submatsp2-1./c1.*submatsp1);
 end
-

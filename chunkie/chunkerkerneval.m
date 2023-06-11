@@ -239,7 +239,7 @@ else
 %     v = 1e-300*ones(length(inew),1); sp = sparse(inew,jnew,v,mm,nn);
 
     wts = weights(chnkr);
-    wts = repmat((wts(:)).',opdims(2),1); wts = wts(:);
+    wts = wts(:);
     
     xflam1 = chnkr.r(:,:);
     xflam1 = repmat(xflam1,opdims(2),1);
@@ -265,7 +265,6 @@ else
 
     optsifmm=[]; optsifmm.Tmax=Inf;
     F = ifmm(matfun,targsflam,xflam1,200,1e-14,pxyfun,optsifmm);
- 
     fints = ifmm_mv(F,dens(:),matfun);
 
     % delete interactions in flag array (possibly unstable approach)
@@ -284,11 +283,10 @@ else
 
             delsmooth = find(flag(:,i)); 
             delsmoothrow = (opdims(1)*(delsmooth(:)-1)).' + (1:opdims(1)).';
-
+            delsmoothrow = delsmoothrow(:);
             targinfo.r = targs(:,delsmooth);
 
             kernmat = kern(srcinfo,targinfo);
-
             fints(delsmoothrow) = fints(delsmoothrow) - kernmat*densvals;
         end
     end    
@@ -336,18 +334,19 @@ if isempty(flag) % do all to all adaptive
                     targd(:,j),targn(:,j),targd2(:,j),kern,opdims,t,w,opts);
             
             indj = (j-1)*opdims(1);
-            ind = indj + (1:opdims(1));
+            ind = indj(:).' + (1:opdims(1)).'; ind = ind(:);
             fints(ind) = fints(ind) + fints1;
         end
     end
 else % do only those flagged
     for i = 1:nch
         [ji] = find(flag(:,i));
-        fints1 =  chnk.adapgausskerneval(r,d,n,d2,h,ct,bw,i,dens,targs(:,ji), ...
+        [fints1,maxrec,numint,iers] =  chnk.adapgausskerneval(r,d,n,d2,h,ct,bw,i,dens,targs(:,ji), ...
                     targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
                 
         indji = (ji-1)*opdims(1);
-        ind = indji + (1:opdims(1));
+        ind = (indji(:)).' + (1:opdims(1)).';
+        ind = ind(:);
         fints(ind) = fints(ind) + fints1;        
 
     end

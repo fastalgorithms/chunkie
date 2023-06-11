@@ -59,7 +59,7 @@ classdef chunkgraph
         end
         function npts = get.npts(obj)
             npts = 0;
-            for iedge = numel(obj.echnks)
+            for iedge = 1:numel(obj.echnks)
             	n = size(obj.echnks(iedge).r(:,:),2);
                 npts = n + npts;
             end

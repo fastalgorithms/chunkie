@@ -60,6 +60,10 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %           opts.nsub_or_tol = (40) specify the level of refinements in rcip
 %                    or a tolerance where the number of levels is given by
 %                    ceiling(log_{2}(1/tol^2);
+%           opts.adaptive_correction = (false) flag for whether to use
+%                    adaptive quadrature for near touching panels on
+%                    different chunkers
+%           opts.eps = (1e-14) tolerance for adaptive quadrature
 %  ilist - cell array of integer arrays ([]), list of panel interactions that 
 %          should be ignored when constructing matrix entries or quadrature
 %          corrections. 
@@ -94,6 +98,7 @@ nonsmoothonly = false;
 l2scale = false;
 isrcip = true;
 nsub = 40;
+adaptive_correction = false;
 
 % get opts from struct if available
 
@@ -119,6 +124,10 @@ if(isfield(opts,'nsub_or_tol'))
         nsub = ceil(opts.nsub_or_tol);
     end
     
+end
+
+if (isfield(opts,'adaptive_correction'))
+    adaptive_correction = opts.adaptive_correction;
 end
 
 % Flag for determining whether input object is a chunkergraph
@@ -179,59 +188,84 @@ nrows = irowlocs(end)-1;
 ncols = icollocs(end)-1;
 
 if (~nonsmoothonly)
-    
     sysmat = zeros(nrows,ncols);
-
-    for i = 1:nchunkers
-        chnkri = chnkrs(i);
-        for j = 1:nchunkers
-            chnkrj = chnkrs(j);
-            if (chnkri.nch < 1 || chnkri.k < 1 || chnkrj.nch<1 || chnkri.k<1)
-                sysmat_tmp = [];
-                break
-            end
-
-           if (i~=j)
-
-                opdims = reshape(opdims_mat(:,i,j),[2,1]);
-                wts = weights(chnkrj);
-                wts2 = repmat( (wts(:)).', opdims(2), 1);
-                wts2 = ( wts2(:) ).';
-                wts = wts2;
-
-                if (l2scale)
-                    wts = sqrt(wts);
-                end
-
-                if (size(kern) == 1)
-                    ftmp = kern;
-                else
-                    ftmp = kern{i,j};
-                end 
-
-                sysmat_tmp = ftmp(chnkrj,chnkri).*wts;
-                
-                if (l2scale)
-                    wts = weights(chnkri);
-                    wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
-                    sysmat_tmp = bsxfun(@times,wtsrow,sysmat_tmp);
-                end
-                irowinds = irowlocs(i):(irowlocs(i+1)-1);
-                icolinds = icollocs(j):(icollocs(j+1)-1);
-                sysmat(irowinds,icolinds) = sysmat_tmp;
-
-           end
-        end
-    end    
-else
+else 
     sysmat = sparse(nrows,ncols);
     isysmat = [];
     jsysmat = [];
     vsysmat = [];
+end
+
+
+%% Off diagonal interactions 
+
+for i = 1:nchunkers
+    chnkri = chnkrs(i);
+    for j = 1:nchunkers
+        chnkrj = chnkrs(j);
+        if (chnkri.nch < 1 || chnkri.k < 1 || chnkrj.nch<1 || chnkri.k<1)
+            sysmat_tmp = [];
+            break
+        end
+
+        if (i~=j)
+
+            opdims = reshape(opdims_mat(:,i,j),[2,1]);
+            wts = weights(chnkrj);
+            wts2 = repmat( (wts(:)).', opdims(2), 1);
+            wts2 = ( wts2(:) ).';
+            wts = wts2;
+
+            if (size(kern) == 1)
+                ftmp = kern;
+            else
+                ftmp = kern{i,j};
+            end 
+
+            if (~nonsmoothonly)
+                sysmat_tmp = ftmp(chnkrj,chnkri).*wts;
+            end
+
+            if adaptive_correction
+                flag = flagnear(chnkrj,chnkri.r(:,:));
+                sysmat_tmp_adap = chunkermat_adap(chnkrj,ftmp,opdims, ...
+                    chnkri,flag,opts);
+                if (~nonsmoothonly)
+                    [isys,jsys,vsys] = find(sysmat_tmp_adap);
+                    ijsys = isys + (jsys-1)*size(sysmat_tmp_adap,1);
+                    sysmat_tmp(ijsys) = vsys(:);
+                else
+                    sysmat_tmp = sysmat_tmp_adap;
+
+                end
+            end
+
+            if l2scale
+                wts = sqrt(wts); 
+                wtsrow = weights(chnkri); wtsrow = sqrt(wtsrow(:))';
+                wtsrow = repmat(wtsrow,opdims(1),1); wtsrow = wtsrow(:);
+                sysmat_tmp = wtsrow.*sysmat_tmp./wts;
+            end
+            
+            if (~nonsmoothonly)
+
+                irowinds = irowlocs(i):(irowlocs(i+1)-1);
+                icolinds = icollocs(j):(icollocs(j+1)-1);
+                sysmat(irowinds,icolinds) = sysmat_tmp;
+            else
+                [isys,jsys,vsys] = find(sysmat_tmp);
+                isysmat = [isysmat;isys+irowlocs(i)-1];
+                jsysmat = [jsysmat;jsys+icollocs(j)-1];
+                vsysmat = [vsysmat;vsys];
+            end
+        end
+    end
 end    
 
-for i=1:nchunkers
+%% Diagonal Interaction. 
 
+for i=1:nchunkers
+    
     opdims = reshape(opdims_mat(:,i,i),[2,1]);
     jlist = [];
     if ~isempty(ilist)
@@ -242,6 +276,7 @@ for i=1:nchunkers
     if (size(kern) == 1)
         ftmp = kern;
     else
+        
         ftmp = kern{i,i};
     end 
     
@@ -252,10 +287,11 @@ for i=1:nchunkers
         if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
             auxquads = opts.auxquads.ggqlog;
         else
-            k = chnkr.k;
-            auxquads = chnk.quadggq.setuplogquad(k,opdims);
-            opts.auxquads.ggqlog = auxquads;
-        end    
+            
+        end   
+        k = chnkr.k;
+        auxquads = chnk.quadggq.setuplogquad(k,opdims);
+        opts.auxquads.ggqlog = auxquads;
         type = 'log';
         if nonsmoothonly
             sysmat_tmp = chnk.quadggq.buildmattd(chnkr,ftmp,opdims,type,auxquads,jlist);
@@ -280,13 +316,30 @@ for i=1:nchunkers
         return;
     end
 
+    if adaptive_correction
+        flag = flagnear(chnkr,chnkr.r(:,:));
+
+        % mark off the near and self interactions
+        for ich = 1:chnkr.nch
+            for jch = [ich,chnkr.adj(1,ich),chnkr.adj(2,ich)]
+                flag((jch - 1)*chnkr.k+(1:chnkr.k), ich) = 0;
+            end
+        end
+        
+        sysmat_tmp_adap = chunkermat_adap(chnkr,ftmp,opdims, chnkr,flag,opts);
+
+        [isys,jsys,vsys] = find(sysmat_tmp_adap);
+
+        ijsys = isys + (jsys-1)*size(sysmat_tmp_adap,1);
+        sysmat_tmp(ijsys) = vsys(:);
+    end
+
     if l2scale
         wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
         wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
         wtscol = wtscol.';
         wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
-        sysmat_tmp = bsxfun(@times,wtsrow,sysmat_tmp);
-        sysmat_tmp = bsxfun(@rdivide,sysmat_tmp,wtscol);
+        sysmat_tmp = wtsrow.*sysmat_tmp./wtscol;
     end
  
     if (~nonsmoothonly)
@@ -311,6 +364,7 @@ if(icgrph && isrcip)
     
     
     for ivert=1:nv
+        fprintf('ivert=%d\n',ivert);
         clist = chnkobj.vstruc{ivert}{1};
         isstart = chnkobj.vstruc{ivert}{2};
         isstart(isstart==1) = 0;
@@ -319,7 +373,8 @@ if(icgrph && isrcip)
         iedgechunks = zeros(2,nedge);
         iedgechunks(1,:) = clist;
         iedgechunks(2,:) = 1;
-        iedgechunks(2,isstart==0) = nch_all(isstart==0);
+        nch_use = nch_all(clist);
+        iedgechunks(2,isstart==0) = nch_use(isstart==0);
         
         
         % since opdims mat for all chunkers meeting at the same 
@@ -379,5 +434,77 @@ end
 if (nargout >1) 
 	varargout{1} = opts;
 end  
+
+end
+
+function mat = chunkermat_adap(chnkr,kern,opdims, ...
+    chnkrt,flag,opts)
+
+% copied and modified from the function chunkerkernevalmat in chunkerkernevalmat.m
+% chnkrt is the target chunker. 
+
+k = chnkr.k;
+nch = chnkr.nch;
+
+if nargin < 5
+    flag = [];
+end
+if nargin < 6
+    opts = [];
+end
+
+targs = chnkrt.r(:,:); targn = chnkrt.n(:,:); 
+targd = chnkrt.d(:,:); targd2 = chnkrt.d2(:,:);
+
+[~,nt] = size(targs);
+
+if (~any(flag(:)))
+    mat = sparse(opdims(1)*nt,opdims(2)*chnkr.npt);
+    return
+end
+
+% using adaptive quadrature
+
+
+
+is = zeros(nnz(flag)*opdims(1)*opdims(2)*k,1);
+js = is;
+vs = is;
+istart = 1;
+
+[t,w] = lege.exps(2*k+1);
+ct = lege.exps(k);
+bw = lege.barywts(k);
+r = chnkr.r;
+d = chnkr.d;
+n = chnkr.n;
+d2 = chnkr.d2;
+h = chnkr.h;
+
+for i = 1:nch
+    jmat = 1 + (i-1)*k*opdims(2);
+    jmatend = i*k*opdims(2);
+                    
+    [ji] = find(flag(:,i));
+    mat1 =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+                targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
+            
+    js1 = jmat:jmatend;
+    js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);
+            
+    indji = (ji-1)*opdims(1);
+    indji = repmat( (indji(:)).', opdims(1),1) + ( (1:opdims(1)).');
+    indji = indji(:);
+    
+    indji = repmat(indji,1,opdims(2)*k);
+    
+    iend = istart+numel(mat1)-1;
+    is(istart:iend) = indji(:);
+    js(istart:iend) = js1(:);
+    vs(istart:iend) = mat1(:);
+    istart = iend+1;
+end
+
+mat = sparse(is,js,vs,opdims(1)*nt,opdims(2)*chnkr.npt);
 
 end
