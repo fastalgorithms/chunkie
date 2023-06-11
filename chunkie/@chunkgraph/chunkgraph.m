@@ -1,5 +1,11 @@
 classdef chunkgraph
-
+%CHUNKGRAPH chunk graph class for storing complex domains
+%
+% We describe a complex domain by its edges (smooth, regular
+% curves) and vertices (free ends of edges or points where the ends of 
+% one or more edges meets)
+%
+% 
     properties(SetAccess=public)
         verts
         edge2verts
