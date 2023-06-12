@@ -76,10 +76,14 @@ format long e
 format compact
 
 geom_class = clm.read_geom_clm9();
+% update points per wavelength
 geom_class.ppw = 5;
+
+% Loads various region/curve parameters to clm and store in clmparams
 clmparams = clm.setup_geom(geom_class);
 tol = 1e-7;
 
+% Discretize the curves and store in chnkr
 chnkr = clm.get_geom_clmparams(clmparams);
 
 

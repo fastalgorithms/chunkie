@@ -1,5 +1,48 @@
 function [clmparams] = setup_geom(geom_class)
+%
+% clmparams stores the following quantities:
+%   * xylim = min and max (x,y) coorindates where solution is desired
+%               if manually specified, must completely contain
+%               non flat regions of the geometry
+%   * ndomain = number of regions in the geometry
+%   * rn = refractive index of each region
+%   * lambda = wavelength of incident light
+%   * mode = Whether to use 'te' or 'tm' mode. 
+%       Here we always assume that the transmission problem is either in
+%       the 'TE' or 'TM' polarization, which implies that the boundary conditions
+%       are of the form
+%       [u] = f, [coef du/dn] = g
+%
+%       where [u] denotes the jump in u across an interface. 
+%       To obtain the TE polarization, coef \equiv 1, and for the 
+%         TM polarization
+%         coef should be set to the square of the refractive index of 
+%         the medium.
+%    * verts = vertices defining the geometry (these are the corner 
+%         locations at which RCIP will be used)
+%    * coef (ndomain,1) = inferred from rn, lambda, and mode. Determines
+%          coef int he boundary condition above.
+%    * lvert,rvert = vertex number corresponding to left/right most vertex beyond
+%           which complex coordinates are used
+%    * ngr = grid size for plotting solution
+%    * cpars,cparams = parameters defining the curves, cell array of structs
+%               cparams contains left and right end points of parameter
+%               space, whether the curve is closed or not and the type
+%               of the curve
+%    * ncurve = number of curves
+%    * clist = list of size (ndomain,1), ordered list of curves defining
+%          the the regions.
+%    * k = (ndomain,1) wavenumber in each region and is given by
+%         rn*2*pi/lambda
+%    * c = (2,ndomain) for each curve speficies which region is in the
+%         positive normal direction and negative normal direction
+%    * k1,k2 (1,ndomain) = k1 = k(c(1,i)); and k2 = k(c(2,i)) wave number
+%          on the positive and negative normal side of each curve
+%    * is_inf 
+
     clmparams= [];
+    
+    
     if(isfield(geom_class,'xylim'))
         clmparams.xylim = geom_class.xylim;
         
@@ -107,10 +150,8 @@ function [clmparams] = setup_geom(geom_class)
     c1 = log(1.0/eps)/min(kinf)*2*pi;
     c2 = c1/2;
     
-    
-    C = 6*(xmax-xmin);
-    L(1) = C-xmin;
-    L(2) = xmax+C;
+    L(1) = 6*c2-xmin;
+    L(2) = 6*c2+xmax;
     
     % Determine the number of curves actually used
     % There are two additional curves corresponding to

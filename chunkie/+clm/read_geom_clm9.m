@@ -83,7 +83,7 @@ function geom_class = read_geom_clm9()
     src(2,:) = [4.67,  -4.0, 0.7, -1.68];
 
     for i=1:ndomain
-        regions{i}.region_id = 1;
+        regions{i}.region_id = i;
         regions{i}.icurve_list = clist{i};
         regions{i}.is_inf = 0;
         if(i == 1)
@@ -96,6 +96,8 @@ function geom_class = read_geom_clm9()
     geom_class.regions = regions;
     geom_class.lvert = 1;
     geom_class.rvert = 2;
+    
+    
     
 
 end

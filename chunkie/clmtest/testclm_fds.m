@@ -102,6 +102,18 @@ xlim([-10,10])
 ylim([-16,4])
 drawnow
 
+src = clmparams.src_in;
+targ = clmparams.src_in;
+
+ndomain = clmparams.ndomain;
+k = clmparams.k;
+coef = clmparams.coef;
+
+[targdomain,~,~] = clm.finddomain_gui(chnkr,clmparams,targ);
+
+
+
+
 
 %% Get various operators 
 start = tic; 
@@ -162,6 +174,8 @@ disp(' ')
 disp('Now check the accuracy of numerical solutions')
 disp('Exact value               Numerical value           Error')  
 fprintf('%0.15e     %0.15e     %7.1e\n', [real(uexact).'; real(ucomp).'; real(uerror)'])
+
+return
 
 
 
