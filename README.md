@@ -76,18 +76,17 @@ and optionally on the
 the library will not function without FLAM and its subdirectories included in the matlab path.
 
 
-## chunkie team
+## chunkie developers and antecedents
 
-chunkers:
-- Travis Askham
-- Manas Rachh
-- Michael O'Neil
-- Jeremy Hoskins
-- Dan Fortunato
+chunkie has benefitted from several developers: Travis Askham, Manas Rachh, 
+Michael O'Neil, Jeremy Hoskins, Dan Fortunato, Shidong Jiang, Fredrik Fryklund, 
+Hai Yang Wang, and Hai Zhu.
 
-James Bremer provided generalized Gaussian quadrature rules (chunkie/+chnk/+quad/+brem)
+James Bremer and Zydrunas Gimbutas provided generalized Gaussian quadrature rules (chunkie/+chnk/+quadggq)
 
-Many routines were modelled after parts of the legeexps.f library (Copyright Vladimir Rokhlin, Free BSD 3-clause) and FMMLIB2D (Copyright Leslie Greengard and Zydrunas Gimbutas, Free BSD 3-clause).
+Many routines were modelled after parts of the legeexps.f library (Copyright Vladimir Rokhlin, Free BSD 3-clause),
+FMMLIB2D (Copyright Leslie Greengard and Zydrunas Gimbutas, Free BSD 3-clause), and Johan Helsing's
+RCIP tutorial (https://arxiv.org/abs/1207.6737)
 
 ## Contributing
 
