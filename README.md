@@ -78,9 +78,9 @@ the library will not function without FLAM and its subdirectories included in th
 
 ## chunkie developers and antecedents
 
-chunkie has benefitted from several developers: Travis Askham, Manas Rachh, 
-Michael O'Neil, Jeremy Hoskins, Dan Fortunato, Shidong Jiang, Fredrik Fryklund, 
-Hai Yang Wang, and Hai Zhu.
+chunkie has benefitted from the contributions of several developers: Travis Askham, 
+Manas Rachh, Michael O'Neil, Jeremy Hoskins, Dan Fortunato, Shidong Jiang, 
+Fredrik Fryklund, Hai Yang Wang, and Hai Zhu.
 
 James Bremer and Zydrunas Gimbutas provided generalized Gaussian quadrature rules (chunkie/+chnk/+quadggq)
 
