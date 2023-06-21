@@ -50,8 +50,7 @@ axis equal
 
 % build CFIE
 
-fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'c',[1,1i]);
-fkern = kernel('helm','c',zk,[1,1i]);
+fkern = kernel('helm','c',zk,[1,-zk*1i]);
 start = tic; sysmat = chunkermat(chnkr,fkern);
 t1 = toc(start);
 

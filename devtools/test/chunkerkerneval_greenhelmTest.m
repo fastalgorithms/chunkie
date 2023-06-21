@@ -52,9 +52,9 @@ zk = rand() + 1i*rand();
 
 % kernel defs
 
-kernd = @(s,t) chnk.helm2d.kern(zk,s,t,'d');
-kerns = @(s,t) chnk.helm2d.kern(zk,s,t,'s');
-kernsprime = @(s,t) chnk.helm2d.kern(zk,s,t,'sprime');
+kernd = kernel('h','d',zk);
+kerns = kernel('h','s',zk);
+kernsprime = kernel('h','sprime',zk);
 
 opdims = [1 1];
 
@@ -64,16 +64,14 @@ srcinfo = []; srcinfo.r = sources;
 targinfo = []; targinfo.r = chnkr.r(:,:); 
 targinfo.d = chnkr.d(:,:);
 targinfo.n = chnkr.n(:,:);
-kernmats = kerns(srcinfo,targinfo);
-kernmatsprime = kernsprime(srcinfo,targinfo);
-densu = kernmats*strengths;
-densun = kernmatsprime*strengths;
+[u,gradu] = kerns.fmm(1e-12,srcinfo,targinfo,strengths,2);
+densu = u;
+densun = sum(chnkr.n(:,:).*gradu,1);
 
 % eval u at targets
 
 targinfo = []; targinfo.r = targets;
-kernmatstarg = kerns(srcinfo,targinfo);
-utarg = kernmatstarg*strengths;
+utarg = kerns.fmm(1e-12,srcinfo,targinfo,strengths,1);
 
 
 % test green's id

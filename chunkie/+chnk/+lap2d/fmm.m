@@ -43,6 +43,12 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
 %   hess - hessian at target locations
 %
 %
+
+  if isa(targ,'struct')
+    targuse = targ.r(:,:);
+  else
+    targuse = targ;
+  end
    srcuse = [];
    mover2pi = -1.0/2/pi;
    srcuse.sources = srcinfo.r(1:2,:);
@@ -63,7 +69,7 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
      srcuse.charges = mover2pi*eta*sigma(:).';
    end
    pg = 0;
-   U = rfmm2d(eps,srcuse,pg,targ,pgt);
+   U = rfmm2d(eps,srcuse,pg,targuse,pgt);
    if strcmpi(type,'sgrad')
     pot = U.gradtarg;
     if (pgt >= 2)

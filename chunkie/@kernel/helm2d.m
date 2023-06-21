@@ -51,7 +51,7 @@ switch lower(type)
 
     case {'c', 'combined'}
         if ( nargin < 3 )
-            warning('Missing combined layer coefficients eta. Defaulting to [1,1i].');
+            warning('Missing combined layer coefficients. Defaulting to [1,1i].');
             coefs = [1,1i];
         end
         obj.type = 'c';
