@@ -67,8 +67,6 @@ targinfo = []; targinfo.r = targets;
 kernmatstarg = kerns(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
-%
-
 % build laplace dirichlet matrix
 
 fkern = @(s,t) chnk.lap2d.kern(s,t,'D');

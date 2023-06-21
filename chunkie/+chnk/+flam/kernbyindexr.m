@@ -31,6 +31,10 @@ function mat = kernbyindexr(i,j,targs,chnkr,whts,kern,opdims,spmat)
 
 % find unique underlying points
 
+if isa(kern,'kernel')
+    kern=kern.eval;
+end
+
 ipts = idivide(int64(i(:)-1),int64(opdims(1)))+1;
 jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;
 

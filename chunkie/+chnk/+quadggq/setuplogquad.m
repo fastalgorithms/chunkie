@@ -2,6 +2,10 @@ function [logquad]=setuplogquad(k,opdims)
 % obtain quadrature nodes and weights, and interpolation matrices for
 % logarithmic and nearly logarithmic singularities
 
+msg = "chnk.quadggq.setuplogquad to be deprecated. " + ...
+    "use chnk.quadggq.setup instead";
+warning(msg);
+
   npolyfac=2;  
   [xs1,wts1,xs0,wts0] = chnk.quadggq.getlogquad(k,npolyfac);
   ainterp1 = lege.matrin(k,xs1);

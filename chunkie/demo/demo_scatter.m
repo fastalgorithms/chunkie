@@ -11,7 +11,7 @@ addpaths_loc();
 
 % planewave vec
 
-kvec = 5*[1;-1.5];
+kvec = 20*[1;-1.5];
 
 %
 
@@ -50,7 +50,8 @@ axis equal
 
 % build CFIE
 
-fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'c',1);
+fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'c',[1,1i]);
+fkern = kernel('helm','c',zk,[1,1i]);
 start = tic; sysmat = chunkermat(chnkr,fkern);
 t1 = toc(start);
 

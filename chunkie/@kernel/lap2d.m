@@ -21,6 +21,7 @@ end
 
 obj = kernel();
 obj.name = 'laplace';
+obj.opdims = [1 1];
 
 switch lower(type)
 
@@ -41,6 +42,20 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sprime');
         % TODO: FMM for sprime.
         obj.sing = 'smooth';
+
+    case {'sg', 'sgrad'}
+        obj.type = 'sg';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sgrad');
+        obj.fmm = @(eps,s,t,sigma,pgt) chnk.lap2d.fmm(eps, s, t, 'sgrad', sigma, pgt);
+        obj.sing = 'pv';
+        obj.opdims = [2,1];
+
+    case {'dg', 'dgrad'}
+        obj.type = 'dg';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'dgrad');
+        obj.fmm = @(eps,s,t,sigma,pgt) chnk.lap2d.fmm(eps, s, t, 'dgrad', sigma, pgt);
+        obj.sing = 'hs';
+        obj.opdims = [2,1];
 
     case {'c', 'combined'}
         if ( nargin < 2 )

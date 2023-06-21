@@ -49,6 +49,9 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
    if strcmpi(type,'s')
       srcuse.charges = mover2pi*sigma(:).';
    end
+   if strcmpi(type,'sgrad')
+      srcuse.charges = mover2pi*sigma(:).';
+   end
    if strcmpi(type,'d')
       srcuse.dipstr = mover2pi*sigma(:).';
       srcuse.dipvec = srcinfo.n(1:2,:);
@@ -61,11 +64,21 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
    end
    pg = 0;
    U = rfmm2d(eps,srcuse,pg,targ,pgt);
-   pot = U.pottarg.';
-   if(pgt>=2) 
+   if strcmpi(type,'sgrad')
+    pot = U.gradtarg;
+    if (pgt >= 2)
+     varargout{1} = U.hesstarg([1 2 2 3],:);
+    end
+    if (pgt >= 3)
+        warning('fmm: hessian not available for kernel %s',type)
+    end
+   else
+    pot = U.pottarg.';
+    if(pgt>=2) 
        varargout{1} = U.gradtarg; 
-   end
-   if(pgt==3) 
+    end
+    if(pgt==3) 
        varargout{2} = U.hesstarg; 
+    end
    end
 end

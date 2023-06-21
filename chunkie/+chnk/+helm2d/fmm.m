@@ -54,10 +54,10 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
       srcuse.dipvec = srcinfo.n(1:2,:);
    end
    if strcmpi(type,'c')
-     eta = varargin{1};
-     srcuse.dipstr = sigma(:).';
+     coefs = varargin{1};
+     srcuse.dipstr = coefs(1)*sigma(:).';
      srcuse.dipvec = srcinfo.n(1:2,:);
-     srcuse.charges = 1i*eta*sigma(:).';
+     srcuse.charges = coefs(2)*sigma(:).';
    end
    pg = 0;
    U = hfmm2d(eps,zk,srcuse,pg,targ,pgt);

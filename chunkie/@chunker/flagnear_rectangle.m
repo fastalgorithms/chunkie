@@ -108,7 +108,7 @@ isp = zeros(nn,1);
 jsp = zeros(nn,1);
 istack = zeros(4*nlev,1);
 
-for i = 1:length(pts)
+for i = 1:size(pts,2)
     ntry = 0;
     is = 1;
     pt = pts(:,i);
@@ -232,7 +232,7 @@ end
 end
 
 function [rects,rectinfo] = bounding_rects_cheap(convreg,d1s,d2s)
-% find minimal area bounding rectangle for each region
+% find tight rectangle for each region given axes
 
 [dim,m,n] = size(convreg);
 xreg = reshape(convreg(1,:,:),m,n);

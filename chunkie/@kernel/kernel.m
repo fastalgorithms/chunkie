@@ -50,6 +50,7 @@ classdef kernel
         fmm        % Function handle for kernel FMM
         sing       % Singularity type
         splitinfo  % Kernel-split information
+        opdims     % Dimension of the operator
 
     end
 

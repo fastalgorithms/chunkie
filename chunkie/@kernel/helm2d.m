@@ -1,4 +1,4 @@
-function obj = helm2d(type, zk, eta)
+function obj = helm2d(type, zk, coefs)
 %KERNEL.HELM2D   Construct the Helmholtz kernel.
 %   KERNEL.HELM2D('s', ZK) or KERNEL.HELM2D('single', ZK) constructs the
 %   single-layer Helmholtz kernel with wavenumber ZK.
@@ -27,6 +27,7 @@ end
 obj = kernel();
 obj.name = 'helmholtz';
 obj.params.zk = zk;
+obj.opdims = [1 1];
 
 switch lower(type)
 
@@ -50,13 +51,13 @@ switch lower(type)
 
     case {'c', 'combined'}
         if ( nargin < 3 )
-            warning('Missing combined layer parameter eta. Defaulting to 1.');
-            eta = 1;
+            warning('Missing combined layer coefficients eta. Defaulting to [1,1i].');
+            coefs = [1,1i];
         end
         obj.type = 'c';
-        obj.params.eta = eta;
-        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c', eta);
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, pgt, eta);
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c', coefs);
+        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, pgt, coefs);
         obj.sing = 'log';
 
     otherwise
