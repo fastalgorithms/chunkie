@@ -67,8 +67,6 @@ targinfo = []; targinfo.r = targets;
 kernmatstarg = kerns(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
-%
-
 % build laplace dirichlet matrix
 
 fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
@@ -96,7 +94,7 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 
 opts.usesmooth=false;
 opts.verb=false; 
-opts.flam=true;
+opts.accel=true;
 start=tic; Dsol = chunkerkerneval(chnkr,fkern,sol2,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)

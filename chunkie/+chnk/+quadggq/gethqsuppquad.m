@@ -1,11 +1,12 @@
 function [xs0,ws0] = gethqsuppquad(k,itype)
-%GETLOGQUAD returns a GGQ quadrature for smooth+log*smooth
-% of the requested order (if available)
+%CHNK.QUADGGQ.GETHQSUPPQUAD returns a GGQ quadrature for up to 
+% hyper-singular kernels for nodes of the requested order (if available). 
+% Rule will integrate base kernel types times polynomials of degree 2*k-1
 %
 % input
 % k - order of nodes on panel
-% itype - 1 gives a rule for log and 1/(x-xk), 2 gives a rule
-%           for log, 1/(x-xk), 1/(x-xk)^2   
+% itype - 1 gives a rule for log and 1/(x-xj), 2 gives a rule
+%           for log, 1/(x-xj), 1/(x-xj)^2   
 
   if nargin < 2
     itype = 2;
@@ -36,7 +37,7 @@ function [xs0,ws0] = gethqsuppquad(k,itype)
       case 20
 	[xs0,ws0] = chnk.quadggq.hsupp_nnode020_npoly040();
       otherwise
-	error("gethqsuppquad: order not available\n");
+	error("gethqsuppquad: order not available");
     end
   end
   if itype == 2
@@ -64,7 +65,7 @@ function [xs0,ws0] = gethqsuppquad(k,itype)
       case 20
 	[xs0,ws0] = chnk.quadggq.hqsupp_nnode020_npoly040();
       otherwise
-	error("gethqsuppquad: order not available\n");
+	error("gethqsuppquad: order not available");
     end
   end
 end

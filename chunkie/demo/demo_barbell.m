@@ -49,7 +49,7 @@ plot3(chnkr,1)
 
 % build laplace dirichlet matrix
 
-fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
+fkern = kernel('laplace','d');
 opts = [];
 start = tic; D = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);

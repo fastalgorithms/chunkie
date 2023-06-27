@@ -40,6 +40,10 @@ function [Kpxy,nbr] = proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
 
 % scaled proxy points and weights (no scaling necessary on tangents)
 
+if isa(kern,'kernel')
+    kern = kern.eval;
+end
+
 lmax = max(l);
 pxy = bsxfun(@plus,pr*lmax,ctr(:));
 pw = lmax*pw;
