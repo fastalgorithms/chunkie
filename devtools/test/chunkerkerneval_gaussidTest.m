@@ -41,7 +41,7 @@ targs(1,:) = xx(:); targs(2,:) = yy(:);
 
 fprintf('computing Gauss I.D. with smooth rule...\n');
 opts.forcesmooth=true;
-opts.flam = true;
+opts.accel = true;
 start=tic; d1 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
 toc(start)
 
@@ -51,7 +51,7 @@ if doadap
     opts.forcesmooth=false;
     opts.forceadap = false;
     opts.fac = 1.0;
-    opts.flam = true;
+    opts.accel = true;
     start=tic; d12 = chunkerkerneval(chnkr,kernd,dens1,targs,opts); 
     toc(start)
     assert(all(or(abs(d12(:))<1e-6,abs(d12(:)+1)<1e-6)));

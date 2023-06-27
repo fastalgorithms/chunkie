@@ -39,13 +39,23 @@ end
 
 nquad0 = size(xs0,1);
 
-auxquads = chnk.quadggq.setuplogquad(k,opdims);
+if nargin < 4 || isempty(type)
+    type = 'log';
+end
+
+auxquads = chnk.quadggq.setup(k,type);
+
 
 xs0 = auxquads.xs0;
 wts0 = auxquads.wts0;
 
+temp = eye(opdims(2));
+
 ainterps0 = auxquads.ainterps0;
-ainterps0kron = auxquads.ainterps0kron;
+ainterps0kron = cell(k,1);
+for j = 1:k
+    ainterps0kron{j} = kron(ainterps0{j},temp);
+end
 
 
 % do smooth weight for all
