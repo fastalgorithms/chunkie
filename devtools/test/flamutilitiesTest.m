@@ -51,28 +51,26 @@ axis equal
 
 %
 
-kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
+kerns = kernel('lap','s');
 
 % eval u on bdry
 
 srcinfo = []; srcinfo.r = sources;
 targinfo = []; targinfo.r = chnkr.r(:,:); 
 targinfo.d = chnkr.d(:,:);
-kernmats = kerns(srcinfo,targinfo);
-ubdry = kernmats*strengths;
+ubdry = kerns.fmm(1e-12,srcinfo,targinfo,strengths,1);
 
 % eval u at targets
 
 targinfo = []; targinfo.r = targets;
-kernmatstarg = kerns(srcinfo,targinfo);
-utarg = kernmatstarg*strengths;
+utarg = kerns.fmm(1e-12,srcinfo,targinfo,strengths,1);
 
 %
 
 % build laplace dirichlet matrix
 
-fkern = @(s,t) chnk.lap2d.kern(s,t,'D');
-start = tic; D = chunkermat(chnkr,fkern);
+kernd = kernel('lap','d');
+start = tic; D = chunkermat(chnkr,kernd);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -82,38 +80,38 @@ sys = -0.5*eye(chnkr.k*chnkr.nch) + D;
 % build sparse tridiag part 
 
 opts.nonsmoothonly = true;
-start = tic; spmat = chunkermat(chnkr,fkern,opts);
+start = tic; spmat = chunkermat(chnkr,kernd,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to build tridiag\n',t1)
 
-spmat = spmat -0.5*speye(chnkr.k*chnkr.nch);
+spmat = spmat -0.5*speye(chnkr.npt);
 
 % test matrix entry evaluator
 start = tic; 
 % opdims = [1 1];
 opdims = ones([2,1,1]);
 
-sys2 = chnk.flam.kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,fkern,opdims,spmat);
+sys2 = chnk.flam.kernbyindex(1:chnkr.npt,1:chnkr.npt,chnkr,wts,kernd,opdims,spmat);
 t1 = toc(start);
 
 fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
 
 
 xflam = chnkr.r(:,:);
-matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkr,wts,fkern,opdims,spmat);
+matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkr,wts,kernd,opdims,spmat);
 [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
 ifaddtrans = true;
 pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkr,wts, ...
-    fkern,opdims,pr,ptau,pw,pin,ifaddtrans);
+    kernd,opdims,pr,ptau,pw,pin,ifaddtrans);
 
 
 start = tic; F = rskelf(matfun,xflam,200,1e-14,pxyfun); t1 = toc(start);
-F = chunkerflam(chnkr,fkern,-0.5);
+F = chunkerflam(chnkr,kernd,-0.5);
 
 fprintf('%5.2e s : time for flam rskelf compress\n',t1)
 
 pxyfunr = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-        ctr,chnkr,wts,fkern,opdims,pr,ptau,pw,pin);
+        ctr,chnkr,wts,kernd,opdims,pr,ptau,pw,pin);
 
 opts = [];
 start = tic; F2 = rskel(matfun,xflam,xflam,200,1e-14,pxyfunr,opts); t1 = toc(start);
@@ -148,7 +146,7 @@ assert(err < 1e-10);
 opts.usesmooth=false;
 opts.verb=false;
 opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
-start=tic; Dsol = chunkerkerneval(chnkr,fkern,sol3,targets,opts); 
+start=tic; Dsol = chunkerkerneval(chnkr,kernd,sol3,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 

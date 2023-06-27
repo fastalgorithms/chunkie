@@ -38,6 +38,10 @@ function mat = kernbyindex(i,j,chnkrs,whts,kern,opdims_mat,spmat,l2scale)
 % l2scale - boolean type that determines if we should 
 %    rescale the matrix by l2scale. the default value is false. 
 
+if isa(kern,'kernel')
+    kern = kern.eval;
+end
+
 if nargin < 8
     l2scale = false;
 end

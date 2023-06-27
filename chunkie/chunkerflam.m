@@ -81,6 +81,33 @@ function [F] = chunkerflam(chnkobj,kern,dval,opts)
 
 F = [];
 
+if isa(kern,'function_handle')
+    kern2 = kernel(kern);
+    kern = kern2;
+elseif isa(kern,'cell')
+    sz = size(kern);
+    kern2(sz(1),sz(2)) = kernel();
+    for j = 1:sz(2)
+        for i = 1:sz(1)
+            if isa(kern{i,j},'function_handle')
+                kern2(i,j) = kernel(kern{i,j});
+            elseif isa(kern{i,j},'kernel')
+                kern2(i,j) = kern{i,j};
+            else
+                msg = "Second input is not a kernel object, function handle, " ...
+                    + "or cell array";
+                error(msg);
+            end
+        end
+    end
+    kern = kern2;
+    
+elseif ~isa(kern,'kernel')
+    msg = "Second input is not a kernel object, function handle, " ...
+                + "or cell array";
+    error(msg);
+end
+
 if nargin < 3
     dval = 0.0;
 end
@@ -142,10 +169,11 @@ for i=1:nchunkers
         srcinfo.r = chnkrs(j).r(:,1); srcinfo.d = chnkrs(j).d(:,1); 
         srcinfo.d2 = chnkrs(j).d2(:,1); srcinfo.n = chnkrs(j).n(:,1);
 
+        
         if (size(kern) == 1)
-            ftemp = kern(srcinfo,targinfo);
+            ftemp = kern.eval(srcinfo,targinfo);
         else
-            ktmp = kern{i,j};
+            ktmp = kern(i,j).eval;
             ftemp = ktmp(srcinfo,targinfo);
         end   
         opdims = size(ftemp);

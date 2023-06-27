@@ -16,6 +16,10 @@ function npxy = nproxy_square(kern,width,opts)
 % Output:
 %   npxy - number of points on perimeter of box to be sent to proxy routine
 %
+
+    if isa(kern,'kernel')
+        kern = kern.eval;
+    end
   if nargin < 3
     opts = [];
   end

@@ -42,6 +42,9 @@ function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkrs,whts,kern,opdims_mat, ...
 %    rescale the matrix by l2scale. the default value is false. 
 % 
 
+if isa(kern,'kernel')
+    kern = kern.eval;
+end
 
 if nargin < 14
     l2scale = false;
