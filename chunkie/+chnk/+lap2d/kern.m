@@ -24,6 +24,17 @@ if strcmpi(type,'sprime')
     submat = (grad(:,:,1).*nx + grad(:,:,2).*ny);
 end
 
+if strcmpi(type,'sgrad')
+    [~,grad] = chnk.lap2d.green(src,targ,true);
+    submat = reshape(permute(grad,[3,1,2]),2*nt,ns);
+end
+
+if strcmpi(type,'dgrad')
+    [~,~,hess] = chnk.lap2d.green(src,targ,true);
+    submat = -(hess(:,:,1:2).*srcinfo.n(1,:)+hess(:,:,2:3).*srcinfo.n(2,:));
+    submat = reshape(permute(submat,[3,1,2]),2*nt,ns);
+end
+
 if strcmpi(type,'s')
     submat = chnk.lap2d.green(src,targ);
 end

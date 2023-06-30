@@ -21,19 +21,23 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 % Optional input:
 %   opts  - options structure. available options (default settings)
 %           opts.quad = string ('ggq'), specify quadrature routine to 
-%                       use. Other available options include
+%                       use for neighbor and self interactoins. Other 
+%                       available options include:
 %                       - 'native' selects standard scaled Gauss-Legendre 
-%                       quadrature for native functions
-%                       smooth kernels with removable singularities
-%           opts.type = string ('log'), type of singularity of kernel. Type
-%                       can take on the following arguments:
-%                         log => logarithmically singular kernels
-%                         pv => principal value singular kernels
-%                         hs => hypersingular kernels
+%                       quadrature for smooth integral kernels
+%           opts.sing = string ('log') 
+%                       default type of singularity of kernel in case it 
+%                       is not defined by the kernel object. Supported 
+%                       types are:
+%                         smooth => smooth kernels
+%                         log => logarithmically singular kernels or 
+%                                smooth times log + smooth
+%                         pv => principal value singular kernels + log
+%                         hs => hypersingular kernels + pv
 %
 %           opts.nonsmoothonly = boolean (false), if true, only compute the
 %                         entries for which a special quadrature is used
-%                         (e.g. self and neighbor interactoins) and return
+%                         (e.g. self and neighbor interactions) and return
 %                         in a sparse array.
 %           opts.l2scale = boolean (false), if true scale rows by 
 %                           sqrt(whts) and columns by 1/sqrt(whts)
@@ -59,7 +63,7 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %                      of type chunkergraph
 %           opts.nsub_or_tol = (40) specify the level of refinements in rcip
 %                    or a tolerance where the number of levels is given by
-%                    ceiling(log_{2}(1/tol^2);
+%                    ceiling(log_{2}(1/tol^2));
 %           opts.adaptive_correction = (false) flag for whether to use
 %                    adaptive quadrature for near touching panels on
 %                    different chunkers
@@ -67,7 +71,6 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %  ilist - cell array of integer arrays ([]), list of panel interactions that 
 %          should be ignored when constructing matrix entries or quadrature
 %          corrections. 
-%
 %
 % Output:
 %   sysmat - the system matrix for discretizing integral operator whose kernel 
@@ -85,6 +88,37 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %   [sysmat,opts] = chunkermat(chnkr,kern,opts,ilist);
 %
 
+% convert kernel to kernel object, put in singularity info 
+% opts.sing provides a default value for singularities if not 
+% defined for kernels
+
+if isa(kern,'function_handle')
+    kern2 = kernel(kern);
+    kern = kern2;
+elseif isa(kern,'cell')
+    sz = size(kern);
+    kern2(sz(1),sz(2)) = kernel();
+    for j = 1:sz(2)
+        for i = 1:sz(1)
+            if isa(kern{i,j},'function_handle')
+                kern2(i,j) = kernel(kern{i,j});
+            elseif isa(kern{i,j},'kernel')
+                kern2(i,j) = kern{i,j};
+            else
+                msg = "Second input is not a kernel object, function handle, " ...
+                    + "or cell array";
+                error(msg);
+            end
+        end
+    end
+    kern = kern2;
+    
+elseif ~isa(kern,'kernel')
+    msg = "Second input is not a kernel object, function handle, " ...
+                + "or cell array";
+    error(msg);
+end
+    
 if nargin < 3
     opts = [];
 end
@@ -99,11 +133,15 @@ l2scale = false;
 isrcip = true;
 nsub = 40;
 adaptive_correction = false;
+sing = 'log';
 
 % get opts from struct if available
 
 if isfield(opts,'quad')
     quad = opts.quad;
+end
+if isfield(opts,'sing')
+    sing = opts.sing;
 end
 if isfield(opts,'l2scale')
     l2scale = opts.l2scale;
@@ -123,7 +161,6 @@ if(isfield(opts,'nsub_or_tol'))
     else
         nsub = ceil(opts.nsub_or_tol);
     end
-    
 end
 
 if (isfield(opts,'adaptive_correction'))
@@ -139,7 +176,7 @@ elseif(class(chnkobj) == "chunkgraph")
     icgrph = 1;
     chnkrs = chnkobj.echnks;
 else
-    msg = "Unsupported object in chunkermat";
+    msg = "First input is not a chunker or chunkgraph object";
     error(msg)
 end
 
@@ -147,6 +184,8 @@ nchunkers = length(chnkrs);
 
 opdims_mat = zeros(2,nchunkers,nchunkers);
 lchunks    = zeros(nchunkers,1);
+
+%TODO: figure out a way to avoid this nchunkers^2 loop
 
 for i=1:nchunkers
     
@@ -164,9 +203,9 @@ for i=1:nchunkers
         srcinfo.d2 = chnkrs(j).d2(:,1); srcinfo.n = chnkrs(j).n(:,1);
 
         if (size(kern) == 1)
-            ftemp = kern(srcinfo,targinfo);
+            ftemp = kern.eval(srcinfo,targinfo);
         else
-            ktmp = kern{i,j};
+            ktmp = kern(i,j).eval;
             ftemp = ktmp(srcinfo,targinfo);
         end   
         opdims = size(ftemp);
@@ -199,6 +238,10 @@ end
 
 %% Off diagonal interactions 
 
+%TODO: switch to flagging for all chunks at once, then loop over
+% chunks and do corrections. need to create array from chunk/point index
+% to edge chunk number
+
 for i = 1:nchunkers
     chnkri = chnkrs(i);
     for j = 1:nchunkers
@@ -217,9 +260,9 @@ for i = 1:nchunkers
             wts = wts2;
 
             if (size(kern) == 1)
-                ftmp = kern;
+                ftmp = kern.eval;
             else
-                ftmp = kern{i,j};
+                ftmp = kern(i,j).eval;
             end 
 
             if (~nonsmoothonly)
@@ -248,7 +291,6 @@ for i = 1:nchunkers
             end
             
             if (~nonsmoothonly)
-
                 irowinds = irowlocs(i):(irowlocs(i+1)-1);
                 icolinds = icollocs(j):(icollocs(j+1)-1);
                 sysmat(irowinds,icolinds) = sysmat_tmp;
@@ -260,7 +302,7 @@ for i = 1:nchunkers
             end
         end
     end
-end    
+end
 
 %% Diagonal Interaction. 
 
@@ -272,27 +314,64 @@ for i=1:nchunkers
         jlist = ilist(:,i);
     end
 
+    singi = sing;
     chnkr = chnkrs(i);
     if (size(kern) == 1)
-        ftmp = kern;
+        ftmp = kern.eval;
+        if ~isempty(kern.sing)
+            singi = kern.sing;
+        end
     else
         
-        ftmp = kern{i,i};
+        ftmp = kern(i,i).eval;
+        if ~isempty(kern(i,i).sing)
+            singi = kern(i,i).sing;
+        end
     end 
+
     
     
     % call requested routine
 
     if strcmpi(quad,'ggq')
-        if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
-            auxquads = opts.auxquads.ggqlog;
-        else
-            
-        end   
-        k = chnkr.k;
-        auxquads = chnk.quadggq.setuplogquad(k,opdims);
-        opts.auxquads.ggqlog = auxquads;
-        type = 'log';
+        if strcmpi(singi,'smooth')
+            %TODO: make a reasonable method for smooth with removable
+            type = 'log';
+            if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
+                auxquads = opts.auxquads.ggqlog;
+            else
+                k = chnkr.k;
+                auxquads = chnk.quadggq.setup(k,type);
+                opts.auxquads.ggqlog = auxquads;
+            end
+        elseif strcmpi(singi,'log')
+            type = 'log';
+            if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
+                auxquads = opts.auxquads.ggqlog;
+            else
+                k = chnkr.k;
+                auxquads = chnk.quadggq.setup(k,type);
+                opts.auxquads.ggqlog = auxquads;
+            end
+        elseif strcmpi(singi,'pv')
+            type = 'pv';
+            if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqpv'))
+                auxquads = opts.auxquads.ggqpv;
+            else
+                k = chnkr.k;
+                auxquads = chnk.quadggq.setup(k,type);
+                opts.auxquads.ggqpv = auxquads;
+            end
+        elseif strcmpi(singi,'hs')
+            type = 'hs';
+            if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqhs'))
+                auxquads = opts.auxquads.ggqhs;
+            else
+                k = chnkr.k;
+                auxquads = chnk.quadggq.setup(k,type);
+                opts.auxquads.ggqhs = auxquads;
+            end
+        end
         if nonsmoothonly
             sysmat_tmp = chnk.quadggq.buildmattd(chnkr,ftmp,opdims,type,auxquads,jlist);
         else
@@ -312,7 +391,6 @@ for i=1:nchunkers
         end
     else
         warning('specified quadrature method not available');
-        sysmat_tmp = [];
         return;
     end
 
@@ -438,7 +516,13 @@ end
 end
 
 function mat = chunkermat_adap(chnkr,kern,opdims, ...
-    chnkrt,flag,opts)
+			       chnkrt,flag,opts)
+
+  if isa(kern,'kernel')
+    kernev = kernel.eval;
+  else
+    kernev = kern;
+  end
 
 % copied and modified from the function chunkerkernevalmat in chunkerkernevalmat.m
 % chnkrt is the target chunker. 
@@ -465,8 +549,6 @@ end
 
 % using adaptive quadrature
 
-
-
 is = zeros(nnz(flag)*opdims(1)*opdims(2)*k,1);
 js = is;
 vs = is;
@@ -487,7 +569,7 @@ for i = 1:nch
                     
     [ji] = find(flag(:,i));
     mat1 =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
-                targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
+                targd(:,ji),targn(:,ji),targd2(:,ji),kernev,opdims,t,w,opts);
             
     js1 = jmat:jmatend;
     js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);

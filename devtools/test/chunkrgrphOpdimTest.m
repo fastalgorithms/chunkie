@@ -40,7 +40,7 @@ cc = [1 1; 1 1]; % these numbers might be wrong...
 fkern11 = @(s,t) chnk.helm2d.kern(zk0,s,t,'all',cc) - chnk.helm2d.kern(zk1,s,t,'all',cc);
 fkern12 = @(s,t) chnk.helm2d.kern(zk0,s,t,'c and cprime',eta);
 fkern21 = @(s,t) chnk.helm2d.kern(zk0,s,t,'eval trans');
-fkern22  = @(s,t) chnk.helm2d.kern(zk0,s,t,'c',eta);
+fkern22  = @(s,t) chnk.helm2d.kern(zk0,s,t,'c',[1,1i]);
 
 chnk_trans_flag = [1 1 1 1 0 0 0 0];
 
@@ -57,7 +57,6 @@ for it=1:ncurve
         if all(kern_type==[0 0]), fkerns{it,is} = fkern22; end
     end
 end
-
 
 opts = struct('nonsmoothonly',false, 'rcip',true);
 [sysmat] = chunkermat(cgrph, fkerns, opts);

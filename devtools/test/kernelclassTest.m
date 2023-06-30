@@ -1,5 +1,5 @@
-%CHUNKERKERNEVAL_GREENHELMTEST test the routines for integrating over 
-% chunks against the Green's ID for Helmholtz
+%KERNELCLASSTEST check the use of kernel class for sending FMM
+% and singularity info to various routines
 %
 % 
 
@@ -8,10 +8,12 @@ seed = 8675309;
 rng(seed);
 addpaths_loc();
 
+doadap = false;
+
 % geometry parameters and construction
 
 cparams = [];
-cparams.eps = 1.0e-11;
+cparams.eps = 1.0e-12;
 pref = []; 
 pref.k = 16;
 narms = 5;
@@ -48,39 +50,33 @@ axis equal
 
 %
 
-zk = rand() + 1i*rand();
-
 % kernel defs
 
-kernd = kernel('h','d',zk);
-kerns = kernel('h','s',zk);
-kernsprime = kernel('h','sprime',zk);
+kernd = kernel('lap','d');
+kerns = kernel('lap','s');
 
 opdims = [1 1];
 
 % eval u and dudn on boundary
 
-srcinfo = []; srcinfo.r = sources;
-targinfo = []; targinfo.r = chnkr.r(:,:); 
-targinfo.d = chnkr.d(:,:);
-targinfo.n = chnkr.n(:,:);
-[u,gradu] = kerns.fmm(1e-12,srcinfo,targinfo,strengths,2);
-densu = u;
-densun = sum(chnkr.n(:,:).*gradu,1);
+srcinfo = []; srcinfo.r = sources; 
+
+[ubdry,gradubdry] = kerns.fmm(eps,srcinfo,chnkr.r(:,:),strengths,2);
+unbdry = sum(chnkr.n(:,:).*gradubdry,1);
+
+%
 
 % eval u at targets
 
-targinfo = []; targinfo.r = targets;
-utarg = kerns.fmm(1e-12,srcinfo,targinfo,strengths,1);
+utarg = kerns.fmm(eps,srcinfo,targets,strengths,1);
 
 
 % test green's id
 
-opts.forcesmooth=false;
-opts.quadkgparams = {'RelTol',1.0e-13,'AbsTol',1.0e-13};
-start=tic; Du = chunkerkerneval(chnkr,kernd,densu,targets,opts); 
+opts = [];
+start=tic; Du = chunkerkerneval(chnkr,kernd,ubdry,targets,opts); 
 toc(start)
-start=tic; Sun = chunkerkerneval(chnkr,kerns,densun,targets,opts); 
+start=tic; Sun = chunkerkerneval(chnkr,kerns,unbdry,targets,opts); 
 toc(start)
 
 utarg2 = Sun-Du;

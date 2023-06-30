@@ -2,7 +2,9 @@
 %
 % tests the flagging routine based on rectangles
 %
-ngrid = 500;
+
+addpaths_loc();
+ngrid = 100;
 chnkr = chunkerfunc(@(t) starfish(t));
 chnkr = refine(chnkr);
 rmin = min(chnkr); rmax = max(chnkr);
@@ -13,26 +15,24 @@ y = linspace(rmin(2),rmax(2),ngrid);
 
 targets = [xx(:).'; yy(:).'];
 
-start = tic; sp = flagnear_rectangle(chnkr,targets); toc(start)
-nnz(sp)
-start = tic; sp2 = flagnear_rectangle_grid(chnkr,x,y); toc(start)
-nnz(sp2)
+sp = flagnear_rectangle(chnkr,targets);
+sp2 = flagnear_rectangle_grid(chnkr,x,y);
 
 assert(nnz(sp-sp2) == 0);
 
-ispec = (sp2*ones(chnkr.nch,1) > 0);
+%ispec = (sp2*ones(chnkr.nch,1) > 0);
 
-ells = ellipses(chnkr,1.8);
-rects = bounding_rects(ells);
+%ells = ellipses(chnkr,1.8);
+%rects = bounding_rects(ells);
 
 
-clf
-plot(chnkr,'m')
-hold on
-scatter(targets(1,ispec),targets(2,ispec),'bo')
-scatter(targets(1,~ispec),targets(2,~ispec),'go')
-scatter(ells(1,:),ells(2,:),'rx')
-scatter(rects(1,:),rects(2,:),'mx')
+%clf
+%plot(chnkr,'m')
+%hold on
+%scatter(targets(1,ispec),targets(2,ispec),'bo')
+%scatter(targets(1,~ispec),targets(2,~ispec),'go')
+%scatter(ells(1,:),ells(2,:),'rx')
+%scatter(rects(1,:),rects(2,:),'mx')
 
 
 

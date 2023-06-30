@@ -1,4 +1,3 @@
-
 function submat= kern(zk,srcinfo,targinfo,type,varargin)
 %CHNK.HELM2D.KERN standard Helmholtz layer potential kernels in 2D
 % 
@@ -33,9 +32,9 @@ function submat= kern(zk,srcinfo,targinfo,type,varargin)
 %                type == 's', single layer kernel S
 %                type == 'sprime', normal derivative of single
 %                      layer S'
-%                type == 'c', combined layer kernel D + i eta S
-%   varargin{1} - eta in the combined layer formula, otherwise
-%                does nothing
+%                type == 'c', combined layer kernel alpha D + beta S
+%   varargin{1} - length 2 array [alpha,beta] in the combined layer 
+%                 formula, otherwise does nothing
 %
 % Output:
 %   submat - the evaluation of the selected kernel for the

@@ -1,24 +1,30 @@
 function [R]=Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
     Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,...
-    glxs,sbcmat,lvmat,u)
-  % carry out the forward recursion for computing the preconditioner R 
-  % in the RCIP method
-  %
-  % A more general version of Shidong's rcip version
-  %
-  % Function is passed as a handle, number of equations is given by
-  % ndim
-  %
-  % Kernel on input takes in arguments (chnkrlocal,ilistl);
-  % 
-  % Note that matrix must be scaled to have identity on the diagonal,
-  % will not work with scaled version of identity
+    glxs,sbcmat,lvmat,u,opts)
+%CHNK.RCIP.Rcompchunk carry out the forward recursion for computing
+% the preconditioner R where geometry is described as a chunker
+%
+% This routine is not intended to be user-callable 
+%
+% Adapted from Shidong Jiang's RCIP implementation
+%
+% Function is passed as a handle, number of equations is given by
+% ndim
+%
+% Kernel on input takes in arguments (chnkrlocal,ilistl);
+% 
+% Note that matrix must be scaled to have identity on the diagonal,
+% will not work with scaled version of identity
   
 k = chnkr.k;  
 dim = chnkr.dim;
 
 if nargin < 14
     [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k); 
+end
+
+if nargin < 17
+    opts = [];
 end
 
 nedge = size(iedgechunks,2);
@@ -36,12 +42,12 @@ ctr = zeros(dim,nedge);
 if(size(fkern)==1)
     fkernlocal = fkern;
 else
-    fkernlocal = cell(nedge,nedge);
+  fkernlocal(nedge,nedge) = kernel();
     for i=1:nedge
         ici = iedgechunks(1,i);
         for j=1:nedge
             icj = iedgechunks(1,j);
-            fkernlocal{i,j} = fkern{ici,icj};
+            fkernlocal(i,j) = fkern(ici,icj);
         end
     end
 
@@ -158,9 +164,8 @@ for level=1:nsub
         ilistl = ilist;
     end
 
-    opts = [];
     % test for opdims ~= [1,1]
-    MAT = chunkermat(chnkrlocal,fkernlocal,opts,ilistl);
+    [MAT,opts] = chunkermat(chnkrlocal,fkernlocal,opts,ilistl);
     
 
 %

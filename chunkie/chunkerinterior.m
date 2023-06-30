@@ -75,7 +75,7 @@ if usefmm_final
 end
 
 if ~usefmm_final || icont
-    kernd = @(s,t) chnk.lap2d.kern(s,t,'d');
+    kernd = kernel('lap','d');
     dens1 = ones(chnkr.k,chnkr.nch);
     wts = weights(chnkr);
 
