@@ -43,6 +43,18 @@ switch lower(type)
         % TODO: FMM for sprime.
         obj.sing = 'smooth';
 
+    case {'st', 'stau'}
+        obj.type = 'st';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'stau');
+        % TODO: FMM for stau.
+        obj.sing = 'pv';
+
+    case {'dp', 'dprime'}
+        obj.type = 'dp';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'dprime');
+        % TODO: FMM for sprime.
+        obj.sing = 'hs';
+
     case {'sg', 'sgrad'}
         obj.type = 'sg';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sgrad');
