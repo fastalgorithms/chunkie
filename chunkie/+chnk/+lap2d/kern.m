@@ -24,6 +24,15 @@ if strcmpi(type,'sprime')
     submat = (grad(:,:,1).*nx + grad(:,:,2).*ny);
 end
 
+if strcmpi(type,'stau')
+    targnorm = chnk.normal2d(targinfo);
+    [~,grad] = chnk.lap2d.green(src,targ,true);
+    nx = repmat((targnorm(1,:)).',1,ns);
+    ny = repmat((targnorm(2,:)).',1,ns);
+
+    submat = (-grad(:,:,1).*ny + grad(:,:,2).*nx);
+end
+
 if strcmpi(type,'sgrad')
     [~,grad] = chnk.lap2d.green(src,targ,true);
     submat = reshape(permute(grad,[3,1,2]),2*nt,ns);
@@ -34,6 +43,19 @@ if strcmpi(type,'dgrad')
     submat = -(hess(:,:,1:2).*srcinfo.n(1,:)+hess(:,:,2:3).*srcinfo.n(2,:));
     submat = reshape(permute(submat,[3,1,2]),2*nt,ns);
 end
+
+if strcmpi(type,'dprime')
+  targnorm = targinfo.n;
+  srcnorm = srcinfo.n;
+  [~,~,hess] = chnk.lap2d.green(src,targ);
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+  submat = -(hess(:,:,1).*nxsrc.*nxtarg + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+      + hess(:,:,3).*nysrc.*nytarg);
+end
+
 
 if strcmpi(type,'s')
     submat = chnk.lap2d.green(src,targ);

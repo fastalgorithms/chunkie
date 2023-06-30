@@ -12,11 +12,11 @@ doadap = false;
 % geometry parameters and construction
 
 cparams = [];
-cparams.eps = 1.0e-6;
+cparams.eps = 1.0e-9;
 pref = []; 
-pref.k = 10;
+pref.k = 16;
 narms = 5;
-amp = 0.5;
+amp = 0.3;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
@@ -40,57 +40,36 @@ axis equal
 
 kernd = kernel('lap','d');
 kerns = kernel('lap','s');
-kerndgrad = kernel('lap','dgrad');
-kernsgrad = kernel('lap','sgrad');
+kerndprime = kernel('lap','dprime');
+kernsprime = kernel('lap','sprime');
+kernstau = kernel('lap','stau');
 
 % eval u and dudn on boundary
 
 srcinfo = []; srcinfo.r = sources; 
 
+eps = 1e-15;
 [ubdry,gradubdry] = kerns.fmm(eps,srcinfo,chnkr.r(:,:),strengths,2);
 unbdry = sum(chnkr.n(:,:).*gradubdry,1);
+tau = -chnk.perp(chnkr.n(:,:));
+utbdry = sum(tau(:,:).*gradubdry,1);
 
-% evaluate gradu on boundary again using singular matrix builders 
-% and the identity: 
-%      grad u = 2*(grad S dudn - grad D u)
-% integral for grad S is interpreted in the principal value sense and the 
-% integral for grad D is interpreted in the Hadamard finite part sense
+wtsc = weights(chnkr);
+sprimemat = chunkermat(chnkr,kernsprime);
+staumat = chunkermat(chnkr,kernstau);
+sys = 0.5*eye(chnkr.npt) + sprimemat + ones(chnkr.npt,1)*(wtsc(:).');
+mu = sys\unbdry(:);
+utau = staumat*mu;
 
-dgradmat = chunkermat(chnkr,kerndgrad);
-sgradmat = chunkermat(chnkr,kernsgrad);
-
-gradu = 2*(sgradmat*unbdry(:) - dgradmat*ubdry(:));
-
-relerr = norm(gradu(:)-gradubdry(:))/norm(gradubdry(:));
-
-fprintf('relative frobenius error (Greens ID grad) %5.2e\n',relerr);
-
-assert(relerr < 1e-2);
-
-smat = chunkermat(chnkr,kerns);
-mu = smat\ubdry(:);
-gradu2 = sgradmat*mu + reshape(chnkr.n(:,:).*mu(:).',2*chnkr.npt,1)*0.5;
-
-relerr = norm(gradu2(:)-gradubdry(:))/norm(gradubdry(:));
-
-fprintf('relative frobenius error (grad S, computed mu) %5.2e\n',relerr);
-
-%%
-% need legendre spectral diff matrix to test this part 
-
-[~,~,u,v] = lege.exps(chnkr.k);
-dermat  = v(:,1:end-1)*lege.derpol(u);
+relerr = norm(utau-utbdry(:))/norm(utbdry);
+fprintf('%5.2e : error in utau test (testing pv integration)\n',relerr);
+assert(relerr < 1e-9);
 
 dmat = chunkermat(chnkr,kernd);
-mu = (-0.5*eye(chnkr.npt)+dmat)\ubdry(:);
+dprimemat = chunkermat(chnkr,kerndprime);
+sys = -0.5*eye(chnkr.npt) + dmat;
+mu = sys\ubdry(:);
+un = dprimemat*mu;
 
-mu = reshape(mu,chnkr.k,chnkr.nch);
-muder = 0.5*(dermat*mu)./chnkr.h(:).';
-
-t = -chnk.perp(chnkr.n(:,:));
-gradu3 = dgradmat*mu(:) + reshape(t.*(muder(:).'),2*chnkr.npt,1)*(-0.5);
-
-relerr = norm(gradu3(:)-gradubdry(:))/norm(gradubdry(:));
-
-fprintf('relative frobenius error (grad D, computed mu) %5.2e\n',relerr);
-
+relerr = norm(un-unbdry(:))/norm(unbdry);
+fprintf('%5.2e : error in un test (testing hs integration)\n',relerr);

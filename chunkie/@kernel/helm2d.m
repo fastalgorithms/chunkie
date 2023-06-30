@@ -49,6 +49,12 @@ switch lower(type)
         % TODO: Add FMM for sprime.
         obj.sing = 'log';
 
+    case {'dp', 'dprime'}
+        obj.type = 'dp';
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'dprime');
+        % TODO: Add FMM for sprime.
+        obj.sing = 'hs';
+
     case {'c', 'combined'}
         if ( nargin < 3 )
             warning('Missing combined layer coefficients. Defaulting to [1,1i].');
