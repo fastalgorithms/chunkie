@@ -38,7 +38,7 @@ function [mat,maxrecs,numints,iers] = adapgausswts(r,d,n,d2,h,ct,bw,j,...
 
 eps = 1e-12;
 nnmax=100000;
-maxdepth=200;
+maxdepth=52; % since double-precision only has 52-bits of precision
 
 if nargin < 17
     opts = [];
@@ -58,7 +58,7 @@ end
 [~,k,~] = size(r);
 k2 = length(t);
 
-rs = r(:,:,j);
+rs_ = r(:,:,j);
 ds = d(:,:,j);
 ns = n(:,:,j);
 d2s = d2(:,:,j);
@@ -79,7 +79,11 @@ for ii = 1:ntarg
     dt1 = dt(:,ii);
     nt1 = nt(:,ii);
     d2t1 = d2t(:,ii);
-    
+
+    % shift everything so that the target is at the origin
+    rs = bsxfun(@minus, rs_, rt1);
+    rt1 = rt1*0;
+
     % start the recursion
 
     stack(1,1)=-1;
