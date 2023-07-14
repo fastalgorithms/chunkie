@@ -2,9 +2,10 @@
 % test the kernel definitions for elasticity
 
 clear all
-clc
 iseed = 1234;
 rng(iseed,'twister');
+clc
+addpaths_loc();
 
 % pde parameters 
 
@@ -18,23 +19,23 @@ cparams = []; cparams.eps=1e-10;
 chnkr = chunkerfunc(@(t) starfish(t),cparams);
 chnkr = chnkr.sort();
 
-f = [-1.3;0.7]; % charge strength
+f = [-1.3;2]; % charge strength
 src = []; src.r = [2;1]; src.n = randn(2,1);
 targ = []; targ.r = 0.1*randn(2,1); targ.n = randn(2,1);
 
-figure(1)
-clf
-plot(chnkr,'g')
-hold on
-plot(src.r(1),src.r(2),'bo')
-plot(targ.r(1),targ.r(2),'rx')
-axis equal
+%figure(1)
+%clf
+%plot(chnkr,'g')
+%hold on
+%plot(src.r(1),src.r(2),'bo')
+%plot(targ.r(1),targ.r(2),'rx')
+%axis equal
 
 % test that the kernels do what we expect 
 % (Green's ID, solve pde, etc)
 
 niter=5;
-[pde_errs,pdedalt_errs,div_errs,trac_errs,gid_err] = ...
+[pde_errs,pdedalt_errs,div_errs,trac_errs,gid_err,daltgrad_errs] = ...
     test_kernels(chnkr,src,targ,lam,mu,f,niter);
 
 assert(gid_err < 1e-14);
@@ -42,6 +43,7 @@ assert(min(pde_errs) < 1e-5);
 assert(min(pdedalt_errs) < 1e-5);
 assert(min(div_errs) < 1e-9);
 assert(min(trac_errs) < 1e-9);
+assert(min(daltgrad_errs) < 1e-9);
 
 %
 
@@ -71,7 +73,7 @@ err_dir = norm(utarg-utargsol)/norm(utarg);
 assert(err_dir < 1e-10);
 
 
-function [pde_errs,pdedalt_errs,div_errs,trac_errs,gid_err] = ...
+function [pde_errs,pdedalt_errs,div_errs,trac_errs,gid_err,daltgrad_errs] = ...
     test_kernels(chnkr,s,targ,lam,mu,f,niter)
 %TEST_KERNELS
 %
@@ -103,6 +105,7 @@ pde_errs = zeros(niter,1);
 pdedalt_errs = zeros(niter,1);
 div_errs = zeros(niter,1);
 trac_errs = zeros(niter,1);
+daltgrad_errs = zeros(niter,1);
 is = randi(chnkr.npt);
 s = [];
 s.r = chnkr.r(:,is);
@@ -114,7 +117,7 @@ t.r = chnkr.r(:,it);
 t.d = chnkr.d(:,it);
 t.n = chnkr.n(:,it);
 
-[u00,trac00,dub00,dalt00] = elasticlet(lam,mu,s,t,f);
+[u00,trac00,dub00,dalt00,dalt00grad] = elasticlet(lam,mu,s,t,f);
 
 for i = 1:niter
     h = 0.1^i;
@@ -180,20 +183,26 @@ for i = 1:niter
     %fprintf('%5.2e trac err\n',norm(tracuh-trac00)/norm(trac00));
     trac_errs(i) = norm(tracuh-trac00)/norm(trac00);
     
+    daltgrad_errs(i) = ...
+        norm(dalt00grad(1:2:end)-daltx)/norm(dalt00grad(1:2:end)) ...
+        + norm(dalt00grad(2:2:end)-dalty)/norm(dalt00grad(2:2:end));
+    
 end
 
 end
 
-function [u,trac,dub,dalt] = elasticlet(lam,mu,s,t,f)
+function [u,trac,dub,dalt,daltgrad] = elasticlet(lam,mu,s,t,f)
 
 mat = chnk.elast2d.kern(lam,mu,s,t,'s');
 mattrac = chnk.elast2d.kern(lam,mu,s,t,'strac');
 matdub = chnk.elast2d.kern(lam,mu,s,t,'d');
 matdalt = chnk.elast2d.kern(lam,mu,s,t,'dalt');
+matdaltgrad = chnk.elast2d.kern(lam,mu,s,t,'daltgrad');
 u = mat*f;
 trac = mattrac*f;
 dub = matdub*f;
 dalt = matdalt*f;
+daltgrad = matdaltgrad*f;
 
 end
 

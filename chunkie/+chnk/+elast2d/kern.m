@@ -1,5 +1,5 @@
 function [mat] = kern(lam,mu,s,t,type)
-%ELAST2D.KERN
+%CHNK.ELAST2D.KERN
 % elasticity kernels in two dimensions
 %
 % notation
@@ -24,7 +24,7 @@ function [mat] = kern(lam,mu,s,t,type)
 %                - delta_ij r_k/r^2) + zeta r_ir_jr_k/r^4
 % - [Strac]_ij = T_{ikj} n_k
 % - [D]_ij = -T_{jki}n_k   
-% - [Dalt]_ij = -zeta*(r_ir_j r_n)/r^4 - 2*eta*r_n/r^4
+% - [Dalt]_ij = -zeta*(r_ir_j r_n)/r^4 - 2*eta*r_n/r^2*delta_ij
 %
 % inputs
 % - lam, mu: real floats, Lame parameters
@@ -35,6 +35,10 @@ function [mat] = kern(lam,mu,s,t,type)
 %   * type == 'Strac', traction of single layer kernel
 %   * type == 'D', double layer kernel
 %   * type == 'Dalt', alternative (smooth) double layer kernel  
+%   * type == 'Daltgrad', gradient of alternative (smooth) double layer 
+%                kernel is 4 x 2, where entries are organized as
+%                          Daltgrad = [grad Dalt(1,1) grad Dalt(1,2) 
+%                                      grad Dalt(2,1) grad Dalt(2,2)] 
 %               
 % outpts 
 % - mat: (2 nt) x (2 ns) matrix 
@@ -51,7 +55,6 @@ zeta = (lam+mu)/(pi*(lam+2*mu));
 
 n = size(s.r,2);
 m = size(t.r,2);
-mat = zeros(2*m,2*n);
 
 x = (t.r(1,:)).' - s.r(1,:);
 y = (t.r(2,:)).' - s.r(2,:);
@@ -100,6 +103,52 @@ if (strcmpi(type,'dalt'))
         (kron(x,[1 1; 0 0]) + kron(y,[0 0; 1 1]));
     term1 = eta*(kron(rdotv./r2,[2 0; 0 2]));
     mat = -(term1+term2);
+end
+
+if (strcmpi(type,'daltgrad'))
+    dirx = s.n(1,:); dirx = dirx(:).';
+    diry = s.n(2,:); diry = diry(:).';
+    rdotv = x.*dirx + y.*diry;
+    r6 = r4.*r2;
+    
+    mat = zeros(4*m,2*n);
+    
+    % i = 1, j = 1, l = 1
+    aij_xl = -zeta*(-4*x.^3.*rdotv./r6+(2*x.*rdotv+x.^2.*dirx)./r4) ...
+        -2*eta*(dirx./r2 - 2*rdotv.*x./r4);
+    mat(1:4:end,1:2:end) = aij_xl;
+
+    % i = 1, j = 1, l = 2
+    aij_xl = -zeta*(-4*x.^2.*y.*rdotv./r6+(x.^2.*diry)./r4) ...
+        -2*eta*(diry./r2 - 2*rdotv.*y./r4);
+    mat(2:4:end,1:2:end) = aij_xl;
+
+    % i = 2, j = 1, l = 1
+    aij_xl = -zeta*(-4*x.^2.*y.*rdotv./r6+(y.*rdotv+x.*y.*dirx)./r4);
+    mat(3:4:end,1:2:end) = aij_xl;
+
+    % i = 2, j = 1, l = 2
+    aij_xl = -zeta*(-4*x.*y.^2.*rdotv./r6+(x.*rdotv+x.*y.*diry)./r4);
+    mat(4:4:end,1:2:end) = aij_xl;
+
+    % i = 1, j = 2, l = 1
+    aij_xl = -zeta*(-4*x.^2.*y.*rdotv./r6+(y.*rdotv+x.*y.*dirx)./r4);
+    mat(1:4:end,2:2:end) = aij_xl;
+
+    % i = 1, j = 2, l = 2
+    aij_xl = -zeta*(-4*x.*y.^2.*rdotv./r6+(x.*rdotv + x.*y.*diry)./r4);
+    mat(2:4:end,2:2:end) = aij_xl;
+
+    % i = 2, j = 2, l = 1
+    aij_xl = -zeta*(-4*y.^2.*x.*rdotv./r6+(y.^2.*dirx)./r4) ...
+        -2*eta*(dirx./r2 - 2*rdotv.*x./r4);
+    mat(3:4:end,2:2:end) = aij_xl;
+
+    % i = 2, j = 2, l = 2
+    aij_xl = -zeta*(-4*y.^3.*rdotv./r6+(2*y.*rdotv+y.^2.*diry)./r4) ...
+        -2*eta*(diry./r2 - 2*rdotv.*y./r4);
+    mat(4:4:end,2:2:end) = aij_xl;
+
 end
 
 end
