@@ -96,17 +96,27 @@ function rhs = get_rhs_gui(chnkr,clmparams,np,alpha1,alpha2,opts)
             ny = targnorm(2,:,:); ny=ny(:);
 
             if d1==idomup || d1 == idomdown
-                [u1,gradu1]=clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),chnkr(i).r,clmparams.is_inf(d1),idomup,idomdown,coef);
-                du1dn = gradu1(:,1).*nx + gradu1(:,2).*ny;
-                rhs(ind1) = rhs(ind1) + alpha1(i)*u1(:);
-                rhs(ind2) = rhs(ind2) - alpha2(i)/c1*du1dn(:);
+                y = chnkr(i).r(2,:);
+                if(norm(y)>1e-16)
+                    [u1,gradu1]=clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),chnkr(i).r,clmparams.is_inf(d1),idomup,idomdown,coef);
+                    du1dn = gradu1(:,1).*nx + gradu1(:,2).*ny;
+                    rhs(ind1) = rhs(ind1) + alpha1(i)*u1(:);
+                    rhs(ind2) = rhs(ind2) - alpha2(i)/c1*du1dn(:);
+                
+                    fprintf('maxu1=%d   icurve=%d\n',max(abs(u1)),i);
+                end
             end
 
             if d2==idomup || d2==idomdown
-                [u2,gradu2]=clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),chnkr(i).r,clmparams.is_inf(d2),idomup,idomdown,coef);
-                du2dn = gradu2(:,1).*nx + gradu2(:,2).*ny;
-                rhs(ind1) = rhs(ind1) - alpha1(i)*u2(:);
-                rhs(ind2) = rhs(ind2) + alpha2(i)/c2*du2dn(:);
+                y = chnkr(i).r(2,:);
+                if(norm(y)>1e-16)
+                    [u2,gradu2]=clm.planewavetotal_gui(k(idomup),alpha,k(idomdown),chnkr(i).r,clmparams.is_inf(d2),idomup,idomdown,coef);
+                    du2dn = gradu2(:,1).*nx + gradu2(:,2).*ny;
+                    rhs(ind1) = rhs(ind1) - alpha1(i)*u2(:);
+                    rhs(ind2) = rhs(ind2) + alpha2(i)/c2*du2dn(:);
+                    fprintf('maxu2=%d   icurve=%d\n',max(abs(u2)),i);
+                end
+                
             end
         end
     end
