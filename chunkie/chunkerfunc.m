@@ -132,7 +132,7 @@ else
 end
 nchnew=nch;
 
-maxiter_res=10000;
+maxiter_res=nchmax;
 
 rad_curr = 0;
 for ijk = 1:maxiter_res
@@ -151,16 +151,17 @@ for ijk = 1:maxiter_res
 
             a=ab(1,ich);
             b=ab(2,ich);
-            rlself = chunklength(fcurve,a,b,xs,ws);
            
             ts = a + (b-a)*(xs2+1)/2.0;
             [r,d,d2] = fcurve(ts);
-            
+
             zd = d(1,:)+1i*d(2,:);
             vd = abs(zd);
             zdd= d2(1,:)+1i*d2(2,:);
             dkappa = imag(zdd.*conj(zd))./abs(zd).^2;
 
+            rlself = vd(:).'*ws2*(b-a)/2;
+            
             cfs = u2*vd.';
             errs0 = sum(abs(cfs(1:k)).^2,1);
             errs = sum(abs(cfs(k+1:k2)).^2,1);
@@ -436,16 +437,16 @@ for i = 1:nch
     
     ts = a + (b-a)*(xs+1)/2;
     [out{:}] = fcurve(ts);
-    chnkr.r(:,:,i) = reshape(out{1},dim,k);
-    chnkr.d(:,:,i) = reshape(out{2},dim,k);
-    chnkr.d2(:,:,i) = reshape(out{3},dim,k);
-    chnkr.h(i) = (b-a)/2;
+    chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
+    chnkr.dstor(:,:,i) = reshape(out{2},dim,k);
+    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k);
+    chnkr.hstor(i) = (b-a)/2;
 end
 
-chnkr.adj = adjs(:,1:nch);
+chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
 
 % update normals
-chnkr.n = normals(chnkr);
+chnkr.n(:,:,1:nch) = normals(chnkr);
 
 end
 

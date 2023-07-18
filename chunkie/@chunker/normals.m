@@ -18,12 +18,11 @@ function rnorms = normals(chnkr)
 assert(chnkr.dim == 2,'normals only implemented for dim=2');
 k = chnkr.k;
 nch = chnkr.nch;
-d = chnkr.d;
 
-dd = sqrt(d(1,:,:).^2 + d(2,:,:).^2);
+dd = sqrt(chnkr.dstor(1,:,1:nch).^2 + chnkr.dstor(2,:,1:nch).^2);
 rnorms = zeros(2,k,nch);
-rnorms(1,:,:) = d(2,:,:)./dd;
-rnorms(2,:,:) = -d(1,:,:)./dd;
+rnorms(1,:,:) = chnkr.dstor(2,:,1:nch)./dd;
+rnorms(2,:,:) = -chnkr.dstor(1,:,1:nch)./dd;
 
 end
 
