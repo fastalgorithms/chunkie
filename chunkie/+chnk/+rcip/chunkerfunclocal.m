@@ -1,4 +1,4 @@
-function chnkr = chunkerfunclocal(fcurve,ts,pref,xs)
+function chnkr = chunkerfunclocal(fcurve,ts,pref,xs,ws)
 %CHUNKERFUNC create a chunker object for constructing the system matrix
 % used in the forward recursion for computing the preconditioner R 
 % in the RCIP method
@@ -17,15 +17,21 @@ function chnkr = chunkerfunclocal(fcurve,ts,pref,xs)
 %   pref - chunkerpref object or structure (defaults)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
-%   xs - Gauss-Legendre nodes
+%   xs - Gauss-Legendre nodes of order k
+%   ws - Gauss-Legendre weights of order k
 
-if nargin < 3
+if nargin < 3 || isempty(pref)
     pref = chunkerpref();
 else
     pref = chunkerpref(pref);
 end
 
-chnkr = chunker(pref); % empty chunker
+if nargin < 5
+    [xs,ws] = lege.exps(pref.k);
+end
+    
+
+chnkr = chunker(pref,xs,ws); % empty chunker
 
 nch = length(ts)-1; % number of chunks
 
@@ -65,13 +71,13 @@ for i = 1:nch
     
     ts = a + (b-a)*(xs+1)/2;
     [out{:}] = fcurve(ts);
-    chnkr.r(:,:,i) = reshape(out{1},dim,k);
-    chnkr.d(:,:,i) = reshape(out{2},dim,k);
-    chnkr.d2(:,:,i) = reshape(out{3},dim,k);
-    chnkr.h(i) = (b-a)/2;
+    chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
+    chnkr.dstor(:,:,i) = reshape(out{2},dim,k);
+    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k);
+    chnkr.hstor(i) = (b-a)/2;
 end
 
-chnkr.adj = adjs(:,1:nch);
+chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
 % added by Shidong Jiang
-chnkr.n = normals(chnkr);
+chnkr.nstor(:,:,1:nch) = normals(chnkr);
 end

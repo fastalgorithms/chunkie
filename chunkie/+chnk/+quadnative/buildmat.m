@@ -11,17 +11,18 @@ end
 if nargin < 5
     j = 1:chnkr.nch;
 end
+
 if nargin < 6
     [~,wts] = lege.exps(chnkr.k);
 end
 
 % grab specific boundary data
 
-r = chnkr.r;
-d = chnkr.d;
-d2 = chnkr.d2;
-h = chnkr.h;
-n = chnkr.n;
+r = chnkr.rstor;
+d = chnkr.dstor;
+d2 = chnkr.d2stor;
+h = chnkr.hstor;
+n = chnkr.nstor;
 
 [dim,k,~] = size(r);
 rs = r(:,:,j); rt = r(:,:,i); ds = d(:,:,j); dt = d(:,:,i); nt = n(:,:,i);

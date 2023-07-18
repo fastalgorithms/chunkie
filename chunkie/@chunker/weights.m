@@ -20,7 +20,7 @@ function wts = weights(chnkr)
 
   k = chnkr.k;
   nch = chnkr.nch;
-  [~,w] = lege.exps(k);
+  w = chnkr.wstor;
   wts = reshape(sqrt(sum((chnkr.d).^2,1)),k,nch);
   wts = wts.*bsxfun(@times,w(:),(chnkr.h(:)).');
 

@@ -49,8 +49,9 @@ for j = 1:k
   smatbigi = fkern(srcinfo,targinfo);
   dsdtndim2 = repmat(dsdt{j}.',opdims(2),1);
   dsdtndim2 = dsdtndim2(:);
+  smatbigi = bsxfun(@times,smatbigi,dsdtndim2.');
   submat(opdims(1)*(j-1)+1:opdims(1)*j,:) = ...
-    smatbigi*diag(dsdtndim2)*ainterps0kron{j};
+    smatbigi*ainterps0kron{j};
 end
 
 end

@@ -19,6 +19,8 @@ function [R]=Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
 k = chnkr.k;  
 dim = chnkr.dim;
 
+glws = chnkr.wstor;
+
 if nargin < 14
     [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k); 
 end
@@ -129,7 +131,7 @@ for level=1:nsub
     % construct local chunks around the corner
     for i=1:nedge
         chnkrlocal(i) = chnk.rcip.chunkerfunclocal(@(t) shiftedcurve(t,rcs(:,:,i),dcs(:,:,i), ...
-            dscal(i),d2cs(:,:,i),d2scal(i),ileftright(i)),ts{i},pref,glxs);
+            dscal(i),d2cs(:,:,i),d2scal(i),ileftright(i)),ts{i},pref,glxs,glws);
     end
     
     % at the top level, append/prepend the next chunk

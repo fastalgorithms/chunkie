@@ -83,7 +83,7 @@ for j = 1:k
 end
 
 % do smooth weight for all
-[~,wts] = lege.exps(k);
+wts = chnkr.wstor;
 sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims,1:nch,1:nch,wts);
 
 % overwrite nbor and self
