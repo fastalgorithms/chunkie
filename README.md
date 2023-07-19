@@ -76,7 +76,7 @@ and optionally on the
 the library will not function without FLAM and its subdirectories included in the matlab path.
 
 
-## chunkie developers and antecedents
+## chunkie team
 
 chunkie has benefitted from the contributions of several developers: Travis Askham, 
 Manas Rachh, Michael O'Neil, Jeremy Hoskins, Dan Fortunato, Shidong Jiang, 
