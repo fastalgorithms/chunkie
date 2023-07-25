@@ -4,7 +4,7 @@ addpaths_loc();
 verts = [-3 1; 3 1; 3 5; -3 5; 
          -3 -5; 3 -5; 3 -1; -3 -1].';
 
-edge2verts = [
+verts2edge = [
     -1, 1, 0, 0, 0, 0, 0, 0;
     0, -1, 1, 0, 0, 0, 0, 0;
     0, 0, -1, 1, 0, 0, 0, 0;
@@ -14,12 +14,12 @@ edge2verts = [
     0, 0, 0, 0, 0, 0, -1, 1;
     0, 0, 0, 0, 1, 0, 0, -1];
 
-edge2verts = sparse(edge2verts);
+verts2edge = sparse(verts2edge);
 
 fchnks = {}; % this by default gives me straight lines
 
 prefs = struct('maxchunklen',0.5);
-[cgrph] = chunkgraphinit(verts, edge2verts, fchnks, prefs);
+[cgrph] = chunkgraphinit(verts, verts2edge, fchnks, prefs);
 
 % figure(1); clf; hold on; axis equal; axis off;
 % plot(cgrph);

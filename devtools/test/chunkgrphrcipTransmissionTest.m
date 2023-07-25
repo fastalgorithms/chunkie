@@ -37,15 +37,15 @@ cpars{2}.theta = theta(2); cpars{2}.ifconvex = 2; cpars{2}.islocal = -1;
 verts = exp(1i*2*pi*(0:4)/5);
 verts = [real(verts);imag(verts)];
 
-edge2verts = [-1, 1, 0, 0, 0; ...
+verts2edge = [-1, 1, 0, 0, 0; ...
                0,-1, 1, 0, 0; ...
                0, 0,-1, 1, 0; ...
                0, 0, 0,-1, 1; ...
                1, 0, 0, 0,-1];
-edge2verts = sparse(edge2verts);
+verts2edge = sparse(verts2edge);
 amp = 0.5;
 frq = 6;
-ncurve = size(edge2verts,1);
+ncurve = size(verts2edge,1);
 
 fchnks    = cell(1,ncurve);
 for icurve = 1:ncurve
@@ -55,7 +55,7 @@ end
 
 prefs      = [];
 % prefs.chsmall = 1d-4;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
+[cgrph] = chunkgraphinit(verts,verts2edge,fchnks,prefs);
 
 
 vstruc = procverts(cgrph);

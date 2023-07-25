@@ -45,16 +45,16 @@ cpars{2}.theta = theta(2); cpars{2}.ifconvex = 2; cpars{2}.islocal = -1;
 verts = exp(1i*2*pi*(0:4)/5);
 verts = [real(verts);imag(verts)];
 
-edge2verts = [-1, 1, 0, 0, 0; ...
+verts2edge = [-1, 1, 0, 0, 0; ...
                0,-1, 1, 0, 0; ...
                0, 0,-1, 1, 0; ...
                0, 0, 0,-1, 1; ...
                1, 0, 0, 0,-1];
-edge2verts = sparse(edge2verts);
+verts2edge = sparse(verts2edge);
 amp = 0.5;
 frq = 6;
 fchnks    = {};
-for icurve = 1:size(edge2verts,1)
+for icurve = 1:size(verts2edge,1)
     fchnks{icurve} = @(t) circulararc(t,cpars{1});
     fchnks{icurve} = @(t) sinearc(t,amp,frq);
 end
@@ -62,7 +62,7 @@ end
 
 prefs      = [];
 % prefs.chsmall = 1d-4;
-[cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
+[cgrph] = chunkgraph(verts,verts2edge,fchnks,prefs);
 
 vstruc = procverts(cgrph);
 rgns = findregions(cgrph);
@@ -93,16 +93,16 @@ cpars{2}.theta = theta(2); cpars{2}.ifconvex = 2; cpars{2}.islocal = -1;
 verts = exp(1i*2*pi*(0:4)/5);
 verts = [real(verts);imag(verts)];
 
-edge2verts = [-1, 1, 0, 0, 0; ...
+verts2edge = [-1, 1, 0, 0, 0; ...
                0,-1, 1, 0, 0; ...
                0, 0,-1, 1, 0; ...
                0, 0, 0,-1, 1; ...
                1, 0, 0, 0,-1];
-edge2verts = sparse(edge2verts);
+verts2edge = sparse(verts2edge);
 amp = 0.5;
 frq = 6;
 fchnks    = {};
-for icurve = 1:size(edge2verts,1)
+for icurve = 1:size(verts2edge,1)
     fchnks{icurve} = @(t) circulararc(t,cpars{1});
     fchnks{icurve} = @(t) sinearc(t,amp,frq);
 end
@@ -110,7 +110,7 @@ end
 
 prefs      = [];
 % prefs.chsmall = 1d-4;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
+[cgrph] = chunkgraphinit(verts,verts2edge,fchnks,prefs);
 
 vstruc = procverts(cgrph);
 rgns = findregions(cgrph);
