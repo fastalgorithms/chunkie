@@ -1,4 +1,26 @@
 function [rgn] = findunbounded(cgrph,rgn)
+%FINDUNBOUNDED after having computed all the regions, rgn, of a 
+% chunkgraph, cgrph, findunbounded identifies an unbounded region and 
+% moves it to the start of the rgn cell array.
+% NOTE: this routine is designed for finding the complement of 
+% simply-connected regions. For non-simply connected, two rgn arrays 
+% should be built for each component and findunbounded should be called 
+% on both separately. The two can then be merged manually.
+%
+% Syntax: [rgn] = findunbounded(cgrph,rgn);
+%
+% Input:
+%   cgrph  - chunkgraph object
+%   rgn    - the rgn cell array containing edge indices of each region
+%
+% Output:
+%   rgn    - the same cell array as rgn but with the unbounded region 
+%            in the first entry.
+%  
+%
+%
+
+% author: Jeremy Hoskins
 
     iunbound = 1;
     

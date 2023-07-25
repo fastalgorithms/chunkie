@@ -1,5 +1,17 @@
-function plot_regions(obj,varargin)
+function plot_regions(obj)
 
+%Plot_REGIONS plots regions of a chunkgraph in 2 dimensions
+% All regions in the chunkgraph are plotted in a different color.
+%
+% Syntax: plot_regions(cgrph)
+%
+% Input: 
+%   cgrph - chunkgraph object
+%
+% Output:
+%   none 
+%
+% author: Jeremy Hoskins
 
 ifhold = ishold();
 
