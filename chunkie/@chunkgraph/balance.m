@@ -1,4 +1,21 @@
 function [obj] = balance(obj)
+%BALANCE Given a vertex, with incident edges E1,E2,...,Ek, balance 
+% makes sure that the arclength of the chunks of E1,...,EK, nearest the 
+% vertex are within a factor of two of eachother.
+%
+% Syntax: [cgrph] = balance(cgrph);
+%
+% Input:
+%   cgrph  - chunkgraph object
+%
+% Output:
+%   cgrph  - chunkgraph object with refined chunks near vertices.
+%  
+%
+%
+
+% author: Jeremy Hoskins
+
     if (isfield(obj,'vstruc'))
         vstruc = obj.vstruc;
     else
