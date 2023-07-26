@@ -22,6 +22,17 @@ assert(info.ier == 0,'adjacency issues after chunk build starfish');
 %
 
 fprintf('%5.2e seconds to chunk starfish with %d chunks\n',t1,chnkr.nch);
+
+cparams.nout = 3;
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+t1 = toc(start);
+
+[~,~,info] = sortinfo(chnkr);
+assert(info.ier == 0,'adjacency issues after chunk build starfish');
+
+%
+
+fprintf('%5.2e seconds to chunk starfish with %d chunks\n',t1,chnkr.nch);
 % 
 % figure(1)
 % clf
@@ -58,9 +69,10 @@ assert(info.ier == 0,'adjacency issues after chunker reversal');
 
 % chunk up circle and test area
 
-modes = 5*rand(); ctr = [1.0;-0.5];
+r = 5*rand(); ctr = [1.0;-0.5];
 
-start = tic; chnkr = chunkerfunc(@(t) chnk.curves.bymode(t,modes,ctr),cparams); 
+circfun = @(t) ctr + r*[cos(t(:).');sin(t(:).')];
+start = tic; chnkr = chunkerfunc(circfun,cparams); 
 t1 = toc(start);
 
 fprintf('%5.2e seconds to chunk circle domain with %d chunks\n', ...
@@ -70,7 +82,7 @@ fprintf('%5.2e seconds to chunk circle domain with %d chunks\n', ...
 assert(info.ier == 0,'adjacency issues after chunk build circle');
 
 a = area(chnkr);
-assert(abs(a - pi*modes^2) < 1e-12,'area wrong for circle domain')
+assert(abs(a - pi*r^2) < 1e-12,'area wrong for circle domain')
 
 
 % subplot(1,3,3)
