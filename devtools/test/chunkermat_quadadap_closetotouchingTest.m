@@ -72,7 +72,7 @@ utarg = kernmatstarg*strengths;
 % use adaptive routine to build matrix (self done by ggq, nbor by adaptive)
 
 eta = 1;
-fkern = @(s,t) chnk.lap2d.kern(s,t,'C',eta);
+fkern = @(s,t) chnk.lap2d.kern(s,t,'C',[1,eta]);
 
 type = 'log';
 opts = []; opts.robust = true;

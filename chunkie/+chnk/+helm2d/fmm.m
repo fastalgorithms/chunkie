@@ -32,12 +32,16 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 %   type - string, determines kernel type
 %                type == 'd', double layer kernel D
 %                type == 's', single layer kernel S
-%                type == 'c', combined layer kernel D + i eta S
-%   varargin{1} - eta in the combined layer formula, otherwise
+%                type == 'c', combined layer kernel coefs(1)*D + coefs(2)*S
+%                type = 'sprime' normal derivative of single layer, 
+%                   note that targinfo must contain targ.n
+%                type = 'dprime' normal derivative of double layer,
+%                   note that targinfo must contain targ.n
+%   varargin{1} - coef in the combined layer formula, otherwise
 %                does nothing
 %
 % Output:
-%   pot - potential corresponding to the kernel at the target locations
+%   pot - potential/neumann data corresponding to the kernel at the target locations
 %
 % Optional output
 %   grad  - gradient at target locations
@@ -52,10 +56,10 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
     end
    srcuse = [];
    srcuse.sources = srcinfo.r(1:2,:);
-   if strcmpi(type,'s')
+   if strcmpi(type,'s') || strcmpi(type,'sprime')
       srcuse.charges = sigma(:).';
    end
-   if strcmpi(type,'d')
+   if strcmpi(type,'d') || strcmpi(type, 'dprime')
       srcuse.dipstr = sigma(:).';
       srcuse.dipvec = srcinfo.n(1:2,:);
    end
@@ -65,13 +69,30 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
      srcuse.dipvec = srcinfo.n(1:2,:);
      srcuse.charges = coefs(2)*sigma(:).';
    end
+
    pg = 0;
    U = hfmm2d(eps,zk,srcuse,pg,targuse,pgt);
    pot = U.pottarg.';
-   if(pgt>=2) 
-       varargout{1} = U.gradtarg; 
+   if strcmpi(type,'sprime') || strcmpi(type,'dprime')
+     if isfield(targ,'n')
+         pot = (U.gradtarg(1,:).*targ.n(1,:) + U.gradtarg(2,:).*targ.n(2,:)).'; 
+     else
+        error('HELM2D.FMM: targets require normal info when evaluating',...
+                 'sprime, or dprime'); 
+     end
    end
-   if(pgt==3) 
-       varargout{2} = U.hesstarg; 
+   if(pgt>=2) 
+       if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
+           warning("Gradients not supported for sprime, dprime, stau")
+       else
+           varargout{1} = U.gradtarg;
+       end
+   end
+   if(pgt==3)
+       if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
+           warning("Hessians not supported for sprime, dprime, stau")
+       else
+           varargout{2} = U.hesstarg;
+       end
    end
 end

@@ -295,10 +295,12 @@ for i = 1:nchunkers
                 icolinds = icollocs(j):(icollocs(j+1)-1);
                 sysmat(irowinds,icolinds) = sysmat_tmp;
             else
-                [isys,jsys,vsys] = find(sysmat_tmp);
-                isysmat = [isysmat;isys+irowlocs(i)-1];
-                jsysmat = [jsysmat;jsys+icollocs(j)-1];
-                vsysmat = [vsysmat;vsys];
+                if adaptive_correction
+                    [isys,jsys,vsys] = find(sysmat_tmp);
+                    isysmat = [isysmat;isys+irowlocs(i)-1];
+                    jsysmat = [jsysmat;jsys+icollocs(j)-1];
+                    vsysmat = [vsysmat;vsys];
+                end
             end
         end
     end
@@ -442,7 +444,6 @@ if(icgrph && isrcip)
     
     
     for ivert=1:nv
-        fprintf('ivert=%d\n',ivert);
         clist = chnkobj.vstruc{ivert}{1};
         isstart = chnkobj.vstruc{ivert}{2};
         isstart(isstart==1) = 0;
@@ -493,9 +494,10 @@ if(icgrph && isrcip)
             
             sysmat(starind,starind) = sysmat_tmp;
         else
+            [jind,iind] = meshgrid(starind);
             
-            isysmat = [isysmat;starind];
-            jsysmat = [jsysmat;starind];
+            isysmat = [isysmat;iind(:)];
+            jsysmat = [jsysmat;jind(:)];
             vsysmat = [vsysmat;sysmat_tmp(:)];
         end    
     end
@@ -504,8 +506,15 @@ end
 
 
 
+
 if (nonsmoothonly)
-    sysmat = sparse(isysmat,jsysmat,vsysmat,nrows,ncols);
+    % Fix sparse entry format to use rcip matrix entries for repeats
+    % instead of using the precomputed self correction
+    
+    ijind = [isysmat jsysmat];
+    [~,idx] = unique(ijind, 'rows','last');
+    
+    sysmat = sparse(isysmat(idx),jsysmat(idx),vsysmat(idx),nrows,ncols);
 end
 
 

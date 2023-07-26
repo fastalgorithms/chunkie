@@ -223,7 +223,7 @@ else
     warning('specified quadrature method not available');
     return;
 end
-sp = chunkermat(chnkrs,kern,chunkermatopt);
+sp = chunkermat(chnkobj,kern,chunkermatopt);
 sp = sp + spdiags(dval,0,nrows,nrows);
 
 % prep and call flam

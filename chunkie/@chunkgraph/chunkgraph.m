@@ -21,7 +21,7 @@ classdef chunkgraph
         n
         adj
         sourceinfo
-        npts
+        npt
     end
     
     methods
@@ -159,16 +159,16 @@ classdef chunkgraph
             chnk = merge(obj.echnks);
             adj = chnk.adj;
         end
-        function npts = get.npts(obj)
-            npts = 0;
+        function npt = get.npt(obj)
+            npt = 0;
             for iedge = 1:numel(obj.echnks)
             	n = size(obj.echnks(iedge).r(:,:),2);
-                npts = n + npts;
+                npt = n + npt;
             end
         end
         function sourceinfo = get.sourceinfo(obj)
             sourceinfo = [];
-            ntot = obj.npts;
+            ntot = obj.npt;
             rs = zeros(2,ntot);
             ds = zeros(2,ntot);
             d2s= zeros(2,ntot);

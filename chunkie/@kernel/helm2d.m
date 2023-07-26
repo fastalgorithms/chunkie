@@ -46,13 +46,13 @@ switch lower(type)
     case {'sp', 'sprime'}
         obj.type = 'sp';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'sprime');
-        % TODO: Add FMM for sprime.
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'sprime', sigma, 1);
         obj.sing = 'log';
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'dprime');
-        % TODO: Add FMM for sprime.
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'dprime', sigma, 1);
         obj.sing = 'hs';
 
     case {'c', 'combined'}
