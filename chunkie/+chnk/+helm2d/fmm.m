@@ -75,21 +75,21 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
    pot = U.pottarg.';
    if strcmpi(type,'sprime') || strcmpi(type,'dprime')
      if isfield(targ,'n')
-         pot = (U.gradtarg(1.:).*targ.n(1,:) + U.gradtarg(2,:).*targ.n(2,:)).'; 
+         pot = (U.gradtarg(1,:).*targ.n(1,:) + U.gradtarg(2,:).*targ.n(2,:)).'; 
      else
         error('HELM2D.FMM: targets require normal info when evaluating',...
                  'sprime, or dprime'); 
      end
    end
    if(pgt>=2) 
-       if strcmpi(type, 'sprime' || strcmpi(type,'dprime') || strcmpi(type,'stau')
+       if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
            warning("Gradients not supported for sprime, dprime, stau")
        else
            varargout{1} = U.gradtarg;
        end
    end
    if(pgt==3)
-       if strcmpi(type, 'sprime' || strcmpi(type,'dprime') || strcmpi(type,'stau')
+       if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
            warning("Hessians not supported for sprime, dprime, stau")
        else
            varargout{2} = U.hesstarg;
