@@ -162,6 +162,20 @@ classdef chunkgraph
 
             
             rgns = regions;
+            rgnso= {};
+            
+            for ii=1:max(s)
+                inds = find(s==ii);
+                rgnout = rgns{inds(1)};
+                for jj=2:numel(inds)
+                    indj = inds(jj);
+                    [rgnout] = mergeregions(obj,rgnout,rgns{indj});
+                end
+                rgnso{ii} = rgnout;
+            end    
+            
+            regions = rgnso;
+            rgns = regions;
             rgnout = rgns{1};
             if (numel(rgns)>1)
                 rgn2 = rgns{2};

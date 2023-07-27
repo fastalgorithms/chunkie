@@ -38,7 +38,7 @@ vertd = vertc;
 vertc(1,:) = vertc(1,:)+12;
 
 evert = [1.1;0];
-verts = [vertd,verta,vertb,vertc,evert];
+verts = [vertc,vertd,vertb,verta,evert];
 v2e = [1,-1,0,0;0,1,-1,0;0,0,1,-1;-1,0,0,1];
 verts2edge = zeros(18,size(verts,2));
 verts2edge(1:16,1:16) = kron(eye(4),v2e);
