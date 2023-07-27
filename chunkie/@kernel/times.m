@@ -10,22 +10,14 @@ if (~isa(f,'kernel'))
     f = times(g,f);
     return
 elseif (isscalar(g))
-    if(isa(f.eval, 'function_handle'))
-        feval_str = func2str(f.eval);  
-        fstr_split = split(feval_str,')');
-        fstr_split{2} = [num2str(double(g)) '*' fstr_split{2}];
-        fstr_join = join(fstr_split,')');
-        f.eval = str2func(fstr_join{1});
+    if(isa(f.eval, 'function_handle'))        
+        f.eval = @(varargin) g*f.eval(varargin{:});
     else
         f.eval = [];
     end
     
     if(isa(f.fmm, 'function_handle'))
-        ffmm_str = func2str(f.fmm);  
-        fstr_split = split(ffmm_str,')');
-        fstr_split{2} = [num2str(double(g)) '*' fstr_split{2}];
-        fstr_join = join(fstr_split,')');
-        f.fmm = str2func(fstr_join{1});
+        f.fmm = @(varargin) g*f.fmm(varargin{:});
     else
         f.fmm = [];
     end
