@@ -31,16 +31,23 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
 %   type - string, determines kernel type
 %                type == 'd', double layer kernel D
 %                type == 's', single layer kernel S
-%                type == 'c', combined layer kernel D + eta S
-%   varargin{1} - eta in the combined layer formula, otherwise
+%                type == 'c', combined layer kernel coefs(1)*D + coefs(2)*S
+%                type = 'sprime' normal derivative of single layer, 
+%                   note that targinfo must contain targ.n
+%                type = 'dprime' normal derivative of double layer,
+%                   note that targinfo must contain targ.n
+%                type = 'stau' tangential derivative of single layer,
+%                   note that targinfo must contain targ.d
+%   varargin{1} - coef in the combined layer formula, otherwise
 %                does nothing
 %
 % Output:
-%   pot - potential corresponding to the kernel at the target locations
+%   pot - potential/neumann data corresponding to the kernel at the target locations
 %
 % Optional output
 %   grad  - gradient at target locations
 %   hess - hessian at target locations
+%
 %
 %
 
@@ -52,21 +59,18 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
    srcuse = [];
    mover2pi = -1.0/2/pi;
    srcuse.sources = srcinfo.r(1:2,:);
-   if strcmpi(type,'s')
+   if strcmpi(type,'s') || strcmpi(type,'sgrad') || strcmpi(type,'sprime')
       srcuse.charges = mover2pi*sigma(:).';
    end
-   if strcmpi(type,'sgrad')
-      srcuse.charges = mover2pi*sigma(:).';
-   end
-   if strcmpi(type,'d')
+   if strcmpi(type,'d') || strcmpi(type,'dprime')
       srcuse.dipstr = mover2pi*sigma(:).';
       srcuse.dipvec = srcinfo.n(1:2,:);
    end
    if strcmpi(type,'c')
-     eta = varargin{1};
-     srcuse.dipstr = mover2pi*sigma(:).';
+     coef = varargin{1};
+     srcuse.dipstr = coef(1)*mover2pi*sigma(:).';
      srcuse.dipvec = srcinfo.n(1:2,:);
-     srcuse.charges = mover2pi*eta*sigma(:).';
+     srcuse.charges = mover2pi*coef(2)*sigma(:).';
    end
    pg = 0;
    U = rfmm2d(eps,srcuse,pg,targuse,pgt);
@@ -80,11 +84,40 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
     end
    else
     pot = U.pottarg.';
+    if strcmpi(type,'sprime') || strcmpi(type,'dprime')
+     if isfield(targ,'n')
+         pot = (U.gradtarg(1,:).*targ.n(1,:) + U.gradtarg(2,:).*targ.n(2,:)).'; 
+     else
+        error('LAP2D.FMM: targets require normal info when evaluating',...
+                 'sprime, or dprime'); 
+     end
+    end
+
+    if strcmpi(type,'stau')
+     if isfield(targ,'d')
+         ds = sqrt(targ.d(1,:).^2 + targ.d(2,:).^2);
+         dx = targ.d(1,:)./ds;
+         dy = targ.d(2,:)./ds;
+         pot = (U.gradtarg(1,:).*dx + U.gradtarg(2,:).*dy).'; 
+     else
+        error('LAP2D.FMM: targets require derivative info when evaluating',...
+                 'stau'); 
+     end
+    end
+    
     if(pgt>=2) 
-       varargout{1} = U.gradtarg; 
+       if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
+           warning("Gradients not supported for sprime, dprime, stau")
+       else
+           varargout{1} = U.gradtarg;
+       end
     end
     if(pgt==3) 
-       varargout{2} = U.hesstarg; 
+       if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
+           warning("Hessians not supported for sprime, dprime, stau")
+       else
+           varargout{2} = U.hesstarg;
+       end
     end
    end
 end
