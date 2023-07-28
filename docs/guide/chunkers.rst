@@ -5,9 +5,9 @@
 Curve Discretization with Chunkers
 ===================================
 
-In chunkie, a smooth, regular curve is discretized by diving
+In chunkie, a smooth, regular curve is discretized by dividing
 it into pieces, called "chunks", which are then represented
-by a polynomial interpolant at scaled Legendre nodes. This
+by polynomial interpolants at scaled Legendre nodes. This
 information is stored in a :matlab:`chunker` object.
 
 Creating a Chunker
