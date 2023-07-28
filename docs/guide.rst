@@ -1,6 +1,14 @@
 Chunkie User Guide
 ===================
 
+Detailed documentation of all high-level functions and
+classes can be obtained by viewing the source file or by
+typing "help [function name]" in a MATLAB command window:
+
+.. code:: matlab
+
+   help chunker
+	  
 
 
 .. toctree::

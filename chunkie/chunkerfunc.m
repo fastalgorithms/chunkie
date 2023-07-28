@@ -41,6 +41,9 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
 %
+% Output:
+%   chnkr - a chunker object containing the discretization of the domain
+%
 % Examples:
 %   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish w/ standard
 %                                        % options
