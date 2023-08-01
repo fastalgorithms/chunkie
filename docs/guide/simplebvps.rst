@@ -83,11 +83,158 @@ integration when necessary.
 A Laplace Problem
 ------------------
 
+Consider the Laplace Neumann boundary value problem:
+
+.. math::
+
+   \begin{align*}
+   \Delta u &= 0 & \textrm{ in } \Omega \; ,\\
+   \frac{\partial u}{\partial n} &= f & \textrm{ on } \Gamma \; ,
+   \end{align*}
+
+where :math:`n` is the outward normal.
+This is a model for the equilibrium heat distribution in a
+homogeneous medium, where :math:`f` is a prescribed heat
+flux along the boundary. 
+
+For a solution to exist, :math:`f` must satisfy the compatibility
+condition:
+
+.. math::
+
+   \int_\Gamma f(y) \, ds(y) = 0 \; ,
+
+which is equivalent to requiring that there is no net flux
+of heat into the body. 
+When solutions exist, they are not unique because adding a
+constant to any solution gives another solution. 
 
 
+The solution of this problem by layer potentials has been
+well understood for some time. The standard method is reviewed
+here with a fair amount of detail. Users familiar with the
+approach may simply want to skip down to the code example.
+
+The Green function for the Laplace equation is
+
+.. math::
+
+   G_0 (x,y) = -\frac{1}{2\pi} \log |x-y|
+   
+The standard choice for the layer potential for this problem is
+the *single layer potential*
+
+.. math::
+
+   u(x) = [S\sigma](x) := \int_\Gamma G_0(x,y) \sigma(y) ds(y) \; .
+
+Then, imposing the boundary conditions on this representation
+results in the equation
+
+.. math::
+
+   \begin{align*}
+   f(x_0) &= \lim_{x\in \Omega, x\to x_0} n(x_0)\cdot \nabla_x
+   \int_\Gamma G_0(x,y) \sigma(y) \, ds(y)  \\
+   &= \frac{1}{2} \sigma(x_0) + P.V. \int_\Gamma n(x_0) \cdot \nabla_x G_0(x_0,y)
+   \sigma(y) \, ds(y) \\
+   &=: \left [\left ( \frac{1}{2} \mathcal{I} + \mathcal{S}' \right ) \sigma
+   \right ] (x_0) \; ,
+   \end{align*} 
+
+where :math:`P.V.` indicates that the integral should be interpreted
+in the principal value sense, :math:`\mathcal{I}` is the identity operator, and
+the calligraphic letters indicate that these operators act
+on functions defined on :math:`\Gamma`. The second equality above uses
+a so-called "jump condition" for the single layer potential.
+
+It turns out that the equation for :math:`\sigma` above is a second-kind
+integral equation, i.e. of the form "identity plus compact", but it
+is not invertible. This has a simple remedy. The equation
+
+.. math::
+
+   f = \left ( \frac{1}{2} \mathcal{I} + \mathcal{S}' + \mathcal{W} \right) \sigma \; ,
+
+where
+
+.. math::
+
+   [\mathcal{W}\sigma](x) = \int_\Gamma \sigma (y) \, ds(y) \; ,
+
+has the same solutions as the original equation (so long as
+:math:`f` satisfies the compatibility condition) and is
+invertible. The operator :math:`\mathcal{W}` is straightforward
+to discretize:
+
+.. math::
+
+   W = \begin{bmatrix} 1 \\ 1 \\ \vdots \\ 1 \end{bmatrix}
+   \begin{bmatrix} w_1 & w_2 & \cdots & w_n \end{bmatrix} \; ,
+
+where :math:`w_1,\ldots,w_n` are scaled integration weights on :math:`\Gamma`.
+For historical reasons, the routine that returns this matrix
+in chunkie is called :matlab:`onesmat`.
+
+To discretize the boundary integral equation, chunkie requires a
+:matlab:`chunker` class object discretization of the boundary and a
+:matlab:`kernel` class object representing the integral kernel.
+Many of the most common kernel types are available in chunkie,
+including the normal derivative of the single layer kernel, which is
+called "sprime". This can be obtained via 
+
+.. include:: ../../chunkie/guide/guide_simplebvps.m
+   :literal:
+   :code: matlab
+   :start-after: % START SPRIME
+   :end-before: % END SPRIME
+
+The most essential thing that an instance of the kernel class tells chunkie
+is how to evaluate the kernel function. This is stored in the field
+:matlab:`obj.eval`. The object can also store other information about
+the kernel, such as fast algorithms for its evaluation or the type
+of singularity it has.
+
+.. note::
+
+   The :matlab:`obj.eval` function in a kernel is expected to be
+   of the form :matlab:`eval(s,t)`, where :matlab:`s` and :matlab:`t`
+   are structs that specify information about the "sources" and "targets"
+   for which the kernel is being evaluated. This has the unfortunate feature
+   that :math:`x` and :math:`y` take the roles of "target" and "source",
+   respectively, in the math notation above, so the order is reversed.
+
+   The structs :matlab:`s` and :matlab:`t` must have the fields
+   :matlab:`s.r` and :matlab:`t.r` which specify the
+   locations of the sources and targets, respectively.
+   For sources/targets on a :matlab:`chunker`
+   object, these will also contain fields :matlab:`s.d`, :matlab:`s.d2`,
+   :matlab:`s.n`, and :matlab:`s.data` (likewise for :matlab:`t`) containing
+   the chunk information for the corresponding points. For example,
+   the kernel :matlab:`kernsp` defined above is only defined for targets
+   on a :matlab:`chunker` discretization of a curve and the kernel evaluator
+   :matlab:`kernsp.eval` assumes that the field :matlab:`t.n` is populated
+   with the normal vectors at the targets.
+
+Because these standard kernels are built into chunkie, this PDE
+can be solved with very little coding:
+   
+.. include:: ../../chunkie/guide/guide_simplebvps.m
+   :literal:
+   :code: matlab
+   :start-after: % START LAPLACE NEUMANN
+   :end-before: % END LAPLACE NEUMANN
+
+
+.. image:: ../../chunkie/guide/guide_simplebvps_laplaceneumann.png
+   :width: 500px
+   :alt: combined chunker
+   :align: center
+		
 
 A Helmholtz Scattering Problem
 -------------------------------
+
 
 
 
