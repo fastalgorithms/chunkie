@@ -283,7 +283,7 @@ else
     else
         wts2 = repmat(wts(:).',opdims(1),1); wts2 = wts2(:);
         sigma = wts2(:).*dens(:);
-        fints = kern.fmm(1e-14,chnkr,targs(:,:),sigma,1);
+        fints = kern.fmm(1e-14,chnkr,targs(:,:),sigma);
     end
     % delete interactions in flag array (possibly unstable approach)
     

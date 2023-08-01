@@ -1,4 +1,4 @@
-function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
+function varargout = fmm(eps,zk,srcinfo,targ,type,sigma,varargin)
 %CHNK.HELM2D.FMM fast multipole methods for evaluating helmholtz layer
 %potentials, their gradients, and hessians
 % 
@@ -40,10 +40,8 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
 %   varargin{1} - coef in the combined layer formula, otherwise
 %                does nothing
 %
-% Output:
+% Optional Output:
 %   pot - potential/neumann data corresponding to the kernel at the target locations
-%
-% Optional output
 %   grad  - gradient at target locations
 %   hess - hessian at target locations
 %
@@ -54,6 +52,14 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
     else
         targuse = targ;
     end
+
+   pgt = nargout;
+   if(nargout == 0)
+      warning('HELM2D.FMM: Nothing to compute in HELM2D.FMM, returning with empty array\n');
+      return
+   end
+
+
    srcuse = [];
    srcuse.sources = srcinfo.r(1:2,:);
    if strcmpi(type,'s') || strcmpi(type,'sprime')
@@ -71,11 +77,14 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
    end
 
    pg = 0;
-   U = hfmm2d(eps,zk,srcuse,pg,targuse,pgt);
-   pot = U.pottarg.';
+
+   pgtuse = min(pgt,2);
+
+   U = hfmm2d(eps,zk,srcuse,pg,targuse,pgtuse);
+   varargout{1} = U.pottarg.';
    if strcmpi(type,'sprime') || strcmpi(type,'dprime')
      if isfield(targ,'n')
-         pot = (U.gradtarg(1,:).*targ.n(1,:) + U.gradtarg(2,:).*targ.n(2,:)).'; 
+         varargout{1} = (U.gradtarg(1,:).*targ.n(1,:) + U.gradtarg(2,:).*targ.n(2,:)).'; 
      else
         error('HELM2D.FMM: targets require normal info when evaluating',...
                  'sprime, or dprime'); 
@@ -85,14 +94,14 @@ function [pot,varargout] = fmm(eps,zk,srcinfo,targ,type,sigma,pgt,varargin)
        if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
            warning("Gradients not supported for sprime, dprime, stau")
        else
-           varargout{1} = U.gradtarg;
+           varargout{2} = U.gradtarg;
        end
    end
    if(pgt==3)
        if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
            warning("Hessians not supported for sprime, dprime, stau")
        else
-           varargout{2} = U.hesstarg;
+           varargout{3} = U.hesstarg;
        end
    end
 end

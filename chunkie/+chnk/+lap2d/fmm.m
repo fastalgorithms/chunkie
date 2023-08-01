@@ -1,4 +1,4 @@
-function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
+function varargout = fmm(eps,srcinfo,targ,type,sigma,varargin)
 %CHNK.LAP2D.FMM fast multipole methods for evaluating Laplace layer
 %potentials, their gradients, and hessians
 % 
@@ -41,10 +41,8 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
 %   varargin{1} - coef in the combined layer formula, otherwise
 %                does nothing
 %
-% Output:
+% Optional output:
 %   pot - potential/neumann data corresponding to the kernel at the target locations
-%
-% Optional output
 %   grad  - gradient at target locations
 %   hess - hessian at target locations
 %
@@ -56,6 +54,12 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
   else
     targuse = targ;
   end
+   pgt = nargout;
+   if(nargout == 0)
+      warning('LAP2D.FMM: Nothing to compute in LAP2D.FMM, returning with empty array\n');
+      return
+   end
+
    srcuse = [];
    mover2pi = -1.0/2/pi;
    srcuse.sources = srcinfo.r(1:2,:);
@@ -73,20 +77,21 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
      srcuse.charges = mover2pi*coef(2)*sigma(:).';
    end
    pg = 0;
-   U = rfmm2d(eps,srcuse,pg,targuse,pgt);
+   pgtuse = min(pgt,3);
+   U = rfmm2d(eps,srcuse,pg,targuse,pgtuse);
    if strcmpi(type,'sgrad')
-    pot = U.gradtarg;
+    varargout{1} = U.gradtarg;
     if (pgt >= 2)
-     varargout{1} = U.hesstarg([1 2 2 3],:);
+     varargout{2} = U.hesstarg([1 2 2 3],:);
     end
     if (pgt >= 3)
         warning('fmm: hessian not available for kernel %s',type)
     end
    else
-    pot = U.pottarg.';
+    varargout{1} = U.pottarg.';
     if strcmpi(type,'sprime') || strcmpi(type,'dprime')
      if isfield(targ,'n')
-         pot = (U.gradtarg(1,:).*targ.n(1,:) + U.gradtarg(2,:).*targ.n(2,:)).'; 
+         varargout{1} = (U.gradtarg(1,:).*targ.n(1,:) + U.gradtarg(2,:).*targ.n(2,:)).'; 
      else
         error('LAP2D.FMM: targets require normal info when evaluating',...
                  'sprime, or dprime'); 
@@ -98,7 +103,7 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
          ds = sqrt(targ.d(1,:).^2 + targ.d(2,:).^2);
          dx = targ.d(1,:)./ds;
          dy = targ.d(2,:)./ds;
-         pot = (U.gradtarg(1,:).*dx + U.gradtarg(2,:).*dy).'; 
+         varargout{1} = (U.gradtarg(1,:).*dx + U.gradtarg(2,:).*dy).'; 
      else
         error('LAP2D.FMM: targets require derivative info when evaluating',...
                  'stau'); 
@@ -109,14 +114,14 @@ function [pot,varargout] = fmm(eps,srcinfo,targ,type,sigma,pgt,varargin)
        if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
            warning("Gradients not supported for sprime, dprime, stau")
        else
-           varargout{1} = U.gradtarg;
+           varargout{2} = U.gradtarg;
        end
     end
     if(pgt==3) 
        if strcmpi(type, 'sprime') || strcmpi(type,'dprime') || strcmpi(type,'stau')
            warning("Hessians not supported for sprime, dprime, stau")
        else
-           varargout{2} = U.hesstarg;
+           varargout{3} = U.hesstarg;
        end
     end
    end

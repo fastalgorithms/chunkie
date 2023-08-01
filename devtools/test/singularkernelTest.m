@@ -44,12 +44,13 @@ kerndprime = kernel('lap','dprime');
 kernsprime = kernel('lap','sprime');
 kernstau = kernel('lap','stau');
 
+
 % eval u and dudn on boundary
 
 srcinfo = []; srcinfo.r = sources; 
 
 eps = 1e-15;
-[ubdry,gradubdry] = kerns.fmm(eps,srcinfo,chnkr.r(:,:),strengths,2);
+[ubdry,gradubdry] = kerns.fmm(eps,srcinfo,chnkr.r(:,:),strengths);
 unbdry = sum(chnkr.n(:,:).*gradubdry,1);
 tau = -chnk.perp(chnkr.n(:,:));
 utbdry = sum(tau(:,:).*gradubdry,1);

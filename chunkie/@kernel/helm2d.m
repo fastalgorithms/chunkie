@@ -34,25 +34,25 @@ switch lower(type)
     case {'s', 'single'}
         obj.type = 's';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 's');
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.helm2d.fmm(eps, zk, s, t, 's', sigma, pgt);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 's', sigma);
         obj.sing = 'log';
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'd');
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.helm2d.fmm(eps, zk, s, t, 'd', sigma, pgt);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'd', sigma);
         obj.sing = 'log';
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'sprime');
-        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'sprime', sigma, 1);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'sprime', sigma);
         obj.sing = 'log';
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'dprime');
-        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'dprime', sigma, 1);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'dprime', sigma);
         obj.sing = 'hs';
 
     case {'c', 'combined'}
@@ -63,7 +63,7 @@ switch lower(type)
         obj.type = 'c';
         obj.params.coefs = coefs;
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c', coefs);
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, pgt, coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, coefs);
         obj.sing = 'log';
 
     otherwise
