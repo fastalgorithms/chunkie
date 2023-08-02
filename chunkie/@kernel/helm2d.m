@@ -9,9 +9,9 @@ function obj = helm2d(type, zk, coefs)
 %   KERNEL.HELM2D('sp', ZK) or KERNEL.HELM2D('sprime', ZK) constructs the
 %   derivative of the single-layer Helmholtz kernel with wavenumber ZK.
 %
-%   KERNEL.HELM2D('c', ZK, ETA) or KERNEL.HELM2D('combined', ZK, ETA)
+%   KERNEL.HELM2D('c', ZK, COEFS) or KERNEL.HELM2D('combined', ZK, COEFS)
 %   constructs the combined-layer Helmholtz kernel with wavenumber ZK and
-%   parameter ETA, i.e., KERNEL.HELM2D('d', ZK) + 1i*ETA*KERNEL.HELM2D('s',
+%   parameter ETA, i.e., COEFS(1)*KERNEL.HELM2D('d', ZK) + COEFS(2)*KERNEL.HELM2D('s',
 %   ZK).
 %
 % See also CHNK.HELM2D.KERN.

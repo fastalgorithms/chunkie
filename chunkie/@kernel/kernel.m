@@ -5,14 +5,16 @@ classdef kernel
 %   K = KERNEL(NAME, TYPE) constructs a kernel of the specified name and
 %   type. The currently supported kernels names and types are:
 %
-%      NAME                           TYPE
-%      ----                           ----
-%      'laplace'    ('lap', 'l')      's', 'd', 'sp', 'c'
-%      'helmholtz'  ('helm', 'h')     's', 'd', 'sp', 'c'
-%      'elasticity' ('elast', 'e')    's', 'strac', 'd', 'dalt'
-%      'stokes'     ('stok', 's')     'svel', 'spres', 'strac',
-%                                     'dvel', 'dpres', 'dtrac'
-%
+%      NAME                                         TYPE
+%      ----                                         ----
+%      'laplace'    ('lap', 'l')                    's', 'd', 'sp', 'c'
+%      'helmholtz'  ('helm', 'h')                   's', 'd', 'sp', 'dp', 'c'
+%      'helmholtz difference' ('helmdiff', 'hdiff') 's', 'd', 'sp', 'dp'
+%      'elasticity' ('elast', 'e')                  's', 'strac', 'd', 'dalt'
+%      'stokes'     ('stok', 's')                   'svel', 'spres', 'strac',
+%                                                   'dvel', 'dpres', 'dtrac'
+%      'zeros'       ('zero','z') 
+%  
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.
@@ -43,14 +45,14 @@ classdef kernel
 
     properties
 
-        name       % Name of the kernel
-        type       % Type of the kernel
-        params     % Structure of kernel parameters
-        eval       % Function handle for kernel evaluation
-        fmm        % Function handle for kernel FMM
-        sing       % Singularity type
-        splitinfo  % Kernel-split information
-        opdims     % Dimension of the operator
+        name           % Name of the kernel
+        type           % Type of the kernel
+        params         % Structure of kernel parameters
+        eval           % Function handle for kernel evaluation
+        fmm            % Function handle for kernel FMM
+        sing           % Singularity type
+        splitinfo      % Kernel-split information
+        opdims = [0 0] % Dimension of the operator
 
     end
 
@@ -68,10 +70,14 @@ classdef kernel
                       obj = kernel.lap2d(varargin{:});
                   case {'helmholtz', 'helm', 'h'}
                       obj = kernel.helm2d(varargin{:});
+                  case {'helmholtz difference', 'helmdiff', 'hdiff'}
+                      obj = kernel.helm2ddiff(varargin{:});
                   case {'stokes', 'stok', 's'}
                       obj = kernel.stok2d(varargin{:});
                   case {'elasticity', 'elast', 'e'}
                       obj = kernel.elast2d(varargin{:});
+                  case {'zeros', 'zero', 'z'}
+                      obj = kernel.zeros(varargin{:});
                   otherwise
                       error('Kernel ''%s'' not found.', kern);
               end
@@ -101,8 +107,10 @@ classdef kernel
 
         obj = lap2d(varargin);
         obj = helm2d(varargin);
+        obj = helm2ddiff(varargin);
         obj = stok2d(varargin);
         obj = elast2d(varargin);
+        obj = zeros(varargin);
 
     end
 
@@ -151,7 +159,12 @@ opdims = [sum(rowdims) sum(coldims)];
     function varargout = fmm_(eps, s, t, sigma)
 
         [~, ns] = size(s.r);
-        [~, nt] = size(t.r);
+        if isa(t,'struct')
+            [~,nt] = size(t.r);
+        else
+            [~,nt] = size(t);
+        end
+        
 
         % Compute interleaved indices
         ridx = cell(m, 1);
@@ -202,7 +215,29 @@ opdims = [sum(rowdims) sum(coldims)];
     end
 
 K.opdims = opdims;
-K.eval = @eval_;
-K.fmm  = @fmm_;
+
+K.sing = 'smooth';
+sing_all = {kerns.sing};
+if ( any(strcmpi(sing_all, 'log')) ),  K.sing = 'log'; end
+if ( any(strcmpi(sing_all, 'pv'))  ),  K.sing = 'pv';  end
+if ( any(strcmpi(sing_all, 'hs'))  ),  K.sing = 'hs';  end
+
+% Check if all input kernels have an eval function handle
+ifeval = all(cellfun('isclass', {kerns.eval}, 'function_handle'));
+
+if ( ifeval )
+    K.eval = @eval_;
+else
+    K.eval = [];
+end
+
+% Check if all input kernels have an fmm function handle
+iffmm = all(cellfun('isclass', {kerns.fmm}, 'function_handle'));
+
+if ( iffmm )
+    K.fmm  = @fmm_;
+else
+    K.fmm = [];
+end
 
 end
