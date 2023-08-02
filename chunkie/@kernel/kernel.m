@@ -77,6 +77,9 @@ classdef kernel
               end
           elseif ( isa(kern, 'function_handle') )
               obj.eval = kern;
+          elseif ( isa(kern, 'kernel') )
+              % TODO: Check that opdims are consistent
+              kern = interleave(kern);
           else
               error('First input must be a string or function handle.');
           end
@@ -95,5 +98,103 @@ classdef kernel
         obj = elast2d(varargin);
 
     end
+
+end
+
+function K = interleave(kern)
+
+[m, n] = size(kern);
+K = kernel();
+
+opdims = [0 0];
+
+opdims_cat = reshape(cat(3,K.opdims),[1,2 size(K)]);
+opdims_rows = squeeze(opdims_cat(1,1,1:m,1));
+opdims_cols = squeeze(opdims_cat(1,2,1,1:n));
+opdims_rows = opdims_rows(:);
+opdims_cols = opdims_cols(:);
+
+opdims(1) = sum(opdims_rows);
+opdims(2) = sum(opdims_cols);
+
+opdims_rows_csum = [0; cumsum(opdims_rows)]';
+opdims_cols_csum = [0; cumsum(opdims_cols)]';
+
+
+K.opdims = opdims;
+
+
+    function K_interleaved = k_eval(s, t)
+        [~, ns] = size(s.r);
+        [~, nt] = size(t.r);
+        
+        irinds = cell(m,1);
+        icinds = cell(n,1);
+        
+        for k=1:m
+            irinds{k} = (opdims_rows_csum(k)+1):(opdims_rows_csum(k+1)) +  ...
+               (0:(nt-1))*K.opdims(1);
+        end
+        for l=1:n
+            icinds{l} = (opdims_cols_csum(l)+1):(opdims_rows_csum(l+1)) +  ...
+               (0:(ns-1))*K.opdims(2);
+        end    
+             
+        K_interleaved = zeros(nt*K.opdims(1), ns*K.opdims(2));
+        for k = 1:m
+            for l = 1:n
+                K_interleaved(irinds{k},icinds{l}) = kern(k,l).eval(s,t);  
+            end
+        end
+    end
+
+    function varargout = k_fmm(eps, s, t, sigma)
+        
+        fmm_kl = cell(nargout, m, n);
+        
+        [~, ns] = size(s.r);
+        [~, nt] = size(t.r);
+        
+        irinds = cell(m,1);
+        icinds = cell(n,1);
+        
+        for k=1:m
+            irinds{k} = (opdims_rows_csum(k)+1):(opdims_rows_csum(k+1)) +  ...
+               (0:(nt-1))*K.opdims(1);
+        end
+        for l=1:n
+            icinds{k} = (opdims_cols_csum(l)+1):(opdims_rows_csum(l+1)) +  ...
+               (0:(ns-1))*K.opdims(2);
+        end    
+        
+        for k = 1:m
+            for l = 1:n
+            [fmm_kl{:,k,l}] = kern(k,l).fmm(eps, s, t, sigma(icinds{l}));
+            end
+        end
+        
+        if(nargout >=1)
+            pot = zeros(K.opdims(1)*nt,1);
+            for k=1:m
+                for l=1:n
+                    pot(irinds{k}) = pot(irinds{k}) + fmm_kl{1,k,l};
+                end
+            end
+            varargout{1} = pot;
+        elseif(nargout >=2)
+            grad = zeros(2,K.opdims(1)*nt);
+            for k=1:m
+                for l=1:n
+                    grad(:,irinds{k}) = grad(:,irinds{k}) + fmm_kl{2,k,l};
+                end
+            end
+            varargout{2} = grad;
+        else
+            error('In KERNEL.INTERLEAVE: Too many output arguments for fmm, aborting.\n');
+        end   
+    end
+
+K.eval = @k_eval;
+K.fmm = @k_fmm;
 
 end
