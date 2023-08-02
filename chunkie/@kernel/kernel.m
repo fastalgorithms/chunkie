@@ -78,8 +78,15 @@ classdef kernel
           elseif ( isa(kern, 'function_handle') )
               obj.eval = kern;
           elseif ( isa(kern, 'kernel') )
-              % TODO: Check that opdims are consistent
-              kern = interleave(kern);
+              if ( numel(kern) == 1 )
+                  obj = kern;
+              else
+                  % The input is a matrix of kernels.
+                  % Create a single kernel object by interleaving the
+                  % outputs of each sub-kernel's eval() and fmm() routines.
+                  % TODO: Check that opdims are consistent
+                  obj = interleave(kern);
+              end
           else
               error('First input must be a string or function handle.');
           end
@@ -101,100 +108,101 @@ classdef kernel
 
 end
 
-function K = interleave(kern)
+function K = interleave(kerns)
+%INTERLEAVE   Create a kernel from a matrix of kernels by interleaving.
 
-[m, n] = size(kern);
+[m, n] = size(kerns);
 K = kernel();
 
-opdims = [0 0];
+rowdims = cat(1, kerns(:,1).opdims); rowdims = rowdims(:,1).';
+coldims = cat(1, kerns(1,:).opdims); coldims = coldims(:,2).';
+rowstarts = [0 cumsum(rowdims)];
+colstarts = [0 cumsum(coldims)];
+opdims = [sum(rowdims) sum(coldims)];
 
-opdims_cat = reshape(cat(3,K.opdims),[1,2 size(K)]);
-opdims_rows = squeeze(opdims_cat(1,1,1:m,1));
-opdims_cols = squeeze(opdims_cat(1,2,1,1:n));
-opdims_rows = opdims_rows(:);
-opdims_cols = opdims_cols(:);
+    function out = eval_(s, t)
 
-opdims(1) = sum(opdims_rows);
-opdims(2) = sum(opdims_cols);
-
-opdims_rows_csum = [0; cumsum(opdims_rows)]';
-opdims_cols_csum = [0; cumsum(opdims_cols)]';
-
-
-K.opdims = opdims;
-
-
-    function K_interleaved = k_eval(s, t)
         [~, ns] = size(s.r);
         [~, nt] = size(t.r);
-        
-        irinds = cell(m,1);
-        icinds = cell(n,1);
-        
-        for k=1:m
-            irinds{k} = (opdims_rows_csum(k)+1):(opdims_rows_csum(k+1)) +  ...
-               (0:(nt-1))*K.opdims(1);
+
+        % Compute interleaved indices
+        ridx = cell(m, 1);
+        cidx = cell(n, 1);
+        for k = 1:m
+            ridx{k} = (rowstarts(k)+1:rowstarts(k+1)).' + (0:nt-1)*opdims(1);
+            ridx{k} = ridx{k}(:).';
         end
-        for l=1:n
-            icinds{l} = (opdims_cols_csum(l)+1):(opdims_rows_csum(l+1)) +  ...
-               (0:(ns-1))*K.opdims(2);
-        end    
-             
-        K_interleaved = zeros(nt*K.opdims(1), ns*K.opdims(2));
+        for l = 1:n
+            cidx{l} = ((colstarts(l)+1):colstarts(l+1)).' + (0:ns-1)*opdims(2);
+            cidx{l} = cidx{l}(:).';
+        end
+
+        % Evaluate each sub-kernel and assign the resulting block to the
+        % output matrix using interleaved indices
+        out = zeros(opdims(1)*nt, opdims(2)*ns);
         for k = 1:m
             for l = 1:n
-                K_interleaved(irinds{k},icinds{l}) = kern(k,l).eval(s,t);  
+                out(ridx{k},cidx{l}) = kerns(k,l).eval(s,t);  
             end
         end
+
     end
 
-    function varargout = k_fmm(eps, s, t, sigma)
-        
-        fmm_kl = cell(nargout, m, n);
-        
+    function varargout = fmm_(eps, s, t, sigma)
+
         [~, ns] = size(s.r);
         [~, nt] = size(t.r);
-        
-        irinds = cell(m,1);
-        icinds = cell(n,1);
-        
-        for k=1:m
-            irinds{k} = (opdims_rows_csum(k)+1):(opdims_rows_csum(k+1)) +  ...
-               (0:(nt-1))*K.opdims(1);
+
+        % Compute interleaved indices
+        ridx = cell(m, 1);
+        cidx = cell(n, 1);
+        for k = 1:m
+            ridx{k} = (rowstarts(k)+1:rowstarts(k+1)).' + (0:nt-1)*opdims(1);
+            ridx{k} = ridx{k}(:).';
         end
-        for l=1:n
-            icinds{k} = (opdims_cols_csum(l)+1):(opdims_rows_csum(l+1)) +  ...
-               (0:(ns-1))*K.opdims(2);
-        end    
-        
+        for l = 1:n
+            cidx{l} = ((colstarts(l)+1):colstarts(l+1)).' + (0:ns-1)*opdims(2);
+            cidx{l} = cidx{l}(:).';
+        end
+
+        % Call the FMM for each sub-kernel using interleaved indices to
+        % slice the given density
+        fmms = cell(m, n, nargout);
         for k = 1:m
             for l = 1:n
-            [fmm_kl{:,k,l}] = kern(k,l).fmm(eps, s, t, sigma(icinds{l}));
+                [fmms{k,l,:}] = kerns(k,l).fmm(eps, s, t, sigma(cidx{l}));
             end
         end
-        
-        if(nargout >=1)
-            pot = zeros(K.opdims(1)*nt,1);
-            for k=1:m
-                for l=1:n
-                    pot(irinds{k}) = pot(irinds{k}) + fmm_kl{1,k,l};
+
+        % Combine the outputs from each block using interleaved indices
+        if ( nargout > 0 )
+            pot = zeros(opdims(1)*nt, 1);
+            for k = 1:m
+                for l = 1:n
+                    pot(ridx{k}) = pot(ridx{k}) + fmms{k,l,1};
                 end
             end
             varargout{1} = pot;
-        elseif(nargout >=2)
-            grad = zeros(2,K.opdims(1)*nt);
-            for k=1:m
-                for l=1:n
-                    grad(:,irinds{k}) = grad(:,irinds{k}) + fmm_kl{2,k,l};
+        end
+
+        if ( nargout > 1 )
+            grad = zeros(2, opdims(1)*nt);
+            for k = 1:m
+                for l = 1:n
+                    grad(:,ridx{k}) = grad(:,ridx{k}) + fmms{k,l,2};
                 end
             end
             varargout{2} = grad;
-        else
-            error('In KERNEL.INTERLEAVE: Too many output arguments for fmm, aborting.\n');
-        end   
+        end
+
+        if ( nargout > 2 )
+            error('CHUNKIE:kernel:interleave', 'Too many output arguments for FMM.');
+        end
+
     end
 
-K.eval = @k_eval;
-K.fmm = @k_fmm;
+K.opdims = opdims;
+K.eval = @eval_;
+K.fmm  = @fmm_;
 
 end
