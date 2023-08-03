@@ -281,9 +281,9 @@ else
         F = ifmm(matfun,targsflam,xflam1,200,1e-14,pxyfun,optsifmm);
         fints = ifmm_mv(F,dens(:),matfun);
     else
-        wts2 = repmat(wts(:).',opdims(2),1); wts2 = wts2(:);
+        wts2 = repmat(wts(:).', opdims(2), 1);
         sigma = wts2(:).*dens(:);
-        fints = kern.fmm(1e-14,chnkr,targs(:,:),sigma);
+        fints = kern.fmm(1e-14, chnkr, targs(:,:), sigma);
     end
     % delete interactions in flag array (possibly unstable approach)
     
