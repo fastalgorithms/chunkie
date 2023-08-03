@@ -9,9 +9,9 @@ function obj = lap2d(type, coefs)
 %   KERNEL.LAP2D('sp') or KERNEL.LAP2D('sprime') constructs the derivative
 %   of the single-layer Laplace kernel.
 %
-%   KERNEL.LAP2D('c', coefs) or KERNEL.LAP2D('combined', coefs) constructs the
-%   combined-layer Laplace kernel with parameter ETA, i.e.,
-%   KERNEL.LAP2D('d') + eta*KERNEL.LAP2D('s').
+%   KERNEL.LAP2D('c', coefs) or KERNEL.LAP2D('combined', coefs) constructs
+%   the combined-layer Laplace kernel with parameter ETA, i.e.,
+%   KERNEL.LAP2D('d') + ETA*KERNEL.LAP2D('s').
 %
 % See also CHNK.LAP2D.KERN.
 
@@ -28,44 +28,44 @@ switch lower(type)
     case {'s', 'single'}
         obj.type = 's';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 's');
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.lap2d.fmm(eps, s, t, 's', sigma, pgt);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 's', sigma);
         obj.sing = 'log';
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'd');
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.lap2d.fmm(eps, s, t, 'd', sigma, pgt);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'd', sigma);
         obj.sing = 'smooth';
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sprime');
-        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'sprime', sigma, 1);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'sprime', sigma);
         obj.sing = 'smooth';
 
     case {'st', 'stau'}
         obj.type = 'st';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'stau');
-        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'stau', sigma, 1);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'stau', sigma);
         obj.sing = 'pv';
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'dprime');
-        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'dprime', sigma, 1);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'dprime', sigma);
         obj.sing = 'hs';
 
     case {'sg', 'sgrad'}
         obj.type = 'sg';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sgrad');
-        obj.fmm = @(eps,s,t,sigma,pgt) chnk.lap2d.fmm(eps, s, t, 'sgrad', sigma, pgt);
+        obj.fmm = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'sgrad', sigma);
         obj.sing = 'pv';
         obj.opdims = [2,1];
 
     case {'dg', 'dgrad'}
         obj.type = 'dg';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'dgrad');
-        obj.fmm = @(eps,s,t,sigma,pgt) chnk.lap2d.fmm(eps, s, t, 'dgrad', sigma, pgt);
+        obj.fmm = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'dgrad', sigma);
         obj.sing = 'hs';
         obj.opdims = [2,1];
 
@@ -77,7 +77,7 @@ switch lower(type)
         obj.type = 'c';
         obj.params.coefs = coefs;
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'c', coefs);
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.lap2d.fmm(eps, s, t, 'c', sigma, pgt, coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'c', sigma, coefs);
         obj.sing = 'log';
 
     otherwise

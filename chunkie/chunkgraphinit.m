@@ -1,6 +1,6 @@
 function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams)
 
-    display("Warning: this method is deprecated. Use the chunkgraph constructor instead.");
+    warning('This method is deprecated. Use the chunkgraph constructor instead.');
     prefs = [];
     cgrph            = chunkgraph(prefs);
     cgrph.verts      = verts;
