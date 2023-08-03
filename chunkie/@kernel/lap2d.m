@@ -9,8 +9,8 @@ function obj = lap2d(type, coefs)
 %   KERNEL.LAP2D('sp') or KERNEL.LAP2D('sprime') constructs the derivative
 %   of the single-layer Laplace kernel.
 %
-%   KERNEL.LAP2D('c', coefs) or KERNEL.LAP2D('combined', coefs) constructs the
-%   combined-layer Laplace kernel with parameter ETA, i.e.,
+%   KERNEL.LAP2D('c', coefs) or KERNEL.LAP2D('combined', coefs) constructs
+%   the combined-layer Laplace kernel with parameter ETA, i.e.,
 %   KERNEL.LAP2D('d') + ETA*KERNEL.LAP2D('s').
 %
 % See also CHNK.LAP2D.KERN.
