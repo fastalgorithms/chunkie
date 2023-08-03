@@ -98,8 +98,6 @@ classdef kernel
           end
 
       end
-      
-      
 
     end
 
@@ -120,7 +118,6 @@ function K = interleave(kerns)
 %INTERLEAVE   Create a kernel from a matrix of kernels by interleaving.
 
 [m, n] = size(kerns);
-K = kernel();
 
 rowdims = cat(1, kerns(:,1).opdims); rowdims = rowdims(:,1).';
 coldims = cat(1, kerns(1,:).opdims); coldims = coldims(:,2).';
@@ -214,30 +211,25 @@ opdims = [sum(rowdims) sum(coldims)];
 
     end
 
+K = kernel();
 K.opdims = opdims;
 
+% The new singularity type is the worst of the singularity types of all
+% sub-kernels
+sings = {kerns.sing};
 K.sing = 'smooth';
-sing_all = {kerns.sing};
-if ( any(strcmpi(sing_all, 'log')) ),  K.sing = 'log'; end
-if ( any(strcmpi(sing_all, 'pv'))  ),  K.sing = 'pv';  end
-if ( any(strcmpi(sing_all, 'hs'))  ),  K.sing = 'hs';  end
+if ( any(strcmpi(sings, 'log')) ),  K.sing = 'log'; end
+if ( any(strcmpi(sings, 'pv'))  ),  K.sing = 'pv';  end
+if ( any(strcmpi(sings, 'hs'))  ),  K.sing = 'hs';  end
 
-% Check if all input kernels have an eval function handle
-ifeval = all(cellfun('isclass', {kerns.eval}, 'function_handle'));
-
-if ( ifeval )
+% The new kernel has eval() only if all sub-kernels have eval()
+if ( all(cellfun('isclass', {kerns.eval}, 'function_handle')) )
     K.eval = @eval_;
-else
-    K.eval = [];
 end
 
-% Check if all input kernels have an fmm function handle
-iffmm = all(cellfun('isclass', {kerns.fmm}, 'function_handle'));
-
-if ( iffmm )
+% The new kernel has fmm() only if all sub-kernels have fmm()
+if ( all(cellfun('isclass', {kerns.fmm}, 'function_handle')) )
     K.fmm  = @fmm_;
-else
-    K.fmm = [];
 end
 
 end
