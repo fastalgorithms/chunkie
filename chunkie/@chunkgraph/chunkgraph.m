@@ -14,11 +14,12 @@ classdef chunkgraph
         vstruc
     end
 
-    properties(Dependent,SetAccess=private)
+    properties(SetAccess=public)
         r
         d
         d2
         n
+        wts
         adj
         sourceinfo
         npt
@@ -104,6 +105,7 @@ classdef chunkgraph
             end
             obj.echnks = echnks;
             obj.vstruc = procverts(obj);
+            obj.wts = weights(obj);
             %[regions] = findregions(obj);
             %obj.regions = regions;
             
@@ -139,6 +141,9 @@ classdef chunkgraph
             validateattributes(val,classes,{})
             obj.echnks = val;
         end  
+        function obj = set.wts(obj,val)
+            obj.wts = val;
+        end
         function r = get.r(obj)
             chnk = merge(obj.echnks);
             r = chnk.r;
@@ -153,7 +158,11 @@ classdef chunkgraph
         end
      	function n = get.n(obj)
             chnk = merge(obj.echnks);
-            n = normals(chnk);
+            n = chnk.n;
+        end
+        function wts = get.wts(obj)
+            chnk = merge(obj.echnks);
+            wts = chnk.wts;
         end
         function adj = get.adj(obj)
             chnk = merge(obj.echnks);
@@ -177,7 +186,7 @@ classdef chunkgraph
             for iedge = 1:numel(obj.echnks)
                 chnk = obj.echnks(iedge);
                 n = chnk.npt;
-                w = weights(chnk);
+                w = chnk.wts;
                 ws(ind+(1:n))    = w;
                 rs(:,ind+(1:n))  = chnk.r(:,:);
                 ds(:,ind+(1:n))  = chnk.d(:,:);

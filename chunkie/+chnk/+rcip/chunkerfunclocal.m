@@ -80,4 +80,7 @@ end
 chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
 % added by Shidong Jiang
 chnkr.nstor(:,:,1:nch) = normals(chnkr);
+
+% add weights
+chnkr.wtsstor(:,1:nch) = weights(chnkr);
 end

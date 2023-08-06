@@ -126,7 +126,7 @@ if robust
     end
     dists = sqrt(dists);
     
-    wtschnk = weights(chnkr);
+    wtschnk = chnkr.wts;
     chnklen = sum(wtschnk,1);
 
     % do adaptive quadrature for points that aren't

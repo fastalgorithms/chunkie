@@ -252,7 +252,7 @@ else
 %     mm = nt*opdims(1); nn = chnkr.npt*opdims(2);
 %     v = 1e-300*ones(length(inew),1); sp = sparse(inew,jnew,v,mm,nn);
 
-    wts = weights(chnkr);
+    wts = chnkr.wts;
     wts = wts(:);
     
     if ~isa(kern,'kernel') || isempty(kern.fmm)
@@ -261,9 +261,7 @@ else
         xflam1 = reshape(xflam1,chnkr.dim,numel(xflam1)/chnkr.dim);
         targsflam = repmat(targs(:,:),opdims(1),1);
         targsflam = reshape(targsflam,chnkr.dim,numel(targsflam)/chnkr.dim);
-    %    matfun = @(i,j) chnk.flam.kernbyindexr(i,j,targs,chnkr,wts,kern, ...
-    %        opdims,sp);
-        matfun = @(i,j) chnk.flam.kernbyindexr(i,j,targs,chnkr,wts,kerneval, ...
+        matfun = @(i,j) chnk.flam.kernbyindexr(i,j,targs,chnkr,kerneval, ...
             opdims);
     
 
@@ -275,7 +273,7 @@ else
         [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
         pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr,wts,kerneval,opdims,pr,ptau,pw,pin);
+            ctr,chnkr,kerneval,opdims,pr,ptau,pw,pin);
 
         optsifmm=[]; optsifmm.Tmax=Inf;
         F = ifmm(matfun,targsflam,xflam1,200,1e-14,pxyfun,optsifmm);

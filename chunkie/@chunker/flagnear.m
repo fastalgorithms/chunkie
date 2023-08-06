@@ -49,9 +49,7 @@ xx(:,npt+1:npt+nt) = pts;
 
 pt2chnk = repmat(1:nch,k,1);
 pt2chnk = pt2chnk(:);
-lens = zeros(nch,1);
-ws = weights(chnkr);
-lens(:) = sum(ws,1); lens = lens*fac;
+lens = chunklen(chnkr); lens = lens(:)*fac;
 lmax = max(lens)*2.5;
 
 T = hypoct_uni(xx,lmax);

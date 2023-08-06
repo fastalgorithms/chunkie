@@ -1,6 +1,7 @@
 function wts = weights(chnkr)
 %WEIGHTS integration weights suitable for smooth functions defined on the 
-% chunker object
+% chunker object. Note that this routine is only to be used
+% inside chunkerfunc and not accessed externally.
 %
 % This is merely the standard Legendre weights scaled to the chunks
 %

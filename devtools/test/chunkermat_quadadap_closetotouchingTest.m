@@ -126,7 +126,7 @@ start=tic; layersolho = chunkerkerneval(chnkr,fkern,solho,targs,opts);
 t1 = toc(start);
 %
 
-wchnkr = weights(chnkr);
+wchnkr = chnkr.wts;
 
 relerr = norm(utarg-layersola,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-layersola,'inf')/dot(abs(sola(:)),wchnkr(:));
