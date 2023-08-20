@@ -23,7 +23,7 @@ function asym_tables = load_asym_tables()
     [N,X]=meshgrid(0:(ncheb-1),xcheb);
     Tc2v = cos(N.*X);
     Tv2c = inv(Tc2v);
-
+    Tfull = kron(Tv2c,Tv2c);
     Tc2vd = N.*sin(N.*X)./sqrt(1-cos(X).^2);
     Tc2vd(1,:) = (0:(ncheb-1)).^2;
     Tc2vd(end,:) = (-1).^(1:ncheb).*(0:(ncheb-1)).^2;
@@ -41,7 +41,14 @@ function asym_tables = load_asym_tables()
     for kk=1:nks
         for jj=1:111
             for ii=1:3  
-                vmat = squeeze(allvs(:,:,ii,jj,kk));
+%                vmat = squeeze(allvs(:,:,ii,jj,kk));
+                if (ii ==1)
+                    vmat = squeeze(allvs(:,:,ii,jj,kk));
+                else
+                    vmat = squeeze(allvs(:,:,ii,jj,kk));
+                    vmat = reshape(Tfull*vmat(:),[12,12]);
+                    allvs(:,:,ii,jj,kk) = vmat;
+                end
                 ia = jj;
                 vda = (2)^(ia-1)*20*Tc2cd*vmat;
                 vdaa= (2)^(ia-1)*20*Tc2cd*vda;

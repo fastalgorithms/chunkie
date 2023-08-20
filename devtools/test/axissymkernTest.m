@@ -20,8 +20,10 @@ isend = isstart + 0;
 isind = isstart:isend;
 
 itstart = ceil(2*chnkr.npt/3);
+itstart = isstart+1;
 itend = itstart + 0;
 itind = itstart:itend;
+
 
 
 srcinfo = [];
@@ -93,7 +95,7 @@ end
 
 for j=1:ns
     for i=1:nt
-        v(i,j) = integral(@(x) fker(x, src(:,j), targ(:,i), srcnorm(:,j), targnorm(:,i)), 0, 2*pi,'AbsTol',1E-10); 
+        v(i,j) = integral(@(x) fker(x, src(:,j), targ(:,i), srcnorm(:,j), targnorm(:,i)), 0, 2*pi,'AbsTol',1E-12); 
     end
 end
 
