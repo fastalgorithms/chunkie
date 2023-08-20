@@ -126,7 +126,7 @@ if strcmpi(type, 'dprimediff')
   nysrc = repmat(srcnorm(2,:),nt,1);
   nxtarg = repmat((targnorm(1,:)).',1,ns);
   nytarg = repmat((targnorm(2,:)).',1,ns);
-  submat = hess(:,:,4).*nxsrc.*nxtarg + hess(:,:,6).*nysrc.*nxtarg ... 
-              - hess(:,:,5).*nxsrc.*nytarg - hess(:,:,3).*nysrc.*nytarg;
+  submat = hess(:,:,4).*nxsrc.*nxtarg - hess(:,:,5).*nysrc.*nxtarg ...
+      - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
 end
 
