@@ -14,7 +14,10 @@ classdef kernel
 %      'stokes'     ('stok', 's')                   'svel', 'spres', 'strac',
 %                                                   'dvel', 'dpres', 'dtrac'
 %      'zeros'       ('zero','z') 
-%  
+%      'axis sym helmholtz'                         's' 'd' 'sp' 'c'
+%         ('axissymh', 'axissymhelm')
+%      'axis sym helmholtz difference'              's' 'd' 'sp' 'dp'
+%         ('axissymhdiff', 'axissymhelmdiff') 
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.
@@ -78,6 +81,11 @@ classdef kernel
                       obj = kernel.elast2d(varargin{:});
                   case {'zeros', 'zero', 'z'}
                       obj = kernel.zeros(varargin{:});
+                  case {'axis sym helmholtz', 'axissymh', 'axissymhelm'}
+                      obj = kernel.axissymhelm2d(varargin{:});
+                  case {'axis sym helmholtz difference', 'axissymhdiff' ...
+                           'axissymhelmdiff'}
+                      obj = kernel.axissymhelm2ddiff(varargin{:});    
                   otherwise
                       error('Kernel ''%s'' not found.', kern);
               end
@@ -108,6 +116,8 @@ classdef kernel
         obj = helm2ddiff(varargin);
         obj = stok2d(varargin);
         obj = elast2d(varargin);
+        obj = axissymhelm2d(varargin);
+        obj = axissymhelm2ddiff(varargin);
         obj = zeros(varargin);
 
     end
