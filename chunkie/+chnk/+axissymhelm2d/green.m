@@ -54,27 +54,98 @@ end
 
 over2pi = 1/2/pi;
 kabs = abs(k);
+
+rt = repmat(targ(1,:).',1,ns);
+rs = repmat(src(1,:),nt,1);
+dz = repmat(src(2,:),nt,1)-repmat(targ(2,:).',1,ns);
+r  = rt*kabs;
+dz = dz*kabs;
+dr = (rs-rt)*kabs;
+dout = chnk.axissymhelm2d.helm_axi2(r, dr, dz, ifun, asym_tables);
+int = dout.int;
+intdz = dout.intdz;
+intdq = dout.intdq;
+intdr = dout.intdr;
+intdzz = dout.intdzz;
+intdrq = dout.intdrq;
+intdrz = dout.intdrz;
+intdqz = dout.intdqz;
+
+% int   = zeros(nt,ns);
+% intdz = zeros(nt,ns);
+% intdq = zeros(nt,ns);
+% intdr = zeros(nt,ns);
+% intdzz = zeros(nt,ns);
+% intdrq = zeros(nt,ns);
+% intdrz = zeros(nt,ns);
+% intdqz = zeros(nt,ns);
+% 
+% for j=1:ns
+%     for i=1:nt
+%         r = targ(1,i) * kabs;
+%         dr = (src(1,j) - targ(1,i)) * kabs;
+%         dz = (src(2,j) - targ(2,i)) * kabs;
+%         dout = chnk.axissymhelm2d.helm_axi(r, dr, dz, ifun, asym_tables);
+%         int(i,j) = dout.int;
+%         intdz(i,j) = dout.intdz;
+%         intdq(i,j) = dout.intdq;
+%         intdr(i,j) = dout.intdr;
+%         intdzz(i,j) = dout.intdzz;
+%         intdrq(i,j) = dout.intdrq;
+%         intdrz(i,j) = dout.intdrz;
+%         intdqz(i,j) = dout.intdqz;
+%     end
+% end
+
+
+% for j = 1:ns
+%     
+%     for i = 1:nt
+%         r = targ(1,i) * kabs;
+%         dr = (src(1,j) - targ(1,i)) * kabs;
+%         dz = (src(2,j) - targ(2,i)) * kabs;
+%         dout = chnk.axissymhelm2d.helm_axi(r, dr, dz, ifun, asym_tables);
+%         vtmp(i,j) = dout.int * over2pi * kabs * src(1,j);
+%          
+%         gtmp(i,j,1) = dout.intdr * over2pi * kabs.^2 * src(1,j);
+%         gtmp(i,j,2) = dout.intdq * over2pi * kabs.^2 * src(1,j);  
+%         gtmp(i,j,3) = -dout.intdz * over2pi * kabs.^2 * src(1,j);
+%         
+% % Fix hessian scalings
+% % No drr, dr'r', or dr r' currently available
+%         htmp(i,j,1) = 0;
+%         htmp(i,j,2) = 0;
+%         htmp(i,j,3) = dout.intdzz * over2pi * kabs.^3 * src(1,j);
+%         htmp(i,j,4) = dout.intdrq * over2pi * kabs.^3 * src(1,j);
+%         htmp(i,j,5) = dout.intdrz * over2pi * kabs.^3 * src(1,j);
+%         htmp(i,j,6) = dout.intdqz * over2pi * kabs.^3 * src(1,j);
+%     end
+% end
+
 for j = 1:ns
     
     for i = 1:nt
         r = targ(1,i) * kabs;
         dr = (src(1,j) - targ(1,i)) * kabs;
         dz = (src(2,j) - targ(2,i)) * kabs;
-        dout = chnk.axissymhelm2d.helm_axi(r, dr, dz, ifun, asym_tables);
-        vtmp(i,j) = dout.int * over2pi * kabs * src(1,j);
+        %dout = chnk.axissymhelm2d.helm_axi(r, dr, dz, ifun, asym_tables);
+        if (i >1 && size(int,1)<=1)
+            disp("catastrophic error")
+        end
+        vtmp(i,j) = int(i,j) * over2pi * kabs * src(1,j);
          
-        gtmp(i,j,1) = dout.intdr * over2pi * kabs.^2 * src(1,j);
-        gtmp(i,j,2) = dout.intdq * over2pi * kabs.^2 * src(1,j);  
-        gtmp(i,j,3) = -dout.intdz * over2pi * kabs.^2 * src(1,j);
+        gtmp(i,j,1) = intdr(i,j) * over2pi * kabs.^2 * src(1,j);
+        gtmp(i,j,2) = intdq(i,j) * over2pi * kabs.^2 * src(1,j);  
+        gtmp(i,j,3) = -intdz(i,j) * over2pi * kabs.^2 * src(1,j);
         
 % Fix hessian scalings
 % No drr, dr'r', or dr r' currently available
-        htmp(i,j,1) = 0;
-        htmp(i,j,2) = 0;
-        htmp(i,j,3) = dout.intdzz * over2pi * kabs.^3 * src(1,j);
-        htmp(i,j,4) = dout.intdrq * over2pi * kabs.^3 * src(1,j);
-        htmp(i,j,5) = dout.intdrz * over2pi * kabs.^3 * src(1,j);
-        htmp(i,j,6) = dout.intdqz * over2pi * kabs.^3 * src(1,j);
+        %htmp(i,j,1) = 0;
+        %htmp(i,j,2) = 0;
+        htmp(i,j,3) = intdzz(i,j) * over2pi * kabs.^3 * src(1,j);
+        htmp(i,j,4) = intdrq(i,j) * over2pi * kabs.^3 * src(1,j);
+        htmp(i,j,5) = intdrz(i,j) * over2pi * kabs.^3 * src(1,j);
+        htmp(i,j,6) = intdqz(i,j) * over2pi * kabs.^3 * src(1,j);
     end
 end
 

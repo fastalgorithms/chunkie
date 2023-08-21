@@ -79,4 +79,11 @@ function asym_tables = load_asym_tables()
     wlege = wlege*pi/2;
     asym_tables.xlege = xlege;
     asym_tables.wlege = wlege;
+    
+   	nlege = 100;
+    [xlege,wlege,~,~] = lege.exps(nlege);
+    xlege = (pi*(xlege+1)/2);
+    wlege = wlege*pi/2;
+    asym_tables.xlege_mid = xlege;
+    asym_tables.wlege_mid = wlege;
 end

@@ -7,7 +7,7 @@ pref = [];
 pref.k = 16;
 narms = 3;
 amp = 0.5;
-
+cparams.maxchunklen = 0.1;
 cparams.ta = -pi/2;
 cparams.tb = pi/2;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
@@ -15,13 +15,15 @@ t1 = toc(start);
 
 [~,~,info] = sortinfo(chnkr);
 
+np = 100;
 isstart = ceil(chnkr.npt/3);
-isend = isstart + 0;
+isend = isstart + np;
 isind = isstart:isend;
 
+
 itstart = ceil(2*chnkr.npt/3);
-itstart = isstart+1;
-itend = itstart + 0;
+itstart = isstart+np+1;
+itend = itstart + np;
 itind = itstart:itend;
 
 
@@ -56,8 +58,8 @@ v = get_exact_kernels(zk, srcinfo, targinfo, type);
 
 err1 = norm(v(:) - submat(:));
 fprintf('Error in kernel %s  = %d \n',type,err1);
-fprintf('ratios = %d\n', v(1:end)./submat(1:end));
-fprintf('ratios difference= %d\n', v(1:end)./submat2(1:end));
+fprintf('ratios = %d\n', max(abs(v(1:end)./submat(1:end)-1)));
+fprintf('ratios difference= %d\n', max(abs(v(1:end)./submat2(1:end)-1)));
 
 
 

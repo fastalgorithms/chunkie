@@ -9,7 +9,7 @@ function [dout] = dalph(r,dr,z)
     num = -2*r.*dr-dr.^2+z.^2;
     val = num./den.^2;
     adr= -2*r.*val; 
-    az = 4*(r+dr).*r.*z/den.^2;
+    az = 4*(r+dr).*r.*z./den.^2;
     
     dout.ar = ar;
     dout.adr= adr;
