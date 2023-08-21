@@ -17,9 +17,22 @@ function [ds] = helm_axi2(rs,drs,dzs,ifun,htables)
     
     alph_far = alphs(ifar);
     r0s_far  = r0s(ifar);
-    [i_mid] = find(alph_far.*r0s_far < 150);
+    [i_mid] = find((1-alph_far).*r0s_far < 150);
     imid = ifar(i_mid);
     ifar(i_mid) = [];
+    
+    alph_mid = alphs(imid);
+    r0s_mid  = r0s(imid);
+    [i_midnear] = find((1-alph_mid).*r0s_mid < 40);
+    imidnear = imid(i_midnear);
+    imid(i_midnear) = [];
+    
+   	alph_midnear = alphs(imidnear);
+    r0s_midnear  = r0s(imidnear);
+    [i_midnearnear] = find((1-alph_midnear).*r0s_midnear < 40);
+    imidnearnear = imidnear(i_midnearnear);
+    imidnear(i_midnearnear) = [];
+    
     
     [kc,kcdk,kcda,kcdkk,kcdak,kcdaa] ...
         = helm_axi_close_table(r0s(iclose),alphs(iclose),ifun,htables);
@@ -29,7 +42,29 @@ function [ds] = helm_axi2(rs,drs,dzs,ifun,htables)
     kernsdkk(iclose) = kcdkk;
     kernsdak(iclose) = kcdak;
     kernsdaa(iclose) = kcdaa;
- 
+
+ 	[kf,kfda,kfdk,kfdaa,kfdak,kfdkk] ...
+        = chnk.axissymhelm2d.helm_axi_smooth2(r0s(imidnearnear),alphs(imidnearnear),...
+        ifun,htables.xlege_midnear,htables.wlege_midnear);
+    
+    kerns(imidnearnear) = kf;
+    kernsda(imidnearnear) = kfda;
+    kernsdk(imidnearnear) = kfdk;
+    kernsdaa(imidnearnear)= kfdaa;
+    kernsdak(imidnearnear)= kfdak;
+    kernsdkk(imidnearnear)= kfdkk;
+    
+	[kf,kfda,kfdk,kfdaa,kfdak,kfdkk] ...
+        = chnk.axissymhelm2d.helm_axi_smooth2(r0s(imidnear),alphs(imidnear),...
+        ifun,htables.xlege_midnear,htables.wlege_midnear);
+    
+    kerns(imidnear) = kf;
+    kernsda(imidnear) = kfda;
+    kernsdk(imidnear) = kfdk;
+    kernsdaa(imidnear)= kfdaa;
+    kernsdak(imidnear)= kfdak;
+    kernsdkk(imidnear)= kfdkk;
+    
     [kf,kfda,kfdk,kfdaa,kfdak,kfdkk] ...
         = chnk.axissymhelm2d.helm_axi_smooth2(r0s(imid),alphs(imid),...
         ifun,htables.xlege_mid,htables.wlege_mid);

@@ -86,4 +86,18 @@ function asym_tables = load_asym_tables()
     wlege = wlege*pi/2;
     asym_tables.xlege_mid = xlege;
     asym_tables.wlege_mid = wlege;
+    
+  	nlege = 50;
+    [xlege,wlege,~,~] = lege.exps(nlege);
+    xlege = (pi*(xlege+1)/2);
+    wlege = wlege*pi/2;
+    asym_tables.xlege_midnear = xlege;
+    asym_tables.wlege_midnear = wlege;
+    
+  	nlege = 20;
+    [xlege,wlege,~,~] = lege.exps(nlege);
+    xlege = (pi*(xlege+1)/2);
+    wlege = wlege*pi/2;
+    asym_tables.xlege_midnearnear = xlege;
+    asym_tables.wlege_midnearnear = wlege;
 end
