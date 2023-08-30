@@ -49,3 +49,6 @@ h = pcolor(xx,yy,uu); set(h,'EdgeColor','none'); colorbar
 % END LAPLACE NEUMANN
 saveas(figure(1),"guide_simplebvps_laplaceneumann.png")
 
+% START BASIC SCATTERING
+
+% END BASIC SCATTERING
