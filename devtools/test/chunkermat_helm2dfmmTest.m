@@ -108,7 +108,7 @@ if(iffmm)
     sol_use = sol2.*wchnkr(:);
     eps = 1e-6;
     pgt = 1;
-    pot = chnk.helm2d.fmm(eps,zk,chnkr,targets,'D',sol_use,pgt);
+    pot = chnk.helm2d.fmm(eps,zk,chnkr,targets,'D',sol_use);
 
     relerr = norm(utarg-pot,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
     relerr2 = norm(utarg-pot,'inf')/dot(abs(sol(:)),wchnkr(:));

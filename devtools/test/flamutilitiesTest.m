@@ -74,12 +74,12 @@ kerns = kernel('lap','s');
 srcinfo = []; srcinfo.r = sources;
 targinfo = []; targinfo.r = cgrph.r(:,:); 
 targinfo.d = cgrph.d(:,:);
-ubdry = kerns.fmm(1e-12,srcinfo,targinfo,strengths,1);
+ubdry = kerns.fmm(1e-12,srcinfo,targinfo,strengths);
 
 % eval u at targets
 
 targinfo = []; targinfo.r = targets;
-utarg = kerns.fmm(1e-12,srcinfo,targinfo,strengths,1);
+utarg = kerns.fmm(1e-12,srcinfo,targinfo,strengths);
 
 %
 

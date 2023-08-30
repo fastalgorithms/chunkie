@@ -9,10 +9,10 @@ function obj = helm2d(type, zk, coefs)
 %   KERNEL.HELM2D('sp', ZK) or KERNEL.HELM2D('sprime', ZK) constructs the
 %   derivative of the single-layer Helmholtz kernel with wavenumber ZK.
 %
-%   KERNEL.HELM2D('c', ZK, ETA) or KERNEL.HELM2D('combined', ZK, ETA)
+%   KERNEL.HELM2D('c', ZK, COEFS) or KERNEL.HELM2D('combined', ZK, COEFS)
 %   constructs the combined-layer Helmholtz kernel with wavenumber ZK and
-%   parameter ETA, i.e., KERNEL.HELM2D('d', ZK) + 1i*ETA*KERNEL.HELM2D('s',
-%   ZK).
+%   parameter ETA, i.e., COEFS(1)*KERNEL.HELM2D('d', ZK) + 
+%   COEFS(2)*KERNEL.HELM2D('s', ZK).
 %
 % See also CHNK.HELM2D.KERN.
 
@@ -34,25 +34,25 @@ switch lower(type)
     case {'s', 'single'}
         obj.type = 's';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 's');
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.helm2d.fmm(eps, zk, s, t, 's', sigma, pgt);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 's', sigma);
         obj.sing = 'log';
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'd');
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.helm2d.fmm(eps, zk, s, t, 'd', sigma, pgt);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'd', sigma);
         obj.sing = 'log';
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'sprime');
-        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'sprime', sigma, 1);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'sprime', sigma);
         obj.sing = 'log';
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'dprime');
-        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'dprime', sigma, 1);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'dprime', sigma);
         obj.sing = 'hs';
 
     case {'c', 'combined'}
@@ -63,7 +63,7 @@ switch lower(type)
         obj.type = 'c';
         obj.params.coefs = coefs;
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c', coefs);
-        obj.fmm  = @(eps,s,t,sigma,pgt) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, pgt, coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, coefs);
         obj.sing = 'log';
 
     otherwise

@@ -64,14 +64,14 @@ srcinfo = []; srcinfo.r = sources;
 targinfo = []; targinfo.r = chnkr.r(:,:); 
 targinfo.d = chnkr.d(:,:);
 targinfo.n = chnkr.n(:,:);
-[u,gradu] = kerns.fmm(1e-12,srcinfo,targinfo,strengths,2);
+[u,gradu] = kerns.fmm(1e-12,srcinfo,targinfo,strengths);
 densu = u;
 densun = sum(chnkr.n(:,:).*gradu,1);
 
 % eval u at targets
 
 targinfo = []; targinfo.r = targets;
-utarg = kerns.fmm(1e-12,srcinfo,targinfo,strengths,1);
+utarg = kerns.fmm(1e-12,srcinfo,targinfo,strengths);
 
 
 % test green's id
