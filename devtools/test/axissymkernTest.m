@@ -20,12 +20,10 @@ isstart = ceil(chnkr.npt/3);
 isend = isstart + np;
 isind = isstart:isend;
 
-
 itstart = ceil(2*chnkr.npt/3);
 itstart = isstart+np+1;
 itend = itstart + np;
 itind = itstart:itend;
-
 
 
 srcinfo = [];
@@ -41,14 +39,15 @@ targinfo.d2 = chnkr.d2(:,itind);
 targinfo.n = chnkr.n(:,itind);
 
 % Real k tests
-zk = 1.1;
+zk = 20.1;
 
-type = 'dprimediff';
-start = tic; submat = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, type); 
+type = 'sprime';
+origin = [0 0];
+start = tic; submat = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin, type); 
 t1 = toc(start);
 
-submat2 = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, 'dprime'); 
-submat2 = submat2 - chnk.axissymhelm2d.kern(1j*zk, srcinfo, targinfo, 'dprime'); 
+submat2 = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin, 'dprime'); 
+submat2 = submat2 - chnk.axissymhelm2d.kern(1j*zk, srcinfo, targinfo, origin, 'dprime'); 
 
 
 fprintf('First call to axissymhelm2d.kern time%d\n',t1);
@@ -61,6 +60,36 @@ fprintf('Error in kernel %s  = %d \n',type,err1);
 fprintf('ratios = %d\n', max(abs(v(1:end)./submat(1:end)-1)));
 fprintf('ratios difference= %d\n', max(abs(v(1:end)./submat2(1:end)-1)));
 
+
+% Now test the shifted kernel bit
+origin_new = [3.1 2.1];
+chnkr_shift = chnkr;
+chnkr_shift.r(1,:) = chnkr.r(1,:) + origin_new(1);
+chnkr_shift.r(2,:) = chnkr.r(2,:) + origin_new(2);
+
+
+start = tic; submat = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin_new, type); 
+t1 = toc(start);
+
+submat2 = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin_new, 'dprime'); 
+submat2 = submat2 - chnk.axissymhelm2d.kern(1j*zk, srcinfo, targinfo, origin_new, 'dprime'); 
+
+
+fprintf('First call to axissymhelm2d.kern time%d\n',t1);
+
+
+srcinfo.r(1,:) = srcinfo.r(1,:) + origin_new(1);
+srcinfo.r(2,:) = srcinfo.r(2,:) + origin_new(2);
+
+targinfo.r(1,:) = targinfo.r(1,:) + origin_new(1);
+targinfo.r(2,:) = targinfo.r(2,:) + origin_new(2);
+ 
+v = get_exact_kernels(zk, srcinfo, targinfo, type);
+
+err1 = norm(v(:) - submat(:));
+fprintf('Error in shifted kernel %s  = %d \n',type,err1);
+fprintf('ratios shifted kernel= %d\n', max(abs(v(1:end)./submat(1:end)-1)));
+fprintf('ratios difference shifted= %d\n', max(abs(v(1:end)./submat2(1:end)-1)));
 
 
 

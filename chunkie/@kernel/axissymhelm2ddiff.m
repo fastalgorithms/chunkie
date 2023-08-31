@@ -51,7 +51,9 @@ switch lower(type)
     case {'dp', 'dprime'}
         obj.type = 'dp';
         obj.eval = @(s,t) coefs(1)*chnk.axissymhelm2d.kern(real(zks(1)),  ... 
-                                                s, t, 'dprimediff');
+                                                s, t, [0,0], 'dprimediff');
+        obj.shifted_eval = @(s,t,o) coefs(1)*chnk.axissymhelm2d.kern(real(zks(1)),  ... 
+                                                s, t, o, 'dprimediff');
         obj.fmm = [];
         if ( abs(coefs(1)-coefs(2)) < eps )
             obj.sing = 'log';

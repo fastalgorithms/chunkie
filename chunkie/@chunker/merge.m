@@ -6,7 +6,10 @@ if isempty(chnkrs)
 end
 assert(isa(chnkrs,'chunker'), 'input must be of chunker type');
 
-chnkrout = chunker();
+
+pref = [];
+pref.k = chnkrs(1).k;
+chnkrout = chunker(pref);
 %chnkrout = chnkrs(1);
 
 

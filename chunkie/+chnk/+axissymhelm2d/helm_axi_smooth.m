@@ -1,46 +1,51 @@
-function [kern,kernda,kerndk,kerndaa,kerndak,kerndkk] ...
-    = helm_axi_smooth(r0,alph,ifun,xlege,wlege)
+function [kerns,kernsda,kernsdk,kernsdaa,kernsdak,kernsdkk] ...
+    = helm_axi_smooth(r0s,alphs,ifun,xlege,wlege)
 
-    if (ifun == 1)
-        rt = sqrt(1-(1-alph)*xlege);
-        kern = sum(chnk.axissymhelm2d.asymint(xlege,alph,r0).*wlege);
-        kerndk = sum(chnk.axissymhelm2d.asymintdk(xlege,alph,r0).*wlege);
-        kernda = sum(chnk.axissymhelm2d.asymintda(xlege,alph,r0).*wlege);
-        kerndak= sum(chnk.axissymhelm2d.asymintdak(xlege,alph,r0).*wlege);
-        kerndaa= sum(chnk.axissymhelm2d.asymintdaa(xlege,alph,r0).*wlege);
-        kerndkk= sum(chnk.axissymhelm2d.asymintdkk(xlege,alph,r0).*wlege);
-    end
+
+    [alp,xle] = meshgrid(alphs,xlege);
+    xle = cos(xle);
+    [r0t,wle] = meshgrid(r0s,wlege);
+    rts = sqrt(1-(1-alp).*xle);
+    
     if (ifun == 2)
-        rt = sqrt(1-(1-alph)*xlege);
-        kern = sum(chnk.axissymhelm2d.asymint(xlege,alph,1i*r0).*wlege);
-        kerndk = 1i*sum(chnk.axissymhelm2d.asymintdk(xlege,alph,1i*r0).*wlege);
-        kernda = sum(chnk.axissymhelm2d.asymintda(xlege,alph,1i*r0).*wlege);
-        kerndak= 1i*sum(chnk.axissymhelm2d.asymintdak(xlege,alph,1i*r0).*wlege);
-        kerndaa= sum(chnk.axissymhelm2d.asymintdaa(xlege,alph,1i*r0).*wlege);
-        kerndkk= -sum(chnk.axissymhelm2d.asymintdkk(xlege,alph,1i*r0).*wlege);
+        r0t = r0t*1i;
     end
-   	if (ifun == 3)
-        rt = sqrt(1-(1-alph)*xlege);
-        kern = sum(chnk.axissymhelm2d.asymint(xlege,alph,r0).*wlege);
-        kerndk = sum(chnk.axissymhelm2d.asymintdk(xlege,alph,r0).*wlege);
-        kernda = sum(chnk.axissymhelm2d.asymintda(xlege,alph,r0).*wlege);
-        kerndak= sum(chnk.axissymhelm2d.asymintdak(xlege,alph,r0).*wlege);
-        kerndaa= sum(chnk.axissymhelm2d.asymintdaa(xlege,alph,r0).*wlege);
-        kerndkk= sum(chnk.axissymhelm2d.asymintdkk(xlege,alph,r0).*wlege);
-        
-    	kern2 = sum(chnk.axissymhelm2d.asymint(xlege,alph,1i*r0).*wlege);
-        kern2dk = 1i*sum(chnk.axissymhelm2d.asymintdk(xlege,alph,1i*r0).*wlege);
-        kern2da = sum(chnk.axissymhelm2d.asymintda(xlege,alph,1i*r0).*wlege);
-        kern2dak= 1i*sum(chnk.axissymhelm2d.asymintdak(xlege,alph,1i*r0).*wlege);
-        kern2daa= sum(chnk.axissymhelm2d.asymintdaa(xlege,alph,1i*r0).*wlege);
-        kern2dkk= -sum(chnk.axissymhelm2d.asymintdkk(xlege,alph,1i*r0).*wlege);
-        
-        kern    = kern    - kern2;
-        kernda  = kernda  - kern2da;
-        kerndk  = kerndk  - kern2dk;
-        kerndaa = kerndaa - kern2daa;
-        kerndak = kerndak - kern2dak;
-        kerndkk = kerndkk - kern2dkk;
+    
+    efac = exp(1i*r0t.*rts)./rts.*wle;
+    r2   = rts.^2;
+    k2   = 1i*r0t.*rts;
+    
+    kerns = sum(chnk.axissymhelm2d.asymint_v(rts,r0t,efac),1);
+    kernsdk = sum(chnk.axissymhelm2d.asymintdk_v(rts,r0t,efac),1);
+    kernsda = sum(chnk.axissymhelm2d.asymintda_v(xle,rts,r0t,efac),1);
+  	kernsdaa = sum(chnk.axissymhelm2d.asymintdaa_v(xle,rts,r0t,efac,k2,r2),1);
+ 	kernsdak = sum(chnk.axissymhelm2d.asymintdak_v(xle,rts,r0t,efac),1);
+  	kernsdkk = sum(chnk.axissymhelm2d.asymintdkk_v(xle,rts,r0t,efac),1);
+    
+    if (ifun == 2)
+        kernsdk =   kernsdk*1i;
+        kernsdak =  kernsdak*1i;
+        kernsdkk = -kernsdkk;
     end
+    
+    if (ifun == 3)
+        r0t = r0t*1i;
+       	efac = exp(1i*r0t.*rts)./rts.*wle;
+        r2   = rts.^2;
+        k2   = 1i*r0t.*rts;
+        kern2_v = sum(chnk.axissymhelm2d.asymint_v(rts,r0t,efac),1);
+        kern2dk_v = sum(chnk.axissymhelm2d.asymintdk_v(rts,r0t,efac),1);
+        kern2da_v = sum(chnk.axissymhelm2d.asymintda_v(xle,rts,r0t,efac),1);
+        kern2daa_v = sum(chnk.axissymhelm2d.asymintdaa_v(xle,rts,r0t,efac,k2,r2),1);
+        kern2dak_v = sum(chnk.axissymhelm2d.asymintdak_v(xle,rts,r0t,efac),1);
+        kern2dkk_v = sum(chnk.axissymhelm2d.asymintdkk_v(xle,rts,r0t,efac),1);
+        kerns      = kerns       -    kern2_v;
+        kernsdk    = kernsdk     - 1i*kern2dk_v;
+        kernsda    = kernsda     -    kern2da_v;
+        kernsdak   = kernsdak    - 1i*kern2dak_v;
+        kernsdaa   = kernsdaa    -    kern2daa_v;
+        kernsdkk   = kernsdkk    +    kern2dkk_v;     
+    end
+
 end
 

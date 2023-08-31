@@ -52,6 +52,7 @@ classdef kernel
         type           % Type of the kernel
         params         % Structure of kernel parameters
         eval           % Function handle for kernel evaluation
+        shifted_eval   % Function handle for evaluating translated kernel evaluation
         fmm            % Function handle for kernel FMM
         sing           % Singularity type
         splitinfo      % Kernel-split information
@@ -163,6 +164,37 @@ opdims = [sum(rowdims) sum(coldims)];
 
     end
 
+
+    function out = shifted_eval_(s, t, o)
+
+        [~, ns] = size(s.r);
+        [~, nt] = size(t.r);
+
+        % Compute interleaved indices
+        ridx = cell(m, 1);
+        cidx = cell(n, 1);
+        for k = 1:m
+            ridx{k} = (rowstarts(k)+1:rowstarts(k+1)).' + (0:nt-1)*opdims(1);
+            ridx{k} = ridx{k}(:).';
+        end
+        for l = 1:n
+            cidx{l} = ((colstarts(l)+1):colstarts(l+1)).' + (0:ns-1)*opdims(2);
+            cidx{l} = cidx{l}(:).';
+        end
+
+        % Evaluate each sub-kernel and assign the resulting block to the
+        % output matrix using interleaved indices
+        out = zeros(opdims(1)*nt, opdims(2)*ns);
+        for k = 1:m
+            for l = 1:n
+                out(ridx{k},cidx{l}) = kerns(k,l).shifted_eval(s,t,o);  
+            end
+        end
+
+    end
+
+
+
     function varargout = fmm_(eps, s, t, sigma)
 
         [~, ns] = size(s.r);
@@ -232,10 +264,26 @@ if ( any(strcmpi(sings, 'log')) ),  K.sing = 'log'; end
 if ( any(strcmpi(sings, 'pv'))  ),  K.sing = 'pv';  end
 if ( any(strcmpi(sings, 'hs'))  ),  K.sing = 'hs';  end
 
+% Set params
+K.params = cell(m, n);
+for k=1:m
+    for l=1:n
+        K.params{k,l} = kerns(k,l).params;
+    end
+end
+
 % The new kernel has eval() only if all sub-kernels have eval()
 if ( all(cellfun('isclass', {kerns.eval}, 'function_handle')) )
     K.eval = @eval_;
 end
+
+
+% The new kernel has eval() only if all sub-kernels have eval()
+if ( all(cellfun('isclass', {kerns.shifted_eval}, 'function_handle')) )
+    K.shifted_eval = @shifted_eval_;
+end
+
+
 
 % The new kernel has fmm() only if all sub-kernels have fmm()
 if ( all(cellfun('isclass', {kerns.fmm}, 'function_handle')) )

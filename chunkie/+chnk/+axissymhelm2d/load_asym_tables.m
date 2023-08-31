@@ -64,6 +64,24 @@ function asym_tables = load_asym_tables()
         end
     end    
 
+    naind = 111;
+    nkind = 152;
+
+    allvs = reshape(allvs, [ncheb, ncheb, 3, naind*nkind]);
+    allda = reshape(allda, [ncheb, ncheb, 3, naind*nkind]);
+    alldk = reshape(alldk, [ncheb, ncheb, 3, naind*nkind]);
+    alldak = reshape(alldak, [ncheb, ncheb, 3, naind*nkind]);
+    alldkk = reshape(alldkk, [ncheb, ncheb, 3, naind*nkind]);
+    alldaa = reshape(alldaa, [ncheb, ncheb, 3, naind*nkind]);
+
+    allvs = permute(allvs, [1,2,4,3]);
+    allda = permute(allda, [1,2,4,3]);
+    alldk = permute(alldk, [1,2,4,3]);
+    alldak = permute(alldak, [1,2,4,3]);
+    alldaa = permute(alldaa, [1,2,4,3]);
+    alldkk = permute(alldkk, [1,2,4,3]);
+    
+
     asym_tables =[];
     asym_tables.allvs = allvs;
     asym_tables.allda = allda;

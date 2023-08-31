@@ -26,7 +26,7 @@ classdef chunkgraph
     end
     
     methods
-        function obj = chunkgraph(verts,edge2verts,fchnks,cparams)
+        function obj = chunkgraph(verts, edge2verts, fchnks, cparams, pref)
             if (nargin == 0)
                 return
             end
@@ -62,10 +62,16 @@ classdef chunkgraph
                 end
             end
             
+            if nargin <= 4
+                pref = [];
+                pref.nchmax = 10000;
+                pref.k = 16;
+            end
             
-            pref = [];
-            pref.nchmax = 10000;
-            pref.k = 16;
+            if ~isfield(pref, 'nchmax')
+                pref.nchmax = 10000;
+            end
+            
             
             if (size(verts,2) ~= size(edge2verts,2))
                 error('Incompatible vertex and edge sizes');

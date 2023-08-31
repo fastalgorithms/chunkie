@@ -47,19 +47,22 @@ switch lower(type)
 
     case {'s', 'single'}
         obj.type = 's';
-        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, 's');
+        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, [0,0], 's');
+        obj.shifted_eval = @(s,t,o) chnk.axissymhelm2d.kern(zk, s, t, o, 's');
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'d', 'double'}
         obj.type = 'd';
-        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, 'd');
+        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, [0,0], 'd');
+        obj.shifted_eval = @(s,t,o) chnk.axissymhelm2d.kern(zk, s, t, o, 'd');
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
-        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, 'sprime');
+        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, [0,0], 'sprime');
+        obj.shifted_eval = @(s,t,o) chnk.axissymhelm2d.kern(zk, s, t, o, 'sprime');
         obj.fmm = [];
         obj.sing = 'log';
 
@@ -70,7 +73,8 @@ switch lower(type)
         end
         obj.type = 'c';
         obj.params.coefs = coefs;
-        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, 'c', coefs);
+        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, [0,0], 'c', coefs);
+        obj.shifted_eval = @(s,t,o) chnk.axissymhelm2d.kern(zk, s, t, o, 'c', coefs);
         obj.fmm = [];
         obj.sing = 'log';
 

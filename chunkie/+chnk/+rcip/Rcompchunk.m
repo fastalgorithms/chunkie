@@ -41,19 +41,6 @@ d2cs = zeros(k,dim,nedge);
 dscal = zeros(nedge,1);
 d2scal = zeros(nedge,1);
 ctr = zeros(dim,nedge);
-if(size(fkern)==1)
-    fkernlocal = fkern;
-else
-  fkernlocal(nedge,nedge) = kernel();
-    for i=1:nedge
-        ici = iedgechunks(1,i);
-        for j=1:nedge
-            icj = iedgechunks(1,j);
-            fkernlocal(i,j) = fkern(ici,icj);
-        end
-    end
-
-end
 
 
 for i = 1:nedge
@@ -106,7 +93,9 @@ nsys = 3*k*nedge*ndim;
 nR = 2*k*nedge*ndim;
 
 ts = cell(nedge,1);
-chnkrlocal(1,nedge) = chunker();
+pref = [];
+pref.k = k;
+chnkrlocal(1,nedge) = chunker(pref);
 
 h0=ones(nedge,1);
 for level=1:nsub
@@ -159,6 +148,27 @@ for level=1:nsub
             chnkrlocal(i).wts = weights(chnkrlocal(i));
         end
     end
+
+
+    if(size(fkern)==1)
+        fkernlocal = fkern;
+        if isa(fkern.shifted_eval, 'function_handle')
+            fkernlocal.eval = @(s,t) fkern.shifted_eval(s,t, ctr(:,1));
+        end
+    else
+        fkernlocal(nedge,nedge) = kernel();
+        for i=1:nedge
+            ici = iedgechunks(1,i);
+            for j=1:nedge
+                icj = iedgechunks(1,j);
+                fkernlocal(i,j) = fkern(ici,icj);
+                if isa(fkern(ici,icj).shifted_eval, 'function_handle')
+                    fkernlocal(i,j).eval = @(s,t) fkern(ici,icj).shifted_eval(s,t,ctr(:,i));
+                end
+            end
+        end
+    end
+
     
 % construct the system matrix for local chunks
     if level == 1

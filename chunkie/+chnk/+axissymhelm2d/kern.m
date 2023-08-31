@@ -1,4 +1,4 @@
-function submat = kern(zk, srcinfo, targinfo, type, varargin)
+function submat = kern(zk, srcinfo, targinfo, origin, type, varargin)
 %CHNK.AXISSYMHELM2D.KERN axissymmetric Helmholtz layer potential kernels in 2D
 % 
 % Syntax: submat = chnk.axissymhelm2d.kern(zk,srcinfo,targingo,type,htables)
@@ -63,7 +63,7 @@ targ = targinfo.r;
 
 if strcmpi(type, 'd')
     srcnorm = srcinfo.n;
-    [~, grad] = chnk.axissymhelm2d.green(zk, src, targ);
+    [~, grad] = chnk.axissymhelm2d.green(zk, src, targ, origin);
     nx = repmat(srcnorm(1,:), nt, 1);
     ny = repmat(srcnorm(2,:), nt, 1);
     % Due to lack of translation invariance in r, no sign flip needed, 
@@ -73,7 +73,7 @@ end
 
 if strcmpi(type, 'sprime')
     targnorm = targinfo.n;
-    [~, grad] = chnk.axissymhelm2d.green(zk, src, targ);
+    [~, grad] = chnk.axissymhelm2d.green(zk, src, targ, origin);
 
     nx = repmat((targnorm(1,:)).',1,ns);
     ny = repmat((targnorm(2,:)).',1,ns);
@@ -81,13 +81,13 @@ if strcmpi(type, 'sprime')
 end
 
 if strcmpi(type, 's')
-    submat = chnk.axissymhelm2d.green(zk, src, targ);
+    submat = chnk.axissymhelm2d.green(zk, src, targ, origin);
 end
 
 
 if strcmpi(type, 'sdiff')
     ifdiff = 1;
-    submat = chnk.axissymhelm2d.green(zk, src, targ, ifdiff);
+    submat = chnk.axissymhelm2d.green(zk, src, targ, origin, ifdiff);
 end
 
 if strcmpi(type, 'c')
@@ -96,7 +96,7 @@ if strcmpi(type, 'c')
     if (nargin == 5); coef = varargin{1}; end
     nx = repmat(srcnorm(1,:), nt, 1);
     ny = repmat(srcnorm(2,:), nt, 1);
-    [submats, grad] = chnk.axissymhelm2d.green(zk, src, targ);
+    [submats, grad] = chnk.axissymhelm2d.green(zk, src, targ, origin);
     % Due to lack of translation invariance in r, no sign flip needed, 
     % as gradient is computed with respect to r'
     submat = coef(1)*(grad(:,:,2).*nx - grad(:,:,3).*ny) + coef(2)*submats;
@@ -106,7 +106,7 @@ end
 if strcmpi(type, 'dprime')
   targnorm = targinfo.n;
   srcnorm = srcinfo.n;
-  [~,~,hess] = chnk.axissymhelm2d.green(zk,src,targ);
+  [~,~,hess] = chnk.axissymhelm2d.green(zk, src, targ, origin);
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
   nxtarg = repmat((targnorm(1,:)).',1,ns);
@@ -121,7 +121,7 @@ if strcmpi(type, 'dprimediff')
   targnorm = targinfo.n;
   srcnorm = srcinfo.n;
   ifdiff = 1;
-  [~,~,hess] = chnk.axissymhelm2d.green(zk,src,targ,ifdiff);
+  [~,~,hess] = chnk.axissymhelm2d.green(zk, src, targ, origin, ifdiff);
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
   nxtarg = repmat((targnorm(1,:)).',1,ns);
