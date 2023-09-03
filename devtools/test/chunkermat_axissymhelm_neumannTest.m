@@ -4,16 +4,21 @@ rng(iseed);
 
 addpaths_loc();
 
-zk = 1.1;
+zk = 1j*10.1;
 
-type = 'chunkr';
+type = 'chnkr-star';
+% type = 'chnkr-torus';
+
+irep = 'rpcomb';
+irep = 'sk';
 
 pref = [];
-pref.k = 32;
+pref.k = 16;
 ns = 10;
-nt = 10;
+nt = 100;
 ppw = 80;   % points per wavelength;
 maxchunklen = pref.k/ppw/real(zk)*2*pi;
+maxchunklen = 0.5;
 
 [chnkr, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen);
 wts = chnkr.wts; wts = wts(:);
@@ -57,21 +62,30 @@ axis equal
 % we have the following system of integral equations
 
 % Set up kernels
-alpha = 1;
-c1 = -1/(0.5 + 1i*alpha*0.25);
-c2 = -1i*alpha/(0.5 + 1i*alpha*0.25);
-c3 = -1;
-Sik    = kernel('axissymhelm', 's', 1i*zk);
-Sikp   = kernel('axissymhelm', 'sprime', 1i*zk);
 Skp    = kernel('axissymhelm', 'sprime', zk);
 Sk     = kernel('axissymhelm', 's', zk);
 Dk     = kernel('axissymhelm', 'd', zk);
-Dkdiff = kernel('axissymhelmdiff', 'dprime', [zk 1i*zk]);
+
 Z = kernel.zeros();
-K = [ c1*Skp  c2*Dkdiff c2*Sikp ;
+
+
+if strcmpi(irep,'rpcomb')
+    Sik    = kernel('axissymhelm', 's', 1i*zk);
+    Sikp   = kernel('axissymhelm', 'sprime', 1i*zk);
+    Dkdiff = kernel('axissymhelmdiff', 'dprime', [zk 1i*zk]);
+    alpha = 1;
+    c1 = -1/(0.5 + 1i*alpha*0.25);
+    c2 = -1i*alpha/(0.5 + 1i*alpha*0.25);
+    c3 = -1;
+    K = [ c1*Skp  c2*Dkdiff c2*Sikp ;
        c3*Sik  Z        Z        ;
        c3*Sikp Z        Z        ];
-K = kernel(K);
+    K = kernel(K);
+    Keval = c1*kernel([Sk 1i*alpha*Dk Z]);
+else
+    K = -2*Skp;
+    Keval = -2*Sk;
+end
 
 % Set up boundary data
 
@@ -81,14 +95,14 @@ kernmats = Skp.eval(srcinfo, targinfo);
 ubdry = kernmats*strengths;
 
 npts = chnkr.npt;
-nsys = 3*npts;
+nsys = K.opdims(1)*npts;
 rhs = zeros(nsys, 1);
 
 
 if(l2scale)
-    rhs(1:3:end) = ubdry.*sqrt(wts);
+    rhs(1:K.opdims(1):end) = ubdry.*sqrt(wts);
 else
-    rhs(1:3:end) = ubdry;
+    rhs(1:K.opdims(1):end) = ubdry;
 end
 
 % Form matrix
@@ -107,7 +121,7 @@ utarg = kernmatstarg*strengths;
 
 % Compute solution using chunkerkerneval
 % evaluate at targets and compare
-Keval = c1*kernel([Sk 1i*alpha*Dk Z]);
+
 opts.usesmooth = false;
 opts.verb = false;
 opts.quadkgparams = {'RelTol', 1e-16, 'AbsTol', 1.0e-16};
@@ -135,7 +149,7 @@ fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n', t2)
 
 
 wchnkr = chnkrtotal.wts;
-wchnkr = repmat(wchnkr(:).', 3, 1);
+wchnkr = repmat(wchnkr(:).', K.opdims(1), 1);
 relerr  = norm(utarg-Dsol) / (sqrt(chnkrtotal.nch)*norm(utarg));
 relerr2 = norm(utarg-Dsol, 'inf') / dot(abs(sol(:)), wchnkr(:));
 fprintf('relative frobenius error %5.2e\n', relerr);
@@ -255,7 +269,7 @@ if strcmpi(type, 'cgrph')
     targets = 0.2*[cos(ts)'; sin(ts)'];
 
 
-else
+elseif strcmpi(type,'chnkr-star')
     cparams = [];
     cparams.eps = 1.0e-10;
     cparams.nover = 1;
@@ -268,14 +282,39 @@ else
     chnkobj = chunkerfunc(@(t) starfish(t, narms, amp), cparams, pref); 
     chnkobj = sort(chnkobj);
     
-    ts = 2*pi*rand(ns, 1);
+    ts = -pi/2 + pi*rand(ns, 1);
     sources = starfish(ts, narms, amp);
     sources = 0.5*sources;
 
-    ts = 2*pi*rand(nt, 1);
+    ts = -pi/2 + pi*rand(nt, 1);
     targets = starfish(ts, narms, amp);
-    targets = targets .* (1 + 3*repmat(rand(1, nt), 2, 1));    
+    targets = targets .* (1 + 0.5*repmat(rand(1, nt), 2, 1));   
+
+elseif strcmpi(type,'chnkr-torus')
+    cparams = [];
+    cparams.eps = 1.0e-10;
+    cparams.nover = 1;
+    cparams.ifclosed = true;
+    cparams.ta = 0;
+    cparams.tb = 2*pi;
+    cparams.maxchunklen = maxchunklen;
+    narms = 0;
+    amp = 0.25;
+    ctr = [3 0];
+    chnkobj = chunkerfunc(@(t) starfish(t, narms, amp, ctr), cparams, pref); 
+    chnkobj = sort(chnkobj);
+    
+    ts = -pi/2 + pi*rand(ns, 1);
+    sources = starfish(ts, narms, amp);
+    sources = 0.5*sources;
+    sources(1,:) = sources(1,:) + ctr(1);
+
+    ts = -pi/2 + pi*rand(nt, 1);
+    targets = starfish(ts, narms, amp);
+    targets = targets .* (1 + 0.5*repmat(rand(1, nt), 2, 1));    
+    targets(1,:) = targets(1,:) + ctr(1);
 end
+
 
 
 end

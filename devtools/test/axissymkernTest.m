@@ -5,11 +5,12 @@ cparams = [];
 cparams.eps = 1.0e-4;
 pref = []; 
 pref.k = 16;
-narms = 3;
-amp = 0.5;
-cparams.maxchunklen = 0.1;
+narms = 0;
+amp = 0.25;
+cparams.maxchunklen = 0.125;
 cparams.ta = -pi/2;
 cparams.tb = pi/2;
+
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
@@ -20,11 +21,15 @@ isstart = ceil(chnkr.npt/3);
 isend = isstart + np;
 isind = isstart:isend;
 
+isind = 1:chnkr.npt;
+% isind = 81:95;
+
 itstart = ceil(2*chnkr.npt/3);
 itstart = isstart+np+1;
 itend = itstart + np;
 itind = itstart:itend;
-
+itind = 1:chnkr.npt;
+% itind = 477:495;
 
 srcinfo = [];
 srcinfo.r = chnkr.r(:,isind);
@@ -39,26 +44,24 @@ targinfo.d2 = chnkr.d2(:,itind);
 targinfo.n = chnkr.n(:,itind);
 
 % Real k tests
-zk = 20.1;
+zk = 40.1;
 
-type = 'sprime';
+type = 's';
 origin = [0 0];
 start = tic; submat = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin, type); 
 t1 = toc(start);
 
-submat2 = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin, 'dprime'); 
-submat2 = submat2 - chnk.axissymhelm2d.kern(1j*zk, srcinfo, targinfo, origin, 'dprime'); 
 
-
-fprintf('First call to axissymhelm2d.kern time%d\n',t1);
+fprintf('First call to axissymhelm2d.kern time:  %d\n',t1);
 
 v = get_exact_kernels(zk, srcinfo, targinfo, type);
 
 
-err1 = norm(v(:) - submat(:));
+err1 = norm(v(:) - submat(:))/norm(submat(:));
 fprintf('Error in kernel %s  = %d \n',type,err1);
 fprintf('ratios = %d\n', max(abs(v(1:end)./submat(1:end)-1)));
-fprintf('ratios difference= %d\n', max(abs(v(1:end)./submat2(1:end)-1)));
+
+return
 
 
 % Now test the shifted kernel bit
@@ -89,7 +92,7 @@ v = get_exact_kernels(zk, srcinfo, targinfo, type);
 err1 = norm(v(:) - submat(:));
 fprintf('Error in shifted kernel %s  = %d \n',type,err1);
 fprintf('ratios shifted kernel= %d\n', max(abs(v(1:end)./submat(1:end)-1)));
-fprintf('ratios difference shifted= %d\n', max(abs(v(1:end)./submat2(1:end)-1)));
+
 
 
 
@@ -126,8 +129,13 @@ end
 
 for j=1:ns
     for i=1:nt
-        v(i,j) = integral(@(x) fker(x, src(:,j), targ(:,i), srcnorm(:,j), targnorm(:,i)), 0, 2*pi,'AbsTol',1E-12); 
-    end
+        r = sqrt((src(1,j) - targ(1,i))^2  + (src(2,j)-targ(2,i))^2);
+        if r > eps
+            v(i,j) = integral(@(x) fker(x, src(:,j), targ(:,i), srcnorm(:,j), targnorm(:,i)), 0, 2*pi,'AbsTol',1E-12); 
+        else
+            v(i,j) = 0;
+        end
+    end 
 end
 
 

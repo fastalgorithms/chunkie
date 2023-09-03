@@ -69,6 +69,21 @@ if strcmpi(type, 'd')
     % Due to lack of translation invariance in r, no sign flip needed, 
     % as gradient is computed with repsect to r'
     submat = (grad(:,:,2).*nx - grad(:,:,3).*ny);
+    fker = @(x, s, t, rns) fdlp(x, zk, s, t, rns);
+    for j=1:ns
+        for i=1:nt
+            rt = targ(1,i)*abs(zk);
+            dr = (src(1,j) - targ(1,i))*abs(zk);
+            dz = (src(2,j) - targ(2,i))*abs(zk);
+            r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
+            alph = (dr^2+dz^2)/r0^2;
+            if alph > 2e-4
+                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                       targ(:,i), srcnorm(:,j)), 0, 2*pi, ...
+                       'AbsTol',1e-14,'RelTol',1e-10); 
+            end
+        end
+    end 
 end
 
 if strcmpi(type, 'sprime')
@@ -78,10 +93,44 @@ if strcmpi(type, 'sprime')
     nx = repmat((targnorm(1,:)).',1,ns);
     ny = repmat((targnorm(2,:)).',1,ns);
     submat = (grad(:,:,1).*nx + grad(:,:,3).*ny);
+
+
+    fker = @(x, s, t, rnt) fsprime(x, zk, s, t, rnt);
+    for j=1:ns
+        for i=1:nt
+            rt = targ(1,i)*abs(zk);
+            dr = (src(1,j) - targ(1,i))*abs(zk);
+            dz = (src(2,j) - targ(2,i))*abs(zk);
+            r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
+            alph = (dr^2+dz^2)/r0^2;
+            if alph > 2e-4
+                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                       targ(:,i), targnorm(:,i)), 0, 2*pi, ...
+                       'AbsTol',1e-14,'RelTol',1e-10); 
+            end
+        end
+    end
+
 end
 
 if strcmpi(type, 's')
     submat = chnk.axissymhelm2d.green(zk, src, targ, origin);
+    fker = @(x, s, t) fslp(x, zk, s, t);
+    for j=1:ns
+        for i=1:nt
+            rt = targ(1,i)*abs(zk);
+            dr = (src(1,j) - targ(1,i))*abs(zk);
+            dz = (src(2,j) - targ(2,i))*abs(zk);
+            r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
+            alph = (dr^2+dz^2)/r0^2;
+            if alph > 2e-4
+                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                       targ(:,i)), 0, 2*pi, ...
+                       'AbsTol',1e-14,'RelTol',1e-10); 
+            end
+        end
+    end
+    
 end
 
 
@@ -93,13 +142,29 @@ end
 if strcmpi(type, 'c')
     srcnorm = srcinfo.n; 
     coef = ones(2,1);
-    if (nargin == 5); coef = varargin{1}; end
+    if (nargin == 6); coef = varargin{1}; end
     nx = repmat(srcnorm(1,:), nt, 1);
     ny = repmat(srcnorm(2,:), nt, 1);
     [submats, grad] = chnk.axissymhelm2d.green(zk, src, targ, origin);
     % Due to lack of translation invariance in r, no sign flip needed, 
     % as gradient is computed with respect to r'
     submat = coef(1)*(grad(:,:,2).*nx - grad(:,:,3).*ny) + coef(2)*submats;
+   
+    fker = @(x, s, t, rns) coef(1)*fdlp(x, zk, s, t, rns) + coef(2)*fslp(x, zk, s, t);
+    for j=1:ns
+        for i=1:nt
+            rt = targ(1,i)*abs(zk);
+            dr = (src(1,j) - targ(1,i))*abs(zk);
+            dz = (src(2,j) - targ(2,i))*abs(zk);
+            r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
+            alph = (dr^2+dz^2)/r0^2;
+            if alph > 2e-4
+                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                       targ(:,i), srcnorm(:,j)), 0, 2*pi, ...
+                       'AbsTol',1e-14,'RelTol',1e-10); 
+            end
+        end
+    end
 end
 
 
@@ -128,5 +193,88 @@ if strcmpi(type, 'dprimediff')
   nytarg = repmat((targnorm(2,:)).',1,ns);
   submat = hess(:,:,4).*nxsrc.*nxtarg - hess(:,:,5).*nysrc.*nxtarg ...
       - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
+
+
+    fker = @(x, s, t, rns, rnt) fdprimediff(x, zk, s, t, rns, rnt);
+    for j=1:ns
+        for i=1:nt
+            rt = targ(1,i)*abs(zk);
+            dr = (src(1,j) - targ(1,i))*abs(zk);
+            dz = (src(2,j) - targ(2,i))*abs(zk);
+            r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
+            alph = (dr^2+dz^2)/r0^2;
+            if alph > 2e-4
+                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                       targ(:,i), srcnorm(:,j), targnorm(:,i)), 0, 2*pi, ...
+                       'AbsTol',1e-14,'RelTol',1e-10); 
+            end
+        end
+    end
+
 end
+
+end
+
+
+
+function f = fslp (x, zk, s, t)
+    rs = s(1); zs = s(2);
+    rt = t(1); zt = t(2);
+    
+    r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    f = exp(1j*zk*r)/4/pi./r.*rs;
+end
+
+
+
+function f = fdlp (x, zk, s, t, rns)
+    rs = s(1); zs = s(2);
+    rt = t(1); zt = t(2);
+    
+    rnd = (rt.*cos(x) - rs).*rns(1) + (zt - zs).*rns(2);
+    
+    r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    f = rnd.*(1 - 1j*zk*r).*exp(1j*zk*r)/4/pi./r.^3.*rs;
+end
+
+
+
+function f = fsprime (x, zk, s, t, rnt)
+    rs = s(1); zs = s(2);
+    rt = t(1); zt = t(2);
+    
+    rnd = (rt - rs.*cos(x)).*rnt(1) + (zt - zs).*rnt(2);
+    
+    r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    f = -rnd.*(1-1j*zk*r).*exp(1j*zk*r)/4/pi./r.^3.*rs;
+end
+
+
+
+function f = fdprime (x, zk, s, t, rns, rnt)
+    rs = s(1); zs = s(2);
+    rt = t(1); zt = t(2);
+    
+    rndt = (rt - rs.*cos(x)).*rnt(1) + (zt - zs).*rnt(2);
+    rnds = (rt.*cos(x) - rs).*rns(1) + (zt - zs).*rns(2);
+    rnsnt = rns(1)*rnt(1).*cos(x) + rns(2)*rnt(2);
+    
+    r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    f = -(rnsnt.*(1j*zk.*r-1).*exp(1j*zk*r)/4/pi./r.^3 + ...
+           rndt.*rnds.*(-zk^2.*r.^2 - 3*1j*zk.*r + 3).*exp(1j*zk*r)/4/pi./r.^5).*rs;
+end
+
+
+function f = fsdiff (x, zk, s, t)
+    f = fslp(x, zk, s, t) - fslp(x, 1j*zk, s, t);
+end
+
+
+
+function f = fdprimediff (x, zk, s, t, rns, rnt)
+    f1 = fdprime(x, zk, s, t, rns, rnt); 
+    f2 = fdprime(x, 1j*zk, s, t, rns, rnt);
+    f = f1 - f2;
+end
+
 

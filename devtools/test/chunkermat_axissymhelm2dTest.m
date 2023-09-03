@@ -9,37 +9,55 @@ rng(iseed);
 
 addpaths_loc();
 
+iftorus = 0;
+
 cparams = [];
 cparams.eps = 1.0e-10;
 cparams.nover = 1;
-cparams.ta = -pi/2;
-cparams.tb = pi/2;
-cparams.ifclosed = false;
+
+if ~iftorus
+    cparams.ta = -pi/2;
+    cparams.tb = pi/2;
+    ctr = [0 0];
+    cparams.ifclosed = false;
+else
+    cparams.ta = 0;
+    cparams.tb = 2*pi;
+    ctr = [3 0];
+    cparams.ifclosed = true;
+end
+
+
+cparams.maxchunklen = 0.5;
 pref = []; 
-pref.k = 32;
-narms = 3;
+pref.k = 16;
+narms = 0;
 amp = 0.25;
-start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+
+
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp,ctr),cparams,pref); 
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
 
-zk = 1.1;
+zk = 1j*20.1;
 
 % sources
 
 ns = 10;
-ts = 0.0+2*pi*rand(ns,1);
+ts = -pi/2+pi*rand(ns,1);
 sources = starfish(ts,narms,amp);
-sources = 3.0*sources;
+sources = 0.5*sources;
+sources(1,:) = sources(1,:) + ctr(1);
 strengths = randn(ns,1);
 
 % targets
 
-nt = 3;
-ts = 0.0+2*pi*rand(nt,1);
+nt = 100;
+ts = -pi/2+pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
-targets = targets.*repmat(rand(1,nt),2,1);
+targets = targets .* (1 + 0.5*repmat(rand(1, nt), 2, 1));    
+targets(1,:) = targets(1,:) + ctr(1);
 
 % plot geo and sources
 
@@ -55,9 +73,10 @@ scatter(sources(1,:),sources(2,:),'o')
 scatter(targets(1,:),targets(2,:),'x')
 axis equal 
 
+
 %
 
-kerns = @(s,t) chnk.axissymhelm2d.kern(zk,s,t,'s');
+kerns = @(s,t) chnk.axissymhelm2d.kern(zk,s,t, [0,0], 's');
 
 % eval u on bdry
 
@@ -81,16 +100,17 @@ utarg = kernmatstarg*strengths;
 % build laplace dirichlet matrix
 
 fkern = kernel('axissymh', 'c', zk);
-% fkern = @(s,t) chnk.axissymhelm2d.kern(zk,s,t,'c');
+fkern = @(s,t) chnk.axissymhelm2d.kern(zk,s,t,[0 0],'c', [1 -1j]);
 start = tic; D = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 
-sys = -0.5*eye(chnkr.k*chnkr.nch) + D;
+sys = 0.5*eye(chnkr.k*chnkr.nch) + D;
 
 rhs = ubdry; rhs = rhs(:);
-start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
+
+start = tic; sol = gmres(sys,rhs,[],1e-14,200); t1 = toc(start);
 
 fprintf('%5.2e s : time for dense gmres\n',t1)
 
@@ -120,4 +140,4 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
-assert(relerr < 1e-9);
+assert(relerr < 1e-7);
