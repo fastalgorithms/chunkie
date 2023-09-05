@@ -266,9 +266,9 @@ if ( any(strcmpi(sings, 'hs'))  ),  K.sing = 'hs';  end
 
 % Set params
 K.params = cell(m, n);
-for k=1:m
-    for l=1:n
-        K.params{k,l} = kerns(k,l).params;
+for kk=1:m
+    for ll=1:n
+        K.params{kk,ll} = kerns(kk,ll).params;
     end
 end
 
