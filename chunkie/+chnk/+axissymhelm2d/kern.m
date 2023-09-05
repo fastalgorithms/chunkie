@@ -72,15 +72,18 @@ if strcmpi(type, 'd')
     fker = @(x, s, t, rns) fdlp(x, zk, s, t, rns);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i)*abs(zk);
-            dr = (src(1,j) - targ(1,i))*abs(zk);
-            dz = (src(2,j) - targ(2,i))*abs(zk);
+            rt = targ(1,i);
+            dr = (src(1,j) - targ(1,i));
+            dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
             if alph > 2e-4
-                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                       targ(:,i), srcnorm(:,j)), 0, 2*pi, ...
-                       'AbsTol',1e-14,'RelTol',1e-10); 
+                [x0, w0] = get_grid(zk, rt, dr, dz);
+                fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j));
+                submat(i,j) = 2*w0.'*fvals;
+                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                %       targ(:,i), srcnorm(:,j)), 0, 2*pi, ...
+                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end 
@@ -98,15 +101,18 @@ if strcmpi(type, 'sprime')
     fker = @(x, s, t, rnt) fsprime(x, zk, s, t, rnt);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i)*abs(zk);
-            dr = (src(1,j) - targ(1,i))*abs(zk);
-            dz = (src(2,j) - targ(2,i))*abs(zk);
+            rt = targ(1,i);
+            dr = (src(1,j) - targ(1,i));
+            dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
             if alph > 2e-4
-                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                       targ(:,i), targnorm(:,i)), 0, 2*pi, ...
-                       'AbsTol',1e-14,'RelTol',1e-10); 
+                [x0, w0] = get_grid(zk, rt, dr, dz);
+                fvals = fker(x0, src(:, j), targ(:,i), targnorm(:,i));
+                submat(i,j) = 2*w0.'*fvals;
+                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                %       targ(:,i), targnorm(:,i)), 0, 2*pi, ...
+                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end
@@ -118,15 +124,20 @@ if strcmpi(type, 's')
     fker = @(x, s, t) fslp(x, zk, s, t);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i)*abs(zk);
-            dr = (src(1,j) - targ(1,i))*abs(zk);
-            dz = (src(2,j) - targ(2,i))*abs(zk);
+            rt = targ(1,i);
+            dr = (src(1,j) - targ(1,i));
+            dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
-            alph = (dr^2+dz^2)/r0^2;
+            
+            alph = (dr^2 + dz^2)/r0^2;
+            
             if alph > 2e-4
-                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                       targ(:,i)), 0, 2*pi, ...
-                       'AbsTol',1e-14,'RelTol',1e-10); 
+                [x0, w0] = get_grid(zk, rt, dr, dz);
+                fvals = fker(x0, src(:, j), targ(:,i));
+                submat(i,j) = 2*w0.'*fvals;
+                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                %       targ(:,i)), 0, 2*pi, ...
+                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end
@@ -153,15 +164,18 @@ if strcmpi(type, 'c')
     fker = @(x, s, t, rns) coef(1)*fdlp(x, zk, s, t, rns) + coef(2)*fslp(x, zk, s, t);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i)*abs(zk);
-            dr = (src(1,j) - targ(1,i))*abs(zk);
-            dz = (src(2,j) - targ(2,i))*abs(zk);
+            rt = targ(1,i);
+            dr = (src(1,j) - targ(1,i));
+            dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
             if alph > 2e-4
-                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                       targ(:,i), srcnorm(:,j)), 0, 2*pi, ...
-                       'AbsTol',1e-14,'RelTol',1e-10); 
+                [x0, w0] = get_grid(zk, rt, dr, dz);
+                fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j));
+                submat(i,j) = 2*w0.'*fvals;
+                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                %       targ(:,i), srcnorm(:,j)), 0, 2*pi, ...
+                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end
@@ -194,19 +208,22 @@ if strcmpi(type, 'dprimediff')
   submat = hess(:,:,4).*nxsrc.*nxtarg - hess(:,:,5).*nysrc.*nxtarg ...
       - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
 
-
     fker = @(x, s, t, rns, rnt) fdprimediff(x, zk, s, t, rns, rnt);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i)*abs(zk);
-            dr = (src(1,j) - targ(1,i))*abs(zk);
-            dz = (src(2,j) - targ(2,i))*abs(zk);
+            rt = targ(1,i);
+            dr = (src(1,j) - targ(1,i));
+            dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
             if alph > 2e-4
-                submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                       targ(:,i), srcnorm(:,j), targnorm(:,i)), 0, 2*pi, ...
-                       'AbsTol',1e-14,'RelTol',1e-10); 
+                [x0, w0] = get_grid(zk, rt, dr, dz);
+                fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j), ...
+                    targnorm(:,i));
+                submat(i,j) = 2*w0.'*fvals;
+                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
+                %       targ(:,i), srcnorm(:,j), targnorm(:,i)), 0, 2*pi, ...
+                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end
@@ -221,7 +238,8 @@ function f = fslp (x, zk, s, t)
     rs = s(1); zs = s(2);
     rt = t(1); zt = t(2);
     
-    r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    % r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*rs.*rt.*sin(x/2).^2);
     f = exp(1j*zk*r)/4/pi./r.*rs;
 end
 
@@ -231,9 +249,10 @@ function f = fdlp (x, zk, s, t, rns)
     rs = s(1); zs = s(2);
     rt = t(1); zt = t(2);
     
-    rnd = (rt.*cos(x) - rs).*rns(1) + (zt - zs).*rns(2);
+    rnd = (rt.*cos(x)  - rs).*rns(1) + (zt - zs).*rns(2);
     
-    r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    % r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*rs.*rt.*sin(x/2).^2);
     f = rnd.*(1 - 1j*zk*r).*exp(1j*zk*r)/4/pi./r.^3.*rs;
 end
 
@@ -245,7 +264,8 @@ function f = fsprime (x, zk, s, t, rnt)
     
     rnd = (rt - rs.*cos(x)).*rnt(1) + (zt - zs).*rnt(2);
     
-    r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    % r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*rs.*rt.*sin(x/2).^2);
     f = -rnd.*(1-1j*zk*r).*exp(1j*zk*r)/4/pi./r.^3.*rs;
 end
 
@@ -259,7 +279,8 @@ function f = fdprime (x, zk, s, t, rns, rnt)
     rnds = (rt.*cos(x) - rs).*rns(1) + (zt - zs).*rns(2);
     rnsnt = rns(1)*rnt(1).*cos(x) + rns(2)*rnt(2);
     
-    r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    % r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*rs.*rt.*sin(x/2).^2);
     f = -(rnsnt.*(1j*zk.*r-1).*exp(1j*zk*r)/4/pi./r.^3 + ...
            rndt.*rnds.*(-zk^2.*r.^2 - 3*1j*zk.*r + 3).*exp(1j*zk*r)/4/pi./r.^5).*rs;
 end
@@ -277,4 +298,33 @@ function f = fdprimediff (x, zk, s, t, rns, rnt)
     f = f1 - f2;
 end
 
+
+function [xlegs, wlegs] = get_grid(zk, rt, dr, dz, ppw)
+
+    if (nargin <= 4); ppw = 30; end
+    persistent xlegloc wlegloc
+    k = 16;
+    if isempty(xlegloc) && isempty(wlegloc)
+        [xlegloc,wlegloc] = lege.exps(k);
+    end
+
+    rs = rt + dr;
+    drdiff = sqrt((rt+rs)^2  + dz^2) - sqrt(dr^2 + dz^2);
+    npan = max(ceil(abs(zk)*drdiff*ppw/2/pi/k),3);
+    
+    h = pi/npan;
+    tends = h:h:pi;
+    
+    dr0 = sqrt(dr^2 + dz^2);
+    nref = max(ceil(-log(dr0/h)/log(2)),2);
+    nref = nref + 2;
+    if (nref>20); fprintf('nref = %d   dr0 = %d\n',nref,dr0); end
+    tends = [2.^(-nref:-1)*h tends];
+    tstarts = [0 tends(1:end-1)];
+    
+    xlegs = tstarts + (xlegloc+1)/2*(tends-tstarts);
+    wlegs = wlegloc/2*(tends-tstarts);
+    xlegs = xlegs(:);
+    wlegs = wlegs(:);
+end
 

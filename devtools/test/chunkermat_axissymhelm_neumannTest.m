@@ -4,13 +4,13 @@ rng(iseed);
 
 addpaths_loc();
 
-zk = 1j*10.1;
+zk = 40.1;
 
 type = 'chnkr-star';
-% type = 'chnkr-torus';
+type = 'chnkr-torus';
 
 irep = 'rpcomb';
-irep = 'sk';
+% irep = 'sk';
 
 pref = [];
 pref.k = 16;
@@ -110,7 +110,7 @@ opts = [];
 opts.l2scale = l2scale;
 tic, A = chunkermat(chnkr, K, opts) + eye(nsys); toc
 start = tic;
-sol = gmres(A, rhs, [], 1e-14, 100);
+sol = gmres(A, rhs, [], 1e-14, 200);
 t1 = toc(start);
 
 % Compute exact solution

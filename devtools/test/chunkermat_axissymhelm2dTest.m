@@ -40,7 +40,7 @@ t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
 
-zk = 1j*20.1;
+zk = 80.1;
 
 % sources
 
