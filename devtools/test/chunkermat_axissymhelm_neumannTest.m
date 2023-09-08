@@ -44,6 +44,7 @@ scatter(targets(1,:), targets(2,:), 'x')
 axis equal
 
 
+
 % For solving exterior the Neumann boundary value problem, we use the
 % following integral equation
 %
@@ -94,6 +95,9 @@ targinfo = []; targinfo.r = chnkr.r(:,:); targinfo.n = chnkr.n(:,:);
 kernmats = Skp.eval(srcinfo, targinfo);
 ubdry = kernmats*strengths;
 
+% rvals = chnkr.r(1,:);
+% ubdry = ubdry.*rvals(:);
+
 npts = chnkr.npt;
 nsys = K.opdims(1)*npts;
 rhs = zeros(nsys, 1);
@@ -122,9 +126,9 @@ utarg = kernmatstarg*strengths;
 % Compute solution using chunkerkerneval
 % evaluate at targets and compare
 
-opts.usesmooth = false;
+opts.forceadap = true;
 opts.verb = false;
-opts.quadkgparams = {'RelTol', 1e-16, 'AbsTol', 1.0e-16};
+opts.quadkgparams = {'RelTol', 1e-8, 'AbsTol', 1.0e-8};
 
 if(l2scale)
     wts_rep = repmat(wts(:).', K.opdims(1),1);
@@ -163,7 +167,6 @@ return
 % Test fast direct solver interfaces
 
 % build sparse tridiag part
-
 
 opts.nonsmoothonly = true;
 opts.rcip = true;

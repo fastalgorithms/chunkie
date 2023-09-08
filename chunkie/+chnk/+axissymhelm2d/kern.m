@@ -77,7 +77,7 @@ if strcmpi(type, 'd')
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
-            if alph > 0
+            if alph > 2e-4
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j));
                 submat(i,j) = 2*w0.'*fvals;
@@ -106,7 +106,7 @@ if strcmpi(type, 'sprime')
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
-            if alph > 0
+            if alph > 2e-4
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i), targnorm(:,i));
                 submat(i,j) = 2*w0.'*fvals;
@@ -131,7 +131,7 @@ if strcmpi(type, 's')
             
             alph = (dr^2 + dz^2)/r0^2;
             
-            if alph > 0
+            if alph > 2e-4
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i));
                 submat(i,j) = 2*w0.'*fvals;
@@ -169,7 +169,7 @@ if strcmpi(type, 'c')
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
-            if alph > 0
+            if alph > 2e-4
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j));
                 submat(i,j) = 2*w0.'*fvals;
@@ -216,7 +216,7 @@ if strcmpi(type, 'dprimediff')
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
-            if alph > 0
+            if alph > 2e-4
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j), ...
                     targnorm(:,i));

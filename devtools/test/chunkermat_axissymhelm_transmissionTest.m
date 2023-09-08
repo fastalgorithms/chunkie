@@ -25,7 +25,7 @@ fprintf('Done building geometry\n');
 
 % source strengths
 strengths_in = randn(ns, 1);
-strengths_out = randn(nt, 1)*0;
+strengths_out = randn(nt, 1);
 
 
 % targets
@@ -128,9 +128,10 @@ utarg_in = kernmatstarg*strengths_out;
 % Compute solution using chunkerkerneval
 % evaluate at targets and compare
 
-opts.usesmooth = false;
+opts.forceadap = true;
 opts.verb = false;
-opts.quadkgparams = {'RelTol', 1e-16, 'AbsTol', 1.0e-16};
+opts.quadkgparams = {'RelTol', 1e-8, 'AbsTol', 1.0e-8};
+
 
 if(l2scale)
     wts_rep = repmat(wts(:).', K.opdims(1),1);
