@@ -73,10 +73,6 @@ intdqz = dout.intdqz;
 for j = 1:ns
     darea = src(1,j) + origin(1);
     for i = 1:nt
-        r = targ(1,i) * kabs;
-        dr = (src(1,j) - targ(1,i)) * kabs;
-        dz = (src(2,j) - targ(2,i)) * kabs;
-        %dout = chnk.axissymhelm2d.helm_axi(r, dr, dz, ifun, asym_tables);
         if (i >1 && size(int,1)<=1)
             disp("catastrophic error")
         end

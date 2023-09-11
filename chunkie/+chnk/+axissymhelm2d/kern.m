@@ -69,21 +69,18 @@ if strcmpi(type, 'd')
     % Due to lack of translation invariance in r, no sign flip needed, 
     % as gradient is computed with repsect to r'
     submat = (grad(:,:,2).*nx - grad(:,:,3).*ny);
-    fker = @(x, s, t, rns) fdlp(x, zk, s, t, rns);
+    fker = @(x, s, t, rns) fdlp(x, zk, s, t, rns, origin);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i);
+            rt = targ(1,i) + origin(1);
             dr = (src(1,j) - targ(1,i));
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
-            if alph > 2e-4
+            if alph > 2e-4 && alph < 0.2
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j));
                 submat(i,j) = 2*w0.'*fvals;
-                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                %       targ(:,i), srcnorm(:,j)), 0, 2*pi, ...
-                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end 
@@ -98,21 +95,18 @@ if strcmpi(type, 'sprime')
     submat = (grad(:,:,1).*nx + grad(:,:,3).*ny);
 
 
-    fker = @(x, s, t, rnt) fsprime(x, zk, s, t, rnt);
+    fker = @(x, s, t, rnt) fsprime(x, zk, s, t, rnt, origin);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i);
+            rt = targ(1,i) + origin(1);
             dr = (src(1,j) - targ(1,i));
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
-            if alph > 2e-4
+            if alph > 2e-4 && alph < 0.2
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i), targnorm(:,i));
                 submat(i,j) = 2*w0.'*fvals;
-                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                %       targ(:,i), targnorm(:,i)), 0, 2*pi, ...
-                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end
@@ -121,23 +115,20 @@ end
 
 if strcmpi(type, 's')
     submat = chnk.axissymhelm2d.green(zk, src, targ, origin);
-    fker = @(x, s, t) fslp(x, zk, s, t);
+    fker = @(x, s, t) fslp(x, zk, s, t, origin);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i);
+            rt = targ(1,i) + origin(1);
             dr = (src(1,j) - targ(1,i));
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             
             alph = (dr^2 + dz^2)/r0^2;
             
-            if alph > 2e-4
+            if alph > 2e-4 && alph < 0.2
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i));
                 submat(i,j) = 2*w0.'*fvals;
-                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                %       targ(:,i)), 0, 2*pi, ...
-                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end
@@ -161,21 +152,19 @@ if strcmpi(type, 'c')
     % as gradient is computed with respect to r'
     submat = coef(1)*(grad(:,:,2).*nx - grad(:,:,3).*ny) + coef(2)*submats;
    
-    fker = @(x, s, t, rns) coef(1)*fdlp(x, zk, s, t, rns) + coef(2)*fslp(x, zk, s, t);
+    fker = @(x, s, t, rns) coef(1)*fdlp(x, zk, s, t, rns, origin) + ...
+           coef(2)*fslp(x, zk, s, t, origin);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i);
+            rt = targ(1,i) + origin(1);
             dr = (src(1,j) - targ(1,i));
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
-            if alph > 2e-4
+            if alph > 2e-4 && alph < 0.2
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j));
                 submat(i,j) = 2*w0.'*fvals;
-                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                %       targ(:,i), srcnorm(:,j)), 0, 2*pi, ...
-                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end
@@ -208,22 +197,19 @@ if strcmpi(type, 'dprimediff')
   submat = hess(:,:,4).*nxsrc.*nxtarg - hess(:,:,5).*nysrc.*nxtarg ...
       - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
 
-    fker = @(x, s, t, rns, rnt) fdprimediff(x, zk, s, t, rns, rnt);
+    fker = @(x, s, t, rns, rnt) fdprimediff(x, zk, s, t, rns, rnt, origin);
     for j=1:ns
         for i=1:nt
-            rt = targ(1,i);
+            rt = targ(1,i) + origin(1);
             dr = (src(1,j) - targ(1,i));
             dz = (src(2,j) - targ(2,i));
             r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
             alph = (dr^2+dz^2)/r0^2;
-            if alph > 2e-4
+            if alph > 2e-4 && alph < 0.2
                 [x0, w0] = get_grid(zk, rt, dr, dz);
                 fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,j), ...
                     targnorm(:,i));
                 submat(i,j) = 2*w0.'*fvals;
-                % submat(i,j) = integral(@(x) fker(x, src(:,j), ...
-                %       targ(:,i), srcnorm(:,j), targnorm(:,i)), 0, 2*pi, ...
-                %       'AbsTol',1e-14,'RelTol',1e-10); 
             end
         end
     end
@@ -234,74 +220,69 @@ end
 
 
 
-function f = fslp (x, zk, s, t)
+function f = fslp (x, zk, s, t, o)
     rs = s(1); zs = s(2);
     rt = t(1); zt = t(2);
     
-    % r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
-    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*rs.*rt.*sin(x/2).^2);
-    f = exp(1j*zk*r)/4/pi./r.*rs;
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sin(x/2).^2);
+    f = exp(1j*zk*r)/4/pi./r.*(rs + o(1));
 end
 
 
 
-function f = fdlp (x, zk, s, t, rns)
+function f = fdlp (x, zk, s, t, rns, o)
     rs = s(1); zs = s(2);
     rt = t(1); zt = t(2);
     
-    rnd = (rt.*cos(x)  - rs).*rns(1) + (zt - zs).*rns(2);
+    rnd = ((rt +o(1)).*cos(x)  - (rs + o(1))).*rns(1) + (zt - zs).*rns(2);
     
-    % r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
-    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*rs.*rt.*sin(x/2).^2);
-    f = rnd.*(1 - 1j*zk*r).*exp(1j*zk*r)/4/pi./r.^3.*rs;
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sin(x/2).^2);
+    f = rnd.*(1 - 1j*zk*r).*exp(1j*zk*r)/4/pi./r.^3.*(rs + o(1));
 end
 
 
 
-function f = fsprime (x, zk, s, t, rnt)
+function f = fsprime (x, zk, s, t, rnt, o)
     rs = s(1); zs = s(2);
     rt = t(1); zt = t(2);
     
-    rnd = (rt - rs.*cos(x)).*rnt(1) + (zt - zs).*rnt(2);
-    
-    % r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
-    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*rs.*rt.*sin(x/2).^2);
-    f = -rnd.*(1-1j*zk*r).*exp(1j*zk*r)/4/pi./r.^3.*rs;
+    rnd = ((rt + o(1)) - (rs + o(1)).*cos(x)).*rnt(1) + (zt - zs).*rnt(2);   
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs + o(1)).*(rt + o(1)).*sin(x/2).^2);
+    f = -rnd.*(1-1j*zk*r).*exp(1j*zk*r)/4/pi./r.^3.*(rs + o(1));
 end
 
 
 
-function f = fdprime (x, zk, s, t, rns, rnt)
+function f = fdprime (x, zk, s, t, rns, rnt, o)
     rs = s(1); zs = s(2);
     rt = t(1); zt = t(2);
     
-    rndt = (rt - rs.*cos(x)).*rnt(1) + (zt - zs).*rnt(2);
-    rnds = (rt.*cos(x) - rs).*rns(1) + (zt - zs).*rns(2);
+    rndt = ((rt + o(1)) - (rs + o(1)).*cos(x)).*rnt(1) + (zt - zs).*rnt(2);
+    rnds = ((rt + o(1)).*cos(x)  - (rs + o(1))).*rns(1) + (zt - zs).*rns(2);
     rnsnt = rns(1)*rnt(1).*cos(x) + rns(2)*rnt(2);
     
-    % r = sqrt(rs.^2 + rt.^2 - 2*rs.*rt.*cos(x) + (zs-zt).^2);
-    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*rs.*rt.*sin(x/2).^2);
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sin(x/2).^2);
     f = -(rnsnt.*(1j*zk.*r-1).*exp(1j*zk*r)/4/pi./r.^3 + ...
-           rndt.*rnds.*(-zk^2.*r.^2 - 3*1j*zk.*r + 3).*exp(1j*zk*r)/4/pi./r.^5).*rs;
+           rndt.*rnds.*(-zk^2.*r.^2 - 3*1j*zk.*r + 3).*exp(1j*zk*r)/4/pi./r.^5).*(rs + o(1));
 end
 
 
-function f = fsdiff (x, zk, s, t)
-    f = fslp(x, zk, s, t) - fslp(x, 1j*zk, s, t);
+function f = fsdiff (x, zk, s, t, o)
+    f = fslp(x, zk, s, t, o) - fslp(x, 1j*zk, s, t, o);
 end
 
 
 
-function f = fdprimediff (x, zk, s, t, rns, rnt)
-    f1 = fdprime(x, zk, s, t, rns, rnt); 
-    f2 = fdprime(x, 1j*zk, s, t, rns, rnt);
+function f = fdprimediff (x, zk, s, t, rns, rnt, o)
+    f1 = fdprime(x, zk, s, t, rns, rnt, o); 
+    f2 = fdprime(x, 1j*zk, s, t, rns, rnt, o);
     f = f1 - f2;
 end
 
 
 function [xlegs, wlegs] = get_grid(zk, rt, dr, dz, ppw)
 
-    if (nargin <= 4); ppw = 30; end
+    if (nargin <= 4); ppw = 20; end
     persistent xlegloc wlegloc
     k = 16;
     if isempty(xlegloc) && isempty(wlegloc)
@@ -317,8 +298,6 @@ function [xlegs, wlegs] = get_grid(zk, rt, dr, dz, ppw)
     
     dr0 = sqrt(dr^2 + dz^2);
     nref = max(ceil(-log(dr0/h)/log(2)),2);
-    nref = nref + 2;
-    if (nref>20); fprintf('nref = %d   dr0 = %d\n',nref,dr0); end
     tends = [2.^(-nref:-1)*h tends];
     tstarts = [0 tends(1:end-1)];
     

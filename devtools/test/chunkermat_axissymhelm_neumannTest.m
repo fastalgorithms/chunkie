@@ -7,7 +7,9 @@ addpaths_loc();
 zk = 40.1;
 
 type = 'chnkr-star';
-type = 'chnkr-torus';
+% type = 'chnkr-torus';
+type = 'cgrph';
+% type = 'cgrph-sphere';
 
 irep = 'rpcomb';
 % irep = 'sk';
@@ -37,12 +39,12 @@ strengths = randn(ns, 1);
 figure(1)
 clf
 hold off
-plot(chnkr)
+plot(chnkr, 'k.');
 hold on
+quiver(chnkr);
 scatter(sources(1,:), sources(2,:), 'o')
 scatter(targets(1,:), targets(2,:), 'x')
 axis equal
-
 
 
 % For solving exterior the Neumann boundary value problem, we use the
@@ -112,6 +114,8 @@ end
 % Form matrix
 opts = [];
 opts.l2scale = l2scale;
+opts.rcip = true;
+opts.nsub_or_tol = 20;
 tic, A = chunkermat(chnkr, K, opts) + eye(nsys); toc
 start = tic;
 sol = gmres(A, rhs, [], 1e-14, 200);
@@ -126,7 +130,7 @@ utarg = kernmatstarg*strengths;
 % Compute solution using chunkerkerneval
 % evaluate at targets and compare
 
-opts.forceadap = true;
+opts.forcesmooth = false;
 opts.verb = false;
 opts.quadkgparams = {'RelTol', 1e-8, 'AbsTol', 1.0e-8};
 
@@ -265,13 +269,56 @@ if strcmpi(type, 'cgrph')
     chnkobj = chunkgraph(verts, edge2verts, fchnks, cparams, pref);
     chnkobj = balance(chnkobj);
     
-    ts = 0.0+2*pi*rand(ns,1);
-    sources = 3.0*[cos(ts)';sin(ts)'];
+    ts = -pi/2 + pi*rand(ns,1);
+    sources = 0.2*[cos(ts)';sin(ts)'];
     
-    ts = 0.0+2*pi*rand(nt,1);
-    targets = 0.2*[cos(ts)'; sin(ts)'];
+    ts = -pi/2 + pi*rand(nt,1);
+    targets = 3.0*[cos(ts)'; sin(ts)'];
 
 
+
+elseif strcmpi(type,'cgrph-sphere')
+    
+    
+    nverts = 2; 
+    verts = exp(-1i*pi/2 + 1i*pi*(0:(nverts-1))/(nverts-1));
+    verts = [real(verts);imag(verts)];
+
+
+    iind = 1:(nverts-1);
+    jind = 1:(nverts-1);
+
+    iind = [iind iind];
+    jind = [jind jind + 1];
+    jind(jind>nverts) = 1;
+    svals = [-ones(1,nverts-1) ones(1,nverts-1)];
+    edge2verts = sparse(iind, jind, svals, nverts-1, nverts);
+
+    cparams = [];
+    cparams.eps = 1.0e-10;
+    cparams.nover = 1;
+    cparams.ifclosed = false;
+    cparams.ta = -pi/2;
+    cparams.tb = pi/2;
+    cparams.maxchunklen = maxchunklen;
+    narms = 0;
+    amp = 0.0;
+    
+    fchnks{1} = @(t) circle(t);
+    
+    chnkobj = chunkgraph(verts, edge2verts, fchnks, cparams, pref);
+    chnkobj = balance(chnkobj);
+    
+    ts = -pi/2 + pi*rand(ns, 1);
+    sources = starfish(ts, narms, amp);
+    sources = 0.1*sources;
+
+    ts = -pi/2 + pi*rand(nt, 1);
+    targets = starfish(ts, narms, amp);
+    targets = targets .* (1 + 0.5*repmat(rand(1, nt), 2, 1));   
+
+    
+    
 elseif strcmpi(type,'chnkr-star')
     cparams = [];
     cparams.eps = 1.0e-10;
@@ -335,4 +382,19 @@ r = [(xs(:)).'; (ys(:)).'];
 d = [(xp(:)).'; (yp(:)).'];
 d2 = [(xpp(:)).'; (ypp(:)).'];
 end
+
+
+function [r,d,d2] = circle(t)
+xs = cos(-pi/4 + pi/2*t);
+ys = sin(-pi/4 + pi/2*t);
+xp = -pi*ys/2;
+yp = pi*xs/2;
+xpp = -pi*pi*xs/4;
+ypp = -pi*pi*ys/4;
+r = [(xs(:)).'; (ys(:)).'];
+d = [(xp(:)).'; (yp(:)).'];
+d2 = [(xpp(:)).'; (ypp(:)).'];
+end
+
+
 

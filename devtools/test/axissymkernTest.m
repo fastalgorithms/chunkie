@@ -7,7 +7,7 @@ pref = [];
 pref.k = 16;
 narms = 0;
 amp = 0.25;
-cparams.maxchunklen = 0.125;
+cparams.maxchunklen = 0.5;
 cparams.ta = -pi/2;
 cparams.tb = pi/2;
 
@@ -46,7 +46,7 @@ targinfo.n = chnkr.n(:,itind);
 % Real k tests
 zk = 40.1;
 
-type = 's';
+type = 'sprime';
 origin = [0 0];
 start = tic; submat = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin, type); 
 t1 = toc(start);
@@ -61,7 +61,6 @@ err1 = norm(v(:) - submat(:))/norm(submat(:));
 fprintf('Error in kernel %s  = %d \n',type,err1);
 fprintf('ratios = %d\n', max(abs(v(1:end)./submat(1:end)-1)));
 
-return
 
 
 % Now test the shifted kernel bit
@@ -70,13 +69,11 @@ chnkr_shift = chnkr;
 chnkr_shift.r(1,:) = chnkr.r(1,:) + origin_new(1);
 chnkr_shift.r(2,:) = chnkr.r(2,:) + origin_new(2);
 
+K = kernel('axissymhelm', type, zk);
 
 start = tic; submat = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin_new, type); 
+submat = K.shifted_eval(srcinfo, targinfo, origin_new);
 t1 = toc(start);
-
-submat2 = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin_new, 'dprime'); 
-submat2 = submat2 - chnk.axissymhelm2d.kern(1j*zk, srcinfo, targinfo, origin_new, 'dprime'); 
-
 
 fprintf('First call to axissymhelm2d.kern time%d\n',t1);
 

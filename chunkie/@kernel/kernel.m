@@ -277,13 +277,10 @@ if ( all(cellfun('isclass', {kerns.eval}, 'function_handle')) )
     K.eval = @eval_;
 end
 
-
-% The new kernel has eval() only if all sub-kernels have eval()
+% The new kernel has shifted_eval() only if all sub-kernels have eval()
 if ( all(cellfun('isclass', {kerns.shifted_eval}, 'function_handle')) )
     K.shifted_eval = @shifted_eval_;
 end
-
-
 
 % The new kernel has fmm() only if all sub-kernels have fmm()
 if ( all(cellfun('isclass', {kerns.fmm}, 'function_handle')) )
