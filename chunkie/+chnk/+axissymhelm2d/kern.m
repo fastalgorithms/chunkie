@@ -282,7 +282,7 @@ end
 
 function [xlegs, wlegs] = get_grid(zk, rt, dr, dz, ppw)
 
-    if (nargin <= 4); ppw = 20; end
+    if (nargin <= 4); ppw = 10; end
     persistent xlegloc wlegloc
     k = 16;
     if isempty(xlegloc) && isempty(wlegloc)

@@ -1,8 +1,5 @@
-clearvars; close all;
-iseed = 8675309;
-rng(iseed);
-
 addpaths_loc();
+clear();
 
 zk = 1.1;
 
@@ -12,7 +9,6 @@ type = 'chnkr-star';
 % type = 'cgrph-sphere';
 
 irep = 'rpcomb';
-% irep = 'sk';
 
 pref = [];
 pref.k = 16;
@@ -24,13 +20,10 @@ maxchunklen = pref.k/ppw/real(zk)*2*pi;
 [chnkr, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen);
 wts = chnkr.wts; wts = wts(:);
 
-l2scale = false;
 fprintf('Done building geometry\n');
 
 % source strengths
 strengths = randn(ns, 1);
-
-% targets
 
 
 % Plot everything
@@ -63,62 +56,45 @@ axis equal
 % Setting -S_{ik}[\sigma] + \tau = 0, and - S_{ik}'[\sigma] + \mu=0, 
 % we have the following system of integral equations
 
-% Set up kernels
-Skp    = kernel('axissymhelm', 'sprime', zk);
-Sk     = kernel('axissymhelm', 's', zk);
-Dk     = kernel('axissymhelm', 'd', zk);
-
-Z = kernel.zeros();
-
-
-if strcmpi(irep,'rpcomb')
-    Sik    = kernel('axissymhelm', 's', 1i*zk);
-    Sikp   = kernel('axissymhelm', 'sprime', 1i*zk);
-    Dkdiff = kernel('axissymhelmdiff', 'dprime', [zk 1i*zk]);
-    alpha = 1;
-    c1 = -1/(0.5 + 1i*alpha*0.25);
-    c2 = -1i*alpha/(0.5 + 1i*alpha*0.25);
-    c3 = -1;
-    K = [ c1*Skp  c2*Dkdiff c2*Sikp ;
-       c3*Sik  Z        Z        ;
-       c3*Sikp Z        Z        ];
-    K = kernel(K);
-    Keval = c1*kernel([Sk 1i*alpha*Dk Z]);
-else
-    K = -2*Skp;
-    Keval = -2*Sk;
-end
 
 % Set up boundary data
-
+Skp    = kernel('axissymhelm', 'sprime', zk);
 srcinfo  = []; srcinfo.r = sources; 
 targinfo = []; targinfo.r = chnkr.r(:,:); targinfo.n = chnkr.n(:,:);
 kernmats = Skp.eval(srcinfo, targinfo);
 ubdry = kernmats*strengths;
 
-% rvals = chnkr.r(1,:);
-% ubdry = ubdry.*rvals(:);
 
-npts = chnkr.npt;
-nsys = K.opdims(1)*npts;
-rhs = zeros(nsys, 1);
+[Skpmat, Sikmat, Sikpmat, Dkdiffmat] = get_neumann_matrices(zk, chnkr);
 
+alpha = 1;
+c1 = -1/(0.5 + 1i*alpha*0.25);
+c2 = c1*1i*alpha;
+c3 = -1;
 
-if(l2scale)
-    rhs(1:K.opdims(1):end) = ubdry.*sqrt(wts);
-else
-    rhs(1:K.opdims(1):end) = ubdry;
-end
-
-% Form matrix
-opts = [];
-opts.l2scale = l2scale;
-opts.rcip = true;
-opts.nsub_or_tol = 20;
-tic, A = chunkermat(chnkr, K, opts) + eye(nsys); toc
+n = chnkr.npt;
 start = tic;
-sol = gmres(A, rhs, [], 1e-14, 200);
+M = c1*(Skpmat + 1i*alpha*(Dkdiffmat*Sikmat + Sikpmat*Sikpmat)) + eye(n);
 t1 = toc(start);
+fprintf('Time taken for matrix matrix product:%d \n',t1);
+
+rhs = ubdry;
+start = tic; sol = M\rhs; t1 = toc(start);
+fprintf('Time taken in solve: %d\n',t1);
+
+start = tic; Minv = inv(M); t1 = toc(start);
+fprintf('Time taken in computing inverse: %d\n',t1);
+
+start = tic; sol2 = Minv*rhs; t1 = toc(start);
+fprintf('Time taken in computing solution with precomp inverse: %d\n',t1);
+
+siksol = Sikmat*sol;
+
+%% Begin postprocessing
+
+
+Sk    = kernel('axissymhelm', 's', zk);
+Dk    = kernel('axissymhelm', 'd', zk);
 
 % Compute exact solution
 srcinfo  = []; srcinfo.r  = sources;
@@ -126,18 +102,13 @@ targinfo = []; targinfo.r = targets;
 kernmatstarg = Sk.eval(srcinfo, targinfo);
 utarg = kernmatstarg*strengths;
 
-% Compute solution using chunkerkerneval
-% evaluate at targets and compare
 
-opts.forcesmooth = false;
-opts.verb = false;
-opts.quadkgparams = {'RelTol', 1e-8, 'AbsTol', 1.0e-8};
+Keval = c1*kernel([Sk 1i*alpha*Dk]);
 
-if(l2scale)
-    wts_rep = repmat(wts(:).', K.opdims(1),1);
-    wts_rep = wts_rep(:);
-    sol = sol./sqrt(wts_rep);
-end
+
+soluse = zeros(2*n,1);
+soluse(1:2:end) = sol;
+soluse(2:2:end) = siksol;
 
 if isa(chnkr, 'chunkgraph')
     % Collapse cgrph into chnkrtotal
@@ -148,69 +119,90 @@ else
 end
 
 
-
 start = tic;
-Dsol = chunkerkerneval(chnkrtotal, Keval, sol, targets, opts);
+Dsol = chunkerkerneval(chnkrtotal, Keval, soluse, targets);
 t2 = toc(start);
-fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n', t2)
+fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n', t2);
 
-
-wchnkr = chnkrtotal.wts;
-wchnkr = repmat(wchnkr(:).', K.opdims(1), 1);
+wchnkr = chnkrtotal.wts; wchnkr = wchnkr(:);
 relerr  = norm(utarg-Dsol) / (sqrt(chnkrtotal.nch)*norm(utarg));
 relerr2 = norm(utarg-Dsol, 'inf') / dot(abs(sol(:)), wchnkr(:));
 fprintf('relative frobenius error %5.2e\n', relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n', relerr2);
 
-return
+ 
+ 
+ 
+function [Skpmat, Sikmat, Sikpmat, Dkdiffmat] = get_neumann_matrices(zk, chnkr)
+    
+    Skp    = kernel('axissymhelm', 'sprime', zk);
+    Sik    = kernel('axissymhelm', 's', 1i*zk);
+    Sikp   = kernel('axissymhelm', 'sprime', 1i*zk);
+    Dkdiff = kernel('axissymhelmdiff', 'dprime', [zk 1i*zk]);
+    
+    opts = [];
+    opts.nonsmoothonly = true;
+    opts.rcip = false;
+    opts.nsub_or_tol = 20;
+    start = tic;
+    
+    kernels = cell(1,4);
+    kernels{1} = Skp;
+    kernels{2} = Sik;
+    kernels{3} = Sikp;
+    kernels{4} = Dkdiff;
+    
+    spmats = cell(1,4);
+    
+    parfor imat=1:4
+        spmats{imat} = chunkermat(chnkr, kernels{imat}, opts); 
+    end
+    Skp_spmat = spmats{1}; 
+    Sik_spmat = spmats{2}; 
+    Sikp_spmat = spmats{3};
+    Dkdiff_spmat = spmats{4};
+    
+    t1 = toc(start);
+    fprintf('Time taken in sparse matrix generation: %d\n',t1);
+    
+    
+    nthd = maxNumCompThreads;
+    nbsize = ceil(chnkr.npt/nthd);
+    Skp_cellmat = cell(nthd,1);
+    Sik_cellmat = cell(nthd,1);
+    Sikp_cellmat =  cell(nthd,1);
+    Dkdiff_cellmat = cell(nthd,1);
+    l2scale = false;
+    start = tic;
+    nn = chnkr.npt;
+    parfor i=1:nthd 
+        opdims = [1 1];
+        iind = ((i-1)*nbsize+1):min(nn,i*nbsize);
+        Skp_cellmat{i} = chnk.flam.kernbyindex(iind, 1:nn, chnkr, ... 
+                Skp, opdims, Skp_spmat);
+            
+            
+        Sik_cellmat{i} = chnk.flam.kernbyindex(iind, 1:nn, chnkr, ... 
+                Sik, opdims, Sik_spmat);
+            
+            
+        Sikp_cellmat{i} = chnk.flam.kernbyindex(iind, 1:nn, chnkr, ... 
+                Sikp, opdims, Sikp_spmat);
+            
+            
+        Dkdiff_cellmat{i} = chnk.flam.kernbyindex(iind, 1:nn, chnkr, ... 
+                Dkdiff, opdims, Dkdiff_spmat);
+    end
+    
+    Skpmat = vertcat(Skp_cellmat{:});
+    Sikmat = vertcat(Sik_cellmat{:});
+    Sikpmat = vertcat(Sikp_cellmat{:});
+    Dkdiffmat = vertcat(Dkdiff_cellmat{:});
+    t1 = toc(start);
+    fprintf('Time taken in matrix entry generation: %d\n',t1);
+end 
 
 
-
-
-% Test fast direct solver interfaces
-
-% build sparse tridiag part
-
-opts.nonsmoothonly = true;
-opts.rcip = true;
-start = tic; spmat = chunkermat(chnkr, K, opts); t1 = toc(start);
-fprintf('%5.2e s : time to build tridiag\n',t1)
-
-
-spmat = spmat + speye(nsys);
-
-% test matrix entry evaluator
-start = tic; 
-opdims = K.opdims;
-sys2 = chnk.flam.kernbyindex(1:nsys, 1:nsys, chnkr, K, opdims, ...
-    spmat, l2scale);
-
-
-t1 = toc(start);
-
-fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
-
-err2 = norm(sys2-A,'fro')/norm(A,'fro');
-fprintf('%5.2e   : fro error of build \n',err2);
-
-% test fast direct solver
-opts.ifproxy = false;
-F = chunkerflam(chnkr,K,1.0,opts);
-
-start = tic; sol2 = rskelf_sv(F,rhs); t1 = toc(start);
-
-if(l2scale)
-    wts_rep = repmat(wts(:).', K.opdims(1),1);
-    wts_rep = wts_rep(:);
-    sol2 = sol2./sqrt(wts_rep);
-end
-
-
-fprintf('%5.2e s : time for rskelf_sv \n',t1)
-
-err = norm(sol-sol2,'fro')/norm(sol,'fro');
-
-fprintf('difference between fast-direct and iterative %5.2e\n',err)
 
 
 function [chnkobj, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen)
