@@ -216,6 +216,75 @@ if strcmpi(type, 'dprimediff')
 
 end
 
+if strcmpi(type, 'neu_rpcomb')
+  targnorm = targinfo.n;
+  srcnorm = srcinfo.n;
+  [~,gk,~,sikmat,gik,~,~,~,hessdiff] = ...
+      chnk.axissymhelm2d.green_neu_all(zk, src, targ, origin);
+  alpha = 1;
+  if (nargin == 6); alpha = varargin{1}; end
+  if (size(alpha) > 1)
+    warning('Incorrect dimensions for coefs, using first component');
+    alpha = alpha(1);
+  end
+    
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+
+  spmat = (gk(:,:,1).*nxtarg + gk(:,:,3).*nytarg);
+  spikmat = (gik(:,:,1).*nxtarg + gik(:,:,3).*nytarg);
+  dkdiffmat = hessdiff(:,:,4).*nxsrc.*nxtarg ...
+      - hessdiff(:,:,5).*nysrc.*nxtarg ...
+      - hessdiff(:,:,6).*nxsrc.*nytarg + hessdiff(:,:,3).*nysrc.*nytarg;
+  
+  % Assumes r,z are specified in meters, and, k is appropriately scaled
+  rtmax = max(targ(1,:));
+  rsmax = max(src(1,:));
+  rmax = max(rtmax,rsmax);
+  dr = 2e-4;
+  dz = 2e-4;
+  ppw = 10;
+  [x0, w0] = get_grid(zk, rmax, dr, dz, ppw);
+  sxhalf = sin(x0/2);
+  sxhalf2 = sxhalf.*sxhalf;
+  cx = 1- 2*sxhalf2;
+  for j=1:ns
+        for i=1:nt
+            rt = targ(1,i) + origin(1);
+            dr = (src(1,j) - targ(1,i));
+            dz = (src(2,j) - targ(2,i));
+            r0   = rt^2+(rt+dr)^2+dz^2;
+            alph = (dr^2+dz^2)/r0;
+            if alph > 2e-4 && alph < 0.2
+                [fkp, fik, fikp, fkdiff] = get_neu_kers(zk, cx, sxhalf2, ...
+                          src(:,j), targ(:,i), srcnorm(:,j), targnorm(:,i), origin);
+                spmat(i,j) = 2.*w0'*fkp;
+                sikmat(i,j) = 2.*w0'*fik;
+                spikmat(i,j) = 2.*w0'*fikp;
+                dkdiffmat(i,j) = 2.*w0'*fkdiff; 
+            end
+        end
+  end
+  submat = zeros(3*nt, 3*ns);
+  c1 = -1.0/(0.5 + 0.25*1i*alpha);
+  c2 = 1i*alpha*c1;
+  submat(1:3:end, 1:3:end) = c1*spmat;
+  submat(1:3:end, 2:3:end) = c2*dkdiffmat;
+  submat(1:3:end, 3:3:end) = c2*spikmat;
+  submat(2:3:end, 1:3:end) = -sikmat;
+  submat(3:3:end, 1:3:end) = -spikmat;
+  
+  
+  
+
+
+
+
+    
+end
+
 end
 
 
@@ -256,14 +325,50 @@ end
 function f = fdprime (x, zk, s, t, rns, rnt, o)
     rs = s(1); zs = s(2);
     rt = t(1); zt = t(2);
+
+    sxhalf = sin(x/2);
+    sxhalf2 = sxhalf.*sxhalf;
+    cx = 1-2*sxhalf2;
     
-    rndt = ((rt + o(1)) - (rs + o(1)).*cos(x)).*rnt(1) + (zt - zs).*rnt(2);
-    rnds = ((rt + o(1)).*cos(x)  - (rs + o(1))).*rns(1) + (zt - zs).*rns(2);
-    rnsnt = rns(1)*rnt(1).*cos(x) + rns(2)*rnt(2);
+    rndt = ((rt + o(1)) - (rs + o(1)).*cx).*rnt(1) + (zt - zs).*rnt(2);
+    rnds = ((rt + o(1)).*cx  - (rs + o(1))).*rns(1) + (zt - zs).*rns(2);
+    rnsnt = rns(1)*rnt(1).*cx + rns(2)*rnt(2);
     
-    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sin(x/2).^2);
-    f = -(rnsnt.*(1j*zk.*r-1).*exp(1j*zk*r)/4/pi./r.^3 + ...
-           rndt.*rnds.*(-zk^2.*r.^2 - 3*1j*zk.*r + 3).*exp(1j*zk*r)/4/pi./r.^5).*(rs + o(1));
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sxhalf2);
+    f = -(rnsnt.*(1j*zk.*r-1)./r.^3 + ...
+           rndt.*rnds.*(-zk^2.*r.^2 - 3*1j*zk.*r + 3)./r.^5).*exp(1j*zk*r)/4/pi.*(rs + o(1));
+end
+
+function [fkp, fik, fikp, fkdiff] = get_neu_kers(zk, cx, sxhalf2, s, t, rns, rnt, o)
+
+    rs = s(1); zs = s(2);
+    rt = t(1); zt = t(2);
+    
+        
+    rndt = ((rt + o(1)) - (rs + o(1)).*cx).*rnt(1) + (zt - zs).*rnt(2);
+    rnds = ((rt + o(1)).*cx  - (rs + o(1))).*rns(1) + (zt - zs).*rns(2);
+    rnsnt = rns(1)*rnt(1).*cx + rns(2)*rnt(2);
+    
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sxhalf2);
+    rinv = 1.0./r;
+    rinv2 = rinv.*rinv;
+    rinv3 = rinv.*rinv2;
+    rinv5 = rinv3.*rinv2;
+    
+    afac = 1/4/pi.*(rs + o(1));
+    efac = exp(1j*zk*r).*afac;
+    efac_i = exp(-zk*r).*afac;
+    
+    fkp = -rndt.*(1-1j*zk*r).*rinv3.*efac;
+    
+    fik = efac_i.*rinv;
+    fikp = -rndt.*(1 + zk*r).*rinv3.*efac_i;
+    
+    
+    fkdiff = -(rnsnt.*(1j*zk.*r-1).*rinv3 + ...
+           rndt.*rnds.*(-zk^2.*r.^2 - 3*1j*zk.*r + 3).*rinv5).*efac;
+    fkdiff = fkdiff + (rnsnt.*(-zk.*r-1).*rinv3 + ...
+           rndt.*rnds.*(zk^2.*r.^2 + 3*zk.*r + 3).*rinv5).*efac_i;
 end
 
 

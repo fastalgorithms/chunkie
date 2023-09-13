@@ -77,6 +77,19 @@ switch lower(type)
         obj.shifted_eval = @(s,t,o) chnk.axissymhelm2d.kern(zk, s, t, o, 'c', coefs);
         obj.fmm = [];
         obj.sing = 'log';
+     case {'neu_rpcomb'}
+        obj.type = 'neu_rpcomb';
+        if ( nargin < 3 )
+            warning('Missing coefficient of 1i*D. Defaulting to 1.');
+            coefs = 1;
+        end
+        obj.eval = @(s,t) chnk.axissymhelm2d.kern(zk, s, t, [0,0], 'neu_rpcomb', coefs);
+        obj.shifted_eval = @(s,t,o) chnk.axissymhelm2d.kern(zk, s, t, o, 'neu_rpcomb', coefs);
+        obj.fmm = [];
+        obj.sing = 'log';
+        obj.opdims = [3 3];
+        obj.params.c1 = -1.0/(0.5 + 0.25*1i*coefs);
+        obj.params.c2 = -1i*coefs/(0.5 + 0.25*1i*coefs);
 
     otherwise
         error('Unknown axissym Helmholtz kernel type ''%s''.', type);

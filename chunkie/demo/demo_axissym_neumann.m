@@ -1,7 +1,7 @@
 addpaths_loc();
 clear();
 
-zk = 1.1;
+zk = 6*pi;
 
 type = 'chnkr-star';
 % type = 'chnkr-torus';
@@ -66,6 +66,8 @@ ubdry = kernmats*strengths;
 
 
 [Skpmat, Sikmat, Sikpmat, Dkdiffmat] = get_neumann_matrices(zk, chnkr);
+[Skpmat2, Sikmat2, Sikpmat2, Dkdiffmat2] = get_neumann_matrices2(zk, chnkr);
+
 
 alpha = 1;
 c1 = -1/(0.5 + 1i*alpha*0.25);
@@ -135,6 +137,7 @@ fprintf('relative l_inf/l_1 error %5.2e\n', relerr2);
  
 function [Skpmat, Sikmat, Sikpmat, Dkdiffmat] = get_neumann_matrices(zk, chnkr)
     
+    nn = chnkr.npt;
     Skp    = kernel('axissymhelm', 'sprime', zk);
     Sik    = kernel('axissymhelm', 's', 1i*zk);
     Sikp   = kernel('axissymhelm', 'sprime', 1i*zk);
@@ -154,17 +157,18 @@ function [Skpmat, Sikmat, Sikpmat, Dkdiffmat] = get_neumann_matrices(zk, chnkr)
     
     spmats = cell(1,4);
     
-    parfor imat=1:4
+    for imat=1:4
         spmats{imat} = chunkermat(chnkr, kernels{imat}, opts); 
     end
     Skp_spmat = spmats{1}; 
     Sik_spmat = spmats{2}; 
     Sikp_spmat = spmats{3};
     Dkdiff_spmat = spmats{4};
+
+
     
     t1 = toc(start);
     fprintf('Time taken in sparse matrix generation: %d\n',t1);
-    
     
     nthd = maxNumCompThreads;
     nbsize = ceil(chnkr.npt/nthd);
@@ -175,7 +179,7 @@ function [Skpmat, Sikmat, Sikpmat, Dkdiffmat] = get_neumann_matrices(zk, chnkr)
     l2scale = false;
     start = tic;
     nn = chnkr.npt;
-    parfor i=1:nthd 
+    for i=1:nthd 
         opdims = [1 1];
         iind = ((i-1)*nbsize+1):min(nn,i*nbsize);
         Skp_cellmat{i} = chnk.flam.kernbyindex(iind, 1:nn, chnkr, ... 
@@ -200,7 +204,47 @@ function [Skpmat, Sikmat, Sikpmat, Dkdiffmat] = get_neumann_matrices(zk, chnkr)
     Dkdiffmat = vertcat(Dkdiff_cellmat{:});
     t1 = toc(start);
     fprintf('Time taken in matrix entry generation: %d\n',t1);
-end 
+end
+
+
+function [Skpmat, Sikmat, Sikpmat, Dkdiffmat] = get_neumann_matrices2(zk, chnkr)
+    
+ 
+    Nkerns = kernel('axissymhelm', 'neu_rpcomb', zk);
+    
+    opts = [];
+    opts.nonsmoothonly = true;
+    opts.rcip = false;
+    opts.nsub_or_tol = 20;
+    start = tic;
+    
+    spmat = chunkermat(chnkr, Nkerns, opts);
+    
+    
+    t1 = toc(start);
+    fprintf('Time taken in sparse matrix generation (new): %d\n',t1);
+    
+    nsys = 3*chnkr.npt;
+    nthd = maxNumCompThreads;
+    nbsize = ceil(nsys/nthd);
+    N_cellmat = cell(nthd,1);
+    start = tic;
+    for i=1:nthd 
+        opdims = Nkerns.opdims;
+        iind = ((i-1)*nbsize+1):min(nsys,i*nbsize);
+        N_cellmat{i} = chnk.flam.kernbyindex(iind, 1:nsys, chnkr, ... 
+                Nkerns, opdims, spmat);           
+    end
+    
+    Nmat = vertcat(N_cellmat{:});
+    Skpmat = Nmat(1:3:end, 1:3:end)/Nkerns.params.c1;
+    Dkdiffmat = Nmat(1:3:end, 2:3:end)/Nkerns.params.c2;
+    Sikpmat = Nmat(1:3:end, 3:3:end)/Nkerns.params.c2;
+    Sikmat = -Nmat(2:3:end, 1:3:end);
+    t1 = toc(start);
+    fprintf('Time taken in matrix entry generation (new): %d\n',t1);
+end
+
 
 
 
