@@ -238,34 +238,41 @@ if strcmpi(type, 'neu_rpcomb')
   dkdiffmat = hessdiff(:,:,4).*nxsrc.*nxtarg ...
       - hessdiff(:,:,5).*nysrc.*nxtarg ...
       - hessdiff(:,:,6).*nxsrc.*nytarg + hessdiff(:,:,3).*nysrc.*nytarg;
-  
-  % Assumes r,z are specified in meters, and, k is appropriately scaled
-  rtmax = max(targ(1,:));
-  rsmax = max(src(1,:));
-  rmax = max(rtmax,rsmax);
-  dr = 2e-4;
-  dz = 2e-4;
-  ppw = 10;
-  [x0, w0] = get_grid(zk, rmax, dr, dz, ppw);
-  sxhalf = sin(x0/2);
-  sxhalf2 = sxhalf.*sxhalf;
-  cx = 1- 2*sxhalf2;
-  for j=1:ns
-        for i=1:nt
-            rt = targ(1,i) + origin(1);
-            dr = (src(1,j) - targ(1,i));
-            dz = (src(2,j) - targ(2,i));
-            r0   = rt^2+(rt+dr)^2+dz^2;
-            alph = (dr^2+dz^2)/r0;
-            if alph > 2e-4 && alph < 0.2
-                [fkp, fik, fikp, fkdiff] = get_neu_kers(zk, cx, sxhalf2, ...
-                          src(:,j), targ(:,i), srcnorm(:,j), targnorm(:,i), origin);
-                spmat(i,j) = 2.*w0'*fkp;
-                sikmat(i,j) = 2.*w0'*fik;
-                spikmat(i,j) = 2.*w0'*fikp;
-                dkdiffmat(i,j) = 2.*w0'*fkdiff; 
+
+  rt = repmat(targ(1,:).',1,ns); rt = rt(:);
+  rs = repmat(src(1,:),nt,1); rs = rs(:);
+  dr = rs - rt;
+  rt = rt + origin(1);
+  dz = repmat(src(2,:),nt,1)-repmat(targ(2,:).',1,ns); dz = dz(:);
+  r0 = rt.^2 + (rt + dr).^2 + dz.^2;
+  alphs = (dr.^2 + dz.^2)./r0;
+  iflag = (alphs > 2e-4).*(alphs < 0.2);
+  if sum(iflag)
+
+      % Assumes r,z are specified in meters, and, k is appropriately scaled
+      rtmax = max(targ(1,:));
+      rsmax = max(src(1,:));
+      rmax = max(rtmax,rsmax);
+      dr0 = 2e-4;
+      dz0 = 2e-4;
+      ppw = 10;
+      [x0, w0] = get_grid(zk, rmax, dr0, dz0, ppw);
+      iflag = reshape(iflag, [nt, ns]);
+      sxhalf = sin(x0/2);
+      sxhalf2 = sxhalf.*sxhalf;
+      cx = 1- 2*sxhalf2;
+      for j=1:ns
+            for i=1:nt
+                if iflag(i,j)
+                    [fkp, fik, fikp, fkdiff] = get_neu_kers(zk, cx, sxhalf2, ...
+                              src(:,j), targ(:,i), srcnorm(:,j), targnorm(:,i), origin);
+                    spmat(i,j) = 2.*w0'*fkp;
+                    sikmat(i,j) = 2.*w0'*fik;
+                    spikmat(i,j) = 2.*w0'*fikp;
+                    dkdiffmat(i,j) = 2.*w0'*fkdiff; 
+                end
             end
-        end
+      end
   end
   submat = zeros(3*nt, 3*ns);
   c1 = -1.0/(0.5 + 0.25*1i*alpha);
