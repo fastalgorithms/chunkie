@@ -77,6 +77,7 @@ function [obj] = balance(obj)
                 pinds(ind) = pinds(ind)+1;
             end
             chnkr = refine(chnkr,opts);
+            chnkr = sort(chnkr);
         end
         obj.echnks(vedge(ind)) = chnkr;
         
