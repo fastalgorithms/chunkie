@@ -118,10 +118,16 @@ end
 % smooth for sufficiently far, adaptive otherwise
 
 %optsflag = []; optsflag.fac = opts_use.fac;
-optsflag = [];
+rho = 1.8;
+optsflag = [];  optsflag.rho = rho;
 flag = flagnear_rectangle(chnkr,targs,optsflag);
 
-fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens,targs, ...
+npoly = chnkr.k*2;
+nlegnew = chnk.ellipse_oversample(rho,npoly,opts_use.eps);
+nlegnew = max(nlegnew,chnkr.k);
+
+[chnkr2,dens2] = upsample(chnkr,nlegnew,dens);
+fints = chunkerkerneval_smooth(chnkr2,kern,opdims,dens2,targs, ...
     flag,opts_use);
 
 fints = fints + chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
