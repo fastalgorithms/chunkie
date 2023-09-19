@@ -25,7 +25,7 @@ function [obj] = balance(obj)
     echnks = obj.echnks;
     
     nverts = size(obj.verts,2);
-    
+    % Loop over all vertices in the cgraph structure
     for iii=1:nverts
       
     vedge = vstruc{iii}{1};
@@ -33,13 +33,13 @@ function [obj] = balance(obj)
     
     ifdone = false;
     while (~ifdone)
-    %%%%%%% find the arclengths of each panel incident to the edge
+    % find the arclengths of each panel on the edge incident to 
+    % the vertex 
     
     parcl = zeros([numel(vedge),1]);
     pinds = zeros([numel(vedge),1]);
     
-    [xleg16,wleg16,~,~] = lege.exps(16);
-    
+    [~,wleg16,~,~] = lege.exps(16);
     for ii=1:numel(vedge)
         if (sign(vsign(ii)) == -1)
             ds =  obj.echnks(vedge(ii)).d(:,:,1);
@@ -52,7 +52,7 @@ function [obj] = balance(obj)
         h  =  obj.echnks(vedge(ii)).h(pinds(ii));
         k  =  obj.echnks(vedge(ii)).k;
         if (k ~=16)
-             [xleg,wleg,~,~] = lege.exps(k);
+             [~,wleg,~,~] = lege.exps(k);
         else
             wleg = wleg16;
         end    
@@ -61,11 +61,14 @@ function [obj] = balance(obj)
         parcl(ii) = arc;
           
     end    
-    
+    % find the ratio of the max to min panels of all edges
+    % incident at the vertex and refine the panel with the 
+    % max panel length
     amin = min(parcl);
     [amax,ind] = max(parcl);
     ind = ind(1);
     n2ref = floor(log(amax/amin)/log(2));
+    
     
     if (n2ref >0)
         chnkr = obj.echnks(vedge(ind));
@@ -73,10 +76,16 @@ function [obj] = balance(obj)
         opts.lvlrfac = 'a';
         for ilev = 1:n2ref
             opts.splitchunks=([pinds(ind)]);
+            % If it is the last chunk, then update pinds to 
+            % ensure that the last chunk is refined at 
+            % subsequent levels
             if (pinds(ind)>1)
                 pinds(ind) = pinds(ind)+1;
             end
+            % resort chnkr in case both end points need
+            % to be refined in the wrong order
             chnkr = refine(chnkr,opts);
+            chnkr = sort(chnkr);
         end
         obj.echnks(vedge(ind)) = chnkr;
         
