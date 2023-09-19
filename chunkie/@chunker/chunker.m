@@ -16,6 +16,7 @@ classdef chunker
         adj
         h
         n
+        wts
         data
     end
     properties(Access=public)
@@ -25,6 +26,7 @@ classdef chunker
         adjstor
         hstor
         nstor
+        wtsstor
         datastor
     end        
     properties(SetAccess=private)
@@ -69,6 +71,7 @@ classdef chunker
             obj.rstor = zeros(dim,k,nchstor);
             obj.dstor = zeros(dim,k,nchstor);
             obj.nstor = zeros(dim,k,nchstor);
+            obj.wtsstor = zeros(k,nchstor);
             obj.d2stor = zeros(dim,k,nchstor);
             obj.adjstor = zeros(2,nchstor);
             obj.hstor = zeros(nchstor,1);
@@ -96,6 +99,9 @@ classdef chunker
         function n = get.n(obj)
             n = obj.nstor(:,:,1:obj.nch);
         end
+        function wts = get.wts(obj)
+            wts = obj.wtsstor(:,1:obj.nch);
+        end
         function data = get.data(obj)
             data = obj.datastor(:,:,1:(obj.nch*obj.hasdata));
         end
@@ -108,6 +114,9 @@ classdef chunker
         function obj = set.d(obj,val)
             obj.dstor(:,:,1:obj.nch) = val;
         end
+        function obj = set.wts(obj,val)
+            obj.wtsstor(:,1:obj.nch) = val;
+        end        
         function obj = set.n(obj,val)
             obj.nstor(:,:,1:obj.nch) = val;
         end        
@@ -166,6 +175,7 @@ classdef chunker
             rtemp = obj.r;
             dtemp = obj.d;
             ntemp = obj.n;
+            wtstemp = obj.wts;
             d2temp = obj.d2;
             adjtemp = obj.adj;
             htemp = obj.h;
@@ -173,6 +183,7 @@ classdef chunker
             obj.rstor = zeros(obj.dim,obj.k,nchstornew);
             obj.dstor = zeros(obj.dim,obj.k,nchstornew);
             obj.nstor = zeros(obj.dim,obj.k,nchstornew);
+            obj.wtsstor = zeros(obj.k,nchstornew);
             obj.d2stor = zeros(obj.dim,obj.k,nchstornew);
             obj.adjstor = zeros(2,nchstornew);
             obj.hstor = zeros(nchstornew,1);
@@ -180,6 +191,7 @@ classdef chunker
             obj.r = rtemp;
             obj.d = dtemp;
             obj.n = ntemp;
+            obj.wts = wtstemp;
             obj.d2 = d2temp;
             obj.adj = adjtemp;
             obj.h = htemp;
@@ -229,7 +241,7 @@ classdef chunker
                     toleft = ldist < rdist;
                 end
                 
-                lens = chunklen(obj,newvert,obj.wstor); 
+                lens = chunklen(obj,newvert); 
                 maxlen = max(lens(:));
                 tol = obj.verttol; tol = max(tol,maxlen*tol);
                 

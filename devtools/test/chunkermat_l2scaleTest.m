@@ -55,7 +55,7 @@ u1nbdr = f_u1n(chnkr);
 
 % the incident field at the boundary,
 
-wts = weights(chnkr);
+wts = chnkr.wts;
 wts = wts(:);
 swts = sqrt(wts);
 npt = chnkr.npt;

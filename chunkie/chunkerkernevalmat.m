@@ -3,7 +3,7 @@ function mat = chunkerkernevalmat(chnkr,kern,targs,opts)
 % the chunk geometry to the value of the convolution of the given
 % integral kernel with the density at the specified target points
 %
-% Syntax: mat = chunkerkerneval(chnkr,kern,targs,opts)
+% Syntax: mat = chunkerkernevalmat(chnkr,kern,targs,opts)
 %
 % Input:
 %   chnkr - chunker object description of curve
@@ -140,7 +140,7 @@ srcinfo = []; srcinfo.r = chnkr.r(:,:); srcinfo.n = chnkr.n(:,:);
 srcinfo.d = chnkr.d(:,:); srcinfo.d2 = chnkr.d2(:,:);
 
 mat = kern(srcinfo,targinfo);
-wts = weights(chnkr);
+wts = chnkr.wts;
 wts2 = repmat( (wts(:)).', opdims(2), 1);
 wts2 = ( wts2(:) ).';
 mat = mat.*wts2;

@@ -27,7 +27,7 @@ t1 = toc(start);
 fprintf('%5.2e s : time to build geo\n',t1)
 
 
-wchnkr = weights(chnkr);
+wchnkr = chnkr.wts;
 wchnkr = wchnkr(:);
 
 % sources

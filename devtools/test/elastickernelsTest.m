@@ -56,7 +56,7 @@ sysmat2 = sysmat + diag*eye(2*chnkr.npt);
 t = []; t.r = chnkr.r(:,:); 
 t.n = chnkr.n(:,:); t.d = chnkr.d(:,:);
 
-wts = weights(chnkr); wts = wts(:); 
+wts = chnkr.wts; wts = wts(:); 
 wts2 = [wts(:).'; wts(:).']; wts2 = wts2(:);
 
 ubdry = elasticlet(lam,mu,src,t,f);
@@ -86,7 +86,7 @@ function [pde_errs,pdedalt_errs,div_errs,trac_errs,gid_err,daltgrad_errs] = ...
 t = []; t.r = chnkr.r(:,:); 
 t.n = chnkr.n(:,:); t.d = chnkr.d(:,:);
 
-wts = weights(chnkr); wts = wts(:); 
+wts = chnkr.wts; wts = wts(:); 
 wts2 = [wts(:).'; wts(:).']; wts2 = wts2(:);
 
 [u,trac] = elasticlet(lam,mu,s,t,f);

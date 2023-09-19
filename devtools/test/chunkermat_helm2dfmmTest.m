@@ -99,7 +99,7 @@ err = norm(sol-sol2,'fro')/norm(sol2,'fro');
 fprintf('difference between direct and iterative %5.2e\n',err)
 
 % evaluate at targets and compare
-wchnkr = weights(chnkr);
+wchnkr = chnkr.wts;
 
 % evaluate at targets using FMM and compare
 iffmm = 0;

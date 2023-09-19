@@ -22,7 +22,7 @@ if strcmpi(type,'smooth')
     d2 = trap.d2;
     n = trap.n;
 
-    wts = weights(trap);
+    wts = trap.wts;
     wts2 = repmat(wts,opdims(2),1);
     wts2 = wts2(:);
     
@@ -131,7 +131,7 @@ d = trap.d;
 n = trap.n;
 d2 = trap.d2;
 
-wts = weights(trap);
+wts = trap.wts;
 wts2 = repmat((wts(:)).',opdims(2),1);
 wts2 = wts2(:);
 

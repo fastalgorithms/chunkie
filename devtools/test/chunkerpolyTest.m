@@ -73,7 +73,7 @@ plot3(x(:),y(:),z(:))
 
 barb_area_2 = area(chnkr2);
 err_area = abs(barb_area-barb_area_2)/abs(barb_area);
-barb_length_2 = sum(sum(weights(chnkr2)));
+barb_length_2 = sum(sum(chnkr2.wts));
 err_length = abs(barb_length -barb_length_2)/abs(barb_length);
 fprintf('%5.2e : diff between true/computed area\n',err_area);
 fprintf('%5.2e : diff between true/computed length\n',err_length);

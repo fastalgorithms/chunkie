@@ -237,20 +237,19 @@ mmin = [inf;inf];
 for i=1:nchunkers
     chnkr = chnkrs(i);
     opdim = opdims_mat(2,1,i);
-    wtsi = weights(chnkr); wtsi = wtsi(:);
     xi = chnkr.r(:,:);
     for j=1:opdim
-        wts(icollocs(i)+j-1:opdim:icollocs(i+1)-1) = wtsi;
         xflam(:,icollocs(i)+j-1:opdim:icollocs(i+1)-1) = xi;
     end
-
     mmax = max([mmax,max(chnkr)],[],2);
     mmin = min([mmin,min(chnkr)],[],2);
 end
 
 width = max(mmax-mmin);
 
-matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrs,wts,kern,opdims_mat,sp,l2scale);
+chnkrtotal = merge(chnkrs);
+
+matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrs,kern,opdims_mat,sp,l2scale);
 
 if ~useproxy
     if strcmpi(flamtype,'rskelf')
@@ -283,7 +282,7 @@ end
 
 if strcmpi(flamtype,'rskelf')
     ifaddtrans = true;
-    pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkrs,wts, ...
+    pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkrs, ...
         kern,opdims_mat,pr,ptau,pw,pin,ifaddtrans,l2scale);
     F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun,struct('verb',verb,...
         'lvlmax',lvlmax));
@@ -292,7 +291,7 @@ end
 if strcmpi(flamtype,'rskel') 
     warning('chunkerflam: proxyr has not adapted for the multiple chunker case yet')
     pxyfunr = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-        ctr,chnkr,wts,kern,opdims,pr,ptau,pw,pin);
+        ctr,chnkr,kern,opdims,pr,ptau,pw,pin);
     F = rskel(matfun,xflam,xflam,occ,rank_or_tol,pxyfunr);
 end
 	 
