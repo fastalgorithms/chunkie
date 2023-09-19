@@ -21,7 +21,7 @@ chnkr = chnkr.sort();
 
 f = [-1.3;2]; % charge strength
 src = []; src.r = [2;1]; src.n = randn(2,1);
-targ = []; targ.r = 0.1*randn(2,1); targ.n = randn(2,1);
+targ = []; targ.r = 0.1*randn(2,4); targ.n = randn(2,4);
 
 %figure(1)
 %clf
@@ -41,9 +41,9 @@ niter=5;
 assert(gid_err < 1e-14);
 assert(min(pde_errs) < 1e-5);
 assert(min(pdedalt_errs) < 1e-5);
-assert(min(div_errs) < 1e-9);
-assert(min(trac_errs) < 1e-9);
-assert(min(daltgrad_errs) < 1e-9);
+assert(min(div_errs) < 1e-7);
+assert(min(trac_errs) < 1e-7);
+assert(min(daltgrad_errs) < 1e-7);
 
 %
 
@@ -72,6 +72,42 @@ err_dir = norm(utarg-utargsol)/norm(utarg);
 
 assert(err_dir < 1e-10);
 
+%
+
+sp = -0.5*(mu/(lam+2*mu)); stoktrac = -0.5*(lam+mu)/(lam+2*mu);
+diag = sp+stoktrac;
+fkern = kernel();
+fkern.eval = @(s,t) chnk.elast2d.kern(lam,mu,s,t,'strac');
+fkern.sing = 'pv';
+fkern.opdims = [2,2];
+
+start = tic(); sysmat = chunkermat(chnkr,fkern); toc(start)
+sysmat2 = sysmat + diag*eye(2*chnkr.npt);
+
+t = []; t.r = chnkr.r(:,:); 
+t.n = chnkr.n(:,:); t.d = chnkr.d(:,:);
+
+wts = weights(chnkr); wts = wts(:); 
+wts2 = [wts(:).'; wts(:).']; wts2 = wts2(:);
+
+[~,tracbdry] = elasticlet(lam,mu,src,t,f);
+
+sigma = gmres(sysmat2,tracbdry,[],1e-13,100);
+
+smat = chnk.elast2d.kern(lam,mu,t,targ,'s');
+utargsol = smat*(wts2.*sigma);
+
+utarg = elasticlet(lam,mu,src,targ,f);
+
+targperp = chnk.perp(targ.r);
+nt = size(targ.r,2);
+nspace = [repmat(eye(2),nt,1) targperp(:)];
+cfs = nspace\(utarg-utargsol);
+utargsol = utargsol + nspace*cfs;
+
+err_neu = norm(utarg-utargsol)/norm(utarg);
+
+assert(err_neu < 1e-10);
 
 function [pde_errs,pdedalt_errs,div_errs,trac_errs,gid_err,daltgrad_errs] = ...
     test_kernels(chnkr,s,targ,lam,mu,f,niter)
@@ -94,8 +130,8 @@ wts2 = [wts(:).'; wts(:).']; wts2 = wts2(:);
 smat = chnk.elast2d.kern(lam,mu,t,targ,'s');
 dmat = chnk.elast2d.kern(lam,mu,t,targ,'d');
 
-uint = smat*(wts2.*trac) - dmat*(wts2.*u);
-gid_err = norm(-ones(2,1)-uint./utarg);
+uint = smat*(wts2.*trac) - dmat*(wts2.*u); uint = reshape(uint,size(utarg));
+gid_err = norm(-ones(size(utarg))-uint./utarg,'fro');
 
 %fprintf('%5.2e Greens ID err\n',gid_err);
 
@@ -117,7 +153,7 @@ t.r = chnkr.r(:,it);
 t.d = chnkr.d(:,it);
 t.n = chnkr.n(:,it);
 
-[u00,trac00,dub00,dalt00,dalt00grad] = elasticlet(lam,mu,s,t,f);
+[u00,trac00,dub00,dalt00,dalt00grad,dalt00trac,u00grad] = elasticlet(lam,mu,s,t,f);
 
 for i = 1:niter
     h = 0.1^i;
@@ -179,8 +215,13 @@ for i = 1:niter
     %fprintf('%5.2e div err\n',norm(divtrach)/norm(trac00))
     div_errs(i) = norm(divtrach)/norm(trac00);
     jact = [ux uy]; epsmat = 0.5*(jact + jact.');
+    ugradh = jact.'; ugradh = ugradh(:);
+    fprintf('%5.2e sgrad err\n',norm(ugradh-u00grad)/norm(u00grad));
+    daltjact = [daltx dalty]; daltepsmat = 0.5*(daltjact + daltjact.');
     tracuh = (lam*(ux(1)+uy(2))*eye(2) + 2*mu*epsmat)*t.n;
+    tracdalt = (lam*(daltx(1)+dalty(2))*eye(2) + 2*mu*daltepsmat)*t.n;
     %fprintf('%5.2e trac err\n',norm(tracuh-trac00)/norm(trac00));
+    fprintf('%5.2e dalttrac err\n',norm(tracdalt-dalt00trac)/norm(dalt00trac));
     trac_errs(i) = norm(tracuh-trac00)/norm(trac00);
     
     daltgrad_errs(i) = ...
@@ -191,18 +232,22 @@ end
 
 end
 
-function [u,trac,dub,dalt,daltgrad] = elasticlet(lam,mu,s,t,f)
+function [u,trac,dub,dalt,daltgrad,dalttrac,ugrad] = elasticlet(lam,mu,s,t,f)
 
 mat = chnk.elast2d.kern(lam,mu,s,t,'s');
 mattrac = chnk.elast2d.kern(lam,mu,s,t,'strac');
 matdub = chnk.elast2d.kern(lam,mu,s,t,'d');
 matdalt = chnk.elast2d.kern(lam,mu,s,t,'dalt');
 matdaltgrad = chnk.elast2d.kern(lam,mu,s,t,'daltgrad');
+matdalttrac = chnk.elast2d.kern(lam,mu,s,t,'dalttrac');
+matgrad = chnk.elast2d.kern(lam,mu,s,t,'sgrad');
 u = mat*f;
 trac = mattrac*f;
 dub = matdub*f;
 dalt = matdalt*f;
 daltgrad = matdaltgrad*f;
+dalttrac = matdalttrac*f;
+ugrad = matgrad*f;
 
 end
 

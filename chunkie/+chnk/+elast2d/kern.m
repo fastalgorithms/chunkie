@@ -39,6 +39,7 @@ function [mat] = kern(lam,mu,s,t,type)
 %                kernel is 4 x 2, where entries are organized as
 %                          Daltgrad = [grad Dalt(1,1) grad Dalt(1,2) 
 %                                      grad Dalt(2,1) grad Dalt(2,2)] 
+%   * type == 'Dalttrac', traction of alternative (smooth) double layer 
 %               
 % outpts 
 % - mat: (2 nt) x (2 ns) matrix 
@@ -80,6 +81,37 @@ if (strcmpi(type,'strac'))
         kron(y.*dirx./r2,[0 -1; 1 0]) + ...
         kron(rdotv./r2,[1 0; 0 1]));
     mat = term1+term2;
+end
+if (strcmpi(type,'sgrad'))
+    mat = zeros(4*m,2*n);
+    tmp = beta*x./r2;
+    mat(1:4:end,1:2:end) = tmp;
+    mat(3:4:end,2:2:end) = tmp;
+    tmp = beta*y./r2;
+    mat(2:4:end,1:2:end) = tmp;
+    mat(4:4:end,2:2:end) = tmp;
+    
+    % x der of x^2/ r^2
+    tmp = gamma*(2*r2.*x - x.^2.*(2*x))./r4;
+    mat(1:4:end,1:2:end) = mat(1:4:end,1:2:end) + tmp;
+    % y der of x^2/ r^2
+    tmp = gamma*(-x.^2.*(2*y))./r4;
+    mat(2:4:end,1:2:end) = mat(2:4:end,1:2:end) + tmp;
+    % x der of xy/ r^2
+    tmp = gamma*(r2.*y-x.*y.*(2*x))./r4;
+    mat(3:4:end,1:2:end) = mat(3:4:end,1:2:end) + tmp;
+    mat(1:4:end,2:2:end) = mat(1:4:end,2:2:end) + tmp;
+    % y der of xy/ r^2
+    tmp = gamma*(r2.*x-x.*y.*(2*y))./r4;
+    mat(4:4:end,1:2:end) = mat(4:4:end,1:2:end) + tmp;
+    mat(2:4:end,2:2:end) = mat(2:4:end,2:2:end) + tmp;
+    % x der of y^2/ r^2
+    tmp = gamma*(- y.^2.*(2*x))./r4;
+    mat(3:4:end,2:2:end) = mat(3:4:end,2:2:end) + tmp;
+    % y der of y^2/ r^2
+    tmp = gamma*(2*r2.*y-y.^2.*(2*y))./r4;
+    mat(4:4:end,2:2:end) = mat(4:4:end,2:2:end) + tmp;
+    
 end
 if (strcmpi(type,'d'))
     dirx = s.n(1,:); dirx = dirx(:).';
@@ -148,6 +180,61 @@ if (strcmpi(type,'daltgrad'))
     aij_xl = -zeta*(-4*y.^3.*rdotv./r6+(2*y.*rdotv+y.^2.*diry)./r4) ...
         -2*eta*(diry./r2 - 2*rdotv.*y./r4);
     mat(4:4:end,2:2:end) = aij_xl;
+
+end
+
+if (strcmpi(type,'dalttrac'))
+    dirx = s.n(1,:); dirx = dirx(:).';
+    diry = s.n(2,:); diry = diry(:).';
+    rdotv = x.*dirx + y.*diry;
+    r6 = r4.*r2;
+    
+    matg = zeros(4*m,2*n);
+    
+    % i = 1, j = 1, l = 1
+    aij_xl = -zeta*(-4*x.^3.*rdotv./r6+(2*x.*rdotv+x.^2.*dirx)./r4) ...
+        -2*eta*(dirx./r2 - 2*rdotv.*x./r4);
+    matg(1:4:end,1:2:end) = aij_xl;
+
+    % i = 1, j = 1, l = 2
+    aij_xl = -zeta*(-4*x.^2.*y.*rdotv./r6+(x.^2.*diry)./r4) ...
+        -2*eta*(diry./r2 - 2*rdotv.*y./r4);
+    matg(2:4:end,1:2:end) = aij_xl;
+
+    % i = 2, j = 1, l = 1
+    aij_xl = -zeta*(-4*x.^2.*y.*rdotv./r6+(y.*rdotv+x.*y.*dirx)./r4);
+    matg(3:4:end,1:2:end) = aij_xl;
+
+    % i = 2, j = 1, l = 2
+    aij_xl = -zeta*(-4*x.*y.^2.*rdotv./r6+(x.*rdotv+x.*y.*diry)./r4);
+    matg(4:4:end,1:2:end) = aij_xl;
+
+    % i = 1, j = 2, l = 1
+    aij_xl = -zeta*(-4*x.^2.*y.*rdotv./r6+(y.*rdotv+x.*y.*dirx)./r4);
+    matg(1:4:end,2:2:end) = aij_xl;
+
+    % i = 1, j = 2, l = 2
+    aij_xl = -zeta*(-4*x.*y.^2.*rdotv./r6+(x.*rdotv + x.*y.*diry)./r4);
+    matg(2:4:end,2:2:end) = aij_xl;
+
+    % i = 2, j = 2, l = 1
+    aij_xl = -zeta*(-4*y.^2.*x.*rdotv./r6+(y.^2.*dirx)./r4) ...
+        -2*eta*(dirx./r2 - 2*rdotv.*x./r4);
+    matg(3:4:end,2:2:end) = aij_xl;
+
+    % i = 2, j = 2, l = 2
+    aij_xl = -zeta*(-4*y.^3.*rdotv./r6+(2*y.*rdotv+y.^2.*diry)./r4) ...
+        -2*eta*(diry./r2 - 2*rdotv.*y./r4);
+    matg(4:4:end,2:2:end) = aij_xl;
+
+    mat = zeros(2*m,2*n);
+    n1 = t.n(1,:); n1 = n1(:); n2 = t.n(2,:); n2 = n2(:);
+    tmp = matg(1:4:end,:)+matg(4:4:end,:);
+    mat(1:2:end,:) = lam*n1.*tmp;
+    mat(2:2:end,:) = lam*n2.*tmp;
+    tmp = mu*(matg(2:4:end,:) + matg(3:4:end,:));
+    mat(1:2:end,:) = mat(1:2:end,:) + tmp.*n2 + 2*mu*matg(1:4:end,:).*n1;
+    mat(2:2:end,:) = mat(2:2:end,:) + tmp.*n1 + 2*mu*matg(4:4:end,:).*n2;
 
 end
 
