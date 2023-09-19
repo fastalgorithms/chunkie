@@ -5,7 +5,7 @@ clear all
 iseed = 1234;
 rng(iseed,'twister');
 clc
-addpaths_loc();
+%addpaths_loc();
 
 % pde parameters 
 
@@ -19,8 +19,8 @@ cparams = []; cparams.eps=1e-10;
 chnkr = chunkerfunc(@(t) starfish(t),cparams);
 chnkr = chnkr.sort();
 
-f = [-1.3;2]; % charge strength
-src = []; src.r = [2;1]; src.n = randn(2,1);
+f = [-1.3;2;0.8;-1.2]; % charge strength
+src = []; src.r = [2 3.1; 1 -1.1]; src.n = randn(2,2);
 targ = []; targ.r = 0.1*randn(2,4); targ.n = randn(2,4);
 
 %figure(1)
@@ -64,13 +64,21 @@ ubdry = elasticlet(lam,mu,src,t,f);
 sigma = sysmat2\ubdry;
 
 dmatalt = chnk.elast2d.kern(lam,mu,t,targ,'dalt');
+dmataltgrad = chnk.elast2d.kern(lam,mu,t,targ,'daltgrad');
+dmatalttrac = chnk.elast2d.kern(lam,mu,t,targ,'dalttrac');
 utargsol = dmatalt*(wts2.*sigma);
+ugradtargsol = dmataltgrad*(wts2.*sigma);
+tractargsol = dmatalttrac*(wts2.*sigma);
 
-utarg = elasticlet(lam,mu,src,targ,f);
+[utarg,tractarg,~,~,~,~,ugradtarg] = elasticlet(lam,mu,src,targ,f);
 
 err_dir = norm(utarg-utargsol)/norm(utarg);
+err_dir_grad = norm(ugradtarg-ugradtargsol)/norm(ugradtarg);
+err_dir_trac = norm(tractarg-tractargsol)/norm(tractarg);
 
 assert(err_dir < 1e-10);
+assert(err_dir_grad < 1e-9);
+assert(err_dir_trac < 1e-9);
 
 %
 
@@ -142,7 +150,7 @@ pdedalt_errs = zeros(niter,1);
 div_errs = zeros(niter,1);
 trac_errs = zeros(niter,1);
 daltgrad_errs = zeros(niter,1);
-is = randi(chnkr.npt);
+is = randi(chnkr.npt,numel(f)/2,1);
 s = [];
 s.r = chnkr.r(:,is);
 s.d = chnkr.d(:,is);
@@ -156,17 +164,18 @@ t.n = chnkr.n(:,it);
 [u00,trac00,dub00,dalt00,dalt00grad,dalt00trac,u00grad] = elasticlet(lam,mu,s,t,f);
 
 for i = 1:niter
-    h = 0.1^i;
+    hh = 0.1^i;
+    h = hh*ones(1,length(it));
     t01 = t; t10 = t; t0m1 = t; tm10=t;
     t11 = t; t1m1 = t; tm1m1 = t; tm11=t;
-    t01.r(2) = t01.r(2)+h;
-    t10.r(1) = t10.r(1)+h;
-    t0m1.r(2) = t0m1.r(2)-h;
-    tm10.r(1) = tm10.r(1)-h;
-    t11.r(:) = t11.r(:)+h;
-    t1m1.r(:) = t1m1.r(:)+[h;-h];
-    tm1m1.r(:) = tm1m1.r(:)-h;
-    tm11.r(:) = tm11.r(:)+[-h;h];
+    t01.r(2,:) = t01.r(2,:)+h;
+    t10.r(1,:) = t10.r(1,:)+h;
+    t0m1.r(2,:) = t0m1.r(2,:)-h;
+    tm10.r(1,:) = tm10.r(1,:)-h;
+    t11.r = t11.r+h;
+    t1m1.r = t1m1.r+[h;-h];
+    tm1m1.r = tm1m1.r-h;
+    tm11.r = tm11.r+[-h;h];
     [u01,trac01,dub01,dalt01] = elasticlet(lam,mu,s,t01,f);
     [u10,trac10,dub10,dalt10] = elasticlet(lam,mu,s,t10,f);
     [u0m1,trac0m1,dub0m1,dalt0m1] = elasticlet(lam,mu,s,t0m1,f);
@@ -176,32 +185,32 @@ for i = 1:niter
     [um1m1,tracm1m1,dubm1m1,daltm1m1] = elasticlet(lam,mu,s,tm1m1,f);
     [um11,tracm11,dubm11,daltm11] = elasticlet(lam,mu,s,tm11,f);
     
-    lapu = (u01+u10+u0m1+um10-4*u00)/h^2;
-    ux = (u10-um10)/(2*h);
-    uy = (u01-u0m1)/(2*h);
-    uxx = (u10+um10-2*u00)/h^2;
-    uyy = (u01+u0m1-2*u00)/h^2;
-    uxy = (u11-um11-u1m1+um1m1)/(4*h^2);
+    lapu = (u01+u10+u0m1+um10-4*u00)/hh^2;
+    ux = (u10-um10)/(2*hh);
+    uy = (u01-u0m1)/(2*hh);
+    uxx = (u10+um10-2*u00)/hh^2;
+    uyy = (u01+u0m1-2*u00)/hh^2;
+    uxy = (u11-um11-u1m1+um1m1)/(4*hh^2);
     uyx = uxy;
 
-    lapdub = (dub01+dub10+dub0m1+dubm10-4*dub00)/h^2;
-    dubx = (dub10-dubm10)/(2*h);
-    duby = (dub01-dub0m1)/(2*h);
-    dubxx = (dub10+dubm10-2*dub00)/h^2;
-    dubyy = (dub01+dub0m1-2*dub00)/h^2;
-    dubxy = (dub11-dubm11-dub1m1+dubm1m1)/(4*h^2);
+    lapdub = (dub01+dub10+dub0m1+dubm10-4*dub00)/hh^2;
+    dubx = (dub10-dubm10)/(2*hh);
+    duby = (dub01-dub0m1)/(2*hh);
+    dubxx = (dub10+dubm10-2*dub00)/hh^2;
+    dubyy = (dub01+dub0m1-2*dub00)/hh^2;
+    dubxy = (dub11-dubm11-dub1m1+dubm1m1)/(4*hh^2);
     dubyx = dubxy;
     
-    lapdalt = (dalt01+dalt10+dalt0m1+daltm10-4*dalt00)/h^2;
-    daltx = (dalt10-daltm10)/(2*h);
-    dalty = (dalt01-dalt0m1)/(2*h);
-    daltxx = (dalt10+daltm10-2*dalt00)/h^2;
-    daltyy = (dalt01+dalt0m1-2*dalt00)/h^2;
-    daltxy = (dalt11-daltm11-dalt1m1+daltm1m1)/(4*h^2);
+    lapdalt = (dalt01+dalt10+dalt0m1+daltm10-4*dalt00)/hh^2;
+    daltx = (dalt10-daltm10)/(2*hh);
+    dalty = (dalt01-dalt0m1)/(2*hh);
+    daltxx = (dalt10+daltm10-2*dalt00)/hh^2;
+    daltyy = (dalt01+dalt0m1-2*dalt00)/hh^2;
+    daltxy = (dalt11-daltm11-dalt1m1+daltm1m1)/(4*hh^2);
     daltyx = daltxy;
     
-    tracx = (trac10-tracm10)/(2*h);
-    tracy = (trac01-trac0m1)/(2*h);
+    tracx = (trac10-tracm10)/(2*hh);
+    tracy = (trac01-trac0m1)/(2*hh);
     
     pdeuh = mu*lapu + (lam+mu)*[uxx(1)+uxy(2);uyx(1)+uyy(2)];
     %fprintf('%5.2e pde err\n',norm(pdeuh)/norm(u00));

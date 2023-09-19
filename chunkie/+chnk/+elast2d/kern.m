@@ -58,8 +58,8 @@ gamma = -(lam+mu)/(4*pi*mu*(lam+2*mu));
 eta = mu/(2*pi*(lam+2*mu));
 zeta = (lam+mu)/(pi*(lam+2*mu));
 
-n = size(s.r,2);
-m = size(t.r,2);
+n = size(s.r(:,:),2);
+m = size(t.r(:,:),2);
 
 x = (t.r(1,:)).' - s.r(1,:);
 y = (t.r(2,:)).' - s.r(2,:);
