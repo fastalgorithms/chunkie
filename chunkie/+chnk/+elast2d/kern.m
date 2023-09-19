@@ -33,6 +33,10 @@ function [mat] = kern(lam,mu,s,t,type)
 % - type: string 
 %   * type == 'S', single layer kernel
 %   * type == 'Strac', traction of single layer kernel
+%   * type == 'Sgrad', gradient of single layer kernel
+%                kernel is 4 x 2, where entries are organized as
+%                          Sgrad = [grad S(1,1) grad S(1,2) 
+%                                   grad S(2,1) grad S(2,2)] 
 %   * type == 'D', double layer kernel
 %   * type == 'Dalt', alternative (smooth) double layer kernel  
 %   * type == 'Daltgrad', gradient of alternative (smooth) double layer 
