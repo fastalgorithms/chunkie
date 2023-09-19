@@ -63,7 +63,7 @@ icont = false;
 if usefmm_final
    try
        eps_local = 1e-3;
-       wchnkr = weights(chnkr);
+       wchnkr = chnkr.wts;
        dens1_fmm = ones(chnkr.k*chnkr.nch,1).*wchnkr(:);
        pgt = 1;
        vals1 = chnk.lap2d.fmm(eps_local,chnkr,pts,'d',dens1_fmm,pgt);
@@ -77,17 +77,17 @@ end
 if ~usefmm_final || icont
     kernd = kernel('lap','d');
     dens1 = ones(chnkr.k,chnkr.nch);
-    wts = weights(chnkr);
+    wts = chnkr.wts;
 
     opdims = [1 1];
 
     if useflam_final
         xflam1 = chnkr.r(:,:);
-        matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr,wts,kernd,opdims);
+        matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr,kernd,opdims);
         [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
 
         pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr,wts,kernd,opdims,pr,ptau,pw,pin);
+            ctr,chnkr,kernd,opdims,pr,ptau,pw,pin);
         F = ifmm(matfun,pts,xflam1,200,1e-14,pxyfun);
         vals1 = ifmm_mv(F,dens1(:),matfun);
     else
@@ -108,7 +108,7 @@ xx(:,chnkr.npt+1:chnkr.npt+nt) = pts;
 pt2chnk = repmat(1:chnkr.nch,chnkr.k,1);
 
 chunklens = zeros(chnkr.nch,1);
-ws = weights(chnkr);
+ws = chnkr.wts;
 chunklens(:) = sum(ws,1);
 lmax = max(chunklens)*3/chnkr.k;
 

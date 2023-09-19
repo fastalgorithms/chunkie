@@ -1,5 +1,5 @@
 
-function [Kpxy,nbr] = proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
+function [Kpxy,nbr] = proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr,kern,opdims, ...
     pr,ptau,pw,pin,rd)
 %PROXYFUNR proxy function utility for kernels defined on chunkers,
 % rectangular version
@@ -26,7 +26,6 @@ function [Kpxy,nbr] = proxyfunr(rc,rx,slf,nbr,l,ctr,chnkr,whts,kern,opdims, ...
 %
 % ~ other inputs ~
 % chnkr - chunker object 
-% whts - smooth weights on chunker object
 % kern - should be a kernel function of the form 
 %             submat = kern(src, targ, srctau, targtau)
 % opdims - dimensions of operator, opdims(1) output dim, opdims(2) input
@@ -48,6 +47,8 @@ lmax = max(l);
 pxy = bsxfun(@plus,pr*lmax,ctr(:));
 pw = lmax*pw;
 pw2 = repmat(pw(:).',opdims(2),1); pw2 = pw2(:);
+
+whts = chnkr.wts;
 
 if strcmpi(rc,'c')
 
@@ -91,7 +92,7 @@ else
 
     rslf = rx(:,slfuni_ind);
     dslf = zeros(size(rslf));
-    if nargin > 14
+    if nargin > 13
         dslf = rd(:,slfuni);
     end
     

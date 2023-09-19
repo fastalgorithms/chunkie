@@ -134,4 +134,7 @@ chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
 % Set normals
 chnkr.nstor(:,:,1:nch) = normals(chnkr);
 
+% Set weights
+chnkr.wtsstor(:,1:nch) = weights(chnkr);
+
 end

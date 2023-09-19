@@ -21,5 +21,8 @@ obj.r = obj.r(:,k:-1:1,:);
 obj.d = -obj.d(:,k:-1:1,:);
 obj.d2 = obj.d2(:,k:-1:1,:);
 obj.adj = obj.adj([2 1],:);
+obj.n = -obj.n(:,k:-1:1,:);
+obj.wts = obj.wts(k:-1:1,:);
+
 
 end

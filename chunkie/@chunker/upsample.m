@@ -39,6 +39,7 @@ chnkrup.adj= chnkr.adj;
 chnkrup.h= chnkr.h;
 
 chnkrup.n = normals(chnkrup);
+chnkrup.wts = weights(chnkrup);
 
 if chnkr.hasdata
     ndata = chnkr.size(data,1);

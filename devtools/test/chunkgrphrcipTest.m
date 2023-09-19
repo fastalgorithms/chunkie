@@ -127,6 +127,7 @@ opts.rcip = true;
 [sysmat] = chunkermat(cgrph,fkern,opts);
 sysmat = sysmat + eye(size(sysmat,2));
 
+
 % generate some targets...
 
 xs = -2:0.01:2;

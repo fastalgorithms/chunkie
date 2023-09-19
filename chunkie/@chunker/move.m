@@ -16,5 +16,7 @@ obj.d2 = reshape(d2new,rsize);
 
 nnew = rotmat*(obj.n(:,:));
 obj.n = reshape(nnew,rsize);
+
+obj.wts = weights(obj);
  
 end

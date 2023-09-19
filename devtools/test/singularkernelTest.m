@@ -55,7 +55,7 @@ unbdry = sum(chnkr.n(:,:).*gradubdry,1);
 tau = -chnk.perp(chnkr.n(:,:));
 utbdry = sum(tau(:,:).*gradubdry,1);
 
-wtsc = weights(chnkr);
+wtsc = chnkr.wts;
 sprimemat = chunkermat(chnkr,kernsprime);
 staumat = chunkermat(chnkr,kernstau);
 sys = 0.5*eye(chnkr.npt) + sprimemat + ones(chnkr.npt,1)*(wtsc(:).');
