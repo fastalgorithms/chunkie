@@ -273,6 +273,7 @@ classdef chunker
             obj.datastor = [];
         end
         
+        [obj2,f2] = upsample(obj,kup,f)
         [obj,info] = sort(obj)
         [rn,dn,d2n,dist,tn,ichn] = nearest(obj,ref,ich,opts,u,xover,aover)
         obj = reverse(obj)

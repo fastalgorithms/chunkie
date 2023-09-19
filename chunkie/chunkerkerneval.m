@@ -16,10 +16,15 @@ function fints = chunkerkerneval(chnkr,kern,dens,targs,opts)
 % Optional input:
 %   opts - structure for setting various parameters
 %       opts.flam - if = true, use flam utilities. to be replaced by the 
-%                   opts.accel flag. (true)
+%                   opts.forceflam flag. 
+%                   opts.flam supercedes opts.accel, if
+%                   both are true, then flam will be used. (false)
 %       opts.accel - if = true, use specialized fmm if defined 
-%                   for the kernel or use a generic FLAM fmm to accelerate
-%                   the smooth part of the eval. if false do direct. (true)
+%                   for the kernel, if it doesnt exist or if too few 
+%                   sources/targets, or if false, 
+%                   do direct. (true)
+%       opts.forcefmm - if = true, use specialized fmm if defined,
+%                   independent of the number of sources/targets. (false)
 %       opts.forcesmooth - if = true, only use the smooth integration rule
 %                           (false)
 %       opts.forceadap - if = true, only use adaptive quadrature (false)
@@ -66,16 +71,16 @@ opts_use = [];
 opts_use.forcesmooth = false;
 opts_use.forceadap = false;
 opts_use.forcepquad = false;
-opts_use.flam = true;
+opts_use.flam = false;
 opts_use.accel = true;
+opts_use.forcefmm = false;
 opts_use.fac = 1.0;
 opts_use.eps = 1e-12;
 if isfield(opts,'forcesmooth'); opts_use.forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); opts_use.forceadap = opts.forceadap; end
 if isfield(opts,'forcepquad'); opts_use.forcepquad = opts.forcepquad; end
 if isfield(opts,'flam')
-    opts_use.accel = opts.flam;
-    warning('flam flag to be deprecated, use accel instead\n'); 
+    opts_use.flam = opts.flam;
 end
 if isfield(opts,'accel'); opts_use.accel = opts.accel; end
 if isfield(opts,'fac'); opts_use.fac = opts.fac; end
@@ -113,10 +118,16 @@ end
 % smooth for sufficiently far, adaptive otherwise
 
 %optsflag = []; optsflag.fac = opts_use.fac;
-optsflag = [];
+rho = 1.8;
+optsflag = [];  optsflag.rho = rho;
 flag = flagnear_rectangle(chnkr,targs,optsflag);
 
-fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens,targs, ...
+npoly = chnkr.k*2;
+nlegnew = chnk.ellipse_oversample(rho,npoly,opts_use.eps);
+nlegnew = max(nlegnew,chnkr.k);
+
+[chnkr2,dens2] = upsample(chnkr,nlegnew,dens);
+fints = chunkerkerneval_smooth(chnkr2,kern,opdims,dens2,targs, ...
     flag,opts_use);
 
 fints = fints + chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
@@ -171,7 +182,9 @@ else
     kerneval = kern;
 end
 
-flam = true;
+flam = false;
+accel = true;
+forcefmm = false;
 
 if nargin < 6
     flag = [];
@@ -180,6 +193,8 @@ if nargin < 7
     opts = [];
 end
 if isfield(opts,'flam'); flam = opts.flam; end
+if isfield(opts,'accel'); accel = opts.accel; end
+if isfield(opts,'forcefmm'); forcefmm = opts.forcefmm; end
 
 k = chnkr.k;
 nch = chnkr.nch;
@@ -196,7 +211,30 @@ targinfo = []; targinfo.r = targs;
 
 % assume smooth weights are good enough
 
-if ~flam
+% Sequence of checks, first see ifflam is set as it supercedes
+% everything, if not flam, then check to see if the fmm
+% exists and whether it should be used
+% The number of sources set to 200 is currently a hack, 
+% must be set based on opdims, accuracy, and kernel type
+% considerations
+
+imethod = 'direct';
+if flam
+    imethod = 'flam';
+elseif isa(kern,'kernel') && ~isempty(kern.fmm)
+    if forcefmm
+        imethod = 'fmm';
+    elseif accel
+        if nt > 200 || chnkr.npt > 200
+            imethod = 'fmm';
+         end
+     end
+end
+
+    
+    
+
+if strcmpi(imethod,'direct')
     % do dense version
     if isempty(flag)
         % nothing to ignore
@@ -255,7 +293,7 @@ else
     wts = chnkr.wts;
     wts = wts(:);
     
-    if ~isa(kern,'kernel') || isempty(kern.fmm)
+    if strcmpi(imethod,'flam')
         xflam1 = chnkr.r(:,:);
         xflam1 = repmat(xflam1,opdims(2),1);
         xflam1 = reshape(xflam1,chnkr.dim,numel(xflam1)/chnkr.dim);
