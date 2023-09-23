@@ -3,7 +3,7 @@
 % tests the flagging routine based on rectangles
 %
 
-%addpaths_loc();
+addpaths_loc();
 ngrid = 100;
 chnkr = chunkerfunc(@(t) starfish(t));
 chnkr = refine(chnkr);
