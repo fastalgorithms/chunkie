@@ -57,18 +57,15 @@ fprintf('%5.2e s : time for chunkerinterior (no flam)\n',t1);
 fprintf('%5.2e s : time for chunkerinterior (with flam)\n',t2);
 fprintf('%5.2e s : time for chunkerinterior (with fmm)\n',t3);
 
-ifail = in2(:) ~= (scal(:) < 1);
 assert(all(in(:) == (scal(:) < 1)));
 assert(all(in2(:) == (scal(:) < 1)));
 assert(all(in3(:) == (scal(:) < 1)));
 
-%
-% 
-% figure(1)
-% clf
-% hold off
-% scatter(targs(1,in),targs(2,in),'go')
-% hold on
-% scatter(targs(1,~in),targs(2,~in),'rx')
-% plot(chnkr,'b','LineWidth',2)
-% axis equal
+x1 = linspace(-2,2,100);
+[xx,yy] = meshgrid(x1,x1);
+
+opts = [];
+opts.fmm = true;
+opts.flam = false;
+start = tic; in3 = chunkerinterior(chnkr,{x1,x1},opts); t4 = toc(start);
+fprintf('%5.2e s : time for chunkerinterior (meshgrid, with fmm)\n',t4);
