@@ -30,6 +30,7 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %                       is not defined by the kernel object. Supported 
 %                       types are:
 %                         smooth => smooth kernels
+%                         removable => piecewise smooth kernels
 %                         log => logarithmically singular kernels or 
 %                                smooth times log + smooth
 %                         pv => principal value singular kernels + log
@@ -134,6 +135,9 @@ isrcip = true;
 nsub = 40;
 adaptive_correction = false;
 sing = 'log';
+if ~isempty(kern.sing)
+    sing = kern.sing;
+end
 
 % get opts from struct if available
 
@@ -345,6 +349,15 @@ for i=1:nchunkers
                 k = chnkr.k;
                 auxquads = chnk.quadggq.setup(k,type);
                 opts.auxquads.ggqlog = auxquads;
+            end
+        elseif strcmpi(sing, 'removable')
+            type = 'removable';
+            if (isfield(opts,'auxquads') && isfield(opts.auxquads,'ggqremovable'))
+                auxquads = opts.auxquads.ggqremovable;
+            else
+                k = chnkr.k;
+                auxquads = chnk.quadggq.setup(k, type);
+                opts.auxquads.ggqremovable = auxquads;
             end
         elseif strcmpi(singi,'log')
             type = 'log';

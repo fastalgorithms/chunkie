@@ -11,6 +11,9 @@ function [auxquad]=setup(k,type)
 % [[[---------------------------]-------------------]-------------------]
 % type =    'log'                       'pv'                'hs'
 %
+%     f_{0}(x) + abs|x-x_{j}|*f_{1}(x)
+% type = 'removable'
+%
 % where the f_i are polynomials of order 2*k
 %
 % input:
@@ -39,6 +42,8 @@ function [auxquad]=setup(k,type)
       [xs0,wts0] = chnk.quadggq.gethqsuppquad(k,1);
   elseif strcmpi(type,'hs')
       [xs0,wts0] = chnk.quadggq.gethqsuppquad(k,2);
+  elseif strcmpi(type,'removable')
+      [xs0,wts0] = chnk.quadggq.getremovablequad(k,1);
   end
   ainterp1 = lege.matrin(k,xs1);
 
