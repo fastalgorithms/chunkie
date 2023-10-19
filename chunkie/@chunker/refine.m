@@ -150,9 +150,6 @@ if maxchunklen < Inf
 
                 chunklens(i) = sum(chnkr.wts(:,i));
                 chunklens(nch) = sum(chnkr.wts(:,nch));
-                
-                chunklens(i) = dot(dsdti,w);
-                chunklens(nch) = dot(dsdtnch,w);
 
                 ifdone=0;
 
