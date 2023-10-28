@@ -22,6 +22,22 @@ wts = chnkr.wts; wts = wts(:);
 
 fprintf('Done building geometry\n');
 
+
+ngrid = 100;
+grid = linspace(-1,1,ngrid);
+[xt,yt] = meshgrid(grid, grid);
+targs = [xt(:).'; yt(:).'];
+
+opts_in = [];
+opts_in.axissym = 1;
+opts_in.fmm = true;
+[in] = chunkerinterior(chnkr, targs, opts_in);
+
+
+plot(chnkr,'kx'); hold on;
+plot(targs(1,in), targs(2,in), 'b.');
+
+
 % source strengths
 strengths = randn(ns, 1);
 
