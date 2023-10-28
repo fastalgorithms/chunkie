@@ -50,7 +50,7 @@ targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
 ftemp = kern(srcinfo,targinfo);
 opdims = size(ftemp);
 
-if nargin < 5
+if nargin < 4
     opts = [];
 end
 
@@ -65,7 +65,13 @@ if isfield(opts,'nonsmoothonly'); nonsmoothonly = opts.nonsmoothonly; end
 if isfield(opts,'fac'); fac = opts.fac; end
 if isfield(opts,'eps'); eps = opts.eps; end
 
-[dim,~] = size(targs);
+if(isa(targs,'struct') || isa(targs,'chunker'))
+    targsuse = targs.r(:,:);
+else
+    targsuse = targs; 
+end
+
+[dim,~] = size(targsuse);
 
 if (dim ~= 2); warning('only dimension two tested'); end
 
@@ -88,7 +94,10 @@ end
 % smooth for sufficiently far, adaptive otherwise
 
 optsflag = []; optsflag.fac = fac;
-flag = flagnear(chnkr,targs,optsflag);
+
+
+srcinfo = []; srcinfo.r = chnkr.r(:,:); 
+flag = flagnear(chnkr,targsuse,optsflag);
 spmat = chunkerkernevalmat_adap(chnkr,kern,opdims, ...
         targs,flag,optsadap);
 
@@ -120,7 +129,14 @@ end
 k = chnkr.k;
 nch = chnkr.nch;
 
-targinfo = []; targinfo.r = targs;
+targinfo = []; 
+if(isa(targs,'struct') || isa(targs,'chunker'))
+    targinfo.r = targs.r(:,:);
+    targinfo.n = targs.n(:,:);
+else
+    targinfo.r = targs; 
+end
+
 srcinfo = []; srcinfo.r = chnkr.r(:,:); 
 srcinfo.d = chnkr.d(:,:); srcinfo.d2 = chnkr.d2(:,:);
 srcinfo.n = chnkr.n(:,:);
