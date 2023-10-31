@@ -13,7 +13,7 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %               [r,d] = fcurve(t);  or [r,d,d2] = fcurve(t);
 %            where d is the first derivative of r with respect to t and 
 %            d2 is the second derivative. in some situations, this will
-%            improve the convergence order. 
+%            improve the convergence order and final precision.
 %
 % Optional input:
 %	cparams - curve parameters structure (defaults)
@@ -25,9 +25,8 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %           ifclosed == 0 (Inf)
 %       cparams.nover = oversample resolved curve nover
 %           times (0)
-%       cparams.eps = resolve coordinates, arclength,
-%          and first and second derivs of coordinates
-%          to this tolerance (1.0e-6)
+%       cparams.eps = tolerance to resolve coordinates and arclength 
+%           density (1.0e-6)
 %       cparams.lvlr = string, determines type of level
 %          restriction to be enforced
 %               lvlr = 'a' -> no chunk should have double the arc length 
@@ -41,6 +40,9 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %   pref - chunkerpref object or structure (defaults)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
+%
+% Output:
+%   chnkr - a chunker object containing the discretization of the domain
 %
 % Examples:
 %   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish w/ standard
