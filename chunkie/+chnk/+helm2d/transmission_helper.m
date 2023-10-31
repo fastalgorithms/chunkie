@@ -151,7 +151,7 @@ function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
                 c1 = coefs(d1);
                 c2 = coefs(d2);
                 ind1 = sum(nchs(1:i-1))*ngl*2+(1:2:2*nchs(i)*ngl);
-                ind2 = sum(nchs(1:i-1))*ngl*2+(1:2:2*nchs(i)*ngl);
+                ind2 = sum(nchs(1:i-1))*ngl*2+(2:2:2*nchs(i)*ngl);
                 targnorm = chnkrs(i).n;
                 nx = targnorm(1,:); nx = nx(:);
                 ny = targnorm(2,:); ny = ny(:);
