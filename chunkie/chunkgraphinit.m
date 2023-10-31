@@ -1,10 +1,10 @@
-function [cgrph] = chunkgraphinit(verts,verts2edge,fchnks,cparams)
+function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams)
 
     display("Warning: this method is deprecated. Use the chunkgraph constructor instead.");
     prefs = [];
     cgrph            = chunkgraph(prefs);
     cgrph.verts      = verts;
-    cgrph.verts2edge = verts2edge;
+    cgrph.edge2verts = edge2verts;
     cgrph.echnks     = chunker.empty;
     
     if (nargin < 4)
@@ -37,15 +37,15 @@ function [cgrph] = chunkgraphinit(verts,verts2edge,fchnks,cparams)
     pref.nchmax = 10000;
     pref.k = 16;
     
-    if (size(verts,2) ~= size(verts2edge,2))
+    if (size(verts,2) ~= size(edge2verts,2))
         error('Incompatible vertex and edge sizes'); 
     end
     
     echnks = chunker.empty();
-    for i=1:size(verts2edge,1)
+    for i=1:size(edge2verts,1)
         if (numel(fchnks)<i || isempty(fchnks{i}))
-            i1 = find(verts2edge(i,:)==-1);
-            i2 = find(verts2edge(i,:)==1);
+            i1 = find(edge2verts(i,:)==-1);
+            i2 = find(edge2verts(i,:)==1);
             v1 = verts(:,i1);
             v2 = verts(:,i2);
             fcurve = @(t) chnk.curves.linefunc(t,v1,v2);
@@ -57,8 +57,8 @@ function [cgrph] = chunkgraphinit(verts,verts2edge,fchnks,cparams)
             [vs,~,~] =fchnks{i}([0,1]);
             chnkr = chunkerfunc(fchnks{i},cploc,pref);
             chnkr = sort(chnkr);
-            vfin0 = verts(:,find(verts2edge(i,:)==-1));
-            vfin1 = verts(:,find(verts2edge(i,:)== 1));
+            vfin0 = verts(:,find(edge2verts(i,:)==-1));
+            vfin1 = verts(:,find(edge2verts(i,:)== 1));
             r0 = vs(:,1);
             r1 = vfin0;
             scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
@@ -78,7 +78,7 @@ function [cgrph] = chunkgraphinit(verts,verts2edge,fchnks,cparams)
     %[regions] = findregions(cgrph);
     %cgrph.regions = regions;
     
-    adjmat = verts2edge'*verts2edge;
+    adjmat = edge2verts'*edge2verts;
     g = graph(adjmat);
     ccomp = conncomp(g);
     

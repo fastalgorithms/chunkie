@@ -8,7 +8,7 @@ classdef chunkgraph
 % 
     properties(SetAccess=public)
         verts
-        verts2edge
+        edge2verts
         echnks
         regions
         vstruc
@@ -25,7 +25,7 @@ classdef chunkgraph
     end
     
     methods
-        function obj = chunkgraph(verts,verts2edge,fchnks,cparams)
+        function obj = chunkgraph(verts,edge2verts,fchnks,cparams)
             if (nargin == 0)
                 return
             end
@@ -33,7 +33,7 @@ classdef chunkgraph
                 return
             end
             obj.verts      = verts;
-            obj.verts2edge = verts2edge;
+            obj.edge2verts = edge2verts;
             obj.echnks     = chunker.empty;
             
             if (nargin < 4)
@@ -66,15 +66,15 @@ classdef chunkgraph
             pref.nchmax = 10000;
             pref.k = 16;
             
-            if (size(verts,2) ~= size(verts2edge,2))
+            if (size(verts,2) ~= size(edge2verts,2))
                 error('Incompatible vertex and edge sizes');
             end
             
             echnks = chunker.empty();
-            for i=1:size(verts2edge,1)
+            for i=1:size(edge2verts,1)
                 if (numel(fchnks)<i || isempty(fchnks{i}))
-                    i1 = find(verts2edge(i,:)==-1);
-                    i2 = find(verts2edge(i,:)==1);
+                    i1 = find(edge2verts(i,:)==-1);
+                    i2 = find(edge2verts(i,:)==1);
                     v1 = verts(:,i1);
                     v2 = verts(:,i2);
                     fcurve = @(t) chnk.curves.linefunc(t,v1,v2);
@@ -86,8 +86,8 @@ classdef chunkgraph
                     [vs,~,~] =fchnks{i}([0,1]);
                     chnkr = chunkerfunc(fchnks{i},cploc,pref);
                     chnkr = sort(chnkr);
-                    vfin0 = verts(:,find(verts2edge(i,:)==-1));
-                    vfin1 = verts(:,find(verts2edge(i,:)== 1));
+                    vfin0 = verts(:,find(edge2verts(i,:)==-1));
+                    vfin1 = verts(:,find(edge2verts(i,:)== 1));
                     r0 = vs(:,1);
                     r1 = vfin0;
                     scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
@@ -107,7 +107,7 @@ classdef chunkgraph
             %[regions] = findregions(obj);
             %obj.regions = regions;
             
-            adjmat = verts2edge'*verts2edge;
+            adjmat = edge2verts'*edge2verts;
             g = graph(adjmat);
             ccomp = conncomp(g);
             
@@ -195,10 +195,10 @@ classdef chunkgraph
             validateattributes(val,classes,{})
             obj.verts = val;
         end
-        function obj = set.verts2edge(obj,val)
+        function obj = set.edge2verts(obj,val)
             classes = {'numeric'};
             validateattributes(val,classes,{})
-            obj.verts2edge = val;
+            obj.edge2verts = val;
         end    
         function obj = set.echnks(obj,val)
             classes = {'chunker'};
