@@ -6,6 +6,7 @@ classdef trapper
         rstor
         dstor
         d2stor
+        wtsstor
         nstor
         datastor
     end
@@ -13,6 +14,7 @@ classdef trapper
         r
         d
         d2
+        wts
         n
         data
     end
@@ -43,6 +45,7 @@ classdef trapper
             obj.rstor = zeros(dim,nptstor);
             obj.dstor = zeros(dim,nptstor);
             obj.d2stor = zeros(dim,nptstor);
+            obj.wtsstor = zeros(1,nptstor);
             obj.nstor = zeros(dim,nptstor);
             obj.npt = 0;
             obj.nptmax = nptmax;
@@ -52,6 +55,9 @@ classdef trapper
         
         function r = get.r(obj)
             r = obj.rstor(:,1:obj.npt);
+        end
+        function wts = get.wts(obj)
+            wts = obj.wtsstor(1:obj.npt);
         end
         function n = get.n(obj)
             n = obj.nstor(:,1:obj.npt);
@@ -73,6 +79,9 @@ classdef trapper
         end
         function obj = set.r(obj,val)
             obj.rstor(:,1:obj.npt)=val;
+        end
+        function obj = set.wts(obj,val)
+            obj.wtsstor(1:obj.npt)=val;
         end
         function obj = set.n(obj,val)
             obj.nstor(:,1:obj.npt)=val;
@@ -127,10 +136,12 @@ classdef trapper
             dtemp = obj.d;
             d2temp = obj.d2;
             datatemp = obj.data;
+            wtstemp = obj.wts;
             ntemp = obj.n;
             obj.rstor = zeros(obj.dim,nptstornew);
             obj.dstor = zeros(obj.dim,nptstornew);
             obj.d2stor = zeros(obj.dim,nptstornew);
+            obj.wtsstor = zeros(1,nptstornew);
             obj.nstor = zeros(obj.dim,nptstornew);
             obj.datastor = zeros(obj.datadim,nptstornew);
             obj.r = rtemp;
@@ -138,6 +149,7 @@ classdef trapper
             obj.d2 = d2temp;
             obj.data = datatemp;            
             obj.nptstor = nptstornew;
+            obj.wts = wtstemp;
             obj.n = ntemp;
         end
         

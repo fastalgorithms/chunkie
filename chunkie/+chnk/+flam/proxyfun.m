@@ -1,6 +1,6 @@
 % TODO: change the documentation as multipple chunkers are adopted... 
 
-function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkrs,whts,kern,opdims_mat, ...
+function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkrs,kern,opdims_mat, ...
     pr,ptau,pw,pin,ifaddtrans,l2scale)
 %PROXYFUN proxy function utility for kernels defined on chunkers
 %
@@ -16,7 +16,7 @@ function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkrs,whts,kern,opdims_mat, ...
 % but makes some attempts at efficiency (kernel calls corresponding to
 % the same point are not repeated).
 %
-% ~ octtree and index related inputs ~
+% ~ tree and index related inputs ~
 % slf - set of relevant indices for self box (not necessarily equivalent
 %       to the appropriate indices within the chunker object)
 % nbr - set of indices in neighbor boxes (to check for inclusion inside 
@@ -26,7 +26,6 @@ function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkrs,whts,kern,opdims_mat, ...
 %
 % ~ other inputs ~
 % chnkrs - chunker object or an array of chunker objects
-% whts - smooth weights on chunker object (already repeated according to opdims)
 % kern - should be a kernel function of the form 
 %             submat = kern(src, targ, srctau, targtau)
 %        or multiple kernel functions for the multiple chunker case
@@ -46,7 +45,7 @@ if isa(kern,'kernel')
     kern = kern.eval;
 end
 
-if nargin < 14
+if nargin < 13
     l2scale = false;
 end
 
@@ -55,16 +54,17 @@ end
 lmax = max(l);
 pxy = pr*lmax + ctr(:);
 pw = lmax*pw;
-pw_total = [];
 
 npxy = size(pxy,2);
 
 nchunkers = length(chnkrs);
 irowlocs = zeros(nchunkers+1,1);
+irowlocs_trans = zeros(nchunkers+1,1);
 icollocs = zeros(nchunkers+1,1);
 inbrlocs = zeros(nchunkers+1,1);
 lchunks = zeros(nchunkers,1);
 irowlocs(1) = 1;
+irowlocs_trans(1) = 1;
 icollocs(1) = 1;
 inbrlocs(1) = 1;
 
@@ -72,12 +72,12 @@ for i=1:nchunkers
    lchunks(i) = chnkrs(i).npt;
    icollocs(i+1) = icollocs(i) + lchunks(i)*opdims_mat(2,1,i);
    irowlocs(i+1) = irowlocs(i) + npxy*opdims_mat(1,i,1);
+   irowlocs_trans(i+1) = irowlocs_trans(i) + npxy*opdims_mat(2,1,i);
    inbrlocs(i+1) = inbrlocs(i) + lchunks(i)*opdims_mat(1,i,1);
-   pw2 = repmat(pw(:).',opdims_mat(1,i,1),1); pw2 = pw2(:);
-   pw_total = [pw_total; pw2];
 end
 
 nrows = irowlocs(end)-1;
+nrows_trans = irowlocs_trans(end)-1;
 ncols = icollocs(end)-1;
 
 
@@ -106,7 +106,7 @@ nbr = new_nbr;
 Kpxy = zeros(nrows,length(slf));
 
 if ifaddtrans
-    Kpxy2 = zeros(length(slf),nrows);
+    Kpxy2 = zeros(length(slf),nrows_trans);
 end
 
 targinfo = []; targinfo.r = pxy; targinfo.d = ptau; 
@@ -120,6 +120,21 @@ for j=1:nchunkers
     mat_col_end   = icollocs(j+1)-1;
     f_col = slf>=mat_col_start & slf<=mat_col_end;
     mat_col_ind   = slf(f_col);
+    wts = chnkr.wts; wts = wts(:);
+
+% Note that opdims(2) must be same for all rows and a fixed column
+    opdims = opdims_mat(:,1,j);
+
+    jpts = idivide(int64(mat_col_ind(:)-mat_col_start),int64(opdims(2)))+1;
+    [juni,~,ijuni] = unique(jpts);
+
+    ijuni2 = (ijuni-1)*opdims(2) + mod(mat_col_ind(:)-mat_col_start,opdims(2))+1;
+
+    r = chnkr.r(:,juni);
+    d = chnkr.d(:,juni);
+    n = chnkr.n(:,juni);
+    d2 = chnkr.d2(:,juni);
+    srcinfo = []; srcinfo.r = r; srcinfo.d = d; srcinfo.n = n; srcinfo.d2 = d2;
     
     if isempty(mat_col_ind)
         continue
@@ -130,17 +145,12 @@ for j=1:nchunkers
         mat_row_start = irowlocs(i);
         mat_row_end = irowlocs(i+1)-1;
         mat_row_ind = mat_row_start:mat_row_end;
+
+        mat_row_trans_start = irowlocs_trans(i);
+        mat_row_trans_end = irowlocs_trans(i+1)-1;
+        mat_row_trans_ind = mat_row_trans_start:mat_row_trans_end;
         opdims = opdims_mat(:,i,j);
-
-        jpts = idivide(int64(mat_col_ind(:)-mat_col_start),int64(opdims(2)))+1;
-
-        [juni,~,ijuni] = unique(jpts);
-
-        r = chnkr.r(:,juni);
-        d = chnkr.d(:,juni);
-        n = chnkr.n(:,juni);
-        d2 = chnkr.d2(:,juni);
-        srcinfo = []; srcinfo.r = r; srcinfo.d = d; srcinfo.n = n; srcinfo.d2 = d2;
+        opdims_trans = opdims_mat(:,j,i);
 
         if length(kern) == 1
             matuni = kern(srcinfo,targinfo);
@@ -148,7 +158,23 @@ for j=1:nchunkers
             matuni = kern{i,j}(srcinfo,targinfo);
         end
 
-        ijuni2 = (ijuni-1)*opdims(2) + mod(mat_col_ind(:)-mat_col_start,opdims(2))+1;
+        wsrc = wts(juni);
+        wsrc = repmat( (wsrc(:)).', opdims(2), 1);
+        wsrc = ( wsrc(:) ).';
+
+        wtarg = pw(:);
+        wtarg = repmat(wtarg(:).',opdims(1),1);
+        wtarg = wtarg(:);
+        
+        
+        % scale matrix by weights
+        if(l2scale)
+            matuni = sqrt(wtarg) .* matuni .* sqrt(wsrc);
+        else
+            matuni = matuni .* wsrc;
+        end
+        
+
 
         Kpxy(mat_row_ind,f_col) = matuni(:,ijuni2);
 
@@ -158,26 +184,28 @@ for j=1:nchunkers
             else
                 matuni2 = kern{j,i}(targinfo,srcinfo);
             end
-%             assert (sum(f_col) == length(ijuni2))
-%             assert (length(mat_row_ind) == size(matuni2,2))
-            Kpxy2(f_col,mat_row_ind) = matuni2(ijuni2,:);
+
+            wsrc = pw(:);
+            wsrc = repmat( (wsrc(:)).', opdims_trans(2), 1);
+            wsrc = ( wsrc(:) ).';
+
+            wtarg = wts(juni);
+            wtarg = repmat(wtarg(:).',opdims_trans(1),1);
+            wtarg = wtarg(:);
+
+            % scale matrix by weights
+            if(l2scale)
+                matuni2 = sqrt(wtarg) .* matuni2 .* sqrt(wsrc);
+            else
+                matuni2 = matuni2 .* wsrc;
+            end
+        
+
+            Kpxy2(f_col,mat_row_trans_ind) = matuni2(ijuni2,:);
         end
     end
 end
 
-
-% scale by weights
-if l2scale
-    Kpxy = sqrt(pw_total(:)).*Kpxy.*sqrt(whts(slf).');
-    if ifaddtrans
-        Kpxy2 = sqrt(whts(slf)).*Kpxy2.*sqrt(pw_total(:).');
-    end
-else
-    Kpxy = Kpxy.*whts(slf).';
-    if ifaddtrans
-        Kpxy2 = Kpxy2.*pw_total(:).';
-    end
-end
 
 % combining the two matrices
 if ifaddtrans

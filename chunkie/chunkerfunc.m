@@ -506,6 +506,9 @@ chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
 % update normals
 chnkr.nstor(:,:,1:nch) = normals(chnkr);
 
+% update weights
+chnkr.wtsstor(:,1:nch) = weights(chnkr);
+
 end
 
 

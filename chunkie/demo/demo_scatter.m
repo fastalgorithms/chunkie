@@ -77,7 +77,7 @@ targets(1,:) = xxtarg(:); targets(2,:) = yytarg(:);
 
 %
 
-start = tic; in = chunkerinterior(chnkr,targets); t1 = toc(start);
+start = tic; in = chunkerinterior(chnkr,{xtarg,ytarg}); t1 = toc(start);
 out = ~in;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)

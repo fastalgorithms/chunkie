@@ -109,7 +109,7 @@ fprintf('%5.2e s : time to eval at targs (smooth rule only)\n',t1)
 
 %
 
-wchnkr = weights(trap);
+wchnkr = trap.wts;
 
 relerr = norm(utarg-Dsol,'fro')/(sqrt(trap.npt)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));

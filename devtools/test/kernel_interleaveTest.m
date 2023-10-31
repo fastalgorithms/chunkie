@@ -4,19 +4,23 @@ rng(iseed);
 
 addpaths_loc();
 
+zk = 1.1;
+
 cparams = [];
 cparams.eps = 1.0e-10;
 cparams.nover = 1;
 pref = []; 
-pref.k = 32;
+pref.k = 16;
 narms = 3;
 amp = 0.25;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t, narms, amp), cparams, pref); 
 t1 = toc(start);
+chnkr = sort(chnkr);
+wts = chnkr.wts; wts = wts(:);
+
+l2scale = true;
 
 fprintf('%5.2e s : time to build geo\n',t1)
-
-zk = 1.1;
 
 % sources
 
@@ -86,11 +90,20 @@ kernmats = Skp.eval(srcinfo, targinfo);
 ubdry = kernmats*strengths;
 
 npts = chnkr.npt;
-rhs = zeros(3*npts, 1);
-rhs(1:3:end) = ubdry;
+nsys = 3*npts;
+rhs = zeros(nsys, 1);
+
+
+if(l2scale)
+    rhs(1:3:end) = ubdry.*sqrt(wts);
+else
+    rhs(1:3:end) = ubdry;
+end
 
 % Form matrix
-A = chunkermat(chnkr, K) + eye(3*npts);
+opts = [];
+opts.l2scale = l2scale;
+A = chunkermat(chnkr, K, opts) + eye(nsys);
 start = tic;
 sol = gmres(A, rhs, [], 1e-14, 100);
 t1 = toc(start);
@@ -107,14 +120,69 @@ Keval = c1*kernel([Sk 1i*alpha*Dk Z]);
 opts.usesmooth = false;
 opts.verb = false;
 opts.quadkgparams = {'RelTol', 1e-16, 'AbsTol', 1.0e-16};
+
+if(l2scale)
+    wts_rep = repmat(wts(:).', K.opdims(1),1);
+    wts_rep = wts_rep(:);
+    sol = sol./sqrt(wts_rep);
+end
+
 start = tic;
 Dsol = chunkerkerneval(chnkr, Keval, sol, targets, opts);
 t2 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n', t2)
 
-wchnkr = weights(chnkr);
+
+wchnkr = chnkr.wts;
 wchnkr = repmat(wchnkr(:).', 3, 1);
 relerr  = norm(utarg-Dsol) / (sqrt(chnkr.nch)*norm(utarg));
 relerr2 = norm(utarg-Dsol, 'inf') / dot(abs(sol(:)), wchnkr(:));
 fprintf('relative frobenius error %5.2e\n', relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n', relerr2);
+
+
+
+% Test fast direct solver interfaces
+
+% build sparse tridiag part 
+opts.nonsmoothonly = true;
+opts.rcip = true;
+start = tic; spmat = chunkermat(chnkr, K, opts); t1 = toc(start);
+fprintf('%5.2e s : time to build tridiag\n',t1)
+
+spmat = spmat + speye(nsys);
+
+% test matrix entry evaluator
+start = tic; 
+opdims = K.opdims;
+sys2 = chnk.flam.kernbyindex(1:nsys, 1:nsys, chnkr, K, opdims, ...
+    spmat, l2scale);
+
+
+t1 = toc(start);
+
+fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
+
+err2 = norm(sys2-A,'fro')/norm(A,'fro');
+fprintf('%5.2e   : fro error of build \n',err2);
+
+% test fast direct solver
+opts.ifproxy = false;
+F = chunkerflam(chnkr,K,1.0,opts);
+
+start = tic; sol2 = rskelf_sv(F,rhs); t1 = toc(start);
+
+if(l2scale)
+    wts_rep = repmat(wts(:).', K.opdims(1),1);
+    wts_rep = wts_rep(:);
+    sol2 = sol2./sqrt(wts_rep);
+end
+
+
+fprintf('%5.2e s : time for rskelf_sv \n',t1)
+
+err = norm(sol-sol2,'fro')/norm(sol,'fro');
+
+fprintf('difference between fast-direct and iterative %5.2e\n',err)
+
+

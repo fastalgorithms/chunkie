@@ -1,5 +1,5 @@
 % TODO: rewrite this documentation with support for multiple chunkers
-function mat = kernbyindex(i,j,chnkrs,whts,kern,opdims_mat,spmat,l2scale)
+function mat = kernbyindex(i,j,chnkobj,kern,opdims_mat,spmat,l2scale)
 %% evaluate system matrix by entry index utility function for 
 % general kernels, with replacement for specific entries and the
 % ability to add a low-rank modification.
@@ -26,7 +26,6 @@ function mat = kernbyindex(i,j,chnkrs,whts,kern,opdims_mat,spmat,l2scale)
 % j - array of col indices to compute
 % chnkr - chunker object describing boundary, 
 %         or chunkgraph.echunks, which is an array of chunker objects.
-% whts - smooth weights on chunker object (already repeated according to opdims)
 % kern - kernel function of the form kern(s,t,stau,ttau) where s and t 
 %    are source and target points and stau and ttau are the local unit
 %    tangents
@@ -42,14 +41,26 @@ if isa(kern,'kernel')
     kern = kern.eval;
 end
 
-if nargin < 8
+if nargin < 7
     l2scale = false;
 end
 
-% find unique underlying points
+if class(chnkobj) == "chunker"
+    chnkrs = chnkobj;
+elseif class(chnkobj) == "chunkgraph"
+    chnkrs = chnkobj.echnks;
+else
+    msg = "In CHNK.FLAM.KERNBYINDEX, invalid chunk object";
+    error(msg);
+end
 
 
 nchunkers = length(chnkrs);
+if length(size(opdims_mat)) == 2
+    opdims_mat = opdims_mat(:);
+    opdims_mat = repmat(opdims_mat,[nchunkers nchunkers]);
+    opdims_mat = reshape(opdims_mat,[2 nchunkers nchunkers]);
+end
 
 
 irowlocs = zeros(nchunkers+1,1);
@@ -79,10 +90,31 @@ for itrg=1:nchunkers
     mat_row_end   = irowlocs(itrg+1)-1;
     flag_i = i>=mat_row_start & i<=mat_row_end;
     mat_row_ind = i(flag_i);
+    
+    
 
-    if length(mat_row_ind) == 0
+    if isempty(mat_row_ind)
         continue
     end
+    % Note using opdims from first column, opdims(1) has to be
+    % constant in this row.
+    opdims = opdims_mat(:,itrg,1);
+    ipts = idivide(int64(mat_row_ind(:)-mat_row_start),int64(opdims(1)))+1;
+    [iuni,~,iiuni] = unique(ipts);
+    
+    iiuni2 = (iiuni-1)*opdims(1) + mod(mat_row_ind(:)-mat_row_start,opdims(1))+1;
+    
+    ri = chnkr_trg.r(:,iuni);
+    di = chnkr_trg.d(:,iuni); 
+    ni = chnkr_trg.n(:,iuni);
+    d2i = chnkr_trg.d2(:,iuni);
+    targinfo = []; targinfo.r = ri; targinfo.d = di; targinfo.d2 = d2i;
+        targinfo.n = ni;
+
+    wtarg = chnkr_trg.wts(iuni); 
+    wtarg = repmat(wtarg(:).',opdims(1),1);
+    wtarg = wtarg(:);
+    
 
     for isrc=1:nchunkers
         chnkr_src = chnkrs(isrc);
@@ -91,52 +123,50 @@ for itrg=1:nchunkers
         flag_j = j>=mat_col_start & j<=mat_col_end;
         mat_col_ind   = j(flag_j);
 
-        if length(mat_col_ind) == 0
+        if isempty(mat_col_ind)
             continue
         end
 
         opdims = opdims_mat(:,itrg,isrc);
-        ipts = idivide(int64(mat_row_ind(:)-mat_row_start),int64(opdims(1)))+1;
+        
         jpts = idivide(int64(mat_col_ind(:)-mat_col_start),int64(opdims(2)))+1;
-
-        [iuni,~,iiuni] = unique(ipts);
         [juni,~,ijuni] = unique(jpts);
 
-        ri = chnkr_trg.r(:,iuni); rj = chnkr_src.r(:,juni);
-        di = chnkr_trg.d(:,iuni); dj = chnkr_src.d(:,juni);
-        nj = chnkr_src.n(:,juni); ni = chnkr_trg.n(:,iuni);
-        d2i = chnkr_trg.d2(:,iuni); d2j = chnkr_src.d2(:,juni);
+        rj = chnkr_src.r(:,juni);
+        dj = chnkr_src.d(:,juni);
+        nj = chnkr_src.n(:,juni); 
+        d2j = chnkr_src.d2(:,juni);
         srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
         srcinfo.n = nj;
-        targinfo = []; targinfo.r = ri; targinfo.d = di; targinfo.d2 = d2i;
-        targinfo.n = ni;
+         
+        wsrc = chnkr_src.wts(juni); 
+        wsrc = repmat( (wsrc(:)).', opdims(2), 1);
+        wsrc = ( wsrc(:) ).';
+            
         
-        if length(kern) == 1
+        if size(kern) == 1
             matuni = kern(srcinfo,targinfo);
         else
             matuni = kern{itrg,isrc}(srcinfo,targinfo);
         end
-        iiuni2 = (iiuni-1)*opdims(1) + mod(mat_row_ind(:)-mat_row_start,opdims(1))+1;
+        
+        % scale matrix by weights
+        if(l2scale)
+            matuni = sqrt(wtarg) .* matuni .* sqrt(wsrc);
+        else
+            matuni = matuni .* wsrc;
+        end
+        
+        
         ijuni2 = (ijuni-1)*opdims(2) + mod(mat_col_ind(:)-mat_col_start,opdims(2))+1;
         mat(flag_i,flag_j) = matuni(iiuni2,ijuni2);
     end
 end
 
-% scale columns by weights
-
-whts = whts(:);
-
-if l2scale    
-    
-    mat = sqrt(whts(i)) .* mat .* sqrt(whts(j).');
-    
-else
-    mat = mat .* whts(j).' ;
-end
 
 % overwrite any entries given as nonzeros in sparse matrix
 
-if nargin > 6
+if nargin > 5
     [isp,jsp,vsp] = find(spmat(i,j));
     linsp = isp + (jsp-1)*length(i(:));
     mat(linsp) = vsp;
@@ -145,51 +175,3 @@ end
 return;
 
 
-% the original single chunker code
-
-% ipts = idivide(int64(i(:)-1),int64(opdims(1)))+1;
-% jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;
-
-% [iuni,~,iiuni] = unique(ipts);
-% [juni,~,ijuni] = unique(jpts);
-
-% % matrix-valued entries of kernel for unique points
-
-% ri = chnkr.r(:,iuni); rj = chnkr.r(:,juni);
-% di = chnkr.d(:,iuni); dj = chnkr.d(:,juni);
-% nj = chnkr.n(:,juni); ni = chnkr.n(:,iuni);
-% d2i = chnkr.d2(:,iuni); d2j = chnkr.d2(:,juni);
-% srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
-% srcinfo.n = nj;
-% targinfo = []; targinfo.r = ri; targinfo.d = di; targinfo.d2 = d2i;
-% targinfo.n = ni;
-% %di = bsxfun(@rdivide,di,sqrt(sum(di.^2,1)));
-% %dj = bsxfun(@rdivide,dj,sqrt(sum(dj.^2,1)));
-
-% matuni = kern(srcinfo,targinfo);
-
-% % relevant rows and columns in matuni
-
-% iiuni2 = (iiuni-1)*opdims(1) + mod(i(:)-1,opdims(1))+1;
-% ijuni2 = (ijuni-1)*opdims(2) + mod(j(:)-1,opdims(2))+1;
-
-% mat = matuni(iiuni2,ijuni2);
-
-% whts = whts(:);
-
-% % scale columns by weights
-
-% if l2scale
-%     mat = sqrt(whts(ipts(:))) .* mat .* sqrt(whts(jpts(:)).');
-% else
-%     mat = mat .* whts(jpts(:)).';
-% end
-% % overwrite any entries given as nonzeros in sparse matrix
-
-% if nargin > 6
-%     [isp,jsp,vsp] = find(spmat(i,j));
-%     linsp = isp + (jsp-1)*length(i(:));
-%     mat(linsp) = vsp;
-% end
-
-% end

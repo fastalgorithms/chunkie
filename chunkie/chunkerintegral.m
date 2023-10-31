@@ -45,7 +45,7 @@ end
 
 if opts.usesmooth
     % assume smooth weights are good enough
-    wts = weights(chnkr);
+    wts = chnkr.wts;
     if iffun
         fvals = f(chnkr.r(:,:));
     else
