@@ -55,7 +55,6 @@ prefs      = [];
 [cgrph] = chunkgraph(verts,verts2edge,fchnks,prefs);
 
 vstruc = procverts(cgrph);
-%rgns = findregions(cgrph);
 cgrph = balance(cgrph);
 
 % rgns = cgrph.regions;

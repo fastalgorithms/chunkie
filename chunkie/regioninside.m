@@ -6,8 +6,6 @@ function [isinside] = regioninside(cgrph,rgn1,rgn2)
     irgn = 0;
     for ii=2:numel(rgn1)
         nin = pointinregion(cgrph,rgn1{ii},v2);
-        disp("first inclusion:")
-        nin
         if (nin > 0 && mod(nin,2)==1)
             if (irgn ~= 0)
                 disp("Warning: an unsupported geometry error has occurred");

@@ -43,16 +43,12 @@ for i = 1:chnkr.nch
         h2 = chnkr.h(i2);
     end
     if (hself > 2*h1)
-        fprintf('oh no! 1 %d\n',i)
         happy = false;
     end
     if (hself > 2*h2)
-        fprintf('oh no! 2 %d\n',i)
         happy = false;
     end
 end
-
-fprintf('happy? %s\n',mat2str(happy))
 
 % enforce level restriction using refine code with 
 % specific options
@@ -78,13 +74,10 @@ for i = 1:chnkr.nch
         h2 = chnkr.h(i2);
     end
     if (hself > 2*h1)
-        fprintf('oh no! 1 %d\n',i)
         happy = false;
     end
     if (hself > 2*h2)
-        fprintf('oh no! 2 %d\n',i)
         happy = false;
     end
 end
 
-fprintf('happy? %s\n',mat2str(happy))

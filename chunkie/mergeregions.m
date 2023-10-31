@@ -9,8 +9,6 @@ function [rgnout] = mergeregions(cgrph,rgn1,rgn2)
     irgn = 0;
     for ii=2:numel(rgn1)
         nin = pointinregion(cgrph,rgn1{ii},v2);
-        disp("first inclusion:")
-        nin
         if (nin > 0 && mod(nin,2)==1)
             if (irgn ~= 0)
                 disp("Warning: an unsupported geometry error has occurred");
@@ -35,8 +33,6 @@ function [rgnout] = mergeregions(cgrph,rgn1,rgn2)
         irgn = 0;
         for ii=2:numel(rgn2)
             nin = pointinregion(cgrph,rgn2{ii},v1);
-            disp("second inclusion:")
-            nin
             if (nin > 0 && mod(nin,2)==1)
                 if (irgn ~= 0)
                     disp("Warning: an unsupported geometry error has occurred");
@@ -46,8 +42,6 @@ function [rgnout] = mergeregions(cgrph,rgn1,rgn2)
         end
         
         if (irgn ~= 0)
-            disp("here")
-            irgn
             rgnout = rgn2;
             rgnout = [rgnout,rgn1(2:end)];
             rgnout{irgn} = [rgnout{irgn},rgn1{1}];
@@ -55,7 +49,6 @@ function [rgnout] = mergeregions(cgrph,rgn1,rgn2)
     end
 
     if (irgn1==0 && irgn==0)
-        disp("here also")
         rgnout = rgn1;
         rgnout = [rgnout,rgn2(2:end)];
         rgnout{1} = [rgnout{1},rgn2{1}];
