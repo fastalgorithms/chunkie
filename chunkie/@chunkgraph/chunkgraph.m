@@ -131,6 +131,72 @@ classdef chunkgraph
                 regions{i} = region_comp;
             end
             
+            gmat = zeros(numel(regions));
+            
+            for ii=1:numel(regions)
+               rgna = regions{ii};
+               ilist = [];
+               for jj=1:numel(regions)
+                   if (ii ~=jj)
+                        rgnb = regions{jj};
+                        [inc] = regioninside(obj,rgnb,rgna);
+                        if (inc)
+                            ilist = [ilist,jj];
+                        end
+                   end
+                   gmat(ii,ilist) = 1;
+                   gmat(ilist,ii) = 1;
+               end
+               imin = min(ilist);   
+            end    
+            
+            ccomp_reg = conncomp(graph(gmat));
+            [s,inds] = sort(ccomp_reg);
+            regions = regions(inds);
+            
+            for ii = 1:numel(s)
+                si = s(ii);
+                for jj=1:(numel(s)-1)
+                    sj = s(jj);
+                    if (si == sj)
+                        rgna = regions{jj};
+                        rgnb = regions{jj+1};
+                        [inc] = regioninside(obj,rgna,rgnb);
+                        if (inc)
+                            regions([jj,jj+1])= regions([jj+1,jj]);
+                        end
+                    end
+                end    
+            end
+
+            
+            rgns = regions;
+            rgnso= {};
+            
+            for ii=1:max(s)
+                inds = find(s==ii);
+                rgnout = rgns{inds(1)};
+                for jj=2:numel(inds)
+                    indj = inds(jj);
+                    [rgnout] = mergeregions(obj,rgnout,rgns{indj});
+                end
+                rgnso{ii} = rgnout;
+            end    
+            
+            regions = rgnso;
+            rgns = regions;
+            rgnout = rgns{1};
+            if (numel(rgns)>1)
+                rgn2 = rgns{2};
+                [rgnout] = mergeregions(obj,rgnout,rgn2);
+                for ii=3:numel(rgns)
+                    rgn2 = rgns{ii};
+                    [rgnout] = mergeregions(obj,rgnout,rgn2);
+                end
+            end
+            
+            regions = rgnout;
+            
             obj.regions = regions;
         end
         function obj = set.verts(obj,val)
