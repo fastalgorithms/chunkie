@@ -40,19 +40,19 @@ vertc(1,:) = vertc(1,:)+12;
 evert = [1.1;0];
 verts = [vertc,vertd,vertb,verta,evert];
 v2e = [1,-1,0,0;0,1,-1,0;0,0,1,-1;-1,0,0,1];
-verts2edge = zeros(18,size(verts,2));
-verts2edge(1:16,1:16) = kron(eye(4),v2e);
-verts2edge(17,11) = 1;
-verts2edge(17,17)=-1;
-verts2edge(18,12) = 1;
-verts2edge(18,17)= -1;
+edge2verts = zeros(18,size(verts,2));
+edge2verts(1:16,1:16) = kron(eye(4),v2e);
+edge2verts(17,11) = 1;
+edge2verts(17,17)=-1;
+edge2verts(18,12) = 1;
+edge2verts(18,17)= -1;
 
 fchnks = [];
 
 
 prefs      = [];
 % prefs.chsmall = 1d-4;
-[cgrph] = chunkgraph(verts,verts2edge,fchnks,prefs);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
 
 vstruc = procverts(cgrph);
 cgrph = balance(cgrph);
@@ -64,7 +64,7 @@ cgrph = balance(cgrph);
 % r2ub = rgn2{1};
 % 
 % e2 = rgn2{1}{1}(1);
-% v2 = find(cgrph.verts2edge(:,abs(e2))==1);
+% v2 = find(cgrph.edge2verts(:,abs(e2))==1);
 % v2 = verts(:,v2);
 % 
 % irgn = 0;

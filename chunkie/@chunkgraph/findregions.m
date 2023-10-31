@@ -27,8 +27,8 @@ if (isfield(obj,'vstruc'))
 else
     vstruc = procverts(obj);
 end    
-nedge  = size(obj.verts2edge,1);
-e2v    = obj.verts2edge;
+nedge  = size(obj.edge2verts,1);
+e2v    = obj.edge2verts;
 
 % each edge belongs to two regions (going in opposite directions)
 edges = [1:nedge,-(1:nedge)];

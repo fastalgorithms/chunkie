@@ -26,9 +26,9 @@ function [inds,isgn] = vertextract(ivert,cgrph)
 % author: Jeremy Hoskins
 
 % extract the indices of the edges which terminate at ivert.
-ieplus = find(cgrph.verts2edge(:,ivert) ==  1);
+ieplus = find(cgrph.edge2verts(:,ivert) ==  1);
 % extract the indices of the edges which begin at ivert.
-ieminus  = find(cgrph.verts2edge(:,ivert) == -1);
+ieminus  = find(cgrph.edge2verts(:,ivert) == -1);
 
 % for each incoming edge, get the tangent vector near the end (at the 
 % last discretization node)
