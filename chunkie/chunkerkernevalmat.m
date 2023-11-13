@@ -1,4 +1,4 @@
-function mat = chunkerkernevalmat(chnkr,kern,targs,opts)
+function mat = chunkerkernevalmat(chnkr,kern,targobj,opts)
 %CHUNKERKERNEVALMAT compute the matrix which maps density values on 
 % the chunk geometry to the value of the convolution of the given
 % integral kernel with the density at the specified target points
@@ -8,7 +8,10 @@ function mat = chunkerkernevalmat(chnkr,kern,targs,opts)
 % Input:
 %   chnkr - chunker object description of curve
 %   kern - integral kernel taking inputs kern(srcinfo,targinfo) 
-%   targs - targ(1:2,i) gives the coords of the ith target
+%   targobj - object describing the target points, can be specified as
+%       * array of points
+%       * chunker object
+%       * chunkgraph object
 %
 % Optional input:
 %   opts - structure for setting various parameters
@@ -68,7 +71,23 @@ if isfield(opts,'nonsmoothonly'); nonsmoothonly = opts.nonsmoothonly; end
 if isfield(opts,'fac'); fac = opts.fac; end
 if isfield(opts,'eps'); eps = opts.eps; end
 
-[dim,~] = size(targs);
+% Assign appropriate object to targinfo
+targinfo = [];
+if isa(targobj, "chunker")
+    targinfo.r = targobj.r(:,:);
+    targinfo.d = targobj.d(:,:);
+    targinfo.d2 = targobj.d2(:,:);
+    targinfo.n = targobj.n(:,:);
+elseif isa(targobj, "chunkgraph")
+    targinfo.r = targobj.r(:,:);
+    targinfo.d = targobj.d(:,:);
+    targinfo.d2 = targobj.d2(:,:);
+    targinfo.n = targobj.n(:,:);
+else
+    targinfo.r = targobj;
+end
+
+[dim,~] = size(targinfo.r);
 
 
 if (dim ~= 2); warning('only dimension two tested'); end
@@ -78,23 +97,23 @@ optsadap = [];
 optsadap.eps = eps;
 
 if forcesmooth
-    mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targs, ...
+    mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targinfo, ...
         [],optssmooth);
     return
 end
 
 if forceadap
     mat = chunkerkernevalmat_adap(chnkr,kern,opdims, ...
-        targs,[],optsadap);
+        targinfo,[],optsadap);
     return
 end
 
 if forcepqud
     optsflag = []; optsflag.fac = fac;
-    flag = flagnear(chnkr,targs,optsflag);
+    flag = flagnear(chnkr,targinfo.r,optsflag);
     spmat = chunkerkernevalmat_ho(chnkr,kern,opdims, ...
-        targs,flag,optsadap);
-    mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targs, ...
+        targinfo,flag,optsadap);
+    mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targinfo, ...
         flag,opts);
     mat = mat + spmat;
     return
@@ -103,16 +122,16 @@ end
 % smooth for sufficiently far, adaptive otherwise
 
 optsflag = []; optsflag.fac = fac;
-flag = flagnear(chnkr,targs,optsflag);
+flag = flagnear(chnkr,targinfo.r,optsflag);
 spmat = chunkerkernevalmat_adap(chnkr,kern,opdims, ...
-        targs,flag,optsadap);
+        targinfo,flag,optsadap);
 
 if nonsmoothonly
     mat = spmat;
     return;
 end
 
-mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targs, ...
+mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targinfo, ...
     flag,opts);
 
 mat = mat + spmat;
@@ -123,7 +142,7 @@ end
 
 
 function mat = chunkerkernevalmat_smooth(chnkr,kern,opdims, ...
-    targs,flag,opts)
+    targinfo,flag,opts)
 
 if nargin < 6
     flag = [];
@@ -135,7 +154,6 @@ end
 k = chnkr.k;
 nch = chnkr.nch;
 
-targinfo = []; targinfo.r = targs;
 srcinfo = []; srcinfo.r = chnkr.r(:,:); srcinfo.n = chnkr.n(:,:);
 srcinfo.d = chnkr.d(:,:); srcinfo.d2 = chnkr.d2(:,:);
 
@@ -163,7 +181,7 @@ end
 end
 
 function mat = chunkerkernevalmat_adap(chnkr,kern,opdims, ...
-    targs,flag,opts)
+    targinfo,flag,opts)
 
 k = chnkr.k;
 nch = chnkr.nch;
@@ -175,12 +193,30 @@ if nargin < 6
     opts = [];
 end
 
+% Extract target info
+targs = targinfo.r;
 [~,nt] = size(targs);
+targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
+targn = zeros(chnkr.dim,nt);
+if isfield(targinfo, 'd')
+    targd = targinfo.d;
+end
+
+if isfield(targinfo, 'd2')
+    targd2 = targinfo.d2;
+end
+
+if isfield(targinfo, 'n')
+    targn = targinfo.n;
+end
+
 
 % using adaptive quadrature
 
 
 if isempty(flag)
+
+
     mat = zeros(opdims(1)*nt,opdims(2)*chnkr.npt);
 
     [t,w] = lege.exps(2*k+1);
@@ -191,7 +227,7 @@ if isempty(flag)
     n = chnkr.n;
     d2 = chnkr.d2;
     h = chnkr.h;
-    targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);    
+    
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
@@ -228,8 +264,6 @@ else
     n = chnkr.n;
     d2 = chnkr.d2;
     h = chnkr.h;
-    targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
-    targn = zeros(chnkr.dim,nt);
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
@@ -260,7 +294,7 @@ end
 end
 
 function mat = chunkerkernevalmat_ho(chnkr,kern,opdims, ...
-    targs,flag,opts)
+    targinfo,flag,opts)
 
 k = chnkr.k;
 nch = chnkr.nch;
@@ -272,7 +306,24 @@ if nargin < 6
     opts = [];
 end
 
+% Extract target info
+targs = targinfo.r;
 [~,nt] = size(targs);
+targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
+targn = zeros(chnkr.dim,nt);
+if isfield(targinfo, 'd')
+    targd = targinfo.d;
+end
+
+if isfield(targinfo, 'd2')
+    targd2 = targinfo.d2;
+end
+
+if isfield(targinfo, 'n')
+    targn = targinfo.n;
+end
+
+
 
 % using Helsing-Ojala quadrature
 if isempty(flag) % figure out what is this flag for in adaptive routine
@@ -295,8 +346,7 @@ else
     % interpolation matrix 
     intp = lege.matrin(k,t);          % interpolation from k to 2*k
     intp_ab = lege.matrin(k,[-1;1]);  % interpolation from k to end points
-    targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
-    targn = zeros(chnkr.dim,nt);
+    
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);

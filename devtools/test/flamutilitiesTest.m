@@ -31,7 +31,7 @@ for icurve = 1:size(edge2verts,1)
 end
 cparams = [];
 cparams.nover = 2;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
 
 vstruc = procverts(cgrph);
 rgns = findregions(cgrph);

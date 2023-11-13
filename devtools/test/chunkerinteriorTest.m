@@ -67,5 +67,20 @@ x1 = linspace(-2,2,100);
 opts = [];
 opts.fmm = true;
 opts.flam = false;
-start = tic; in3 = chunkerinterior(chnkr,{x1,x1},opts); t4 = toc(start);
+start = tic; in4 = chunkerinterior(chnkr,{x1,x1},opts); t4 = toc(start);
 fprintf('%5.2e s : time for chunkerinterior (meshgrid, with fmm)\n',t4);
+
+% Test targets specified as chunker
+narms = 3;
+amp = 0.1;
+chnkr2 = chunkerfunc(@(t) 0.3*starfish(t,narms,amp),cparams,pref); 
+
+opts = [];
+opts.fmm = true;
+opts.flam = false;
+start = tic; in5 = chunkerinterior(chnkr,chnkr2,opts); t5 = toc(start);
+fprintf('%5.2e s : time for chunkerinterior (chunker, with fmm)\n',t5);
+assert(all(in5(:) == 1));
+
+
+
