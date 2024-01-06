@@ -68,6 +68,16 @@ if strcmpi(type,'sprime')
   submat = (grad(:,:,1).*nx + grad(:,:,2).*ny);
 end
 
+if strcmpi(type,'sdtau')
+  targnorm = targinfo.n;
+  [~,grad] = chnk.helm2d.green(zk,src,targ);
+  nx = repmat((targnorm(1,:)).',1,ns);
+  ny = repmat((targnorm(2,:)).',1,ns);
+
+  submat = -(grad(:,:,1).*ny + grad(:,:,2).*nx);
+end
+
+
 if strcmpi(type,'s')
   submat = chnk.helm2d.green(zk,src,targ);
 end
