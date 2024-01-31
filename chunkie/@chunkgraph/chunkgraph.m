@@ -36,6 +36,10 @@ classdef chunkgraph
             obj.verts      = verts;
             obj.edge2verts = edge2verts;
             obj.echnks     = chunker.empty;
+
+            if nargin < 3
+                fchnks = [];
+            end
             
             if (nargin < 4)
                 cploc = [];
