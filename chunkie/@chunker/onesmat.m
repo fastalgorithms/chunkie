@@ -23,7 +23,7 @@ function mat = onesmat(chnkr)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-wts = weights(chnkr);
+wts = chnkr.wts; 
 wts = wts(:);
 temp = ones(size(wts));
 mat = bsxfun(@times,temp,wts.');

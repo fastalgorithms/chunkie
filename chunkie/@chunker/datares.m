@@ -16,7 +16,7 @@ function [res_flag] = datares(obj,opts)
 % Syntax: res_flag = datares(chnkr,opts)
 %
 % Input:
-%   chnkr - chunker object
+%   obj - chunker object
 %   opts - options data structure. 
 %       opts.idata - the data rows to check resolution on 
 %                   (default all rows, i.e. 1:chnkr.datadim)
@@ -42,8 +42,7 @@ function [res_flag] = datares(obj,opts)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-wts = weights(obj);
-lens = sum(wts,1);
+lens = chunklen(obj); 
 
 idata = 1:obj.datadim;
 ncoeff = floor((obj.k+0.1)/2);

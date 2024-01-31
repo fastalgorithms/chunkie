@@ -233,7 +233,7 @@ for icorner = 1:ncorner
 end
 %
 
-wchnkr = weights(chnkrtotal);
+wchnkr = chnkrtotal.wts;
 
 relerr = norm(utarg-Dsol,'fro')/(sqrt(chnkrtotal.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));

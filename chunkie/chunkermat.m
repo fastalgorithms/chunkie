@@ -254,7 +254,7 @@ for i = 1:nchunkers
         if (i~=j)
 
             opdims = reshape(opdims_mat(:,i,j),[2,1]);
-            wts = weights(chnkrj);
+            wts = chnkrj.wts;
             wts2 = repmat( (wts(:)).', opdims(2), 1);
             wts2 = ( wts2(:) ).';
             wts = wts2;
@@ -285,7 +285,7 @@ for i = 1:nchunkers
 
             if l2scale
                 wts = sqrt(wts); 
-                wtsrow = weights(chnkri); wtsrow = sqrt(wtsrow(:))';
+                wtsrow = chnkri.wts; wtsrow = sqrt(wtsrow(:))';
                 wtsrow = repmat(wtsrow,opdims(1),1); wtsrow = wtsrow(:);
                 sysmat_tmp = wtsrow.*sysmat_tmp./wts;
             end
@@ -295,10 +295,12 @@ for i = 1:nchunkers
                 icolinds = icollocs(j):(icollocs(j+1)-1);
                 sysmat(irowinds,icolinds) = sysmat_tmp;
             else
-                [isys,jsys,vsys] = find(sysmat_tmp);
-                isysmat = [isysmat;isys+irowlocs(i)-1];
-                jsysmat = [jsysmat;jsys+icollocs(j)-1];
-                vsysmat = [vsysmat;vsys];
+                if adaptive_correction
+                    [isys,jsys,vsys] = find(sysmat_tmp);
+                    isysmat = [isysmat;isys+irowlocs(i)-1];
+                    jsysmat = [jsysmat;jsys+icollocs(j)-1];
+                    vsysmat = [vsysmat;vsys];
+                end
             end
         end
     end
@@ -404,7 +406,8 @@ for i=1:nchunkers
             end
         end
         
-        sysmat_tmp_adap = chunkermat_adap(chnkr,ftmp,opdims, chnkr,flag,opts);
+        sysmat_tmp_adap = chunkermat_adap(chnkr, ftmp, opdims, chnkr, ...
+           flag,opts);
 
         [isys,jsys,vsys] = find(sysmat_tmp_adap);
 
@@ -413,7 +416,7 @@ for i=1:nchunkers
     end
 
     if l2scale
-        wts = weights(chnkr); wts = sqrt(wts(:)); wts = wts.';
+        wts = chnkr.wts; wts = sqrt(wts(:)); wts = wts.';
         wtscol = repmat(wts,opdims(2),1); wtscol = wtscol(:); 
         wtscol = wtscol.';
         wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
@@ -443,7 +446,6 @@ if(icgrph && isrcip)
     
     
     for ivert=1:nv
-        fprintf('ivert=%d\n',ivert);
         clist = chnkobj.vstruc{ivert}{1};
         isstart = chnkobj.vstruc{ivert}{2};
         isstart(isstart==1) = 0;
@@ -494,9 +496,10 @@ if(icgrph && isrcip)
             
             sysmat(starind,starind) = sysmat_tmp;
         else
+            [jind,iind] = meshgrid(starind);
             
-            isysmat = [isysmat;starind];
-            jsysmat = [jsysmat;starind];
+            isysmat = [isysmat;iind(:)];
+            jsysmat = [jsysmat;jind(:)];
             vsysmat = [vsysmat;sysmat_tmp(:)];
         end    
     end
@@ -505,8 +508,15 @@ end
 
 
 
+
 if (nonsmoothonly)
-    sysmat = sparse(isysmat,jsysmat,vsysmat,nrows,ncols);
+    % Fix sparse entry format to use rcip matrix entries for repeats
+    % instead of using the precomputed self correction
+    
+    ijind = [isysmat jsysmat];
+    [~,idx] = unique(ijind, 'rows','last');
+    
+    sysmat = sparse(isysmat(idx),jsysmat(idx),vsysmat(idx),nrows,ncols);
 end
 
 

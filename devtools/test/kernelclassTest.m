@@ -61,14 +61,14 @@ opdims = [1 1];
 
 srcinfo = []; srcinfo.r = sources; 
 
-[ubdry,gradubdry] = kerns.fmm(eps,srcinfo,chnkr.r(:,:),strengths,2);
+[ubdry,gradubdry] = kerns.fmm(eps,srcinfo,chnkr.r(:,:),strengths);
 unbdry = sum(chnkr.n(:,:).*gradubdry,1);
 
 %
 
 % eval u at targets
 
-utarg = kerns.fmm(eps,srcinfo,targets,strengths,1);
+utarg = kerns.fmm(eps,srcinfo,targets,strengths);
 
 
 % test green's id

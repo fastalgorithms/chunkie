@@ -1,5 +1,6 @@
 function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams)
 
+    warning('This method is deprecated. Use the chunkgraph constructor instead.');
     prefs = [];
     cgrph            = chunkgraph(prefs);
     cgrph.verts      = verts;
@@ -74,6 +75,7 @@ function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams)
     end    
     cgrph.echnks = echnks;
     cgrph.vstruc = procverts(cgrph);
+    
     %[regions] = findregions(cgrph);
     %cgrph.regions = regions;
     
@@ -93,5 +95,6 @@ function [cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams)
     end 
     
     cgrph.regions = regions;
+    cgrph.wts = weights(cgrph);
     
 end

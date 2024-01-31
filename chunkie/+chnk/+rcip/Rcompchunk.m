@@ -209,6 +209,7 @@ for level=1:nsub
                 chnkrlocal(i) = chnkrlocal(i).sort();
             end
             chnkrlocal(i).n = normals(chnkrlocal(i));
+            chnkrlocal(i).wts = weights(chnkrlocal(i));
         end
     end
     

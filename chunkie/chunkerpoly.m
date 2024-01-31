@@ -350,10 +350,12 @@ if ifclosed
     chnkr.adj(2,nch) = 1;
 end
 
-% compute normals
+% update normals
+chnkr.nstor(:,:,1:nch) = normals(chnkr);
 
-chnkr.n = normals(chnkr);
-    
+% update weights
+chnkr.wtsstor(:,1:nch) = weights(chnkr);
+
 end
 
 function [r,d,d2] = fround(t,m,h,dim)

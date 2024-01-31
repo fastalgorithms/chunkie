@@ -23,8 +23,8 @@ function mat = normonesmat(chnkr)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-wts = weights(chnkr);
-rnorms = normals(chnkr);
+wts = chnkr.wts; 
+rnorms = chnkr.n;
 wts = wts(:);
 wts2 = repmat(wts.',2,1);
 wts2 = wts2(:).*rnorms(:);

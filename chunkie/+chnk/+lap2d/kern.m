@@ -63,9 +63,10 @@ end
 
 if strcmpi(type,'c')
     srcnorm = chnk.normal2d(srcinfo);
-    eta = varargin{1};
+    coef = ones(2,1);
+    if(nargin == 4); coef = varargin{1}; end
     [s,grad] = chnk.lap2d.green(src,targ);
     nx = repmat(srcnorm(1,:),nt,1);
     ny = repmat(srcnorm(2,:),nt,1);
-    submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny) + eta*s;
+    submat = -coef(1)*(grad(:,:,1).*nx + grad(:,:,2).*ny) + coef(2)*s;
 end

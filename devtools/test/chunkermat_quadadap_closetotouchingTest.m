@@ -72,7 +72,7 @@ utarg = kernmatstarg*strengths;
 % use adaptive routine to build matrix (self done by ggq, nbor by adaptive)
 
 eta = 1;
-fkern = @(s,t) chnk.lap2d.kern(s,t,'C',eta);
+fkern = @(s,t) chnk.lap2d.kern(s,t,'C',[1,eta]);
 
 type = 'log';
 opts = []; opts.robust = true;
@@ -126,7 +126,7 @@ start=tic; layersolho = chunkerkerneval(chnkr,fkern,solho,targs,opts);
 t1 = toc(start);
 %
 
-wchnkr = weights(chnkr);
+wchnkr = chnkr.wts;
 
 relerr = norm(utarg-layersola,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-layersola,'inf')/dot(abs(sola(:)),wchnkr(:));

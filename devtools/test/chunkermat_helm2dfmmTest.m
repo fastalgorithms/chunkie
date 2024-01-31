@@ -99,7 +99,7 @@ err = norm(sol-sol2,'fro')/norm(sol2,'fro');
 fprintf('difference between direct and iterative %5.2e\n',err)
 
 % evaluate at targets and compare
-wchnkr = weights(chnkr);
+wchnkr = chnkr.wts;
 
 % evaluate at targets using FMM and compare
 iffmm = 0;
@@ -108,7 +108,7 @@ if(iffmm)
     sol_use = sol2.*wchnkr(:);
     eps = 1e-6;
     pgt = 1;
-    pot = chnk.helm2d.fmm(eps,zk,chnkr,targets,'D',sol_use,pgt);
+    pot = chnk.helm2d.fmm(eps,zk,chnkr,targets,'D',sol_use);
 
     relerr = norm(utarg-pot,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
     relerr2 = norm(utarg-pot,'inf')/dot(abs(sol(:)),wchnkr(:));

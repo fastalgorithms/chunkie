@@ -5,10 +5,15 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %
 % Input: 
 %   fcurve - function handle of the form
-%               [r,d,d2] = fcurve(t)
-%            where r, d, d2 are size [dim,size(t)] arrays describing
-%            position, first derivative, and second derivative of a curve
-%            in dim dimensions parameterized by t.
+%               r = fcurve(t);
+%            where r is a size [dim,size(t)] arrays describing
+%            the position of a curve in dim dimensions parameterized by t.
+%
+%            optionally, the function can be of the form 
+%               [r,d] = fcurve(t);  or [r,d,d2] = fcurve(t);
+%            where d is the first derivative of r with respect to t and 
+%            d2 is the second derivative. in some situations, this will
+%            improve the convergence order and final precision.
 %
 % Optional input:
 %	cparams - curve parameters structure (defaults)
@@ -20,9 +25,8 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %           ifclosed == 0 (Inf)
 %       cparams.nover = oversample resolved curve nover
 %           times (0)
-%       cparams.eps = resolve coordinates, arclength,
-%          and first and second derivs of coordinates
-%          to this tolerance (1.0e-6)
+%       cparams.eps = tolerance to resolve coordinates and arclength 
+%           density (1.0e-6)
 %       cparams.lvlr = string, determines type of level
 %          restriction to be enforced
 %               lvlr = 'a' -> no chunk should have double the arc length 
@@ -36,6 +40,9 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %   pref - chunkerpref object or structure (defaults)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
+%
+% Output:
+%   chnkr - a chunker object containing the discretization of the domain
 %
 % Examples:
 %   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish w/ standard
@@ -63,6 +70,7 @@ ta = 0.0; tb = 2*pi; ifclosed=true;
 chsmall = Inf; nover = 0;
 eps = 1.0e-6;
 lvlr = 'a'; maxchunklen = Inf; lvlrfac = 2.0;
+nout = 1;
 
 if isfield(cparams,'ta')
     ta = cparams.ta;
@@ -92,14 +100,25 @@ if isfield(cparams,'maxchunklen')
     maxchunklen = cparams.maxchunklen;
 end
 
+% discover number of outputs
+try         
+    [r,d,d2] = fcurve(t);
+    nout = 3;
+catch
+    try 
+        [r,d] = fcurve(ta);
+        nout = 2;
+    catch
+        nout = 1;
+    end
+end
+
 k = pref.k;
 nchmax = pref.nchmax; 
  
-dim = checkcurveparam(fcurve,ta);
+dim = checkcurveparam(fcurve,ta,nout);
 pref.dim = dim;
-nout = 3;
-out = cell(nout,1);
-
+out = cell(3,1);
 
 ifprocess = zeros(nchmax,1);
 
@@ -108,13 +127,13 @@ ifprocess = zeros(nchmax,1);
 
 k2 = 2*k;
 [xs,ws,us,vs] = lege.exps(k);
-[xs2,ws2,u2] = lege.exps(k2);   
+dermat = (vs*[lege.derpol(us); zeros(1,k)]).';
+[xs2,ws2,u2,v2] = lege.exps(k2);   
+dermat2 = (v2*[lege.derpol(u2); zeros(1,k2)]).';
 
 xs2p = ((1:k2)-1)/(k2-1)*2-1;
 [polvals,~] = lege.pols(xs2p,k-1);
 interp_xs = reshape(polvals,[k,k2]).'*us; 
-
-
 
 %       . . . start chunking
 
@@ -153,8 +172,13 @@ for ijk = 1:maxiter_res
             b=ab(2,ich);
            
             ts = a + (b-a)*(xs2+1)/2.0;
-            [r,d,d2] = fcurve(ts);
-
+            [out{1:nout}] = fcurve(ts);
+            for j = nout+1:3
+                out{j} = out{j-1}*dermat2*(2/(b-a));
+            end
+            r = out{1};
+            d = out{2};
+            d2 = out{3};
             zd = d(1,:)+1i*d(2,:);
             vd = abs(zd);
             zdd= d2(1,:)+1i*d2(2,:);
@@ -168,6 +192,9 @@ for ijk = 1:maxiter_res
             err1 = sqrt(errs/errs0/k);
             
             resol_speed_test = err1>eps;
+            if nout < 2
+                resol_speed_test = err1>eps*k;
+            end
             
             xmax = max(xmax,max(r(1,:)));
             ymax = max(ymax,max(r(2,:)));
@@ -278,7 +305,7 @@ if or(strcmpi(lvlr,'a'),strcmpi(lvlr,'t'))
             b=ab(2,i);
             
             if strcmpi(lvlr,'a')
-                rlself = chunklength(fcurve,a,b,xs,ws);
+                rlself = chunklength(fcurve,a,b,xs,ws,nout,dermat);
 
                 rl1=rlself;
                 rl2=rlself;
@@ -286,12 +313,12 @@ if or(strcmpi(lvlr,'a'),strcmpi(lvlr,'t'))
                 if (i1 > 0)
                     a1=ab(1,i1);
                     b1=ab(2,i1);
-                    rl1 = chunklength(fcurve,a1,b1,xs,ws);
+                    rl1 = chunklength(fcurve,a1,b1,xs,ws,nout,dermat);
                 end
                 if (i2 > 0)
                     a2=ab(1,i2);
                     b2=ab(2,i2);
-                    rl2 = chunklength(fcurve,a2,b2,xs,ws);
+                    rl2 = chunklength(fcurve,a2,b2,xs,ws,nout,dermat);
                 end
             else
                 
@@ -367,36 +394,64 @@ if (nover > 0)
         for i = 1:nchold
             a=ab(1,i);
             b=ab(2,i);
-		   %       find ab2 using newton such that 
-		   %       len(a,ab2)=len(ab2,b)=half the chunk length
-            rl = chunklength(fcurve,a,b,xs,ws);
+
+              % use dekker's method (hybrid secant/bisection)
+           
+            rl = chunklength(fcurve,a,b,xs,ws,nout,dermat);
             rlhalf=rl/2;
-            thresh=1.0d-8;
-            ifnewt=0;
-            ab0=(a+b)/2;
-            for iter = 1:1000
-
-                [rl1] = chunklength(fcurve,a,ab0,xs,ws);
+            
+            fak = -rlhalf;
+            fbk = rlhalf;
+            
+            thresh=eps*10*rad_curr;
+            
+            ak = a;
+            bk = b;
+            
+            fbkm1 = fbk;
+            bkm1 = bk;
+            
+            for iter = 1:200
+                m = (ak+bk)/2;
+                s = m;
+                if fbkm1 ~= fbk
+                    s = bk - (bk-bkm1)*fbk/(fbk-fbkm1);
+                end
                 
-                [out{:}] = fcurve(ab0);
-                dsdt = sqrt(sum((abs(out{2})).^2));
-                ab1=ab0-(rl1-rlhalf)/dsdt;
-
-                err=rl1-rlhalf;
-                if (abs(err) < thresh)
-                    ifnewt=ifnewt+1;
+                if (s-m)*(s-bk) >= 0
+                    s = m;
                 end
 
-                if (ifnewt == 3)
-                    break;
+                % store last iterate values
+                bkm1 = bk;
+                fbkm1 = fbk;
+
+                bk = s;
+                fbk = chunklength(fcurve,a,bk,xs,ws,nout,dermat)-rlhalf;
+                
+                % update bracket
+                if fak*fbk >= 0
+                    ak = bkm1;
+                    fak = fbkm1;
                 end
-                ab0=ab1;
+                
+                % check if b is still the best guess
+                if abs(fbk) > abs(fak)
+                    tmp = bk;
+                    bk = ak;
+                    ak = tmp;
+                    tmp = fbk;
+                    fbk = fak;
+                    fak = tmp;
+                end                    
+                
+                if (abs(fbk) < thresh)
+                    break
+                    disp(iter)
+                end
             end
 	 
-            if (ifnewt < 3) 
-                error('newton failed in chunkerfunc');
-            end
-            ab2=ab1;
+            ab2=bk;
 
             i1=adjs(1,i);
             i2=adjs(2,i);
@@ -436,7 +491,10 @@ for i = 1:nch
     b=ab(2,i);
     
     ts = a + (b-a)*(xs+1)/2;
-    [out{:}] = fcurve(ts);
+    [out{1:nout}] = fcurve(ts);
+    for j = nout+1:3
+        out{j} = out{j-1}*dermat*(2/(b-a));
+    end
     chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
     chnkr.dstor(:,:,i) = reshape(out{2},dim,k);
     chnkr.d2stor(:,:,i) = reshape(out{3},dim,k);
@@ -446,17 +504,22 @@ end
 chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
 
 % update normals
-chnkr.n(:,:,1:nch) = normals(chnkr);
+chnkr.nstor(:,:,1:nch) = normals(chnkr);
+
+% update weights
+chnkr.wtsstor(:,1:nch) = weights(chnkr);
 
 end
 
 
-function [len] = chunklength(fcurve,a,b,xs,ws)
+function [len] = chunklength(fcurve,a,b,xs,ws,nout,dermat)
     
-    nout = 3;
-    out = cell(nout,1);
+    out = cell(3,1);
     ts = a+(b-a)*(xs+1)/2;
-    [out{:}] = fcurve(ts);
+    [out{1:nout}] = fcurve(ts);
+    for j = nout+1:3
+        out{j} = out{j-1}*dermat*(2/(b-a));
+    end
     dsdt = sqrt(sum(abs(out{2}).^2,1));
     len = dot(dsdt,ws)*(b-a)/2;
  end

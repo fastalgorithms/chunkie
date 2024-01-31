@@ -5,14 +5,16 @@ classdef kernel
 %   K = KERNEL(NAME, TYPE) constructs a kernel of the specified name and
 %   type. The currently supported kernels names and types are:
 %
-%      NAME                           TYPE
-%      ----                           ----
-%      'laplace'    ('lap', 'l')      's', 'd', 'sp', 'c'
-%      'helmholtz'  ('helm', 'h')     's', 'd', 'sp', 'c'
-%      'elasticity' ('elast', 'e')    's', 'strac', 'd', 'dalt'
-%      'stokes'     ('stok', 's')     'svel', 'spres', 'strac',
-%                                     'dvel', 'dpres', 'dtrac'
-%
+%      NAME                                         TYPE
+%      ----                                         ----
+%      'laplace'    ('lap', 'l')                    's', 'd', 'sp', 'c'
+%      'helmholtz'  ('helm', 'h')                   's', 'd', 'sp', 'dp', 'c'
+%      'helmholtz difference' ('helmdiff', 'hdiff') 's', 'd', 'sp', 'dp'
+%      'elasticity' ('elast', 'e')                  's', 'strac', 'd', 'dalt'
+%      'stokes'     ('stok', 's')                   'svel', 'spres', 'strac',
+%                                                   'dvel', 'dpres', 'dtrac'
+%      'zeros'       ('zero','z') 
+%  
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.
@@ -43,14 +45,14 @@ classdef kernel
 
     properties
 
-        name       % Name of the kernel
-        type       % Type of the kernel
-        params     % Structure of kernel parameters
-        eval       % Function handle for kernel evaluation
-        fmm        % Function handle for kernel FMM
-        sing       % Singularity type
-        splitinfo  % Kernel-split information
-        opdims     % Dimension of the operator
+        name           % Name of the kernel
+        type           % Type of the kernel
+        params         % Structure of kernel parameters
+        eval           % Function handle for kernel evaluation
+        fmm            % Function handle for kernel FMM
+        sing           % Singularity type
+        splitinfo      % Kernel-split information
+        opdims = [0 0] % Dimension of the operator
 
     end
 
@@ -68,15 +70,29 @@ classdef kernel
                       obj = kernel.lap2d(varargin{:});
                   case {'helmholtz', 'helm', 'h'}
                       obj = kernel.helm2d(varargin{:});
+                  case {'helmholtz difference', 'helmdiff', 'hdiff'}
+                      obj = kernel.helm2ddiff(varargin{:});
                   case {'stokes', 'stok', 's'}
                       obj = kernel.stok2d(varargin{:});
                   case {'elasticity', 'elast', 'e'}
                       obj = kernel.elast2d(varargin{:});
+                  case {'zeros', 'zero', 'z'}
+                      obj = kernel.zeros(varargin{:});
                   otherwise
                       error('Kernel ''%s'' not found.', kern);
               end
           elseif ( isa(kern, 'function_handle') )
               obj.eval = kern;
+          elseif ( isa(kern, 'kernel') )
+              if ( numel(kern) == 1 )
+                  obj = kern;
+              else
+                  % The input is a matrix of kernels.
+                  % Create a single kernel object by interleaving the
+                  % outputs of each sub-kernel's eval() and fmm() routines.
+                  % TODO: Check that opdims are consistent
+                  obj = interleave(kern);
+              end
           else
               error('First input must be a string or function handle.');
           end
@@ -89,9 +105,131 @@ classdef kernel
 
         obj = lap2d(varargin);
         obj = helm2d(varargin);
+        obj = helm2ddiff(varargin);
         obj = stok2d(varargin);
         obj = elast2d(varargin);
+        obj = zeros(varargin);
 
     end
+
+end
+
+function K = interleave(kerns)
+%INTERLEAVE   Create a kernel from a matrix of kernels by interleaving.
+
+[m, n] = size(kerns);
+
+rowdims = cat(1, kerns(:,1).opdims); rowdims = rowdims(:,1).';
+coldims = cat(1, kerns(1,:).opdims); coldims = coldims(:,2).';
+rowstarts = [0 cumsum(rowdims)];
+colstarts = [0 cumsum(coldims)];
+opdims = [sum(rowdims) sum(coldims)];
+
+    function out = eval_(s, t)
+
+        [~, ns] = size(s.r);
+        [~, nt] = size(t.r);
+
+        % Compute interleaved indices
+        ridx = cell(m, 1);
+        cidx = cell(n, 1);
+        for k = 1:m
+            ridx{k} = (rowstarts(k)+1:rowstarts(k+1)).' + (0:nt-1)*opdims(1);
+            ridx{k} = ridx{k}(:).';
+        end
+        for l = 1:n
+            cidx{l} = ((colstarts(l)+1):colstarts(l+1)).' + (0:ns-1)*opdims(2);
+            cidx{l} = cidx{l}(:).';
+        end
+
+        % Evaluate each sub-kernel and assign the resulting block to the
+        % output matrix using interleaved indices
+        out = zeros(opdims(1)*nt, opdims(2)*ns);
+        for k = 1:m
+            for l = 1:n
+                out(ridx{k},cidx{l}) = kerns(k,l).eval(s,t);  
+            end
+        end
+
+    end
+
+    function varargout = fmm_(eps, s, t, sigma)
+
+        [~, ns] = size(s.r);
+        if isa(t,'struct')
+            [~,nt] = size(t.r);
+        else
+            [~,nt] = size(t);
+        end
+        
+
+        % Compute interleaved indices
+        ridx = cell(m, 1);
+        cidx = cell(n, 1);
+        for k = 1:m
+            ridx{k} = (rowstarts(k)+1:rowstarts(k+1)).' + (0:nt-1)*opdims(1);
+            ridx{k} = ridx{k}(:).';
+        end
+        for l = 1:n
+            cidx{l} = ((colstarts(l)+1):colstarts(l+1)).' + (0:ns-1)*opdims(2);
+            cidx{l} = cidx{l}(:).';
+        end
+
+        % Call the FMM for each sub-kernel using interleaved indices to
+        % slice the given density
+        fmms = cell(m, n, nargout);
+        for k = 1:m
+            for l = 1:n
+                [fmms{k,l,:}] = kerns(k,l).fmm(eps, s, t, sigma(cidx{l}));
+            end
+        end
+
+        % Combine the outputs from each block using interleaved indices
+        if ( nargout > 0 )
+            pot = zeros(opdims(1)*nt, 1);
+            for k = 1:m
+                for l = 1:n
+                    pot(ridx{k}) = pot(ridx{k}) + fmms{k,l,1};
+                end
+            end
+            varargout{1} = pot;
+        end
+
+        if ( nargout > 1 )
+            grad = zeros(2, opdims(1)*nt);
+            for k = 1:m
+                for l = 1:n
+                    grad(:,ridx{k}) = grad(:,ridx{k}) + fmms{k,l,2};
+                end
+            end
+            varargout{2} = grad;
+        end
+
+        if ( nargout > 2 )
+            error('CHUNKIE:kernel:interleave', 'Too many output arguments for FMM.');
+        end
+
+    end
+
+K = kernel();
+K.opdims = opdims;
+
+% The new singularity type is the worst of the singularity types of all
+% sub-kernels
+sings = {kerns.sing};
+K.sing = 'smooth';
+if ( any(strcmpi(sings, 'log')) ),  K.sing = 'log'; end
+if ( any(strcmpi(sings, 'pv'))  ),  K.sing = 'pv';  end
+if ( any(strcmpi(sings, 'hs'))  ),  K.sing = 'hs';  end
+
+% The new kernel has eval() only if all sub-kernels have eval()
+if ( all(cellfun('isclass', {kerns.eval}, 'function_handle')) )
+    K.eval = @eval_;
+end
+
+% The new kernel has fmm() only if all sub-kernels have fmm()
+if ( all(cellfun('isclass', {kerns.fmm}, 'function_handle')) )
+    K.fmm  = @fmm_;
+end
 
 end

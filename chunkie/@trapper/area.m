@@ -3,8 +3,8 @@ function a = area(trap)
 
 assert(trap.dim == 2,'area only well-defined for 2d curves');
 
-wts = weights(trap);
-rnorm = normals(trap);
+wts = trap.wts;
+rnorm = trap.n;
 a = sum(sum(wts.*sum(rnorm.*(trap.r),1)))/trap.dim;
 
 end

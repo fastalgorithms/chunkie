@@ -1,4 +1,4 @@
-function dim = checkcurveparam(fcurve,ta)
+function dim = checkcurveparam(fcurve,ta,nout)
 %CHECKCURVEPARAM check if a curve parameterization is correctly formatted 
 % and return the dimension of the curve.
 %
@@ -8,11 +8,16 @@ function dim = checkcurveparam(fcurve,ta)
 %
 % Input: 
 %   fcurve - function handle of the form
-%               [r,d,d2] = fcurve(t)
-%            where r, d, d2 are size [dim,size(t)] arrays describing
-%            position, first derivative, and second derivative of a curve
-%            in dim dimensions parameterized by t.
+%               r = fcurve(t);
+%            where r is a size [dim,size(t)] arrays describing
+%            the position of a curve in dim dimensions parameterized by t.
+%
+%            optionally, the function can be of the form 
+%               [r,d] = fcurve(t);  or [r,d,d2] = fcurve(t);
+%            where d is the first derivative of r with respect to t and 
+%            d2 is the second derivative. 
 %   ta - sample point t in parameterization to test
+%   nout - number of outputs of fcurve
 %
 % Output:
 %   dim - the dimension of the curve
@@ -21,7 +26,10 @@ function dim = checkcurveparam(fcurve,ta)
 %   dim = checkcurveparam(@(t) starfish(t),0.0);
 
 
-nout = 3;
+if nargin < 3
+    nout = 3;
+end
+
 out = cell(nout,1);
 [out{:}] = fcurve(ta);
 

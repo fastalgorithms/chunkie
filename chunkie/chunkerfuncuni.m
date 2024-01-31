@@ -5,10 +5,15 @@ function chnkr = chunkerfuncuni(fcurve,nch,cparams,pref)
 %
 % Input: 
 %   fcurve - function handle of the form
-%               [r,d,d2] = fcurve(t)
-%            where r, d, d2 are size [dim,size(t)] arrays describing
-%            position, first derivative, and second derivative of a curve
-%            in dim dimensions parameterized by t.
+%               r = fcurve(t);
+%            where r is a size [dim,size(t)] arrays describing
+%            the position of a curve in dim dimensions parameterized by t.
+%
+%            optionally, the function can be of the form 
+%               [r,d] = fcurve(t);  or [r,d,d2] = fcurve(t);
+%            where d is the first derivative of r with respect to t and 
+%            d2 is the second derivative. in some situations, this will
+%            improve the convergence order. 
 %
 % Optional input:
 %   nch - number of chunks to use (16)
@@ -46,9 +51,6 @@ end
 
 
 ta = 0.0; tb = 2*pi; ifclosed=true;
-chsmall = Inf; nover = 0;
-eps = 1.0e-6;
-lvlr = 'a'; maxchunklen = Inf; lvlrfac = 2.0;
 
 if isfield(cparams,'ta')
     ta = cparams.ta;
@@ -60,16 +62,30 @@ if isfield(cparams,'ifclosed')
     ifclosed = cparams.ifclosed;
 end	 
 
+% discover number of outputs
+try         
+    [r,d,d2] = fcurve(t);
+    nout = 3;
+catch
+    try 
+        [r,d] = fcurve(ta);
+        nout = 2;
+    catch
+        nout = 1;
+    end
+end
+
 ts = linspace(ta,tb,nch+1);
 
 k = pref.k;
  
-dim = checkcurveparam(fcurve,ta);
+dim = checkcurveparam(fcurve,ta,nout);
 pref.dim = dim;
-nout = 3;
-out = cell(nout,1);
+out = cell(3,1);
 
-[xs,ws] = lege.exps(k);
+[xs,~,us,vs] = lege.exps(k);
+dermat = (vs*[lege.derpol(us); zeros(1,k)]).';
+
 
 %       . . . start chunking
 
@@ -103,16 +119,22 @@ for i = 1:nch
     b=ab(2,i);
     
     ts = a + (b-a)*(xs+1)/2;
-    [out{:}] = fcurve(ts);
-    chnkr.r(:,:,i) = reshape(out{1},dim,k);
-    chnkr.d(:,:,i) = reshape(out{2},dim,k);
-    chnkr.d2(:,:,i) = reshape(out{3},dim,k);
-    chnkr.h(i) = (b-a)/2;
+    [out{1:nout}] = fcurve(ts);
+    for j = nout+1:3
+        out{j} = out{j-1}*dermat*(2/(b-a));
+    end
+    chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
+    chnkr.dstor(:,:,i) = reshape(out{2},dim,k);
+    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k);
+    chnkr.hstor(i) = (b-a)/2;
 end
 
-chnkr.adj = adjs(:,1:nch);
+chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
 
 % Set normals
-chnkr.n = normals(chnkr);
+chnkr.nstor(:,:,1:nch) = normals(chnkr);
+
+% Set weights
+chnkr.wtsstor(:,1:nch) = weights(chnkr);
 
 end

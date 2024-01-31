@@ -1,23 +1,24 @@
 function quiver(obj,varargin)
-%QUIVER quiver plot of chunker normal vectors in 2 dimensions
-% Uses standard quiver commands
+%QUIVER quiver plot of chunkgraph normal vectors in 2 dimensions
+% Uses standard quiver commands. All edges in the chunkgraph will be
+% plotted in a different color.
 %
-% Syntax: quiver(chnkr,varargin)
+% Syntax: quiver(cgrph,varargin)
 %
 % Input: 
-%   chnkr - chunker object
+%   cgrph - chunkgraph object
 %   varargin - any of the standard quiver commands
 %
 % Output:
 %   none 
 %
 % Examples:
-%   quiver(chnkr,'r','LineWidth',2) % quiver plot of chunker normals
+%   quiver(cgrph,'r','LineWidth',2) % quiver plot of chunkgraph normals
 %                                   % with thick red arrows
 %
 % see also PLOT, PLOT3
 
-% author: Travis Askham (askhamwhat@gmail.com)
+% author: Jeremy Hoskins
 
 ifhold = ishold();
 

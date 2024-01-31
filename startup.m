@@ -61,7 +61,7 @@ if(iffmm)
       !make matlab;  
       addpath './matlab';
       cd matlab;
-      run test_hfmm2d.m;
+      runtests;
       cd ../../../;
   else
       fprintf('Fmm installation not in standard location\n');

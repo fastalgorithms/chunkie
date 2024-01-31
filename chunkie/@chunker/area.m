@@ -23,8 +23,8 @@ assert(nnz(chnkr.adj == 0) == 0, ...
 assert(~any(chnkr.vertdeg > 2), ...
     'area not well-defined for higher order vertices');
 
-wts = weights(chnkr);
-rnorm = normals(chnkr);
+wts = chnkr.wts;
+rnorm = chnkr.n;
 igrand = sum(rnorm.*(chnkr.r),1); igrand = igrand(:);
 a = sum(wts(:).*igrand)/chnkr.dim;
 
