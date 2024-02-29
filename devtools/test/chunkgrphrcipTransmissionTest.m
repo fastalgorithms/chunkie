@@ -55,7 +55,7 @@ end
 
 prefs      = [];
 % prefs.chsmall = 1d-4;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
 
 
 vstruc = procverts(cgrph);

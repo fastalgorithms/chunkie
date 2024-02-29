@@ -7,7 +7,7 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 % Syntax: sysmat = chunkermat(chnkr,kern,opts)
 %
 % Input:
-%   chnkr - chunker object describing boundary
+%   chnkobj - chunker object describing boundary
 %   kern  - kernel function. By default, this should be a function handle
 %           accepting input of the form kern(srcinfo,targinfo), where srcinfo
 %           and targinfo are in the ptinfo struct format, i.e.

@@ -1,4 +1,4 @@
-function mat = kernbyindexr(i,j,targs,chnkr,kern,opdims,spmat)
+function mat = kernbyindexr(i,j,targobj,chnkr,kern,opdims,spmat)
 %% evaluate system matrix by entry index utility function for 
 % general kernels, with replacement for specific entries and the
 % ability to add a low-rank modification, rectangular version
@@ -17,6 +17,10 @@ function mat = kernbyindexr(i,j,targs,chnkr,kern,opdims,spmat)
 %
 % i - array of row indices to compute
 % j - array of col indices to compute
+% targobj - object describing the target points, can be specified as
+%       * array of points
+%       * chunker object
+%       * chunkgraph object
 % chnkr - chunker object describing boundary
 % whts - smooth integration weights on chnkr
 % kern - kernel function of the form kern(s,t,stau,ttau) where s and t 
@@ -42,15 +46,32 @@ jpts = idivide(int64(j(:)-1),int64(opdims(2)))+1;
 [juni,~,ijuni] = unique(jpts);
 
 % matrix-valued entries of kernel for unique points
-
-ri = targs(:,iuni); rj = chnkr.r(:,juni);
+rj = chnkr.r(:,juni);
 dj = chnkr.d(:,juni); d2j = chnkr.d2(:,juni);
 nj = chnkr.n(:,juni);
-%di = bsxfun(@rdivide,di,sqrt(sum(di.^2,1)));
-%dj = bsxfun(@rdivide,dj,sqrt(sum(dj.^2,1)));
 srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
 srcinfo.n = nj;
-targinfo = []; targinfo.r = ri;
+% Assign appropriate object to targinfo
+targinfo = [];
+if isa(targobj, "chunker") || isa(targobj, "chunkgraph")
+    targinfo.r = targobj.r(:,iuni);
+    targinfo.d = targobj.d(:,iuni);
+    targinfo.d2 = targobj.d2(:,iuni);
+    targinfo.n = targobj.n(:,iuni);
+elseif isstruct(targobj)
+    if isfield(targobj,'d')
+        targinfo.d = targobj.d(:,iuni);
+    end
+    if isfield(targobj,'d2')
+        targinfo.d = targobj.d(:,iuni);
+    end
+    if isfield(targobj,'n')
+        targinfo.n = targobj.n(:,iuni);
+    end
+    targinfo.r = targobj.r(:,iuni);
+else
+    targinfo.r = targobj(:,iuni);
+end
 
 matuni = kern(srcinfo,targinfo);
 

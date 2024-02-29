@@ -38,6 +38,8 @@ function varargout = fmm(eps, zk, srcinfo, targinfo, type, sigma, varargin)
 %                   note that targinfo must contain targ.n
 %                type = 'dprime' normal derivative of double layer,
 %                   note that targinfo must contain targ.n
+%                type = 'cprime' normal derivative of combined layer,
+%                   note that targinfo must contain targ.n
 %   sigma - density
 %   varargin{1} - coef in the combined layer formula, otherwise
 %                does nothing
@@ -61,7 +63,7 @@ switch lower(type)
     case {'d', 'dprime'}
         srcuse.dipstr = sigma(:).';
         srcuse.dipvec = srcinfo.n(1:2,:);
-    case 'c'
+    case {'c', 'cprime'}
         coefs = varargin{1};
         srcuse.charges = coefs(2)*sigma(:).';
         srcuse.dipstr  = coefs(1)*sigma(:).';
@@ -83,7 +85,7 @@ if ( nargout > 0 )
     switch lower(type)
         case {'s', 'd', 'c'}
             varargout{1} = U.pottarg.';
-        case {'sprime', 'dprime'}
+        case {'sprime', 'dprime', 'cprime'}
             if ( ~isfield(targinfo, 'n') )
                 error('CHUNKIE:helm2d:fmm:normals', ...
                     'Targets require normal info when evaluating Helmholtz kernel ''%s''.', type);
