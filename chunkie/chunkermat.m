@@ -438,6 +438,7 @@ end
 
 
 if(icgrph && isrcip)
+    [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k);
     nch_all = horzcat(chnkobj.echnks.nch);
     [~,nv] = size(chnkobj.verts);
     ngl = chnkrs(1).k;
@@ -467,7 +468,7 @@ if(icgrph && isrcip)
         
         if(norm(opdims_test(:)-ndim)>=0.5) 
             fprintf('in chunkermat: rcip: opdims did not match up for for vertex =%d\n',ivert)
-            fprtinf('returning without doing any rcip correction\m');
+            fprintf('returning without doing any rcip correction\n');
             break
         end
         starind = zeros(1,2*ngl*ndim*nedge);
@@ -482,13 +483,13 @@ if(icgrph && isrcip)
         end
         
 
-        [Pbc,PWbc,starL,circL,starS,circS,ilist] = chnk.rcip.setup(ngl,ndim, ...
-          nedge,isstart);
+        [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = ...
+            chnk.rcip.setup(ngl,ndim,nedge,isstart);
         
         % this might need to be fixed in triple junction case
         R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
-            Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,... 
-            glxs);
+            Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
+            sbclmat,sbcrmat,lvmat,rvmat,u,opts);
        
         sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
         if (~nonsmoothonly)
