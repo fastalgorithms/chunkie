@@ -148,7 +148,6 @@ end
 
 % smooth for sufficiently far, adaptive otherwise
 
-%optsflag = []; optsflag.fac = opts_use.fac;
 rho = 1.8;
 optsflag = [];  optsflag.rho = rho;
 flag = flagnear_rectangle(chnkr,targinfo.r,optsflag);

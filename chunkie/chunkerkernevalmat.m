@@ -102,13 +102,13 @@ end
 
 forcesmooth = false;
 forceadap = false;
-forcepqud = false;
+forcepquad = false;
 nonsmoothonly = false;
 fac = 1.0;
 eps = 1e-12;
 if isfield(opts,'forcesmooth'); forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); forceadap = opts.forceadap; end
-if isfield(opts,'forcepquad'); forcepqud = opts.forcepquad; end
+if isfield(opts,'forcepquad'); forcepquad = opts.forcepquad; end
 if isfield(opts,'nonsmoothonly'); nonsmoothonly = opts.nonsmoothonly; end
 if isfield(opts,'fac'); fac = opts.fac; end
 if isfield(opts,'eps'); eps = opts.eps; end
@@ -152,7 +152,7 @@ if forceadap
     return
 end
 
-if forcepqud
+if forcepquad
     optsflag = []; optsflag.fac = fac;
     flag = flagnear(chnkr,targinfo.r,optsflag);
     spmat = chunkerkernevalmat_ho(chnkr,ftmp,opdims, ...
@@ -164,6 +164,9 @@ if forcepqud
 end
 
 % smooth for sufficiently far, adaptive otherwise
+
+% TODO: change to chunkerkerneval system, need routine to generate
+% upsampling matrix.
 
 optsflag = []; optsflag.fac = fac;
 flag = flagnear(chnkr,targinfo.r,optsflag);
