@@ -47,7 +47,7 @@ if class(chnkobj) == "chunker"
 elseif class(chnkobj) == "chunkgraph"
    chnkr = merge(chnkobj.echnks);
 else
-    msg = "Unsupported object in chunkerinteriort";
+    msg = "Unsupported object in chunkerinterior";
     error(msg)
 end
 

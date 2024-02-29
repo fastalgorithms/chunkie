@@ -53,16 +53,22 @@ srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
 srcinfo.n = nj;
 % Assign appropriate object to targinfo
 targinfo = [];
-if isa(targobj, "chunker")
+if isa(targobj, "chunker") || isa(targobj, "chunkgraph")
     targinfo.r = targobj.r(:,iuni);
     targinfo.d = targobj.d(:,iuni);
     targinfo.d2 = targobj.d2(:,iuni);
     targinfo.n = targobj.n(:,iuni);
-elseif isa(targobj, "chunkgraph")
+elseif isstruct(targobj)
+    if isfield(targobj,'d')
+        targinfo.d = targobj.d(:,iuni);
+    end
+    if isfield(targobj,'d2')
+        targinfo.d = targobj.d(:,iuni);
+    end
+    if isfield(targobj,'n')
+        targinfo.n = targobj.n(:,iuni);
+    end
     targinfo.r = targobj.r(:,iuni);
-    targinfo.d = targobj.d(:,iuni);
-    targinfo.d2 = targobj.d2(:,iuni);
-    targinfo.n = targobj.n(:,iuni);
 else
     targinfo.r = targobj(:,iuni);
 end

@@ -63,12 +63,9 @@ if class(chnkobj) == "chunker"
 elseif class(chnkobj) == "chunkgraph"
    chnkr = merge(chnkobj.echnks);
 else
-    msg = "Unsupported object in chunkerinteriort";
+    msg = "Unsupported object in chunkerkerneval";
     error(msg)
 end
-
-
-
 
 srcinfo = []; targinfo = [];
 srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 

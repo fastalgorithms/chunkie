@@ -23,7 +23,7 @@ t1 = toc(start);
 
 % sources
 
-ns = 10;
+ns = 100;
 ts = 0.0+2*pi*rand(ns,1);
 sources = starfish(ts,narms,amp);
 sources = 3.0*sources;
@@ -31,7 +31,7 @@ strengths = randn(ns,1);
 
 % targets
 
-nt = 100;
+nt = 300;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
 targets = targets.*repmat(rand(1,nt),2,1);
@@ -52,9 +52,9 @@ axis equal
 
 % kernel defs
 
-kernd = @(s,t) chnk.lap2d.kern(s,t,'d');
-kerns = @(s,t) chnk.lap2d.kern(s,t,'s');
-kernsprime = @(s,t) chnk.lap2d.kern(s,t,'sprime');
+kernd = kernel('lap','d');
+kerns = kernel('lap','s');
+kernsprime = kernel('lap','sprime');
 
 opdims = [1 1];
 
@@ -63,21 +63,22 @@ opdims = [1 1];
 srcinfo = []; srcinfo.r = sources; 
 targinfo = []; targinfo.r = chnkr.r(:,:); 
 targinfo.d = chnkr.d(:,:);
-kernmats = kerns(srcinfo,targinfo);
-kernmatsprime = kernsprime(srcinfo,targinfo);
+kernmats = kerns.eval(srcinfo,targinfo);
+kernmatsprime = kernsprime.eval(srcinfo,targinfo);
 densu = kernmats*strengths;
 densun = kernmatsprime*strengths;
 
 % eval u at targets
 
 targinfo = []; targinfo.r = targets;
-kernmatstarg = kerns(srcinfo,targinfo);
+kernmatstarg = kerns.eval(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
 
-% test green's id
+% test green's id. we use FLAM, direct and FMM for smooth work
 
-opts.quadkgparams = {'RelTol',1.0e-13,'AbsTol',1.0e-13};
+opts = [];
+opts.flam = true;
 start=tic; Du = chunkerkerneval(chnkr,kernd,densu,targets,opts); 
 toc(start)
 start=tic; Sun = chunkerkerneval(chnkr,kerns,densun,targets,opts); 
@@ -89,7 +90,41 @@ utarg2 = Sun-Du;
 
 relerr = norm(utarg-utarg2,'fro')/norm(utarg,'fro');
 
-fprintf('relative frobenius error %5.2e\n',relerr);
+fprintf('relative frobenius error, forcing flam %5.2e\n',relerr);
+
+assert(relerr < 1e-11);
+
+opts = [];
+opts.accel = false;
+start=tic; Du = chunkerkerneval(chnkr,kernd,densu,targets,opts); 
+toc(start)
+start=tic; Sun = chunkerkerneval(chnkr,kerns,densun,targets,opts); 
+toc(start)
+
+utarg2 = Sun-Du;
+
+%
+
+relerr = norm(utarg-utarg2,'fro')/norm(utarg,'fro');
+
+fprintf('relative frobenius error, forcing direct %5.2e\n',relerr);
+
+assert(relerr < 1e-11);
+
+opts = [];
+opts.forcefmm = true;
+start=tic; Du = chunkerkerneval(chnkr,kernd,densu,targets,opts); 
+toc(start)
+start=tic; Sun = chunkerkerneval(chnkr,kerns,densun,targets,opts); 
+toc(start)
+
+utarg2 = Sun-Du;
+
+%
+
+relerr = norm(utarg-utarg2,'fro')/norm(utarg,'fro');
+
+fprintf('relative frobenius error, forcing fmm %5.2e\n',relerr);
 
 assert(relerr < 1e-11);
 
