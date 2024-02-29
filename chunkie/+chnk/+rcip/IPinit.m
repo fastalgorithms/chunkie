@@ -1,10 +1,16 @@
   function [IP,IPW]=IPinit(T,W)
+  %CHNK.RCIP.IPinit 
+  %
   % construct the prolongation matrix IP that maps function values
   % on n_{gl} Gauss-Legendre nodes on [-1,1] to function values at 
   % 2n_{gl} Gauss-Legendre, with shifted and scaled n_{gl}
   % Gauss-Legendre nodes on each subinterval [-1,0], [0,1], respectively.
   %
   % IPW is the weighted prolongation matrix acted on the left side. 
+  %
+  
+  % author: Johan Helsing (part of RCIP tutorial)
+  
   ngl = length(T);
   A=ones(ngl);
   AA=ones(2*ngl,ngl);

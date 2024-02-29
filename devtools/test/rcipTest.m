@@ -13,10 +13,7 @@ chnkr(1,ncurve) = chunker();
 % set wave number
 zk = 1.1;
 
-
-
-
-nch = 5*ones(1,ncurve);
+nch = 8*ones(1,ncurve);
 
 a = -1.0;
 b = 1.0;
@@ -70,7 +67,7 @@ ndim=1;
 
 fkern = @(s,t) -2*chnk.helm2d.kern(zk,s,t,'D');
 
-%%
+%
 
 % sources
 
@@ -86,6 +83,10 @@ nt = 20;
 ts = 0.0+2*pi*rand(1,nt);
 targets = [cos(ts);sin(ts)];
 targets = 0.2*targets;
+targets(:,1) = [0.95;0];
+targets(:,2) = [0,0.36];
+targets(:,3) = [-0.95;0];
+targets(:,2) = [0,0.36];
 
 scatter(sources(1,:),sources(2,:),'o');
 scatter(targets(1,:),targets(2,:),'x');
@@ -133,6 +134,8 @@ RG = speye(np);
 ncorner = 2;
 corners= cell(1,ncorner);
 R = cell(1,ncorner);
+rcipsav = cell(1,ncorner);
+starinds = cell(1,ncorner);
 
 
 corners{1}.clist = [1,2];
@@ -147,9 +150,10 @@ corners{2}.iedgechunks = [1 2; chnkr(1).nch 1];
 
 ndim = 1;
 
-nsub = 100;
+nsub = 40;
 
 opts = [];
+
 
 for icorner=1:ncorner
     clist = corners{icorner}.clist;
@@ -170,30 +174,63 @@ for icorner=1:ncorner
         end
     end
     
+    starinds{icorner} = starind;
     
-    [Pbc,PWbc,starL,circL,starS,circS,ilist] = chnk.rcip.setup(ngl,ndim, ...
+    [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = chnk.rcip.setup(ngl,ndim, ...
       nedge,isstart);
     opts_use = [];
     
     iedgechunks = corners{icorner}.iedgechunks;
-    tic; R{icorner} = chnk.rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
-        Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,... 
-        glxs);
+    optsrcip = [];
+    optsrcip.savedeep = true;
+    tic; [R{icorner},rcipsav{icorner}] = chnk.rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
+        Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,...,
+        [],[],[],[],[],optsrcip);
     toc
     
     sysmat(starind,starind) = inv(R{icorner}) - eye(2*ngl*nedge*ndim);
 end
 sysmat = sysmat + eye(np);
 
-sol = gmres(sysmat,ubdry,np,eps*20,np);
+[sol,flag,relres,iter] = gmres(sysmat,ubdry,np,eps*20,np);
 
-opts.usesmooth=true;
+%
+
+% interpolate to fine grid
+
+ndepth = 10;
+cor = cell(1,ncorner);
+
+for icorner = 1:ncorner
+    solhat = sol(starinds{icorner});
+    [solhatinterp,srcinfo,wts] = chnk.rcip.rhohatInterp(solhat,rcipsav{icorner},ndepth);
+
+    targtemp = targets(:,:) - rcipsav{icorner}.ctr(:,1);
+    targinfo = [];
+    targinfo.r = targtemp;
+    
+    cmat = fkern(srcinfo,targinfo);
+    mu = solhatinterp(:).*wts(:);
+    cor{icorner} = cmat*mu;
+end
+
+%
+
+soltemp = sol;
+for icorner = 1:ncorner
+    soltemp(starinds{icorner}) = 0;
+end
+    
+
+opts = [];
 opts.verb=false;
-opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
-start=tic; Dsol = chunkerkerneval(chnkrtotal,fkern,sol,targets,opts); 
+start=tic; Dsol = chunkerkerneval(chnkrtotal,fkern,soltemp,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
+for icorner = 1:ncorner
+    Dsol = Dsol + cor{icorner};
+end
 %
 
 wchnkr = chnkrtotal.wts;
