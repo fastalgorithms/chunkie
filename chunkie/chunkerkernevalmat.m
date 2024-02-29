@@ -6,8 +6,17 @@ function mat = chunkerkernevalmat(chnkr,kern,targobj,opts)
 % Syntax: mat = chunkerkernevalmat(chnkr,kern,targs,opts)
 %
 % Input:
-%   chnkr - chunker object description of curve
-%   kern - integral kernel taking inputs kern(srcinfo,targinfo) 
+%   chnkr - chunker object describing boundary, currently
+%              only supports chunkers, and not chunkgraphs
+%   kern  - kernel function. By default, this should be a function handle
+%           accepting input of the form kern(srcinfo,targinfo), where srcinfo
+%           and targinfo are in the ptinfo struct format, i.e.
+%                ptinfo.r - positions (2,:) array
+%                ptinfo.d - first derivative in underlying
+%                     parameterization (2,:)
+%                ptinfo.n - unit normals (2,:)
+%                ptinfo.d2 - second derivative in underlying
+%                     parameterization (2,:)
 %   targobj - object describing the target points, can be specified as
 %       * array of points
 %       * chunker object
@@ -41,6 +50,37 @@ function mat = chunkerkernevalmat(chnkr,kern,targobj,opts)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
+% convert kernel to kernel object, put in singularity info 
+% opts.sing provides a default value for singularities if not 
+% defined for kernels
+
+if isa(kern,'function_handle')
+    kern2 = kernel(kern);
+    kern = kern2;
+elseif isa(kern,'cell')
+    sz = size(kern);
+    kern2(sz(1),sz(2)) = kernel();
+    for j = 1:sz(2)
+        for i = 1:sz(1)
+            if isa(kern{i,j},'function_handle')
+                kern2(i,j) = kernel(kern{i,j});
+            elseif isa(kern{i,j},'kernel')
+                kern2(i,j) = kern{i,j};
+            else
+                msg = "Second input is not a kernel object, function handle, " ...
+                    + "or cell array";
+                error(msg);
+            end
+        end
+    end
+    kern = kern2;
+    
+elseif ~isa(kern,'kernel')
+    msg = "Second input is not a kernel object, function handle, " ...
+                + "or cell array";
+    error(msg);
+end
+    
 % determine operator dimensions using first two points
 
 
@@ -51,7 +91,9 @@ srcinfo.d2 = chnkr.d2(:,1);
 targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
 targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
 
-ftemp = kern(srcinfo,targinfo);
+ftmp = kern.eval;
+
+ftemp = ftmp(srcinfo,targinfo);
 opdims = size(ftemp);
 
 if nargin < 4
@@ -96,14 +138,16 @@ optssmooth = [];
 optsadap = []; 
 optsadap.eps = eps;
 
+
+
 if forcesmooth
-    mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targinfo, ...
+    mat = chunkerkernevalmat_smooth(chnkr,ftmp,opdims,targinfo, ...
         [],optssmooth);
     return
 end
 
 if forceadap
-    mat = chunkerkernevalmat_adap(chnkr,kern,opdims, ...
+    mat = chunkerkernevalmat_adap(chnkr,ftmp,opdims, ...
         targinfo,[],optsadap);
     return
 end
@@ -111,9 +155,9 @@ end
 if forcepqud
     optsflag = []; optsflag.fac = fac;
     flag = flagnear(chnkr,targinfo.r,optsflag);
-    spmat = chunkerkernevalmat_ho(chnkr,kern,opdims, ...
+    spmat = chunkerkernevalmat_ho(chnkr,ftmp,opdims, ...
         targinfo,flag,optsadap);
-    mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targinfo, ...
+    mat = chunkerkernevalmat_smooth(chnkr,ftmp,opdims,targinfo, ...
         flag,opts);
     mat = mat + spmat;
     return
@@ -123,7 +167,7 @@ end
 
 optsflag = []; optsflag.fac = fac;
 flag = flagnear(chnkr,targinfo.r,optsflag);
-spmat = chunkerkernevalmat_adap(chnkr,kern,opdims, ...
+spmat = chunkerkernevalmat_adap(chnkr,ftmp,opdims, ...
         targinfo,flag,optsadap);
 
 if nonsmoothonly
@@ -131,7 +175,7 @@ if nonsmoothonly
     return;
 end
 
-mat = chunkerkernevalmat_smooth(chnkr,kern,opdims,targinfo, ...
+mat = chunkerkernevalmat_smooth(chnkr,ftmp,opdims,targinfo, ...
     flag,opts);
 
 mat = mat + spmat;
