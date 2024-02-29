@@ -8,51 +8,14 @@ classdef chunkgraph
 % allowed to intersect (i.e. intersecting curves should be split at the
 % point where they intersect. 
 %
-% chunkgraph required properties:
+% The chunkgraph is specified by an array of chunkers called echnks (the
+% edges), an array of points called verts (the vertices), and an array of
+% indices specifying the vertices at the left and right ends of any 
 %
-%   verts - a (2,:) array of the coordinates of the graph vertices
-%   echnks - an array of chunker objects specifying the edges of the graph
-%   lrverts - a (length(echnks),2) array of the indices. lrverts(i,1) is
-%      the vertex at the left end of edge i. lrverts(i,2) is the vertex at
-%      the right end of edge i. A loop begins and ends at the same vertex
-%
-% chunkgraph derived properties:
-%
-%   regions - a cell array of cell arrays specifying simply connected
-%      regions in the exterior of the chunkgraph. regions{j} specifies the
-%      boundary of the jth region by a cell array. regions{j}{i} specifies
-%      the ith connected component of the boundary of region j by an array
-%      of the indices for the edges forming that component. By convention,
-%      regions{1} is the unbounded connected component of the exterior.
-%   vstruc - a cell array of length size(verts,2). abs(vstruc{j}) is an 
-%      array indicating the edges which meet at a vertex. The sign for each
-%      entry in the array vstruc{j} indicates if the edge starts (negative)
-%      or ends (positive) at the vertex. If a loop meets at a vertex, the
-%      edge number will appear twice in the array, with both signs.
-%
-%   chunkgraph merged edges properties:
-%
-% the properties below refer to the quantities you would get by merging all
-% of the edge chunks. The points for edge 1 appear first, then edge 2, etc.
-%
-%   k - the order of the Legendre nodes used to discretize panels
-%   nch - the total number of chunks over all edges
-%   npt - the total number of points over all edges
-%   r - dim x k x nch array, r(:,i,j) gives the coordinates of the ith 
-%         node on the jth chunk of the chunker
-%   h - nch array of scaling factors for chunks. the chunk derivatives are
-%         scaled as if the coordinates in r(:,:,j) are sampled on an 
-%         interval of length 2*h(j). This affects integration formulas.
-%   d - dim x k x nch array, d(:,i,j) gives the time derivative of the 
-%         coordinate at the ith node on the jth chunk of the chunker
-%   d2 - dim x k x nch array, d(:,i,j) gives the 2nd time derivative of the 
-%         coordinate at the ith node on the jth chunk of the chunker
-%   n - dim x k x nch array of normals to the curve
-
 % 
     properties(SetAccess=public)
         verts
-        lrverts
+        edge2verts
         echnks
         regions
         vstruc
@@ -70,7 +33,7 @@ classdef chunkgraph
     end
     
     methods
-        function obj = chunkgraph(verts,lrverts,fchnks,cparams)
+        function obj = chunkgraph(verts,edge2verts,fchnks,cparams)
             if (nargin == 0)
                 return
             end
@@ -78,7 +41,7 @@ classdef chunkgraph
                 return
             end
             obj.verts      = verts;
-            obj.lrverts = lrverts;
+            obj.edge2verts = edge2verts;
             obj.echnks     = chunker.empty;
             
             if (nargin < 4)
@@ -111,18 +74,17 @@ classdef chunkgraph
             pref.nchmax = 10000;
             pref.k = 16;
             
-            nvert = size(verts,2);
-            if any(lrverts < 1) || any(lrverts > nvert)
-                error('Incompatible vertex and connectivity (lrverts) info');
+            if (size(verts,2) ~= size(edge2verts,2))
+                error('Incompatible vertex and edge sizes');
             end
             
             echnks = chunker.empty();
-            for i=1:size(lrverts,1)
-                i1 = lrverts(i,1);
-                i2 = lrverts(i,2);
-                v1 = verts(:,i1);
-                v2 = verts(:,i2);
+            for i=1:size(edge2verts,1)
                 if (numel(fchnks)<i || isempty(fchnks{i}))
+                    i1 = find(edge2verts(i,:)==-1);
+                    i2 = find(edge2verts(i,:)==1);
+                    v1 = verts(:,i1);
+                    v2 = verts(:,i2);
                     fcurve = @(t) chnk.curves.linefunc(t,v1,v2);
                     chnkr = chunkerfunc(fcurve,cploc,pref);
                     chnkr = sort(chnkr);
@@ -132,13 +94,13 @@ classdef chunkgraph
                     [vs,~,~] =fchnks{i}([0,1]);
                     chnkr = chunkerfunc(fchnks{i},cploc,pref);
                     chnkr = sort(chnkr);
-                    v1 = verts(:,find(edge2verts(i,:)==-1));
-                    v2 = verts(:,find(edge2verts(i,:)== 1));
+                    vfin0 = verts(:,find(edge2verts(i,:)==-1));
+                    vfin1 = verts(:,find(edge2verts(i,:)== 1));
                     r0 = vs(:,1);
-                    r1 = v1;
-                    scale = norm(v2-v1,'fro')/norm(vs(:,2)-vs(:,1),'fro');
-                    xdfin = v2(1)-v1(1);
-                    ydfin = v2(2)-v1(2);
+                    r1 = vfin0;
+                    scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
+                    xdfin = vfin1(1)-vfin0(1);
+                    ydfin = vfin1(2)-vfin0(2);
                     tfin = atan2(ydfin,xdfin);
                     xdini = vs(1,2)-vs(1,1);
                     ydini = vs(2,2)-vs(2,1);
