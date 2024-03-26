@@ -19,6 +19,8 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %	cparams - curve parameters structure (defaults)
 %       cparams.ta = left end of t interval (0)
 %       cparams.tb = right end of t interval (2*pi)
+%       cparams.tsplits = set of initial break points for discretization in
+%                 parameter space (should be in [ta,tb])
 %       cparams.ifclosed = flag determining if the curve
 %           is to be interpreted as a closed curve (true)
 %       cparams.chsmall = max size of end intervals if
@@ -139,19 +141,42 @@ interp_xs = reshape(polvals,[k,k2]).'*us;
 
 ab = zeros(2,nchmax);
 adjs = zeros(2,nchmax);
-ab(1,1)=ta;
-ab(2,1)=tb;
-nch=1;
+
+if (isfield(cparams,'tsplits'))
+    tsplits = cparams.tsplits;
+    tsplits = [tsplits(:); ta; tb];
+else
+    tsplits = [ta;tb];
+end
+   
+tsplits = sort(unique(tsplits),'ascend');
+lab = length(tsplits);
+if (lab-1 > nchmax)
+    error(['nchmax exceeded in chunkerfunc on initial splits.\n ',...
+        'try increasing nchmax in preference struct']);
+end
+if (any(tsplits > tb) || any(tsplits < ta))
+    error(['tsplits outside of interval of definition.\n', ...
+          'check definition of splits, ta and tb']);
+end
+
+ab(1,1:(lab-1)) = tsplits(1:end-1);
+ab(2,1:(lab-1)) = tsplits(2:end);
+
+nch=lab-1;
+adjs(1,1:nch) = 0:(nch-1);
+adjs(2,1:nch) = 2:(nch+1);
+
 if ifclosed
-    adjs(1,1)=1;
-    adjs(2,1)=1;
+    adjs(1,1)=nch;
+    adjs(2,nch)=1;
 else
     adjs(1,1)=-1;
-    adjs(2,1)=-1;
+    adjs(2,nch)=-1;
 end
 nchnew=nch;
 
-maxiter_res=nchmax;
+maxiter_res=nchmax-nch;
 
 rad_curr = 0;
 for ijk = 1:maxiter_res
