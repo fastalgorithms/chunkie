@@ -139,6 +139,5 @@ license.
    getchunkie
    guide
    gallery
-   kerns
    
 

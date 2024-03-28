@@ -16,6 +16,7 @@ typing "help [function name]" in a MATLAB command window:
    :caption: Contents:
 
    guide/chunkers
+   guide/kerns
    guide/simplebvps
    guide/largerproblems
    guide/chunkgraphs

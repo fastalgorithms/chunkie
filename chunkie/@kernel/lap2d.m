@@ -6,15 +6,27 @@ function obj = lap2d(type, coefs)
 %   KERNEL.LAP2D('d') or KERNEL.LAP2D('double') constructs the double-layer
 %   Laplace kernel.
 %
-%   KERNEL.LAP2D('sp') or KERNEL.LAP2D('sprime') constructs the derivative
-%   of the single-layer Laplace kernel.
+%   KERNEL.LAP2D('sp') or KERNEL.LAP2D('sprime') constructs the
+%   normal derivative of the single-layer Laplace kernel.
+%
+%   KERNEL.LAP2D('sg') or KERNEL.LAP2D('sgrad') constructs the
+%   gradient of the single-layer Laplace kernel.
+%
+%   KERNEL.LAP2D('dp') or KERNEL.LAP2D('dprime') constructs the normal
+%   derivative of the double-layer Laplace kernel.
+%
+%   KERNEL.LAP2D('dg') or KERNEL.LAP2D('dgrad') constructs the gradient
+%   of the double-layer Laplace kernel.
 %
 %   KERNEL.LAP2D('c', coefs) or KERNEL.LAP2D('combined', coefs) constructs
-%   the combined-layer Laplace kernel with parameter ETA, i.e.,
-%   KERNEL.LAP2D('d') + ETA*KERNEL.LAP2D('s').
+%   the combined-layer Laplace kernel with parameter coefs, i.e.,
+%   coefs(1)*KERNEL.LAP2D('d') + coefs(2)*KERNEL.LAP2D('s'). If no
+%   value of coefs is specified the default is coefs = [1 1]  
 %
 % See also CHNK.LAP2D.KERN.
 
+% author: Dan Fortunato
+  
 if ( nargin < 1 )
     error('Missing Laplace kernel type.');
 end
@@ -71,7 +83,7 @@ switch lower(type)
 
     case {'c', 'combined'}
         if ( nargin < 2 )
-            warning('Missing combined layer parameter coefs. Defaulting to 1.');
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
             coefs = ones(2,1);
         end
         obj.type = 'c';
