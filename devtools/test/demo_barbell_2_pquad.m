@@ -83,7 +83,10 @@ fprintf('%5.2e s : time to find points in domain\n',t1)
 % compute layer potential at interior points
 opts.forcepquad = true; 
 opts.side = 'i'; % 'i' for interior, 'e' for exterior, for positively oriented curve.
+start = tic;
 Dsolpquad = chunkerkerneval(chnkr,fkern,sol,targets(:,in),opts); 
+t1 = toc(start);
+fprintf('%5.2e s : time for kerneval (Helsing-Ojala for near)\n',t1);
 
 start = tic;
 Dsol = chunkerkerneval(chnkr,fkern,sol,targets(:,in)); t1 = toc(start);
@@ -91,7 +94,7 @@ fprintf('%5.2e s : time for kerneval (adaptive for near)\n',t1);
 
 % Compare with reference solution Dsol
 error = max(abs(Dsol-Dsolpquad))/max(abs(Dsol));
-fprintf('%5.2e Relative max error : \n',error);
+fprintf('%5.2e : Relative max error\n',error);
 % 
 
 figure(3)
