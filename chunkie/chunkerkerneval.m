@@ -174,6 +174,11 @@ end
 function fints = chunkerkerneval_pquad(chnkr,kern,opdims,dens, ...
     targinfo,flag,opts)
 
+if ~isa(kern,'kernel') || isempty(kern.splitinfo)
+    error('Helsing-Ojala quad only available for kernel class objects with splitinfo defined');
+end
+
+
 % target
 [~,nt] = size(targinfo.r);
 fints = zeros(opdims(1)*nt,1);
@@ -198,25 +203,6 @@ for j=1:size(chnkr.r,3)
     [ji] = find(flag(:,j));
     if(~isempty(ji))
         idxjmat = (j-1)*k+(1:k);
-% should be initialized properly in kernel class. Replace 1 with constants, and source an argument.       
-        if(kern.type=='s')
-            kern.splitinfo = [];
-            kern.splitinfo.type = {[1 0 0 0]};
-            kern.splitinfo.action = {'r'};
-            kern.splitinfo.function = {@(s,t) ones(size(t.r,2),size(s.r,2))};
-        end
-
-        if(kern.type=='d')
-            kern.splitinfo = [];
-            kern.splitinfo.type = {[0 0 -1 0]};
-            kern.splitinfo.action = {'r'};
-            kern.splitinfo.function = {@(s,t) ones(size(t.r,2),size(s.r,2))};
-        end
-
-        if(kern.type=='c')
-            kern.splitinfo = {@(targs) zeros(size(targs,2),numel(bw)), @(targs) ones(size(targs,2),...
-                 numel(bw)),@(targs) ones(size(targs,2),numel(bw))};
-        end
 
         targinfoji = [];
         targinfoji.r = targinfo.r(:,ji);
