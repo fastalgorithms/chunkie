@@ -97,9 +97,4 @@ error = max(abs(Dsol-Dsolpquad))/max(abs(Dsol));
 fprintf('%5.2e : Relative max error\n',error);
 % 
 
-figure(3)
-clf
-zztarg = nan(size(xxtarg));
-zztarg(in) = Dsol;
-h=surf(xxtarg,yytarg,zztarg);
-set(h,'EdgeColor','none')
+assert(error < 1e-10)
