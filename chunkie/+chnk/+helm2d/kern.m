@@ -133,14 +133,14 @@ end
 % normal derivative of combined field
 if strcmpi(type,'cprime')
   coef = ones(2,1);
-  if(nargin == 5); coef = varargin{1}; end;
+  if(nargin == 5); coef = varargin{1}; end
   targnorm = targinfo.n;
   srcnorm = srcinfo.n;
   
-  submat = zeros(nt,ns);
+
 
   % Get gradient and hessian info
-  [submats,grad,hess] = chnk.helm2d.green(zk,src,targ);
+  [~,grad,hess] = chnk.helm2d.green(zk,src,targ);
 
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
@@ -161,7 +161,7 @@ end
 % Dirichlet and neumann data corresponding to combined field
 if strcmpi(type,'c2trans') 
   coef = ones(2,1);
-  if(nargin == 5); coef = varargin{1}; end;
+  if(nargin == 5); coef = varargin{1}; end
   targnorm = targinfo.n;
   srcnorm = srcinfo.n;
 

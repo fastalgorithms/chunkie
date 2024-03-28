@@ -1,9 +1,16 @@
 classdef chunkgraph
 %CHUNKGRAPH chunk graph class for storing complex domains
 %
-% We describe a complex domain by its edges (smooth, regular
-% curves) and vertices (free ends of edges or points where the ends of 
-% one or more edges meets)
+% We describe a complex domain by a planar graph. Smooth boundary components
+% (discretized by chunkers) specify the edges of the graph and the
+% coordinates of free ends of the edges or points where the ends of multiple
+% edges meet specify the vertices. The interiors of distinct edges are not 
+% allowed to intersect (i.e. intersecting curves should be split at the
+% point where they intersect. 
+%
+% The chunkgraph is specified by an array of chunkers called echnks (the
+% edges), an array of points called verts (the vertices), and an array of
+% indices specifying the vertices at the left and right ends of any 
 %
 % 
     properties(SetAccess=public)

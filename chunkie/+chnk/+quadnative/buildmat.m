@@ -36,12 +36,7 @@ srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; srcinfo.d2 = d2s; srcinfo.n = ns;
 targinfo = []; targinfo.r = rt; targinfo.d = dt; targinfo.d2 = d2t; targinfo.n = nt;
 hs = h(j); ht = h(i);
 
-dsnrms = sqrt(sum((ds).^2,1));
-%taus = bsxfun(@rdivide,ds,dsnrms);
-
-%dtnrms = sqrt(sum(abs(dt).^2,1));
-%taut = bsxfun(@rdivide,dt,dtnrms);
-
+dsnrms = sqrt(sum(ds.^2,1));
 ws = kron(hs(:),wts(:));
 
 dsdt = dsnrms(:).*ws;

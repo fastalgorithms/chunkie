@@ -1,16 +1,18 @@
-function [in] = chunkerinterior(chnkr,pts,opts)
+function [in] = chunkerinterior(chnkobj,ptsobj,opts)
 %CHUNKERINTERIOR returns an array indicating whether each point specified 
 % % by pts is inside the domain. Assumes the domain is closed.
 %
-% Syntax: in = chunkerinterior(chnkr,pts,opts)
-%         in = chunkerinterior(chnkr,{x,y},opts) % meshgrid version
+% Syntax: in = chunkerinterior(chnkobj,pts,opts)
+%         in = chunkerinterior(chnkobj,{x,y},opts) % meshgrid version
 %
 % Input:
-%   chnkr - chunker object describing geometry
-%   pts - (chnkr.dim,:) array of points to test
-% 
-%   {x,y} - length 2 cell array. the points checked then have the
-%       coordinates of a mesh grid [xx,yy] = meshgrid(x,y)
+%   chnkobj - chunker object or chunkgraph object describing geometry
+%   ptsobj - object describing the target points, can be specified as
+%       * (chnkr.dim,:) array of points to test
+%       * {x,y} - length 2 cell array. the points checked then have the
+%           coordinates of a mesh grid [xx,yy] = meshgrid(x,y)
+%       * chunker object, in which case it uses chunker.r(:,:) 
+%       * chunkgraph object, in which case it uses chunkgraph.r(:,:) 
 %
 % Optional input:
 %   opts - options structure with entries:
@@ -34,23 +36,39 @@ function [in] = chunkerinterior(chnkr,pts,opts)
 
 grid = false;
 
-assert(chnkr.dim == 2,'interior only well-defined for 2D');
 
 if nargin < 3
     opts = [];
 end
 
-if isa(pts,"cell")
-    assert(length(pts)==2,'second input should be either 2xnpts array or length 2 cell array');
-    x = pts{1};
-    y = pts{2};
-    grid = true;
+% Assign appropriate object to chnkr
+if class(chnkobj) == "chunker"
+   chnkr = chnkobj;
+elseif class(chnkobj) == "chunkgraph"
+   chnkr = merge(chnkobj.echnks);
+else
+    msg = "Unsupported object in chunkerinterior";
+    error(msg)
 end
 
-if grid
+assert(chnkr.dim == 2,'interior only well-defined for 2D');
+
+% Assign appropriate object to pts
+if isa(ptsobj, "cell")
+    assert(length(ptsobj)==2,'second input should be either 2xnpts array or length 2 cell array');
+    x = ptsobj{1};
+    y = ptsobj{2};
+    grid = true;
     [xx,yy] = meshgrid(x,y);
     pts = [xx(:).'; yy(:).'];
-end    
+elseif isa(ptsobj, "chunker")
+    pts = ptsobj.r(:,:);
+elseif isa(ptsobj, "chunkgraph")
+    pts = ptsobj.r(:,:);
+else
+    pts = ptsobj;
+end
+
 
 usefmm = true;
 if isfield(opts,'fmm')
