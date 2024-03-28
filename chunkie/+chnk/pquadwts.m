@@ -1,4 +1,4 @@
-function mat = pquadwts(r,d,n,d2,h,ct,bw,j,...
+function [mat,mat_log,mat_cauchy] = pquadwts(r,d,n,d2,h,ct,bw,j,...
     rt,dt,nt,d2t,kern,opdims,t,w,opts,intp_ab,intp)
 %CHNK.INTERPQUADWTS product integration for interaction of kernel on chunk 
 % at targets
@@ -43,13 +43,12 @@ sp = abs(d_i); tang = d_i./sp;                    % speed, tangent
 n_i = -1i*tang;                                   % normal
 cur = -real(conj(d2_i).*n_i)./sp.^2;              % curvature
 wxp_i = w.*d_i;                                     % complex speed weights (Helsing's wzp)
+mat_log = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+mat_cauchy = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
 
-mat_ho_slp = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),'e');
-mat_ho_dlp = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),'e');
-
-mat = (mat_ho_slp+real(mat_ho_dlp))*intp;  % depends on kern, different mat1?
+mat = (mat_log+real(mat_cauchy));  % depends on kern, different mat1?
 
 end
 

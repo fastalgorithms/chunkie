@@ -92,6 +92,7 @@ opts_use.eps = 1e-12;
 if isfield(opts,'forcesmooth'); opts_use.forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); opts_use.forceadap = opts.forceadap; end
 if isfield(opts,'forcepquad'); opts_use.forcepquad = opts.forcepquad; end
+if isfield(opts,'side'); opts_use.side = opts.side; end
 if isfield(opts,'flam')
     opts_use.flam = opts.flam;
 end
@@ -140,7 +141,12 @@ if opts_use.forcepquad
     fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens,targinfo, ...
         flag,opts_use);
 
-    fints = fints + chunkerkerneval_ho(chnkr,kern,opdims,dens, ...
+    if ~isfield(opts_use,'side')
+        msg = "Error: for pquad, set opts.side to 'i' or 'e' ";
+        error(msg)  
+    end
+
+    fints = fints + chunkerkerneval_pquad(chnkr,kern,opdims,dens, ...
         targinfo,flag,opts_use);
 
     return
@@ -165,7 +171,7 @@ fints = fints + chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
 
 end
 
-function fints = chunkerkerneval_ho(chnkr,kern,opdims,dens, ...
+function fints = chunkerkerneval_pquad(chnkr,kern,opdims,dens, ...
     targinfo,flag,opts)
 
 % target
@@ -180,6 +186,7 @@ d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
 h = chnkr.h;
+
 
 % interpolation matrix
 intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -204,13 +211,30 @@ for j=1:size(chnkr.r,3)
     [ji] = find(flag(:,j));
     if(~isempty(ji))
         idxjmat = (j-1)*k+(1:k);
+% should be initialized properly in kernel class. Replace 1 with constants, and source an argument.       
+        if(kern.type=='s')
+            kern.splitinfo = {@(targs) zeros(size(targs,2),numel(bw)), @(targs) ones(size(targs,2),...
+                 numel(bw)),@(targs) zeros(size(targs,2),numel(bw))};
+        end
+
+        if(kern.type=='d')
+            kern.splitinfo = {@(targs) zeros(size(targs,2),numel(bw)), @(targs) zeros(size(targs,2),...
+                 numel(bw)),@(targs) ones(size(targs,2),numel(bw))};
+        end
+
+        if(kern.type=='c')
+            kern.splitinfo = {@(targs) zeros(size(targs,2),numel(bw)), @(targs) ones(size(targs,2),...
+                 numel(bw)),@(targs) ones(size(targs,2),numel(bw))};
+        end
 
 
         % Helsing-Ojala (interior/exterior?)
-        mat1 = chnk.pquadwts(r,d,n,d2,h,ct,bw,j,targs(:,ji), ...
+        [matcfield,mat_log,mat_cauchy] = chnk.pquadwts(r,d,n,d2,h,ct,bw,j,targs(:,ji), ...
             targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
-
-        fints(ji) = fints(ji) + mat1*dens(idxjmat);
+    
+%        fints(ji) = fints(ji) + matcfield*dens(idxjmat);
+        fints(ji) = fints(ji) + (kern.splitinfo{1}(targs(:,ji)) + kern.splitinfo{2}(targs(:,ji)).*mat_log ...
+            + kern.splitinfo{3}(targs(:,ji)).*real(mat_cauchy))*dens(idxjmat);
     end
 end
 end
