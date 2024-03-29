@@ -244,7 +244,7 @@ for i=1:nchunkers
     mmax = max([mmax,max(chnkr)],[],2);
     mmin = min([mmin,min(chnkr)],[],2);
 end
-
+xflam = real(xflam);
 width = max(mmax-mmin);
 
 chnkrtotal = merge(chnkrs);

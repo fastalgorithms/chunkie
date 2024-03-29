@@ -485,11 +485,12 @@ if(icgrph && isrcip)
 
         [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = ...
             chnk.rcip.setup(ngl,ndim,nedge,isstart);
-        
-        % this might need to be fixed in triple junction case
+        optsrcip = opts;
+        optsrcip.nonsmoothonly = false;
+
         R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
             Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
-            sbclmat,sbcrmat,lvmat,rvmat,u,opts);
+            sbclmat,sbcrmat,lvmat,rvmat,u,optsrcip);
        
         sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
         if (~nonsmoothonly)

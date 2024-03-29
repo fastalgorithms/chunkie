@@ -15,10 +15,11 @@ classdef chunkgraph
 % 
     properties(SetAccess=public)
         verts
-        edge2verts
+        edgesendverts
         echnks
         regions
         vstruc
+        v2emat
     end
 
     properties(SetAccess=public)
@@ -33,16 +34,36 @@ classdef chunkgraph
     end
     
     methods
-        function obj = chunkgraph(verts,edge2verts,fchnks,cparams)
+        function obj = chunkgraph(verts,edgesendverts,fchnks,cparams)
             if (nargin == 0)
                 return
             end
             if (numel(verts)==0)
                 return
             end
-            obj.verts      = verts;
-            obj.edge2verts = edge2verts;
+            obj.verts = verts;
+
+            nverts = size(verts(:,:),2);
+            assert(nverts == size(edgesendverts,2),'edge specification not compatible with number of vertices');
+            if (size(edgesendverts,1) ~= 2)
+                nedge = size(edgesendverts,1);
+                edgevertends_new = zeros(2,nedge);
+                nedge = size(edgesendverts,1);
+                for i = 1:nedge
+                    edgevertends_new(1,i) = find(edgesendverts(i,:) == -1);
+                    edgevertends_new(2,i) = find(edgesendverts(i,:) == 1);
+                end
+                edgesendverts = edgevertends_new;
+                assert(all(edgesendverts(:) ~= 0),'edge specification had an error');
+            end 
+
+            obj.edgesendverts = edgesendverts;
+            obj.v2emat = build_v2emat(obj);
             obj.echnks     = chunker.empty;
+
+            if nargin < 3
+                fchnks = [];
+            end
             
             if (nargin < 4)
                 cploc = [];
@@ -74,15 +95,11 @@ classdef chunkgraph
             pref.nchmax = 10000;
             pref.k = 16;
             
-            if (size(verts,2) ~= size(edge2verts,2))
-                error('Incompatible vertex and edge sizes');
-            end
-            
             echnks = chunker.empty();
-            for i=1:size(edge2verts,1)
+            for i=1:size(edgesendverts,2)
                 if (numel(fchnks)<i || isempty(fchnks{i}))
-                    i1 = find(edge2verts(i,:)==-1);
-                    i2 = find(edge2verts(i,:)==1);
+                    i1 = edgesendverts(1,i);
+                    i2 = edgesendverts(2,i);
                     v1 = verts(:,i1);
                     v2 = verts(:,i2);
                     fcurve = @(t) chnk.curves.linefunc(t,v1,v2);
@@ -94,8 +111,10 @@ classdef chunkgraph
                     [vs,~,~] =fchnks{i}([0,1]);
                     chnkr = chunkerfunc(fchnks{i},cploc,pref);
                     chnkr = sort(chnkr);
-                    vfin0 = verts(:,find(edge2verts(i,:)==-1));
-                    vfin1 = verts(:,find(edge2verts(i,:)== 1));
+                    i1 = edgesendverts(1,i);
+                    i2 = edgesendverts(2,i);
+                    vfin0 = verts(:,i1);
+                    vfin1 = verts(:,i2);
                     r0 = vs(:,1);
                     r1 = vfin0;
                     scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
@@ -115,9 +134,8 @@ classdef chunkgraph
             obj.wts = weights(obj);
             %[regions] = findregions(obj);
             %obj.regions = regions;
-            
-            adjmat = edge2verts'*edge2verts;
-            g = graph(adjmat);
+           
+            g = graph(edgesendverts(1,:),edgesendverts(2,:));
             ccomp = conncomp(g);
             
             chnkcomp = {};
@@ -204,10 +222,10 @@ classdef chunkgraph
             validateattributes(val,classes,{})
             obj.verts = val;
         end
-        function obj = set.edge2verts(obj,val)
+        function obj = set.edgesendverts(obj,val)
             classes = {'numeric'};
             validateattributes(val,classes,{})
-            obj.edge2verts = val;
+            obj.edgesendverts = val;
         end    
         function obj = set.echnks(obj,val)
             classes = {'chunker'};
@@ -271,7 +289,11 @@ classdef chunkgraph
             sourceinfo.d2= d2s;
             sourceinfo.w = ws;
         end
-    end   
+            
+        % defined in other files 
+        spmat = build_v2emat(obj)
+    end
+
     methods(Static)
         
     end

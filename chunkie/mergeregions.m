@@ -3,7 +3,7 @@ function [rgnout] = mergeregions(cgrph,rgn1,rgn2)
     rgnout = {};
     
     e2 = rgn2{1}{1}(1);
-    v2 = find(cgrph.edge2verts(:,abs(e2))==1);
+    v2 = cgrph.edgesendverts(2,abs(e2));
     v2 = cgrph.verts(:,v2);
 
     irgn = 0;
@@ -27,7 +27,7 @@ function [rgnout] = mergeregions(cgrph,rgn1,rgn2)
     
     if (irgn == 0)
         e1 = rgn1{1}{1}(1);
-        v1 = find(cgrph.edge2verts(:,abs(e1))==1);
+        v1 = cgrph.edgesendverts(2,abs(e1));
         v1 = cgrph.verts(:,v1);
 
         irgn = 0;
