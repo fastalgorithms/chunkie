@@ -27,18 +27,17 @@ if (isfield(obj,'vstruc'))
 else
     vstruc = procverts(obj);
 end    
-nedge  = size(obj.edge2verts,1);
-e2v    = obj.edge2verts;
-
-% each edge belongs to two regions (going in opposite directions)
-edges = [1:nedge,-(1:nedge)];
+nedge  = size(obj.edgesendverts,2);
 
 % if the user has provided iverts, get the reduced edge list
 if (nargin >1)
-    e2vtmp = e2v(:,iverts);
-    [iinds,jinds] = find(e2vtmp ~= 0);
+    v2etmp = obj.v2emat(:,iverts);
+    [iinds,jinds] = find(v2etmp ~= 0);
     iinds = unique(iinds);
     edges = [iinds,-iinds];
+else
+    % each edge belongs to two regions (going in opposite directions)
+    edges = [1:nedge,-(1:nedge)];
 end    
 
 regions = {};
@@ -56,8 +55,14 @@ while (numel(edges)>0)
     estart = enum;
     ecycle = [enum];
     
-    iv0 = find(e2v(abs(enum),:)==-sign(enum));
-    ivc = find(e2v(abs(enum),:)== sign(enum));
+    if enum > 0
+        iv0 = obj.edgesendverts(1,abs(enum));
+        ivc = obj.edgesendverts(2,abs(enum));
+    else
+        iv0 = obj.edgesendverts(2,abs(enum));
+        ivc = obj.edgesendverts(1,abs(enum));
+    end
+
     ifdone = false;
 
     while (~ifdone)
@@ -72,7 +77,11 @@ while (numel(edges)>0)
             esign = vstruc{ivc}{2}(1);
         end
         enum = -esign*enext;
-        ivc = find(e2v(abs(enum),:)== sign(enum));
+        if enum > 0
+            ivc = obj.edgesendverts(2,abs(enum));
+        else
+            ivc = obj.edgesendverts(1,abs(enum));
+        end
         if (enum == estart)
             ifdone = true;
         else
