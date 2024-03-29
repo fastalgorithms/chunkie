@@ -1,7 +1,7 @@
 function [isinside] = regioninside(cgrph,rgn1,rgn2)
 
     e2 = rgn2{1}{1}(1);
-    v2 = find(cgrph.edge2verts(:,abs(e2))==1);
+    v2 = cgrph.edgesendverts(2,abs(e2));
     v2 = cgrph.verts(:,v2);
     irgn = 0;
     for ii=2:numel(rgn1)
