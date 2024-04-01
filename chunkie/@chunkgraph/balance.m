@@ -39,7 +39,6 @@ function [obj] = balance(obj)
     parcl = zeros([numel(vedge),1]);
     pinds = zeros([numel(vedge),1]);
     
-    [~,wleg16,~,~] = lege.exps(16);
     for ii=1:numel(vedge)
         if (sign(vsign(ii)) == -1)
             ds =  obj.echnks(vedge(ii)).d(:,:,1);
@@ -51,11 +50,8 @@ function [obj] = balance(obj)
         
         h  =  obj.echnks(vedge(ii)).h(pinds(ii));
         k  =  obj.echnks(vedge(ii)).k;
-        if (k ~=16)
-             [~,wleg,~,~] = lege.exps(k);
-        else
-            wleg = wleg16;
-        end    
+
+        wleg = echnks(vedge(ii)).wstor;
 
         arc = sum(sqrt(ds(1,:).^2+ds(2,:).^2).*wleg'*h);
         parcl(ii) = arc;
