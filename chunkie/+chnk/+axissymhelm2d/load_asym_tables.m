@@ -5,7 +5,11 @@ function asym_tables = load_asym_tables()
     dirname = dir([p ,'.m']).folder;
     fname = [dirname '/asym_helm_data.mat'];
     load(fname,'allvs');
-    ncheb = 12;
+    msizes = size(allvs);
+    ncheb = msizes(1);
+    nks = msizes(5);
+    nas = msizes(4);
+    nkers = msizes(3);
     xcheb = (0:(ncheb-1))/(ncheb-1)*pi;
 
     [N,X]=meshgrid(0:(ncheb-1),xcheb);
@@ -22,13 +26,13 @@ function asym_tables = load_asym_tables()
 
     allda = allvs;
     alldk = allvs;
-    alldaa= allvs;
-    alldak= allvs;
-    alldkk= allvs;
+    alldaa = allvs;
+    alldak = allvs;
+    alldkk = allvs;
 
     for kk=1:nks
-        for jj=1:111
-            for ii=1:3  
+        for jj=1:nas
+            for ii=1:nkers
 %                vmat = squeeze(allvs(:,:,ii,jj,kk));
                 if (ii ==1)
                     vmat = squeeze(allvs(:,:,ii,jj,kk));
