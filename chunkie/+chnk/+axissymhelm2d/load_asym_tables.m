@@ -1,22 +1,8 @@
 function asym_tables = load_asym_tables()
 %CHNK.AXISSYMHELM2D.load_asym_tables loads the precomputed tables
 % for axissymmetric Helmholtz kernels
-
-    dirname = '+chnk/+axissymhelm2d/';
-    vdats = {};
-    nks = 152;
-    for ii=1:nks
-        load([dirname 'k2test',num2str(ii),'.mat']);
-        v = Expression1;
-        v = reshape(v,[12,12,3,111]);
-        vdats{ii} = v;
-    end
-
-    allvs = zeros([size(vdats{1}),nks]);
-
-    for ii=1:nks
-        allvs(:,:,:,:,ii) = vdats{ii};
-    end
+    
+    load('asym_helm_data.mat','allvs');
     ncheb = 12;
     xcheb = (0:(ncheb-1))/(ncheb-1)*pi;
 
