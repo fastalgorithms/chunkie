@@ -101,8 +101,10 @@ chnkrlocal(1,nedge) = chunker(pref);
 
 if(size(fkern)==1)
     fkernlocal = fkern;
-    if isa(fkern.shifted_eval, 'function_handle')
-        fkernlocal.eval = @(s,t) fkern.shifted_eval(s, t, ctr(:,1));
+    if isa(fkern, 'kernel')
+        if isa(fkern.shifted_eval, 'function_handle')
+            fkernlocal.eval = @(s,t) fkern.shifted_eval(s, t, ctr(:,1));
+        end
     end
 else
     fkernlocal(nedge,nedge) = kernel();
@@ -111,8 +113,11 @@ else
         for j=1:nedge
             icj = iedgechunks(1,j);
             fkernlocal(i,j) = fkern(ici,icj);
-            if isa(fkern(ici,icj).shifted_eval, 'function_handle')
-                fkernlocal(i,j).eval = @(s,t) fkern(ici,icj).shifted_eval(s,t,ctr(:,i));
+            if isa(fkern(ici,icj), 'kernel')
+                if isa(fkern(ici,icj).shifted_eval, 'function_handle')
+                    fkernlocal(i,j).eval = ...
+                      @(s,t) fkern(ici,icj).shifted_eval(s,t,ctr(:,i));
+                end
             end
         end
     end
