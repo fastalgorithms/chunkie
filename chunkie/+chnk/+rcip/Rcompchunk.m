@@ -106,7 +106,6 @@ for i = 1:nedge
     d2 = chnkri.d2(:,:,ie);    
     il = chnkri.adj(1,ie);
     ir = chnkri.adj(2,ie);
-    h = chnkri.h(ie);
     if (il > 0 && ir < 0)
         nextchunk(i) = il;
         ileftright(i) = 1;
@@ -116,8 +115,8 @@ for i = 1:nedge
         rcs(:,:,i) = sbcrmat*(r.');
         dcs(:,:,i) = u*(d.');
         d2cs(:,:,i) = u*(d2.');
-        dscal(i) = h*2;
-        d2scal(i) = h^2*4; 
+        dscal(i) = 2;
+        d2scal(i) = 4; 
     elseif (il < 0 && ir > 0)
         nextchunk(i) = ir;
         ileftright(i) = -1;
@@ -126,8 +125,8 @@ for i = 1:nedge
         rcs(:,:,i) = sbclmat*(r.');
         dcs(:,:,i) = u*(d.');
         d2cs(:,:,i) = u*(d2.');
-        dscal(i) = h*2;
-        d2scal(i) = h^2*4; 
+        dscal(i) = 2;
+        d2scal(i) = 4; 
     else
         error('RCIP: edge chunk not adjacent to one vertex and one neighbor')
     end
@@ -197,7 +196,7 @@ for level=1:nsub
             chnkrlocal(i).r(:,:,nchi+1) = chnkr(ic).r(:,:,nc)-ctr(:,i);
             chnkrlocal(i).d(:,:,nchi+1) = chnkr(ic).d(:,:,nc);                
             chnkrlocal(i).d2(:,:,nchi+1) = chnkr(ic).d2(:,:,nc); 
-            chnkrlocal(i).h(nchi+1) = chnkr(ic).h(nc);
+
             if ileftright(i) == -1
                 chnkrlocal(i).adj(1,nchi+1) = nchi;
                 chnkrlocal(i).adj(2,nchi+1) = -1;

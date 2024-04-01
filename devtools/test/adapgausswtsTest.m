@@ -78,7 +78,7 @@ ich = chnkr.adj(1,j);
 opdims = zeros(2,1);
 opdims(1) = 1; opdims(2) = 1;
 
-r = chnkr.r; d = chnkr.d; h = chnkr.h; d2 = chnkr.d2; n =chnkr.n;
+r = chnkr.r; d = chnkr.d; d2 = chnkr.d2; n =chnkr.n;
 k = chnkr.k; [t,w] = lege.exps(k);
 bw = lege.barywts(k);
 
@@ -98,7 +98,7 @@ opts.eps = 1e-5;
 ntimes = 100;
 start = tic;
 for i = 1:ntimes
-    [mat,maxrecs,numints,iers] = chnk.adapgausswts(r,d,n,d2,h,t,bw,j, ...
+    [mat,maxrecs,numints,iers] = chnk.adapgausswts(r,d,n,d2,t,bw,j, ...
         rt,dt,nt,d2t,fkern,opdims,t2,w2,opts);
 end
 t1 = toc(start);

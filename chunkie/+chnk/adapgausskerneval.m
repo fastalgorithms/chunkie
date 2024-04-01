@@ -1,4 +1,4 @@
-function [fints,maxrecs,numints,iers] = adapgausskerneval(r,d,n,d2,h,ct,bw,j,...
+function [fints,maxrecs,numints,iers] = adapgausskerneval(r,d,n,d2,ct,bw,j,...
     dens,rt,nt,dt,d2t,kern,opdims,t,w,opts)
 %CHNK.ADAPGAUSSKERNEVAL adaptive integration for interaction of kernel on chunk 
 % at targets
@@ -13,7 +13,6 @@ function [fints,maxrecs,numints,iers] = adapgausskerneval(r,d,n,d2,h,ct,bw,j,...
 %   r - chnkr nodes
 %   d - chnkr derivatives at nodes
 %   d2 - chnkr 2nd derivatives at nodes
-%   h - lengths of chunks in parameter space
 %   ct - Legendre nodes at order of chunker
 %   bw - barycentric interpolation weights for Legendre nodes at order of
 %   chunker
@@ -66,7 +65,6 @@ rs = r(:,:,j);
 ds = d(:,:,j);
 ns = n(:,:,j);
 d2s = d2(:,:,j);
-hs = h(j);
 jstart = opdims(2)*k*(j-1)+1;
 jend = opdims(2)*k*j;
 densj = reshape(dens(jstart:jend),opdims(2),k);
@@ -160,8 +158,6 @@ for ii = 1:ntarg
     fints(istart:iend) = fint1;
     
 end
-
-fints = fints*hs;
 
 end
 

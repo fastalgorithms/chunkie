@@ -1,10 +1,10 @@
-function submat = diagbuildmat(r,d,n,d2,h,data,i,fkern,opdims,...
+function submat = diagbuildmat(r,d,n,d2,data,i,fkern,opdims,...
 			 xs0,whts0,ainterps0kron,ainterps0)
 %CHNK.QUADGGQ.DIAGBUILDMAT                  
 
 % grab specific boundary data
                 
-rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i); hs = h(i); 
+rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i);
 ns = n(:,:,i);
 if(isempty(data))
     dd = [];
@@ -29,7 +29,7 @@ for i = 1:k
     d2fine{i} = (ainterps0{i}*(d2s.')).';
     dfinenrm = sqrt(sum(dfine{i}.^2,1));
     nfine{i} = [dfine{i}(2,:); -dfine{i}(1,:)]./dfinenrm;
-    dsdt{i} = (dfinenrm(:)).*whts0{i}*hs;
+    dsdt{i} = (dfinenrm(:)).*whts0{i};
 end
 
 srcinfo = [];
