@@ -272,7 +272,16 @@ elseif isa(kern,'kernel') && ~isempty(kern.fmm)
      end
 end
 
-    
+if strcmpi(imethod,'fmm')
+    icheck = exist(['fmm2d.' mexext], 'file');
+    if icheck ~=3
+        imethod = 'direct';
+        fstr = ['CHUNKERKERNEVAL: forcefmm flag used but fmm2d not found\n' ...
+           'Using direct computation instead\nMake sure fmm2d.' mexext ...
+           ' is in MATLAB path'];
+        warning(sprintf(fstr))
+    end
+end
     
 
 if strcmpi(imethod,'direct')

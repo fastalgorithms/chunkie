@@ -85,4 +85,9 @@ switch lower(type)
 
 end
 
+icheck = exist(['fmm2d.' mexext], 'file');
+if icheck ~=3
+    obj.fmm = [];
+end
+
 end
