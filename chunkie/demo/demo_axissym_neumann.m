@@ -1,6 +1,8 @@
 addpaths_loc();
 clear();
 
+rng(pi)
+
 zk = 6*pi;
 
 type = 'chnkr-star';

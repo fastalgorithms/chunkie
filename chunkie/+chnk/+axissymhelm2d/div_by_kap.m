@@ -7,7 +7,7 @@ function [dout] = div_by_kap(r,q,z,dfunc)
     i0daa=  0;
     i0dak=  0;
     i0dkk=  2./r0.^3;
-    [dout] = chnk.axissymhelm2d.der_ak_2_grad(r,q,z,i0,i0da,i0dk,...
+    [dout] = chnk.axissymhelm2d.der_ak_to_grad(r,q,z,i0,i0da,i0dk,...
     i0daa,i0dak,i0dkk);
 
     i   = dfunc.int.*i0;

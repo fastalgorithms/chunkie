@@ -1,4 +1,4 @@
-function [ds] = helm_axi(rs,drs,dzs,ifun,htables)
+function [ds,varargout] = helm_axi(rs,drs,dzs,ifun,htables)
 
     r0s   = sqrt(rs.^2+(rs+drs).^2+dzs.^2);
     alphs = (drs.^2+dzs.^2)./r0s.^2;
@@ -88,7 +88,7 @@ function [ds] = helm_axi(rs,drs,dzs,ifun,htables)
     kernsdak(ifar)= kfdak;
     kernsdkk(ifar)= kfdkk;
 
-    [dout] = chnk.axissymhelm2d.der_ak_2_grad(rs,drs,dzs,kerns,kernsda,kernsdk,...
+    [dout] = chnk.axissymhelm2d.der_ak_to_grad(rs,drs,dzs,kerns,kernsda,kernsdk,...
                  kernsdaa,kernsdak,kernsdkk);
     [ds] = chnk.axissymhelm2d.div_by_kap(rs,drs,dzs,dout);
     ds.intdrz = -ds.intdrz;
