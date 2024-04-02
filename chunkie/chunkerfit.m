@@ -29,7 +29,6 @@ function chnkr = chunkerfit(xy, opts)
 %   chnkr - chunker object discretizing the fitted curve
 %
 % Examples:
-%   % Closed curve
 %   r = chnk.curves.bymode(sort(2*pi*rand(20,1)), [2 0.5 0.2 0.7]);
 %   chnkr = chunkerfit(r); % Closed curve
 %   opts = []; opts.ifclosed = false;
