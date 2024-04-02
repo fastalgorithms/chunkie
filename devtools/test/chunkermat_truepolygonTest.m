@@ -119,9 +119,7 @@ end
 
 % evaluate at targets and compare
 
-opts.usesmooth=false;
 opts.verb=false;
-opts.quadkgparams = {'RelTol',1e-16,'AbsTol',1.0e-16};
 start=tic; Ssol = chunkerkerneval(chnkr,kerns,sol,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)

@@ -50,7 +50,6 @@ r = chnkr.r;
 adj = chnkr.adj;
 d = chnkr.d;
 d2 = chnkr.d2;
-h = chnkr.h;
 n = chnkr.n;
 
 data = [];
@@ -101,7 +100,7 @@ for j = 1:nch
         if ~isempty(ilist) && ismember(ibefore,ilist) && ismember(j,ilist) 
         % skip construction if both chunks are in the "bad" chunk list
         else
-            submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,data,ibefore,j, ...
+            submat = chnk.quadggq.nearbuildmat(r,d,n,d2,data,ibefore,j, ...
                 kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
     
             imat = 1 + (ibefore-1)*k*opdims(1);
@@ -115,7 +114,7 @@ for j = 1:nch
       if ~isempty(ilist) && ismember(iafter,ilist) && ismember(j,ilist) 
         % skip construction if both chunks are in the "bad" chunk list
       else      
-        submat = chnk.quadggq.nearbuildmat(r,d,n,d2,h,data,iafter,j, ...
+        submat = chnk.quadggq.nearbuildmat(r,d,n,d2,data,iafter,j, ...
             kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
 
         imat = 1 + (iafter-1)*k*opdims(1);
@@ -129,7 +128,7 @@ for j = 1:nch
     if ~isempty(ilist) && ismember(j,ilist) 
       % skip construction if the chunk is in the "bad" chunk list  
     else
-      submat = chnk.quadggq.diagbuildmat(r,d,n,d2,h,data,j,kern,opdims,...
+      submat = chnk.quadggq.diagbuildmat(r,d,n,d2,data,j,kern,opdims,...
           xs0,wts0,ainterps0kron,ainterps0);
 
       imat = 1 + (j-1)*k*opdims(1);

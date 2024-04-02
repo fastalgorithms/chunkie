@@ -48,12 +48,11 @@ function [obj] = balance(obj)
             pinds(ii) = size(obj.echnks(vedge(ii)).r,3);
         end    
         
-        h  =  obj.echnks(vedge(ii)).h(pinds(ii));
         k  =  obj.echnks(vedge(ii)).k;
 
         wleg = echnks(vedge(ii)).wstor;
 
-        arc = sum(sqrt(ds(1,:).^2+ds(2,:).^2).*wleg'*h);
+        arc = sum(sqrt(ds(1,:).^2+ds(2,:).^2).*wleg');
         parcl(ii) = arc;
           
     end    

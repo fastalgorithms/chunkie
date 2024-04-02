@@ -18,10 +18,7 @@ function chnkr = refine(chnkr,opts)
 %                   (10*chnkr.nch)
 %       opts.lvlr = level restriction flag ('a'), if 'a', enforce that no
 %                   two adjacent chunks should differ in length by more 
-%                   than a factor of approx 2 (see lvlrfac). if 't', 
-%                   enforce that the 
-%                   length in parameter space of two adjacent chunks
-%                   differs by no more than a factor of approx 2. if 'n'
+%                   than a factor of approx 2 (see lvlrfac). if 'n'
 %                   don't enforce (not recommended)
 %       opts.lvlrfac = (2.0) factor for enforcing level restriction
 %       opts.maxchunklen = maximum chunk length (Inf). enforce that no
@@ -85,9 +82,6 @@ chunklens(1:nch) = sum(ws,1);
 % splitting type
 
 stype = 'a';
-if strcmpi(lvlr,'t')
-    stype = 't';
-end
 
 
 % chunks told to split
@@ -165,7 +159,7 @@ end
 
 % level restriction
 
-if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
+if (strcmpi(lvlr,'a'))
     for ijk = 1:maxiter_lvlr
 
         nchold=chnkr.nch;
@@ -175,45 +169,24 @@ if (strcmpi(lvlr,'a') || strcmpi(lvlr,'t'))
             i1=chnkr.adj(1,i);
             i2=chnkr.adj(2,i);
 
-            if (strcmpi(lvlr,'t'))
-                rlself = chnkr.h(i);
-                rl1 = rlself;
-                rl2 = rlself;
-                if (i1 > 0)
-                    rl1 = chnkr.h(i1);
-                end
-                if (i2 > 0)
-                    rl2 = chnkr.h(i2);
-                end
-                if (i1 < 0)
-                    % meets at vertex (parameter space ref not recommended)
-                    rl1 = min(chnkr.h(vert{-i1}));
-                end
-                if (i2 < 0)
-                    rl2 = min(chnkr.h(vert{-i2}));
-                end
-                    
-            else
+            rlself = chunklens(i);
 
-                rlself = chunklens(i);
+            rl1=rlself;
+            rl2=rlself;
 
-                rl1=rlself;
-                rl2=rlself;
-
-                if (i1 > 0)
-                    rl1 = chunklens(i1);
-                end
-                if (i2 > 0)
-                    rl2 = chunklens(i2);
-                end
-                if (numel(vert) ~= 0)
-                if (i1 < 0)
-                    rl1 = min(chunklens(vert{-i1}));
-                end
-                if (i2 < 0)
-                    rl2 = min(chunklens(vert{-i2}));
-                end
-                end
+            if (i1 > 0)
+                rl1 = chunklens(i1);
+            end
+            if (i2 > 0)
+                rl2 = chunklens(i2);
+            end
+            if (numel(vert) ~= 0)
+            if (i1 < 0)
+                rl1 = min(chunklens(vert{-i1}));
+            end
+            if (i2 < 0)
+                rl2 = min(chunklens(vert{-i2}));
+            end
             end
 
     %       only check if self is larger than either of adjacent blocks,

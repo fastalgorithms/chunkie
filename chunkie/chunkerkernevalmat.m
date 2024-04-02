@@ -310,13 +310,12 @@ else
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
-    h = chnkr.h;
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
         [ji] = find(flag(:,i));
-        mat1 =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+        mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
                     targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
                 
         js1 = jmat:jmatend;
@@ -388,7 +387,6 @@ else
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
-    h = chnkr.h;
 
     % interpolation matrix 
     intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -401,7 +399,7 @@ else
         [ji] = find(flag(:,i));
 
         % Helsing-Ojala (interior/exterior?)
-        mat1 = chnk.pquadwts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+        mat1 = chnk.pquadwts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
                     targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
                 
         js1 = jmat:jmatend;
