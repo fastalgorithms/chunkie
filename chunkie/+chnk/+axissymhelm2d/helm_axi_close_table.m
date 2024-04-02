@@ -1,4 +1,4 @@
-function [kerns,kernsdk,kernsda,kernsdkk,kernsdak,kernsdaa] ...
+function [sout] ...
         = helm_axi_close_table(r0s,alphs,ifun,htables)
     int   = zeros(size(alphs));
     kerns = int;
@@ -71,6 +71,13 @@ function [kerns,kernsdk,kernsda,kernsdkk,kernsdak,kernsdaa] ...
         
     end    
     
+    sout = {};
+    sout{1} = kerns;
+    sout{3} = kernsdk;
+    sout{2} = kernsda;
+    sout{4} = kernsdkk;
+    sout{5} = kernsdak;
+    sout{6} = kernsdaa;
     
 end
 

@@ -1,6 +1,18 @@
-function [kerns,kernsda,kernsdk,kernsdaa,kernsdak,kernsdkk,...
-    varargout] ...
+function [sout] ...
     = helm_axi_smooth(r0s,alphs,ifun,xlege,wlege)
+
+
+%%%%
+%
+%       On output, a cell array with entries
+%       *kerns
+%       *kernsda
+%       *kernsdk
+%       *kernsdkk
+%       *kernsdak
+%       *kernsdaa
+%
+%%%%
 
 
     [alp,xle] = meshgrid(alphs,xlege);
@@ -48,6 +60,24 @@ function [kerns,kernsda,kernsdk,kernsdaa,kernsdak,kernsdkk,...
         kernsdkk   = kernsdkk    +    kern2dkk_v;     
     end
 
+    s ={};
+    s{1}    = kerns;
+    s{3}  = kernsdk;
+    s{2}  = kernsda;
+    s{5} = kernsdak;
+    s{6} = kernsdaa;
+    s{4} = kernsdkk;
+
+    if (ifun == 1 || ifun==4)
+        sout.rk = s;
+    end
+    if (ifun ==2)
+        sout.ik = s;
+    end
+    if (ifun ==3)
+        sout.dk = s;
+    end
+        
     if (ifun == 4)
         r0t = r0t*1i;
         efac = exp(1i*r0t.*rts)./rts.*wle;
@@ -60,14 +90,20 @@ function [kerns,kernsda,kernsdk,kernsdaa,kernsdak,kernsdkk,...
         kern2dak_v = sum(asymintdak_v(xle,rts,r0t,efac),1);
         kern2dkk_v = sum(asymintdkk_v(xle,rts,r0t,efac),1);
 
-        if (nargout == 12)
-            varargout{1} = kern2_v;
-            varargout{2} = kern2da_v;
-            varargout{3} = 1i*kern2dk_v;
-            varargout{4} = kern2daa_v;
-            varargout{5} = 1i*kern2dak_v;
-            varargout{6} = -kern2dkk_v;
+        ik = {};
+        ik{1} = kern2_v;
+        ik{2} = kern2da_v;
+        ik{3} = 1i*kern2dk_v;
+        ik{6} = kern2daa_v;
+        ik{5} = 1i*kern2dak_v;
+        ik{4} = -kern2dkk_v;
+        sout.ik = ik;
+
+        dk = {};
+        for ii=1:6
+            dk{ii} = sout.rk{ii}-sout.ik{ii};
         end
+        sout.dk = dk;
     end
 
 end

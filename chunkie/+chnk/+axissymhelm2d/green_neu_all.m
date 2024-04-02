@@ -33,7 +33,8 @@ dz = repmat(src(2,:),nt,1)-repmat(targ(2,:).',1,ns);
 r  = (rt + origin(1))*kabs;
 dz = dz*kabs;
 dr = (rs-rt)*kabs;
-[doutk, doutik, doutdiff] = chnk.axissymhelm2d.helm_axi_all(r, dr, dz, asym_tables);
+ifun = 4;
+[doutk, doutik, doutdiff] = chnk.axissymhelm2d.helm_axi_all(r, dr, dz, asym_tables,ifun);
 
 pfac = over2pi * kabs;
 gfac = pfac * kabs;

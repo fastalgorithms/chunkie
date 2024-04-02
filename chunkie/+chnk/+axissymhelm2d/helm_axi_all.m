@@ -1,32 +1,34 @@
-function [dsk, dsik, dsdiff] = helm_axi_all(rs,drs,dzs,htables)
+function [varargout] = helm_axi_all(rs,drs,dzs,htables,ifun)
 
     r0s   = sqrt(rs.^2+(rs+drs).^2+dzs.^2);
     alphs = (drs.^2+dzs.^2)./r0s.^2;
 
     int   = zeros(size(alphs));
-    kerns_k    = int;
-    kernsdk_k  = int;
-    kernsda_k  = int;
-    kernsdkk_k = int;
-    kernsdak_k = int;
-    kernsdaa_k = int;
 
-    kerns_ik    = int;
-    kernsdk_ik  = int;
-    kernsda_ik  = int;
-    kernsdkk_ik = int;
-    kernsdak_ik = int;
-    kernsdaa_ik = int;
-    
-    
-    kerns_diff    = int;
-    kernsdk_diff  = int;
-    kernsda_diff  = int;
-    kernsdkk_diff = int;
-    kernsdak_diff = int;
-    kernsdaa_diff = int;
+    iflag_rk = (ifun == 1 || ifun == 4);
+    iflag_ik = (ifun == 2 || ifun == 4);
+    iflag_dk = (ifun == 3 || ifun == 4);
 
-    
+    if (iflag_rk)
+    rk = cell(6);
+    for ii=1:6
+        rk{ii} = int;
+    end
+    end
+
+    if (iflag_ik)
+    ik = cell(6);
+    for ii=1:6
+        ik{ii} = int;
+    end
+    end
+
+    if (iflag_dk)
+    dk = cell(6);
+    for ii=1:6
+        dk{ii} = int;
+    end
+    end
     
     iclose = find(alphs<0.2);
     ifar   = 1:numel(alphs);
@@ -51,172 +53,146 @@ function [dsk, dsik, dsdiff] = helm_axi_all(rs,drs,dzs,htables)
     imidnear(i_midnearnear) = [];
     
     
-    [kc,kcdk,kcda,kcdkk,kcdak,kcdaa] ...
+    if (iflag_rk)
+    s ...
         = chnk.axissymhelm2d.helm_axi_close_table(r0s(iclose),alphs(iclose),1,htables);
-    kerns_k(iclose) = kc;
-    kernsda_k(iclose) = kcda;
-    kernsdk_k(iclose) = kcdk;
-    kernsdkk_k(iclose) = kcdkk;
-    kernsdak_k(iclose) = kcdak;
-    kernsdaa_k(iclose) = kcdaa;
+    for ii=1:6
+        rk{ii}(iclose) = s{ii};
+    end
+    end
 
-        
-    [kc,kcdk,kcda,kcdkk,kcdak,kcdaa] ...
+    if (iflag_ik)
+    s ...
         = chnk.axissymhelm2d.helm_axi_close_table(r0s(iclose),alphs(iclose),2,htables);
-    kerns_ik(iclose) = kc;
-    kernsda_ik(iclose) = kcda;
-    kernsdk_ik(iclose) = kcdk;
-    kernsdkk_ik(iclose) = kcdkk;
-    kernsdak_ik(iclose) = kcdak;
-    kernsdaa_ik(iclose) = kcdaa;
+    for ii=1:6
+        ik{ii}(iclose) = s{ii};
+    end
+    end
 
-            
-    [kc,kcdk,kcda,kcdkk,kcdak,kcdaa] ...
+    if (iflag_dk)
+    s ...
         = chnk.axissymhelm2d.helm_axi_close_table(r0s(iclose),alphs(iclose),3,htables);
-    kerns_diff(iclose) = kc;
-    kernsda_diff(iclose) = kcda;
-    kernsdk_diff(iclose) = kcdk;
-    kernsdkk_diff(iclose) = kcdkk;
-    kernsdak_diff(iclose) = kcdak;
-    kernsdaa_diff(iclose) = kcdaa;
+    for ii=1:6
+        dk{ii}(iclose) = s{ii};
+    end
+    end
 
     
-    ifun = 4;
- 	[kf_k,kfda_k,kfdk_k,kfdaa_k,kfdak_k,kfdkk_k, ...
-     kf_ik,kfda_ik,kfdk_ik,kfdaa_ik,kfdak_ik,kfdkk_ik] ...
+ 	s ...
         = chnk.axissymhelm2d.helm_axi_smooth(r0s(imidnearnear),alphs(imidnearnear),...
         ifun,htables.xlege_midnear,htables.wlege_midnear);
     
-    kerns_k(imidnearnear) = kf_k;
-    kernsda_k(imidnearnear) = kfda_k;
-    kernsdk_k(imidnearnear) = kfdk_k;
-    kernsdaa_k(imidnearnear)= kfdaa_k;
-    kernsdak_k(imidnearnear)= kfdak_k;
-    kernsdkk_k(imidnearnear)= kfdkk_k;
+    if (iflag_rk)
+    for ii=1:6
+        rk{ii}(imidnearnear) = s.rk{ii};
+    end
+    end
 
-        
-    kerns_ik(imidnearnear) = kf_ik;
-    kernsda_ik(imidnearnear) = kfda_ik;
-    kernsdk_ik(imidnearnear) = kfdk_ik;
-    kernsdaa_ik(imidnearnear)= kfdaa_ik;
-    kernsdak_ik(imidnearnear)= kfdak_ik;
-    kernsdkk_ik(imidnearnear)= kfdkk_ik;
+    if(iflag_ik)
+    for ii=1:6
+        ik{ii}(imidnearnear) = s.ik{ii};
+    end
+    end
 
-            
-    kerns_diff(imidnearnear) = kf_k - kf_ik;
-    kernsda_diff(imidnearnear) = kfda_k - kfda_ik;
-    kernsdk_diff(imidnearnear) = kfdk_k - kfdk_ik;
-    kernsdaa_diff(imidnearnear)= kfdaa_k - kfdaa_ik;
-    kernsdak_diff(imidnearnear)= kfdak_k - kfdak_ik;
-    kernsdkk_diff(imidnearnear)= kfdkk_k - kfdkk_ik;
+    if(iflag_dk)
+    for ii=1:6
+        dk{ii}(imidnearnear) = s.dk{ii};
+    end
+    end
 
-    ifun = 4;
-	[kf_k,kfda_k,kfdk_k,kfdaa_k,kfdak_k,kfdkk_k, ...
-     kf_ik,kfda_ik,kfdk_ik,kfdaa_ik,kfdak_ik,kfdkk_ik] ...
+	s ...
         = chnk.axissymhelm2d.helm_axi_smooth(r0s(imidnear),alphs(imidnear),...
         ifun,htables.xlege_midnear,htables.wlege_midnear);
     
-    kerns_k(imidnear) = kf_k;
-    kernsda_k(imidnear) = kfda_k;
-    kernsdk_k(imidnear) = kfdk_k;
-    kernsdaa_k(imidnear)= kfdaa_k;
-    kernsdak_k(imidnear)= kfdak_k;
-    kernsdkk_k(imidnear)= kfdkk_k;
-    
-            
-    kerns_ik(imidnear) = kf_ik;
-    kernsda_ik(imidnear) = kfda_ik;
-    kernsdk_ik(imidnear) = kfdk_ik;
-    kernsdaa_ik(imidnear)= kfdaa_ik;
-    kernsdak_ik(imidnear)= kfdak_ik;
-    kernsdkk_ik(imidnear)= kfdkk_ik;
+    if (iflag_rk)
+    for ii=1:6
+        rk{ii}(imidnear) = s.rk{ii};
+    end
+    end
 
-            
-    kerns_diff(imidnear) = kf_k - kf_ik;
-    kernsda_diff(imidnear) = kfda_k - kfda_ik;
-    kernsdk_diff(imidnear) = kfdk_k - kfdk_ik;
-    kernsdaa_diff(imidnear)= kfdaa_k - kfdaa_ik;
-    kernsdak_diff(imidnear)= kfdak_k - kfdak_ik;
-    kernsdkk_diff(imidnear)= kfdkk_k - kfdkk_ik;
+    if (iflag_ik)
+    for ii=1:6
+        ik{ii}(imidnear) = s.ik{ii};
+    end
+    end
 
-    ifun = 4;
-    [kf_k,kfda_k,kfdk_k,kfdaa_k,kfdak_k,kfdkk_k, ...
-     kf_ik,kfda_ik,kfdk_ik,kfdaa_ik,kfdak_ik,kfdkk_ik] ...
+    if (iflag_dk)
+    for ii=1:6
+        dk{ii}(imidnear) = s.dk{ii};
+    end
+    end
+
+    s ...
         = chnk.axissymhelm2d.helm_axi_smooth(r0s(imid),alphs(imid),...
         ifun,htables.xlege_mid,htables.wlege_mid);
-    
-    kerns_k(imid) = kf_k;
-    kernsda_k(imid) = kfda_k;
-    kernsdk_k(imid) = kfdk_k;
-    kernsdaa_k(imid)= kfdaa_k;
-    kernsdak_k(imid)= kfdak_k;
-    kernsdkk_k(imid)= kfdkk_k;
-              
-    kerns_ik(imid) = kf_ik;
-    kernsda_ik(imid) = kfda_ik;
-    kernsdk_ik(imid) = kfdk_ik;
-    kernsdaa_ik(imid)= kfdaa_ik;
-    kernsdak_ik(imid)= kfdak_ik;
-    kernsdkk_ik(imid)= kfdkk_ik;
 
-            
-    kerns_diff(imid) = kf_k - kf_ik;
-    kernsda_diff(imid) = kfda_k - kfda_ik;
-    kernsdk_diff(imid) = kfdk_k - kfdk_ik;
-    kernsdaa_diff(imid)= kfdaa_k - kfdaa_ik;
-    kernsdak_diff(imid)= kfdak_k - kfdak_ik;
-    kernsdkk_diff(imid)= kfdkk_k - kfdkk_ik;
+    if(iflag_rk)
+    for ii=1:6
+        rk{ii}(imid) = s.rk{ii};
+    end
+    end
 
-    ifun = 4;
-   [kf_k,kfda_k,kfdk_k,kfdaa_k,kfdak_k,kfdkk_k, ...
-     kf_ik,kfda_ik,kfdk_ik,kfdaa_ik,kfdak_ik,kfdkk_ik] ...
+    if (iflag_ik)
+    for ii=1:6
+        ik{ii}(imid) = s.ik{ii};
+    end
+    end
+
+    if (iflag_dk)
+    for ii=1:6
+        dk{ii}(imid) = s.dk{ii};
+    end
+    end
+
+    s ...
         = chnk.axissymhelm2d.helm_axi_smooth(r0s(ifar),alphs(ifar),...
         ifun,htables.xlege,htables.wlege);
-    
-    kerns_k(ifar) = kf_k;
-    kernsda_k(ifar) = kfda_k;
-    kernsdk_k(ifar) = kfdk_k;
-    kernsdaa_k(ifar)= kfdaa_k;
-    kernsdak_k(ifar)= kfdak_k;
-    kernsdkk_k(ifar)= kfdkk_k;
-    
-                  
-    kerns_ik(ifar) = kf_ik;
-    kernsda_ik(ifar) = kfda_ik;
-    kernsdk_ik(ifar) = kfdk_ik;
-    kernsdaa_ik(ifar)= kfdaa_ik;
-    kernsdak_ik(ifar)= kfdak_ik;
-    kernsdkk_ik(ifar)= kfdkk_ik;
 
-            
-    kerns_diff(ifar) = kf_k - kf_ik;
-    kernsda_diff(ifar) = kfda_k - kfda_ik;
-    kernsdk_diff(ifar) = kfdk_k - kfdk_ik;
-    kernsdaa_diff(ifar)= kfdaa_k - kfdaa_ik;
-    kernsdak_diff(ifar)= kfdak_k - kfdak_ik;
-    kernsdkk_diff(ifar)= kfdkk_k - kfdkk_ik;
+    if (iflag_rk)
+    for ii=1:6
+        rk{ii}(ifar) = s.rk{ii};
+    end
+    end
+
+    if (iflag_ik)
+    for ii=1:6
+        ik{ii}(ifar) = s.ik{ii};
+    end
+    end
+
+    if (iflag_dk)
+    for ii=1:6
+        dk{ii}(ifar) = s.dk{ii};
+    end
+    end
 
 
-    [doutk] = chnk.axissymhelm2d.der_ak_to_grad(rs,drs,dzs,kerns_k,kernsda_k,kernsdk_k,...
-                 kernsdaa_k,kernsdak_k,kernsdkk_k);
-    [dsk] = chnk.axissymhelm2d.div_by_kap(rs,drs,dzs,doutk);
-    dsk.intdrz = -dsk.intdrz;
-     dsk.intdzz = -dsk.intdzz;
-     
-    
-    [doutik] = chnk.axissymhelm2d.der_ak_to_grad(rs,drs,dzs,kerns_ik,kernsda_ik,kernsdk_ik,...
-                 kernsdaa_ik,kernsdak_ik,kernsdkk_ik);
-    [dsik] = chnk.axissymhelm2d.div_by_kap(rs,drs,dzs,doutik);
-    dsik.intdrz = -dsik.intdrz;
-     dsik.intdzz = -dsik.intdzz; 
-     
-     
-         
-    [doutdiff] = chnk.axissymhelm2d.der_ak_to_grad(rs,drs,dzs,kerns_diff,kernsda_diff,kernsdk_diff,...
-                 kernsdaa_diff,kernsdak_diff,kernsdkk_diff);
-    [dsdiff] = chnk.axissymhelm2d.div_by_kap(rs,drs,dzs,doutdiff);
-    dsdiff.intdrz = -dsdiff.intdrz;
-     dsdiff.intdzz = -dsdiff.intdzz; 
+
+    if(iflag_rk)
+        [dsk] = proc_kerns(rs,drs,dzs,rk);
+        varargout{1} = dsk;
+        if (ifun == 4)
+            [dsik] = proc_kerns(rs,drs,dzs,ik);
+            [dsdiff] = proc_kerns(rs,drs,dzs,dk);
+            varargout{2} = dsik;
+            varargout{3} = dsdiff;
+        end
+    end
+    if(ifun == 2)
+        [dsik] = proc_kerns(rs,drs,dzs,ik);
+        varargout{1} = dsik;
+    end
+    if(ifun==3)
+        [dsdiff] = proc_kerns(rs,drs,dzs,dk);
+        varargout{1} = dsdiff;
+    end
 
 end
 
+function [ds] = proc_kerns(rs,drs,dzs,s)
+    [dout] = chnk.axissymhelm2d.der_ak_to_grad(rs,drs,dzs,s{1},s{2},...
+    s{3},s{6},s{5},s{4});
+    [ds] = chnk.axissymhelm2d.div_by_kap(rs,drs,dzs,dout);
+    ds.intdrz = -ds.intdrz;
+     ds.intdzz = -ds.intdzz;
+end
