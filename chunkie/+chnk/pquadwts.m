@@ -1,5 +1,5 @@
-function [mat,mat_log,mat_cauchy] = pquadwts(r,d,n,d2,h,ct,bw,j,...
-    rt,dt,nt,d2t,kern,opdims,t,w,opts,intp_ab,intp)
+function [varargout] = pquadwts(r,d,n,d2,h,j,...
+    rt,t,w,opts,intp_ab,intp,types)
 %CHNK.INTERPQUADWTS product integration for interaction of kernel on chunk 
 % at targets
 %
@@ -43,13 +43,23 @@ sp = abs(d_i); tang = d_i./sp;                    % speed, tangent
 n_i = -1i*tang;                                   % normal
 cur = -real(conj(d2_i).*n_i)./sp.^2;              % curvature
 wxp_i = w.*d_i;                                     % complex speed weights (Helsing's wzp)
-mat_log = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
-mat_cauchy = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
 
-mat = (mat_log+real(mat_cauchy));  % depends on kern, different mat1?
+varargout = cell(size(types));
 
+for j = 1:length(types)
+    type0 = types{j};
+
+    if (all(type0 == [1 0 0 0]))
+        varargout{j} = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+              struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+    elseif (all(type0 == [0 0 -1 0]))
+            varargout{j} = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+    else
+        error("split panel quad type " + join(string([1 2 3]),",") + " not available");
+    end
+
+end
 end
 
 function [A, A1, A2] = Sspecialquad(t,s,a,b,side)

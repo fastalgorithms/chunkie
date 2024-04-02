@@ -174,6 +174,11 @@ end
 function fints = chunkerkerneval_pquad(chnkr,kern,opdims,dens, ...
     targinfo,flag,opts)
 
+if ~isa(kern,'kernel') || isempty(kern.splitinfo)
+    error('Helsing-Ojala quad only available for kernel class objects with splitinfo defined');
+end
+
+
 % target
 [~,nt] = size(targinfo.r);
 fints = zeros(opdims(1)*nt,1);
@@ -194,47 +199,49 @@ intp_ab = lege.matrin(k,[-1;1]);  % interpolation from k to end points
 
 targs = targinfo.r;
 
-targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
-targn = zeros(chnkr.dim,nt);
-if isfield(targinfo, 'd')
-    targd = targinfo.d;
-end
-
-if isfield(targinfo, 'd2')
-    targd2 = targinfo.d2;
-end
-
-if isfield(targinfo, 'n')
-    targn = targinfo.n;
-end
 for j=1:size(chnkr.r,3)
     [ji] = find(flag(:,j));
     if(~isempty(ji))
         idxjmat = (j-1)*k+(1:k);
-% should be initialized properly in kernel class. Replace 1 with constants, and source an argument.       
-        if(kern.type=='s')
-            kern.splitinfo = {@(targs) zeros(size(targs,2),numel(bw)), @(targs) ones(size(targs,2),...
-                 numel(bw)),@(targs) zeros(size(targs,2),numel(bw))};
+
+        targinfoji = [];
+        targinfoji.r = targinfo.r(:,ji);
+        if isfield(targinfo, 'd')
+            targinfoji.d = targinfo.d(:,ji);
         end
 
-        if(kern.type=='d')
-            kern.splitinfo = {@(targs) zeros(size(targs,2),numel(bw)), @(targs) zeros(size(targs,2),...
-                 numel(bw)),@(targs) ones(size(targs,2),numel(bw))};
+        if isfield(targinfo, 'd2')
+            targinfoji.d2 = targinfo.d2(:,ji);
         end
 
-        if(kern.type=='c')
-            kern.splitinfo = {@(targs) zeros(size(targs,2),numel(bw)), @(targs) ones(size(targs,2),...
-                 numel(bw)),@(targs) ones(size(targs,2),numel(bw))};
-        end
+        if isfield(targinfo, 'n')
+            targinfoji.n = targinfo.n(:,ji);
+        end        
 
+        srcinfo = [];
+        srcinfo.r = r(:,:,j);
+        srcinfo.d = d(:,:,j);
+        srcinfo.d2 = d2(:,:,j);
+        srcinfo.n = n(:,:,j);
 
         % Helsing-Ojala (interior/exterior?)
-        [matcfield,mat_log,mat_cauchy] = chnk.pquadwts(r,d,n,d2,h,ct,bw,j,targs(:,ji), ...
-            targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
+        allmats = cell(size(kern.splitinfo.type));
+        allmats{:} = chnk.pquadwts(r,d,n,d2,h,j,targs(:,ji), ...
+            t,w,opts,intp_ab,intp,kern.splitinfo.type);
     
 %        fints(ji) = fints(ji) + matcfield*dens(idxjmat);
-        fints(ji) = fints(ji) + (kern.splitinfo{1}(targs(:,ji)) + kern.splitinfo{2}(targs(:,ji)).*mat_log ...
-            + kern.splitinfo{3}(targs(:,ji)).*real(mat_cauchy))*dens(idxjmat);
+        for l = 1:length(allmats)
+            switch kern.splitinfo.action{l}
+                case 'r'
+                    mat0 = real(allmats{l});
+                case 'i'
+                    mat0 = imag(allmats{l});
+                case 'c'
+                    mat0 = allmats{l};
+            end
+            fints(ji) = fints(ji) + (kron(mat0,ones(opdims)).* ...
+                kern.splitinfo.function{l}(srcinfo,targinfoji))*dens(idxjmat);
+        end
     end
 end
 end
