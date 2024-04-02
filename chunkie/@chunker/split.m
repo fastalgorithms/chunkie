@@ -137,9 +137,9 @@ h2 = (1-t1)/2;
 chnkr.rstor(:,:,ich) = r_1;
 chnkr.rstor(:,:,nch+1) = r_2;
 chnkr.dstor(:,:,ich) = d_1*h1;
-chnkr.wtsstor(:,ich) = (sqrt(sum(d_1.^2,1)).') .* chnkr.wstor;
+chnkr.wtsstor(:,ich) = (sqrt(sum(d_1.^2,1)).') .* chnkr.wstor*h1;
 chnkr.dstor(:,:,nch+1) = d_2*h2;
-chnkr.wtsstor(:,nch+1) = (sqrt(sum(d_2.^2,1)).') .* chnkr.wstor;
+chnkr.wtsstor(:,nch+1) = (sqrt(sum(d_2.^2,1)).') .* chnkr.wstor*h2;
 chnkr.d2stor(:,:,ich) = d2_1*h1*h1;
 chnkr.d2stor(:,:,nch+1) = d2_2*h2*h2;
 
