@@ -356,7 +356,7 @@ else
         [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
         pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr,wts,kerneval,opdims,pr,ptau,pw,pin);
+            ctr,chnkr,kerneval,opdims,pr,ptau,pw,pin);
 
         optsifmm=[]; optsifmm.Tmax=Inf;
         F = ifmm(matfun,targinfo_flam.r,xflam1,200,1e-14,pxyfun,optsifmm);
