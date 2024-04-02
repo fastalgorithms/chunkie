@@ -34,7 +34,7 @@ classdef chunkgraph
     end
     
     methods
-        function obj = chunkgraph(verts, edgesendverts, fchnks, cparams)
+        function obj = chunkgraph(verts, edgesendverts, fchnks, cparams, pref)
             if (nargin == 0)
                 return
             end
