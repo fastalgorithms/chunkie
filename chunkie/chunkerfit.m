@@ -1,7 +1,7 @@
 function chnkr = chunkerfit(xy, opts)
 %CHUNKERFIT   Create a chunker by fitting a curve to a set of points.
 %
-% Syntax: chnkr = CHUNKERFIT(pts, opts)
+% Syntax: chnkr = CHUNKERFIT(xy, opts)
 %
 % Input:
 %   xy - (2,:) array of points used to fit a curve
