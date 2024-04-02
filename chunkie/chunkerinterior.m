@@ -18,6 +18,7 @@ function [in] = chunkerinterior(chnkobj,ptsobj,opts)
 %   opts - options structure with entries:
 %       opts.fmm = boolean, use FMM 
 %       opts.flam = boolean, use FLAM routines
+%       opts.axissym = boolean, chunker is axissymmetric
 %  Note on the default behavior: 
 %    by default it tries to use the fmm if it exists, if it doesn't
 %    then unless explicitly set to false, it tries to use flam
@@ -35,7 +36,6 @@ function [in] = chunkerinterior(chnkobj,ptsobj,opts)
 % author: Travis Askham (askhamwhat@gmail.com)
 
 grid = false;
-
 
 if nargin < 3
     opts = [];
@@ -80,6 +80,35 @@ if isfield(opts,'flam')
     useflam = opts.flam;
 end
 
+axissym = false;
+if isfield(opts,'axissym')
+    axissym = opts.axissym;
+end
+
+if axissym
+    nch = chnkr.nch;
+    istart = nch+1;
+    iend = 2*nch;
+    chnkr = sort(chnkr);
+    chnkr = chnkr.addchunk(nch);
+    chnkr.r(:,:,istart:iend) = fliplr(chnkr.r(:,:,1:nch));
+    chnkr.r(1,:,istart:iend) = -chnkr.r(1,:,istart:iend);
+    chnkr.d(:,:,istart:iend) = fliplr(chnkr.d(:,:,1:nch));
+    chnkr.d(2,:,istart:iend) = -chnkr.d(2,:,istart:iend);
+
+    chnkr.d2(:,:,istart:iend) = fliplr(chnkr.d2(:,:,1:nch));
+    chnkr.d2(1,:,istart:iend) = chnkr.d2(1,:,istart:iend);
+    
+    chnkr.h(istart:iend) = chnkr.h(1:nch);
+    chnkr.wts = weights(chnkr);
+    chnkr.n = normals(chnkr);
+    chnkr.adj(1,:) = 0:chnkr.nch-1;
+    chnkr.adj(2,:) = 2:chnkr.nch+1;
+    chnkr.adj(1,1) = chnkr.nch;
+    chnkr.adj(2,chnkr.nch) = 1;
+end
+
+
 usefmm_final = false;
 useflam_final = false;
 
@@ -112,6 +141,8 @@ nlegnew = chnk.ellipse_oversample(rho,npoly,eps_local);
 nlegnew = max(nlegnew,chnkr.k);
 
 [chnkr2] = upsample(chnkr,nlegnew);
+
+
 
 icont = false;
 if usefmm_final

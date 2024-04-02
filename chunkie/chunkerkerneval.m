@@ -281,7 +281,6 @@ if strcmpi(imethod,'fmm')
         warning(sprintf(fstr))
     end
 end
-    
 
 if strcmpi(imethod,'direct')
     % do dense version

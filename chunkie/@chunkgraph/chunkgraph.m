@@ -34,7 +34,7 @@ classdef chunkgraph
     end
     
     methods
-        function obj = chunkgraph(verts,edgesendverts,fchnks,cparams)
+        function obj = chunkgraph(verts, edgesendverts, fchnks, cparams, pref)
             if (nargin == 0)
                 return
             end
@@ -90,10 +90,16 @@ classdef chunkgraph
                 end
             end
             
+            if nargin <= 4
+                pref = [];
+                pref.nchmax = 10000;
+                pref.k = 16;
+            end
             
-            pref = [];
-            pref.nchmax = 10000;
-            pref.k = 16;
+            if ~isfield(pref, 'nchmax')
+                pref.nchmax = 10000;
+            end
+            
             
             echnks = chunker.empty();
             for i=1:size(edgesendverts,2)
