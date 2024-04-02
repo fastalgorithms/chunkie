@@ -76,11 +76,9 @@ utarg = kerns.fmm(1e-12,srcinfo,targinfo,strengths);
 
 % test green's id
 
-opts.forcesmooth=false;
-opts.quadkgparams = {'RelTol',1.0e-13,'AbsTol',1.0e-13};
-start=tic; Du = chunkerkerneval(chnkr,kernd,densu,targets,opts); 
+start=tic; Du = chunkerkerneval(chnkr,kernd,densu,targets); 
 toc(start)
-start=tic; Sun = chunkerkerneval(chnkr,kerns,densun,targets,opts); 
+start=tic; Sun = chunkerkerneval(chnkr,kerns,densun,targets); 
 toc(start)
 
 utarg2 = Sun-Du;

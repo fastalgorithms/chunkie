@@ -61,7 +61,7 @@ axis equal
 
 % build CFIE
 
-fkern = @(s,t) chnk.helm2d.kern(zk,s,t,'C',1);
+fkern = kernel('helm','C',zk);
 
 start = tic; sysmat = chunkermat(chnkr,fkern);
 t1 = toc(start);
@@ -72,13 +72,13 @@ sys = 0.5*eye(chnkr.k*chnkr.nch) + sysmat;
 
 % get the boundary data for a source located at the point above
 
-kerns = @(s,t) chnk.helm2d.kern(zk,s,t,'s');
+kerns = kernel('helm','s',zk);
 targs = chnkr.r; targs = reshape(targs,2,chnkr.k*chnkr.nch);
 targstau = tangents(chnkr); 
 targstau = reshape(targstau,2,chnkr.k*chnkr.nch);
 
 srcinfo = []; srcinfo.r = src0; targinfo = []; targinfo.r = targs;
-kernmats = kerns(srcinfo,targinfo);
+kernmats = kerns.eval(srcinfo,targinfo);
 ubdry = -kernmats*strengths;
 
 rhs = ubdry; rhs = rhs(:);
@@ -115,7 +115,7 @@ t1 = toc(start);
 fprintf('%5.2e s : time to evaluate kernel\n',t1)
 
 srcinfo = []; srcinfo.r = src0; targinfo = []; targinfo.r = targets(:,out);
-uin = kerns(srcinfo,targinfo)*strengths;
+uin = kerns.eval(srcinfo,targinfo)*strengths;
 utot = uscat(:)+uin(:);
 
 %

@@ -1,4 +1,4 @@
-function [mat,maxrecs,numints,iers] = adapgausswts(r,d,n,d2,h,ct,bw,j,...
+function [mat,maxrecs,numints,iers] = adapgausswts(r,d,n,d2,ct,bw,j,...
     rt,dt,nt,d2t,kern,opdims,t,w,opts)
 %CHNK.ADAPGAUSSWTS adaptive integration for interaction of kernel on chunk 
 % at targets
@@ -68,7 +68,6 @@ rs_ = r(:,:,j);
 ds = d(:,:,j);
 ns = n(:,:,j);
 d2s = d2(:,:,j);
-hs = h(j);
 
 stack = zeros(2,maxdepth);
 vals = zeros(opdims(1)*opdims(2)*k,maxdepth);
@@ -166,8 +165,6 @@ for ii = 1:ntarg
     mat(istart:iend,:) = reshape(mat1,opdims(1),opdims(2)*k);
     
 end
-
-mat = mat*hs;
 
 end
 

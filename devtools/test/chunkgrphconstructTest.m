@@ -45,12 +45,17 @@ cpars{2}.theta = theta(2); cpars{2}.ifconvex = 2; cpars{2}.islocal = -1;
 verts = exp(1i*2*pi*(0:4)/5);
 verts = [real(verts);imag(verts)];
 
+% legacy connectivity info
 edge2verts = [-1, 1, 0, 0, 0; ...
                0,-1, 1, 0, 0; ...
                0, 0,-1, 1, 0; ...
                0, 0, 0,-1, 1; ...
                1, 0, 0, 0,-1];
 edge2verts = sparse(edge2verts);
+
+% connectivity info
+edgesendverts = [1:5; [2:5 1]];
+
 amp = 0.5;
 frq = 6;
 fchnks    = {};
@@ -61,134 +66,15 @@ end
 %fchnks = {};
 
 prefs      = [];
-% prefs.chsmall = 1d-4;
-[cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
 
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
+[cgrph1] = chunkgraph(verts,edge2verts,fchnks,prefs);
+[cgrph2] = chunkgraph(verts,edgesendverts,fchnks,prefs);
 
+cgrph1 = balance(cgrph1);
+cgrph2 = balance(cgrph2);
 
-
-ncurve = 1;
-
-% set angles for top and bottom curve
-theta = [pi/2.2 pi/2.4];
-
-% set parametrization start and end points for chunkie objects
-tab = [-theta(1)/2 -theta(2)/2; theta(1)/2 theta(2)/2];
-
-% set parameters for curve parametrization
-vert = [a b; 0 0];
-cpars = cell(1,ncurve);
-cpars{1}.v0 = vert(:,1); cpars{1}.v1 = vert(:,2);
-cpars{1}.theta = theta(1); cpars{1}.ifconvex = 0; cpars{1}.islocal = -1;
-
-cpars{2}.v0 = vert(:,1); cpars{2}.v1 = vert(:,2);
-cpars{2}.theta = theta(2); cpars{2}.ifconvex = 2; cpars{2}.islocal = -1;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-verts = exp(1i*2*pi*(0:4)/5);
-verts = [real(verts);imag(verts)];
-
-edge2verts = [-1, 1, 0, 0, 0; ...
-               0,-1, 1, 0, 0; ...
-               0, 0,-1, 1, 0; ...
-               0, 0, 0,-1, 1; ...
-               1, 0, 0, 0,-1];
-edge2verts = sparse(edge2verts);
-amp = 0.5;
-frq = 6;
-fchnks    = {};
-for icurve = 1:size(edge2verts,1)
-    fchnks{icurve} = @(t) circulararc(t,cpars{1});
-    fchnks{icurve} = @(t) sinearc(t,amp,frq);
-end
-%fchnks = {};
-
-prefs      = [];
-% prefs.chsmall = 1d-4;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
-
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
-
-
-zk = 1.0;
-fkern = @(s,t) -2*chnk.helm2d.kern(zk,s,t,'d');
-
-opts = [];
-opts.nonsmoothonly = false;
-opts.rcip = true;
-[sysmat] = chunkermat(cgrph,fkern,opts);
-sysmat = sysmat + eye(size(sysmat,2));
-
-% generate some targets...
-
-xs = -2:0.01:2;
-ys = -2:0.01:2;
-[X,Y] = meshgrid(xs,ys);
-targs = [X(:).';Y(:).'];
-
-srcinfo = [];
-srcinfo.sources = cgrph.r(:,:);
-w = weights(cgrph);
-n = normals(cgrph);
-
-% a quick hack to find the interior points
-
-srcinfo.dipstr = w(:).';
-srcinfo.dipvec = n(:,:); 
-eps = 1E-8;
-pg  = 0;
-pgt = 1;
-[U] = lfmm2d(eps,srcinfo,pg,targs,pgt);
-U = U.pottarg;
-inds = find(abs(U-2*pi)<pi/10);
-
-%%%%%%%%%%%%%%%%%%
-% generate the right hand side
-
-x0 = 1.3;
-y0 = 0.9;
-
-srcinfo = [];
-srcinfo.sources = cgrph.r(:,:);
-w = weights(cgrph);
-n = normals(cgrph);
-
-s = [];
-s.r = [x0;y0];
-t = [];
-t.r = cgrph.r(:,:);
-rhs = chnk.helm2d.kern(zk,s,t,'s');
-dens = sysmat\rhs;
-dens = -2*dens;
-
-srcinfo.dipstr = (w(:).*dens(:)).';
-srcinfo.dipvec = n(:,:); 
-fints = hfmm2d(eps,zk,srcinfo,pg,targs(:,inds),pgt);
-
-t.r = targs(:,inds);
-true_sol = chnk.helm2d.kern(zk,s,t,'s');
-
-usol = zeros(size(targs,2),1);
-uerr = usol;
-usol(inds) = fints.pottarg;
-uerr(inds) = usol(inds)-true_sol;
-usol = reshape(usol,size(X));
-uerr = reshape(uerr,size(X));
-h = pcolor(X,Y,log10(abs(uerr)));
-set(h,'EdgeColor','None'); hold on;
-plot(cgrph,'w-','LineWidth',2);
-caxis([-16,0])
-colorbar
-
-
+assert(all(cgrph1.verts(:) == cgrph2.verts(:)))
+assert(all(all(cgrph1.v2emat == cgrph2.v2emat)))
 
 function [r,d,d2] = circulararc(t,cpars)
 %%circulararc

@@ -14,6 +14,10 @@ function obj = helm2d(type, zk, coefs)
 %   parameter ETA, i.e., COEFS(1)*KERNEL.HELM2D('d', ZK) + 
 %   COEFS(2)*KERNEL.HELM2D('s', ZK).
 %
+%   KERNEL.HELM2D('cp', ZK, COEFS) or KERNEL.HELM2D('combined', ZK, COEFS)
+%   constructs the derivative of the combined-layer Helmholtz kernel with 
+%   wavenumber ZK and  parameter ETA, i.e., COEFS(1)*KERNEL.HELM2D('dp', ZK) + 
+%   COEFS(2)*KERNEL.HELM2D('sp', ZK).
 % See also CHNK.HELM2D.KERN.
 
 if ( nargin < 1 )
@@ -66,9 +70,26 @@ switch lower(type)
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, coefs);
         obj.sing = 'log';
 
+    case {'cp', 'cprime'}
+        if ( nargin < 3 )
+            warning('Missing combined layer coefficients. Defaulting to [1,1i].');
+            coefs = [1,1i];
+        end
+        obj.type = 'cprime';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'cprime', coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'cprime', sigma, coefs);
+        obj.sing = 'hs';
+
     otherwise
         error('Unknown Helmholtz kernel type ''%s''.', type);
 
 end
+
+icheck = exist(['fmm2d.' mexext], 'file');
+if icheck ~=3
+    obj.fmm = [];
+end
+
 
 end

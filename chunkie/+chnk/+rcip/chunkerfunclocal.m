@@ -71,10 +71,11 @@ for i = 1:nch
     
     ts = a + (b-a)*(xs+1)/2;
     [out{:}] = fcurve(ts);
+    h = (b-a)/2;
     chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
-    chnkr.dstor(:,:,i) = reshape(out{2},dim,k);
-    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k);
-    chnkr.hstor(i) = (b-a)/2;
+    chnkr.dstor(:,:,i) = reshape(out{2},dim,k)*h;
+    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k)*h*h;
+
 end
 
 chnkr.adjstor(:,1:nch) = adjs(:,1:nch);

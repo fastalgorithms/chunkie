@@ -1,5 +1,7 @@
-  
-  function [Pbc,PWbc,starL,circL,starS,circS,ilist] = setup(ngl,ndim,nedge,isstart) 
+function [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = ...
+      setup(ngl,ndim,nedge,isstart) 
+  %CHNK.RCIP.SETUP
+  %
   % setup for the RCIP forward recursion
   % inputs:
   % ngl - number of Gauss-Legendre nodes
@@ -15,6 +17,7 @@
   % Pbc - prolongation matrix
   % PWbc - weighted prolongation matrix
   % starL, circL - bad and good indices for the local system matrix
+  % starL1, circL1 - bad and good indices for arrays of nodes, normals, etc
   % starS, circS - bad and good indices for the preconditioner R
   %
   [T,W] = lege.exps(ngl);  
@@ -27,20 +30,30 @@
   % circL - good indices for the system matrix M
   starL = [];
   circL = [];
+  starL1 = [];
+  circL1 = [];
   indg1 = 2*ngl*ndim + (1:ngl*ndim);
   indb1 = 1:2*ngl*ndim;
+  indg11 = 2*ngl+ (1:ngl);
+  indb11 = 1:2*ngl;
   
   indg0 = 1:ngl*ndim;
   indb0 = ngl*ndim + (1:2*ngl*ndim);
+  indg01 = 1:ngl;
+  indb01 = ngl + (1:2*ngl);
   
   for i=1:nedge
     if isstart(i) 
       starL = [starL indb1+3*(i-1)*ngl*ndim];
       circL = [circL indg1+3*(i-1)*ngl*ndim];
+      starL1 = [starL1 indb11+3*(i-1)*ngl];
+      circL1 = [circL1 indg11+3*(i-1)*ngl];
       ilist(:,i) = [1, 2];
     else
       starL = [starL indb0+3*(i-1)*ngl*ndim];
       circL = [circL indg0+3*(i-1)*ngl*ndim];
+      starL1 = [starL1 indb01+3*(i-1)*ngl];
+      circL1 = [circL1 indg01+3*(i-1)*ngl];
       ilist(:,i) = [2, 3];
     end
   end

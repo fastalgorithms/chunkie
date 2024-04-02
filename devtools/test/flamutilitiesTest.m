@@ -31,7 +31,7 @@ for icurve = 1:size(edge2verts,1)
 end
 cparams = [];
 cparams.nover = 2;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
 
 cgrph = balance(cgrph);
 
@@ -104,14 +104,16 @@ t1 = toc(start);
 fprintf('%5.2e s : time to build tridiag\n',t1)
 
 spmat = spmat + speye(npt);
+inds = find(spmat);
+spmat(inds) = sys(inds);
 
 % test matrix entry evaluator
 start = tic; 
-% opdims = [1 1];
-opdims = ones([2,1,1]);
+ opdims = [1 1];
+%opdims = ones([2,1,1]);
 
+%sys2 = chnk.flam.kernbyindex(1:npt,1:npt,cgrph,kernd,opdims,spmat);
 sys2 = chnk.flam.kernbyindex(1:npt,1:npt,cgrph,kernd,opdims,spmat);
-
 
 
 t1 = toc(start);
@@ -120,6 +122,8 @@ fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
 
 err2 = norm(sys2-sys,'fro')/norm(sys,'fro');
 fprintf('%5.2e   : fro error of build \n',err2)
+
+ assert(err2 < 1e-10);
 
 
 xflam = cgrph.r(:,:);
@@ -161,7 +165,7 @@ err = norm(sol-sol3,'fro')/norm(sol,'fro');
 
 fprintf('difference between fast-direct and iterative %5.2e\n',err)
 
-% assert(err < 1e-10);
+ assert(err < 1e-10);
 
 % evaluate at targets and compare
 

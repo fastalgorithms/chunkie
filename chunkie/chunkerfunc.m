@@ -13,21 +13,22 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %               [r,d] = fcurve(t);  or [r,d,d2] = fcurve(t);
 %            where d is the first derivative of r with respect to t and 
 %            d2 is the second derivative. in some situations, this will
-%            improve the convergence order. 
+%            improve the convergence order and final precision.
 %
 % Optional input:
 %	cparams - curve parameters structure (defaults)
 %       cparams.ta = left end of t interval (0)
 %       cparams.tb = right end of t interval (2*pi)
+%       cparams.tsplits = set of initial break points for discretization in
+%                 parameter space (should be in [ta,tb])
 %       cparams.ifclosed = flag determining if the curve
 %           is to be interpreted as a closed curve (true)
 %       cparams.chsmall = max size of end intervals if
 %           ifclosed == 0 (Inf)
 %       cparams.nover = oversample resolved curve nover
 %           times (0)
-%       cparams.eps = resolve coordinates, arclength,
-%          and first and second derivs of coordinates
-%          to this tolerance (1.0e-6)
+%       cparams.eps = tolerance to resolve coordinates and arclength 
+%           density (1.0e-6)
 %       cparams.lvlr = string, determines type of level
 %          restriction to be enforced
 %               lvlr = 'a' -> no chunk should have double the arc length 
@@ -41,6 +42,9 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %   pref - chunkerpref object or structure (defaults)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
+%
+% Output:
+%   chnkr - a chunker object containing the discretization of the domain
 %
 % Examples:
 %   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish w/ standard
@@ -137,19 +141,42 @@ interp_xs = reshape(polvals,[k,k2]).'*us;
 
 ab = zeros(2,nchmax);
 adjs = zeros(2,nchmax);
-ab(1,1)=ta;
-ab(2,1)=tb;
-nch=1;
+
+if (isfield(cparams,'tsplits'))
+    tsplits = cparams.tsplits;
+    tsplits = [tsplits(:); ta; tb];
+else
+    tsplits = [ta;tb];
+end
+   
+tsplits = sort(unique(tsplits),'ascend');
+lab = length(tsplits);
+if (lab-1 > nchmax)
+    error(['nchmax exceeded in chunkerfunc on initial splits.\n ',...
+        'try increasing nchmax in preference struct']);
+end
+if (any(tsplits > tb) || any(tsplits < ta))
+    error(['tsplits outside of interval of definition.\n', ...
+          'check definition of splits, ta and tb']);
+end
+
+ab(1,1:(lab-1)) = tsplits(1:end-1);
+ab(2,1:(lab-1)) = tsplits(2:end);
+
+nch=lab-1;
+adjs(1,1:nch) = 0:(nch-1);
+adjs(2,1:nch) = 2:(nch+1);
+
 if ifclosed
-    adjs(1,1)=1;
-    adjs(2,1)=1;
+    adjs(1,1)=nch;
+    adjs(2,nch)=1;
 else
     adjs(1,1)=-1;
-    adjs(2,1)=-1;
+    adjs(2,nch)=-1;
 end
 nchnew=nch;
 
-maxiter_res=nchmax;
+maxiter_res=nchmax-nch;
 
 rad_curr = 0;
 for ijk = 1:maxiter_res
@@ -493,10 +520,10 @@ for i = 1:nch
     for j = nout+1:3
         out{j} = out{j-1}*dermat*(2/(b-a));
     end
+    h = (b-a)/2;
     chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
-    chnkr.dstor(:,:,i) = reshape(out{2},dim,k);
-    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k);
-    chnkr.hstor(i) = (b-a)/2;
+    chnkr.dstor(:,:,i) = reshape(out{2},dim,k)*h;
+    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k)*h*h;
 end
 
 chnkr.adjstor(:,1:nch) = adjs(:,1:nch);

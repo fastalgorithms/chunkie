@@ -1,5 +1,6 @@
   function Mi=myinv(M)
 % *** equation (9) in Henderson & Searle ***
+
   np=length(M)/2;
   A=M(1:np,1:np);
   U=M(1:np,np+1:2*np);
