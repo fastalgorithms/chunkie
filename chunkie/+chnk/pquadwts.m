@@ -1,6 +1,6 @@
-function mat = pquadwts(r,d,n,d2,ct,bw,j,...
-    rt,dt,nt,d2t,kern,opdims,t,w,opts,intp_ab,intp)
-%CHNK.INTERPQUADWTS product integration for interaction of kernel on chunk 
+function [varargout] = pquadwts(r,d,n,d2,wts,j,...
+    rt,t,w,opts,intp_ab,intp,types)
+%CHNK.pquadwts product integration for interaction of kernel on chunk 
 % at targets
 %
 % WARNING: this routine is not designed to be user-callable and assumes 
@@ -14,6 +14,7 @@ function mat = pquadwts(r,d,n,d2,ct,bw,j,...
 %   d - chnkr derivatives at nodes
 %   n - chnkr normals at nodes
 %   d2 - chnkr 2nd derivatives at nodes
+%   h - lengths of chunks in parameter space
 %   ct - Legendre nodes at order of chunker
 %   bw - barycentric interpolation weights for Legendre nodes at order of
 %   chunker
@@ -33,23 +34,34 @@ function mat = pquadwts(r,d,n,d2,ct,bw,j,...
 %
 
 % Helsing-Ojala (interior/exterior?)
-
 xlohi = intp_ab*(r(1,:,j)'+1i*r(2,:,j)');         % panel end points
 r_i = intp*(r(1,:,j)'+1i*r(2,:,j)');              % upsampled panel
 d_i = (intp*(d(1,:,j)'+1i*d(2,:,j)'));        % r'
 d2_i = (intp*(d2(1,:,j)'+1i*d2(2,:,j)'));   % r''
+wts_i = wts(:,j)';                                %
 sp = abs(d_i); tang = d_i./sp;                    % speed, tangent
 n_i = -1i*tang;                                   % normal
 cur = -real(conj(d2_i).*n_i)./sp.^2;              % curvature
 wxp_i = w.*d_i;                                     % complex speed weights (Helsing's wzp)
 
-mat_ho_slp = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),'e');
-mat_ho_dlp = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),'e');
+varargout = cell(size(types));
 
-mat = (mat_ho_slp+real(mat_ho_dlp))*intp;  % depends on kern, different mat1?
+for j = 1:length(types)
+    type0 = types{j};
 
+    if (all(type0 == [0 0 0 0]))
+      varargout{j} = ones(size(rt,2),numel(wts_i)).*wts_i;
+    elseif (all(type0 == [1 0 0 0]))
+        varargout{j} = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+              struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+    elseif (all(type0 == [0 0 -1 0]))
+            varargout{j} = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+    else
+        error("split panel quad type " + join(string([1 2 3]),",") + " not available");
+    end
+
+end
 end
 
 function [A, A1, A2] = Sspecialquad(t,s,a,b,side)

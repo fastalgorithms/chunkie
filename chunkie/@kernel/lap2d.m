@@ -30,12 +30,20 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 's');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 's', sigma);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0]};
+        obj.splitinfo.action = {'r'};
+        obj.splitinfo.function = {@(s,t) ones(size(t.r,2),size(s.r,2))};
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'd');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'd', sigma);
         obj.sing = 'smooth';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 -1 0]};
+        obj.splitinfo.action = {'r'};
+        obj.splitinfo.function = {@(s,t) ones(size(t.r,2),size(s.r,2))};
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
@@ -79,6 +87,12 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'c', coefs);
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'c', sigma, coefs);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r'};
+        obj.splitinfo.function = cell(2,1);
+        obj.splitinfo.function{1} = @(s,t) coefs(2)*ones(size(t.r,2),size(s.r,2));
+        obj.splitinfo.function{2} = @(s,t) coefs(2)*ones(size(t.r,2),size(s.r,2));
 
     otherwise
         error('Unknown Laplace kernel type ''%s''.', type);
