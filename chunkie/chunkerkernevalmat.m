@@ -1,4 +1,4 @@
-function mat = chunkerkernevalmat(chnkr,kern,targobj,opts)
+    function mat = chunkerkernevalmat(chnkr,kern,targobj,opts)
 %CHUNKERKERNEVALMAT compute the matrix which maps density values on 
 % the chunk geometry to the value of the convolution of the given
 % integral kernel with the density at the specified target points
