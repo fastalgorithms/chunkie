@@ -13,10 +13,9 @@ nchs = info.nchs;
 istart = 1;
 
 A = lege.intmat(chnkr.k);
-[~,w] = lege.exps(chnkr.k);
 ds = arclengthdens(chnkr);
-chunklens = sum((w(:)*(chnkr.h(:).')).*ds,1);
-s = (A*ds).*(chnkr.h(:).');
+chunklens = sum(chnkr.wts,1);
+s = A*ds;
 
 for i = 1:ncomp
     nch = nchs(i);

@@ -71,7 +71,6 @@ for i = 1:length(ich)
     r = chnkr.rstor(:,:,ii);
     d = chnkr.dstor(:,:,ii);
     d2 = chnkr.d2stor(:,:,ii);
-    h = chnkr.hstor(ii);
     rc = u*(r.');
     dc = u*(d.');
     d2c = u*(d2.');

@@ -1,10 +1,9 @@
 function ds = arclengthdens(chnkr)
 %ARCLENGTHDENS arc length density on chunks
 %
-% warning: this takes the length of the ith chunk in parameter space to 
-%   be 2*chnkr.h(i) as opposed to 2. Thus the smooth integration rule
+%   The smooth integration rule
 %   on the ith chunk is 
-%       ds(:,i).*w*chnkr.h(i)
+%       ds(:,i).*w
 %   where w are the standard Legendre weights of appropriate order and 
 %   ds is the output of this routine
 %

@@ -573,14 +573,13 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
-h = chnkr.h;
 
 for i = 1:nch
     jmat = 1 + (i-1)*k*opdims(2);
     jmatend = i*k*opdims(2);
                     
     [ji] = find(flag(:,i));
-    mat1 =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+    mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
                 targd(:,ji),targn(:,ji),targd2(:,ji),kernev,opdims,t,w,opts);
             
     js1 = jmat:jmatend;

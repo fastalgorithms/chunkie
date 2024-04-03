@@ -11,7 +11,6 @@ r = chnkr.r;
 adj = chnkr.adj;
 d = chnkr.d;
 d2 = chnkr.d2;
-h = chnkr.h;
 
 [~,~,u] = lege.exps(k);
 

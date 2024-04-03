@@ -273,13 +273,12 @@ if isempty(flag)
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
-    h = chnkr.h;
     
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
-        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs, ...
+        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs, ...
                     targd,targd2,kern,opdims,t,w,opts);
                 
         js1 = jmat:jmatend;
