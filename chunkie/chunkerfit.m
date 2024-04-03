@@ -36,11 +36,6 @@ function chnkr = chunkerfit(xy, opts)
 %
 % See also CHUNKERFUNC, CHUNKERPREF, CHUNKER.
 
-if ( nargin == 0 )
-    test();
-    return
-end
-
 if ( size(xy, 1) ~= 2 )
     error('CHUNKIE:CHUNKERFIT:size', 'Points must be specified as a 2xN matrix.');
 end
@@ -117,20 +112,6 @@ if ( opts.splitatpoints )
     cparams.tsplits = t;
 end
 chnkr = chunkerfunc(@splinefunc, cparams, opts.pref);
-
-end
-
-function test()
-
-rng(0)
-r = chnk.curves.bymode(sort(2*pi*rand(20,1)), [2 0.5 0.2 0.7]);
-chnkr = chunkerfit(r);
-
-plot(chnkr, 'bo-')
-hold on
-plot(r(1,:), r(2,:), 'r.', markersize=30)
-hold off
-shg
 
 end
 
