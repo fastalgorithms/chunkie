@@ -90,13 +90,17 @@ start=tic; Smat = chunkerkernevalmat(chnkr,kerns,targets,opts);
 Sun = Smat*densun;
 toc(start)
 
-utarg2 = Sun-Du2;
+utarg2 = Sun-Du;
+utarg3 = Sun-Du2;
 
 %
 
 relerr = norm(utarg-utarg2,'fro')/norm(utarg,'fro');
+assert(relerr < 1e-11);
 
 fprintf('relative frobenius error %5.2e\n',relerr);
 
+relerr = norm(utarg-utarg3,'fro')/norm(utarg,'fro');
 assert(relerr < 1e-11);
+
 

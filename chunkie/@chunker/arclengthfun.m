@@ -14,7 +14,7 @@ istart = 1;
 
 A = lege.intmat(chnkr.k);
 ds = arclengthdens(chnkr);
-chunklens = sum(chnkr.wts,1);
+chunklens = chunklen(chnkr);
 s = A*ds;
 
 for i = 1:ncomp

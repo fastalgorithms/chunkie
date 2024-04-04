@@ -279,21 +279,7 @@ if isempty(flag)
         jmatend = i*k*opdims(2);
                         
         mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs, ...
-                    targd,targd2,kern,opdims,t,w,opts);
-                
-        js1 = jmat:jmatend;
-        js1 = repmat( (js1(:)).',1,opdims(1)*numel(ji));
-                
-        indji = (ji-1)*opdims(1);
-        indji = repmat( (indji(:)).', opdims(1),1) + ( (1:opdims(1)).');
-        indji = indji(:);
-        indji = repmat(indji,1,opdims(2)*k);
-        
-        iend = istart+numel(mat1)-1;
-        is(istart:iend) = indji(:);
-        js(istart:iend) = js1(:);
-        vs(istart:iend) = mat1(:);
-        istart = iend+1;
+                    targd,targn,targd2,kern,opdims,t,w,opts);
     end
     
 else
