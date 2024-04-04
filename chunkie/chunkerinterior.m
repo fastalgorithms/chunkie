@@ -99,7 +99,6 @@ if axissym
     chnkr.d2(:,:,istart:iend) = fliplr(chnkr.d2(:,:,1:nch));
     chnkr.d2(1,:,istart:iend) = chnkr.d2(1,:,istart:iend);
     
-    chnkr.h(istart:iend) = chnkr.h(1:nch);
     chnkr.wts = weights(chnkr);
     chnkr.n = normals(chnkr);
     chnkr.adj(1,:) = 0:chnkr.nch-1;
