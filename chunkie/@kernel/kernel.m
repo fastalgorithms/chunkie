@@ -94,17 +94,21 @@ classdef kernel
           elseif ( isa(kern, 'function_handle') )
               obj.eval = kern;
           elseif ( isa(kern, 'kernel') )
-              if ( numel(kern) == 1 )
-                  obj = kern;
-              else
-                  % The input is a matrix of kernels.
-                  % Create a single kernel object by interleaving the
-                  % outputs of each sub-kernel's eval() and fmm() routines.
-                  % TODO: Check that opdims are consistent
-                  obj = interleave(kern);
+              if (numel(kern) == 1)
+		obj = kern;
+	      else
+		obj = interleave(kern);
               end
+          elseif isa(kern,'cell')
+            sz = size(kern); assert(length(sz)==2,'KERNEL: first input not of a supported type');
+            obj(sz(1),sz(2)) = kernel();
+            for j = 1:sz(2)
+                for i = 1:sz(1)
+                    obj(i,j) = kernel(kern{i,j});
+                end
+            end
           else
-              error('First input must be a string or function handle.');
+              error('KERNEL: first input not of a supported type');
           end
 
       end

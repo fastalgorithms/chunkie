@@ -125,9 +125,12 @@ classdef chunker
                 p = chunkerpref(p);
             end
             k = p.k;
+            assert(k >= 2,'CHUNKER: order k of panels must be at least 2');
             if nargin < 3
                 [obj.tstor,obj.wstor] = lege.exps(k);
             else
+                assert(length(t)==k && length(w)==k,...
+                    'CHUNKER: precomputed Legendre nodes appear to be wrong order');
                 obj.tstor = t;
                 obj.wstor = w;
             end
