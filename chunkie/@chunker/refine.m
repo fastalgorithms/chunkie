@@ -238,7 +238,7 @@ for ijk = 1:nover
 
 %       split chunk i now, and recalculate nodes, d, etc
         if (chnkr.nch + 1 > nchmax)
-            error('too many chunks')
+            error('CHUNKER.REFINE nchmax=%d exceeded during oversample',nchmax)
         end
 
         chnkr = split(chnkr,i,[],x,w,u,stype);
