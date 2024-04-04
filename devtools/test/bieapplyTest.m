@@ -9,7 +9,7 @@ addpaths_loc();
 seed = 8675309;
 rng(seed);
 
-%% chunker geometry parameters and construction
+% chunker geometry parameters and construction
 
 cparams = [];
 cparams.eps = 1.0e-4;
@@ -19,7 +19,7 @@ narms = 5;
 amp = 0.5;
 chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams);
 
-%% scalar chunker test
+% scalar chunker test
 fkern = kernel('lap','d');
 
 start = tic; sysmat = chunkermat(chnkr,fkern); t1 = toc(start);
@@ -54,7 +54,7 @@ relerr = norm(sol1-sol2)/norm(sol1);
 fprintf('relative solve error %5.2e\n',relerr);
 assert(relerr < 1e-13)
 
-%% vector valued chunker test
+% vector valued chunker test
 nregions = 2;
 ks = [1.1;2.1]*30;
 coefs = [1.0;1.0];
@@ -104,7 +104,7 @@ fprintf('relative solve error %5.2e\n',relerr);
 assert(relerr < 1e-10)
 
 
-%% setup chunkgraph 
+% setup chunkgraph 
 
 nverts = 3; 
 verts = exp(1i*2*pi*(0:(nverts-1))/nverts);
@@ -133,7 +133,7 @@ vstruc = procverts(cgrph);
 rgns = findregions(cgrph);
 cgrph = balance(cgrph);
 
-%% scalar chunkgraph test
+% scalar chunkgraph test
 fkern = -2*kernel('lap','d');
 
 start = tic; sysmat = chunkermat(cgrph,fkern); t1 = toc(start);
@@ -167,7 +167,7 @@ relerr = norm(sol1-sol2)/norm(sol1);
 fprintf('relative solve error %5.2e\n',relerr);
 assert(relerr < 1e-13)
 
-%% vectorvalued chunkgraph test
+% vectorvalued chunkgraph test
 nregions = 2;
 ks = [1.1;2.1]*30;
 coefs = [1.0;1.0];
