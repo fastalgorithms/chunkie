@@ -102,8 +102,10 @@ else
     srcinfo = []; srcinfo.r = pxy; srcinfo.d = ptau; 
     if (size(rslf,1) == 2)
         srcinfo.n = chnk.perp(ptau);
+        targinfo.n = chnk.perp(dslf);
+        if isnan(sum(targinfo.n,'all')), sum(targinfo.n,'all'), end
     end
-    
+    if isnan(sum(targinfo.r,'all')), sum(targinfo.r,'all'), end
     Kpxy = kern(srcinfo,targinfo);
 
     Kpxy = Kpxy(islfuni2,:);
