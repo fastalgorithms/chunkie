@@ -1,5 +1,8 @@
 function flagslf = flagself(srcs, targs, tol)
     % identify sources and targets pairs that are within tol (1e-14);
+
+    % todo: make this more robust by searching for all pairs that are close
+    % not just the closest
     if nargin < 3
         tol = 1e-14;
     end
