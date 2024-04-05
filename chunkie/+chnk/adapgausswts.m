@@ -8,7 +8,7 @@ function [mat,maxrecs,numints,iers] = adapgausswts(r,d,n,d2,ct,bw,j,...
 % WARNING: this routine currently assumes that the kernel function is
 %   translation invariant to recenter (improves stability). 
 %
-% Syntax: [mat,maxrecs,numints,iers] = adapgausswts(r,d,d2,h,ct,bw,j, ...
+% Syntax: [mat,maxrecs,numints,iers] = adapgausswts(r,d,d2,ct,bw,j, ...
 %   rt,dt,d2t,kern,opdims,t,w,opts)
 %
 % Input:
@@ -16,7 +16,6 @@ function [mat,maxrecs,numints,iers] = adapgausswts(r,d,n,d2,ct,bw,j,...
 %   d - chnkr derivatives at nodes
 %   n - chnkr normals at nodes
 %   d2 - chnkr 2nd derivatives at nodes
-%   h - lengths of chunks in parameter space
 %   ct - Legendre nodes at order of chunker
 %   bw - barycentric interpolation weights for Legendre nodes at order of
 %   chunker

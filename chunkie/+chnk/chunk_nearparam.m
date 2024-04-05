@@ -24,6 +24,7 @@ function [ts,rs,ds,d2s,dist2s] = chunk_nearparam(rval,pts,opts,t,u)
 
 maxnewt = 15;
 thresh0 = 1.0d-14;
+iextra = 3;
 
 if nargin < 4 || isempty(t) || nargin < 5 || isempty(u)
     [t,~,u] = lege.exps(chnkr.k);
@@ -38,12 +39,6 @@ if isfield(opts,'nitermax')
 end
 if isfield(opts,'thresh')
     thresh0 = opts.thresh;
-end
-
-dist = Inf;
-
-if nargin < 3
-    ich = 1:nch;
 end
 
 dim = size(pts,1);
@@ -92,9 +87,10 @@ for i = 1:npts
 
     rdiff0 = r0(:) - ref;
     dprime = rdiff0.'*d0(:);
-    dprime2 = d0(:).'*d0(:) + d0(:).'*d20(:);
+    dprime2 = (d0(:).'*d0(:) + rdiff0(:).'*d20(:));
 
     newtsuccess = false;
+    ifend = 0;
 
     for iii = 1:maxnewt
 
@@ -102,14 +98,17 @@ for i = 1:npts
         
         deltat = - dprime/dprime2;
 
-        t0 = t0+deltat;
+        t1 = t0 + deltat;
         
-        if (t0 > 1.0)
-            t0 = 1;
+        if (t1 > 1.0)
+            t1 = 1;
         end
-        if (t0 < -1.0)
-            t0 = -1;
+        if (t1 < -1.0)
+            t1 = -1;
         end
+    
+        deltat = t1-t0;
+        t0 = t1;
 
         all0 = (lege.exev(t0,cfs));
         r0 = all0(1:dim);
@@ -118,9 +117,13 @@ for i = 1:npts
 
         rdiff0 = r0(:)-ref(:);
         dprime = rdiff0.'*d0(:);
-        dprime2 = d0(:).'*d0(:) + d0(:).'*d20(:);
+        dprime2 = d0(:).'*d0(:) + rdiff0(:).'*d20(:);
 
-        if abs(dprime) < thresh
+        if min(abs(dprime),abs(deltat)) < thresh
+            ifend = ifend+1;
+        end
+
+        if (ifend >= iextra)
             newtsuccess = true;
             break;
         end
@@ -196,7 +199,7 @@ for i = 1:npts
                 d20 = d21;
                 rdiff0 = rdiff1;
                 dprime = rdiff0.'*d0(:);
-                dprime2 = d0(:).'*d0(:) + d0(:).'*d20(:);
+                dprime2 = d0(:).'*d0(:);
                 dist0 = dist1;
                 lam = lam/3;
                 if abs(dprime) < thresh

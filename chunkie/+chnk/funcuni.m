@@ -104,16 +104,18 @@ chnkr = chnkr.addchunk(nch);
 for i = 1:nch
     a=ab(1,i);
     b=ab(2,i);
+    h = (b-a)/2;
     
     ts = a + (b-a)*(xs+1)/2;
     [out{:}] = fcurve(ts);
     chnkr.r(:,:,i) = reshape(out{1},dim,k);
-    chnkr.d(:,:,i) = reshape(out{2},dim,k);
-    chnkr.d2(:,:,i) = reshape(out{3},dim,k);
-    chnkr.h(i) = (b-a)/2;
+    chnkr.d(:,:,i) = reshape(out{2},dim,k)*h;
+    chnkr.d2(:,:,i) = reshape(out{3},dim,k)*h*h;
 end
 
 chnkr.adj = adjs(:,1:nch);
+chnkr.wtsstor(:,1:nch) = weights(chnkr);
+chnkr.nstor(:,:,1:nch) = normals(chnkr);
 
 end
 
