@@ -650,21 +650,19 @@ if (corrections)
             end
         end
 
-        for jchkr = 1:nchunkers
-            ids = 1:lchunks(ichkr);
-            jds = 1:lchunks(jchkr);
+        % identify self interactions to be set to zero
+        ids = 1:lchunks(ichkr);
+        jds = ids;
 
-            flagslf = [1:sum(lchunks);1:sum(lchunks)];
-    opdims = opdims_mat(:,ichkr,jchkr);
-    islf = repmat((1:opdims(1))',opdims(2),1) + opdims(1)*(ids-1) + irowlocs(ichkr)-1;
-    tmp = repmat((1:opdims(2)),opdims(1),1); 
-    jslf = tmp(:) + opdims(2)*(jds-1)+ icollocs(ichkr)-1;
+        opdims = opdims_mat(:,ichkr,ichkr);
+        islf = repmat((1:opdims(1))',opdims(2),1) + opdims(1)*(ids-1) ...
+            + irowlocs(ichkr)-1;
+        tmp = repmat((1:opdims(2)),opdims(1),1); 
+        jslf = tmp(:) + opdims(2)*(jds-1)+ icollocs(ichkr)-1;
 
+        iselfinds = [iselfinds; islf(:)];
+        jselfinds = [jselfinds; jslf(:)];
 
-            iselfinds = [iselfinds; islf(:)];
-            jselfinds = [jselfinds; jslf(:)];
-
-        end
     end
     icorinds = icorinds(:);
     jcorinds = jcorinds(:);
@@ -673,11 +671,9 @@ if (corrections)
     vcormat = sparse(icorinds,jcorinds,vcors,nrows,ncols);
 
     linsp = iselfinds + (jselfinds-1)*nrows;
-    vcormat(linsp) = 0;
-
+    vcormat(linsp) = 0; % set self interactions to zero to avoid NaNs
 
     sysmat = sys_loc-vcormat;
-
 end
 
 if (nargout >1) 
