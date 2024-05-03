@@ -1,15 +1,24 @@
-function [aint,x,w] = intmat(n)
+function [aint,u,v] = intmat(n,u,v)
 %INTMAT returns the spectral integration matrix on n Gaussian nodes
 % a transcription of part of the Rokhlin routine legeinmt
 %
 % input: 
 %   n - the number of Gaussian nodes 
+%
+% optional inputs:
+%   u - k x k matrix mapping values at legendre nodes to legendre series
+%      coefficients
+%   v - k x k matrix mapping legendre series coefficients to values at 
+%      legendre nodes
 % 
+% output: 
+%   
 
-[x,w,u,v] = lege.exps(n);
+if nargin < 3
+    [~,~,u,v] = lege.exps(n);
+end
 
-coeffs = eye(n);
-polints = lege.intpol(coeffs);
-aint = v*polints(1:end-1,:)*u;
+tmp = lege.intpol(u,'original');
+aint = v*tmp(1:end-1,:);
 
 end
