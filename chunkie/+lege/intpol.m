@@ -13,7 +13,7 @@ function intcoeffs = intpol(coeffs,const_option)
 %    take the value zero at -1. If 'original', then the constant on output
 %    is such that the polynomial(s) described by intcoeffs(1:end-1,:) on
 %    output take the value zero at -1. This is used for a spectral
-%    differentiation matrix taking point values to point values on a grid
+%    integration matrix taking point values to point values on a grid
 %    of the same order.
 %
 % output:
