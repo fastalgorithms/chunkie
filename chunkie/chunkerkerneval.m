@@ -91,7 +91,9 @@ end
 % smooth for sufficiently far, adaptive otherwise
 
 optsflag = []; optsflag.fac = fac;
-flag = flagnear(chnkr,targs,optsflag);
+chnkruse = chnkr;
+chnkruse.r = real(chnkr.r);
+flag = flagnear(chnkruse,targs,optsflag);
 fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens,targs, ...
     flag,opts);
 

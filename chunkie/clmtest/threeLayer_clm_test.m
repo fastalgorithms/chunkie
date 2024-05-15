@@ -7,18 +7,18 @@ clear;
 % k1           s3 - s2
 
 d = 1; dshift = d/2;
-rn = [1.2,1,1.2];
+rn = [1.2, 1, 1.2];
 src(1,:) = [0.6, 0.2,-0.9];
-src(2,:) = [d+dshift,dshift,-d-dshift];
+src(2,:) = [d+1e-2, dshift, -d-dshift];
 
 
-src_test = [0.3;dshift/2];
+src_test = [0.3; dshift/2];
 
 
 
 % get densities on each boundary
-[clmparams1,chnkrtotal1] = setup_layer(rn(1:2),[src(:,2),src(:,1)],d);
-[clmparams2,chnkrtotal2] = setup_layer(rn(2:3),[src(:,3),src(:,2)],-d);
+[clmparams1, chnkrtotal1] = setup_layer(rn(1:2),[src(:,2), src(:,1)], d);
+[clmparams2, chnkrtotal2] = setup_layer(rn(2:3),[src(:,3), src(:,2)], -d);
 k1 = clmparams1.k(1); k2 = clmparams1.k(2);
 
 fkern_s_diff = @(s,t) -chnk.helm2d.kern(k1,s,t,'s') + ...
@@ -36,23 +36,23 @@ opts = [];
 opts.forcesmooth = true;
 
 
-A11_21 = chunkerkernevalmat(chnkrtotal2,fkern_d,chnkrtotal1,opts);
-A12_21 = chunkerkernevalmat(chnkrtotal2,fkern_s,chnkrtotal1,opts);
-A21_21 = chunkerkernevalmat(chnkrtotal2,fkern_dprime,chnkrtotal1,opts);
-A22_21 = chunkerkernevalmat(chnkrtotal2,fkern_sprime,chnkrtotal1,opts);
+A11_21 = chunkerkernevalmat(chnkrtotal2, fkern_d, chnkrtotal1, opts);
+A12_21 = chunkerkernevalmat(chnkrtotal2, fkern_s, chnkrtotal1, opts);
+A21_21 = chunkerkernevalmat(chnkrtotal2, fkern_dprime, chnkrtotal1, opts);
+A22_21 = chunkerkernevalmat(chnkrtotal2, fkern_sprime, chnkrtotal1, opts);
 
 
 
-A11_12 = chunkerkernevalmat(chnkrtotal1,fkern_d,chnkrtotal2,opts);
-A12_12 = chunkerkernevalmat(chnkrtotal1,fkern_s,chnkrtotal2,opts);
-A21_12 = chunkerkernevalmat(chnkrtotal1,fkern_dprime,chnkrtotal2,opts);
-A22_12 = chunkerkernevalmat(chnkrtotal1,fkern_sprime,chnkrtotal2,opts);
+A11_12 = chunkerkernevalmat(chnkrtotal1, fkern_d, chnkrtotal2, opts);
+A12_12 = chunkerkernevalmat(chnkrtotal1, fkern_s, chnkrtotal2, opts);
+A21_12 = chunkerkernevalmat(chnkrtotal1, fkern_dprime, chnkrtotal2, opts);
+A22_12 = chunkerkernevalmat(chnkrtotal1, fkern_sprime, chnkrtotal2, opts);
 
 
 
 n = chnkrtotal1.npt;
-tic, A12_1 = chunkermat(chnkrtotal1,fkern_s_diff); toc;
-tic, A21_1 = chunkermat(chnkrtotal1,fkern_dprime_diff); toc;
+tic, A12_1 = chunkermat(chnkrtotal1, fkern_s_diff); toc;
+tic, A21_1 = chunkermat(chnkrtotal1, fkern_dprime_diff); toc;
 A11 = -eye(n);
 A22 = -eye(n);
 Amat1 = [A11,A12_1;A21_1,A22];
@@ -70,11 +70,11 @@ Amat_total = [A11, A12_1, -A11_21, -A12_21; ...
 rhs_1 = zeros(2*n,1); rhs_2 = zeros(2*n,1);
 
 % (upper boundary)
-[u1_1,grad1_1] = chnk.helm2d.green(k1,src(:,2),chnkrtotal1.r(:,:));
-[u2_1,grad2_1] = chnk.helm2d.green(k2,src(:,3),chnkrtotal1.r(:,:));
+[u1_1,grad1_1] = chnk.helm2d.green(k1, src(:,2), chnkrtotal1.r(:,:));
+[u2_1,grad2_1] = chnk.helm2d.green(k2, src(:,3), chnkrtotal1.r(:,:));
 % (lower boundary)
-[u1_2,grad1_2] = chnk.helm2d.green(k2,src(:,3),chnkrtotal2.r(:,:));
-[u2_2,grad2_2] = chnk.helm2d.green(k1,src(:,1),chnkrtotal2.r(:,:));
+[u1_2,grad1_2] = chnk.helm2d.green(k2, src(:,3), chnkrtotal2.r(:,:));
+[u2_2,grad2_2] = chnk.helm2d.green(k1, src(:,1), chnkrtotal2.r(:,:));
 
 
 un1_1 = -grad1_1(:,:,2);
@@ -96,10 +96,10 @@ rhs_total(1:2*n) = rhs_1;
 rhs_total((2*n+1):end) = rhs_2;
 
 
-ifgreenfun = 1;
+ifgreenfun = 0;
 if( ifgreenfun)
-    [u2_1,grad2_1] = chnk.helm2d.green(k2,src(:,2),chnkrtotal1.r(:,:));
-    [u1_2,grad1_2] = chnk.helm2d.green(k2,src(:,2),chnkrtotal2.r(:,:));
+    [u2_1,grad2_1] = chnk.helm2d.green(k2, src(:,2), chnkrtotal1.r(:,:));
+    [u1_2,grad1_2] = chnk.helm2d.green(k2, src(:,2), chnkrtotal2.r(:,:));
     rhs_total = zeros(4*n,1);
     rhs_total(1:n) = u2_1;
     rhs_total((n+1):(2*n)) = -grad2_1(:,:,2);
@@ -225,10 +225,8 @@ geom_class.ppw = 5;
 clmparams = clm.setup_geom(geom_class);
 
 [chnkr] = clm.get_geom_clmparams(clmparams);
-%clf
-%plot(chnkr,'k.')
 
 chnkrtotal = merge(chnkr);
 targs = chnkrtotal.r(:,:)+[0;layer_y];
-chnkrtotal.r = reshape(targs,[2,chnkrtotal.k,chnkrtotal.nch]);
+chnkrtotal.r = reshape(targs, [2,chnkrtotal.k,chnkrtotal.nch]);
 end
