@@ -140,7 +140,6 @@ if ~flam
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
             dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
-            %dsdtdt = chnkr.d(1,:,i);% for complex contour, added by SJ 9/30/21
             dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
@@ -218,7 +217,7 @@ else
     if ~isempty(flag)
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
+            dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
             dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
@@ -295,36 +294,21 @@ else
     bw = lege.barywts(k);
     r = chnkr.r;
     d = chnkr.d;
+    n = chnkr.n;
     d2 = chnkr.d2;
     h = chnkr.h;
-    targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
-    for i = 1:nch
-%         rci = rc(:,:,i);
-%         dci = dc(:,:,i);
-%         d2ci = d2c(:,:,i);    
-%         densvals = dens(:,:,i); densvals = densvals.';
-%         densc = u*densvals; % each column is set of coefficients
-%                         % for one dimension of density on chunk
-                        
+    targd = zeros(chnkr.dim,nt); 
+    targn = zeros(chnkr.dim,nt); 
+    targd2 = zeros(chnkr.dim,nt);
+    for i = 1:nch                        
         [ji] = find(flag(:,i));
-        fints1 =  chnk.adapgausskerneval(r,d,d2,h,ct,bw,i,dens,targs(:,ji), ...
-                    targd(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
+        
+        fints1 =  chnk.adapgausskerneval(r,d,n,d2,h,ct,bw,i,dens,targs(:,ji), ...
+                    targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
                 
         indji = (ji-1)*opdims(1);
         fints(indji+(1:opdims(1))) = fints(indji+(1:opdims(1))) + fints1;
         
-%        for jj = 1:length(ji)
-%            j = ji(jj);
-%            indj = (j-1)*opdims(1);
-%             for l = 1:opdims(1)
-%                 ind = indj+l;
-%                 temp = chnk.intchunk.kerncoefs(kern,opdims,l,...
-%                     densc,rci,dci,d2ci,targs(:,j),quadgkparams);
-% 
-%                 fints(ind) = fints(ind) + temp*chnkr.h(i);
-%             end
-%        end
-
     end
     
 end

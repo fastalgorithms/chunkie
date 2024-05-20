@@ -23,6 +23,9 @@ d2i = lege.exev(t,d2ci.').';
 
 targinfo = []; targinfo.r = targ;
 srcinfo = []; srcinfo.r = ri; srcinfo.d = di; srcinfo.d2 = d2i;
+
+ni = chnk.perp(di); ni = ni./(sqrt(sum(ni.^2,1)));
+srcinfo.n = ni;
 dsdt = sqrt(sum(di.^2,1));
 kernmat = kern(srcinfo,targinfo);
 kernmat = kernmat(rdim:opdims(1):end,:);
