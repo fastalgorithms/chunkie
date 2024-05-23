@@ -70,7 +70,7 @@ bdrydata = [bdrydatad;bdrydatan];
 sol1 = sys\bdrydata;
 
 cormat = chunkermat(cgrph,kerns,struct("corrections",true));
-sysapply = @(sigma) bieapply(cgrph,kerns,1,sigma,cormat);
+sysapply = @(sigma) chunkermatapply(cgrph,kerns,1,sigma,cormat);
 
 xapply1 = sys*bdrydata;
 xapply2 = sysapply(bdrydata);
@@ -194,7 +194,7 @@ bdrydata = [bdrydatad;bdrydatat(:)];
 sol1 = sys\bdrydata;
 
 cormat = chunkermat(cgrph,kerns,struct("corrections",true));
-sysapply = @(sigma) bieapply(cgrph,kerns,1,sigma,cormat);
+sysapply = @(sigma) chunkermatapply(cgrph,kerns,1,sigma,cormat);
 
 xapply1 = sys*bdrydata;
 xapply2 = sysapply(bdrydata);

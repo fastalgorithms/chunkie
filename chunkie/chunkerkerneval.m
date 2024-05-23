@@ -179,7 +179,6 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
-h = chnkr.h;
 
 % interpolation matrix
 intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -207,7 +206,7 @@ for j=1:size(chnkr.r,3)
 
 
         % Helsing-Ojala (interior/exterior?)
-        mat1 = chnk.pquadwts(r,d,n,d2,h,ct,bw,j,targs(:,ji), ...
+        mat1 = chnk.pquadwts(r,d,n,d2,ct,bw,j,targs(:,ji), ...
             targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
 
         fints(ji) = fints(ji) + mat1*dens(idxjmat);
@@ -268,14 +267,12 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
-h = chnkr.h;
-
 
 
 if isempty(flag) % do all to all adaptive
     for i = 1:nch
         for j = 1:nt
-            fints1 = chnk.adapgausskerneval(r,d,n,d2,h,ct,bw,i,dens,targs(:,j), ...
+            fints1 = chnk.adapgausskerneval(r,d,n,d2,ct,bw,i,dens,targs(:,j), ...
                     targd(:,j),targn(:,j),targd2(:,j),kerneval,opdims,t,w,opts);
             
             indj = (j-1)*opdims(1);
@@ -286,7 +283,7 @@ if isempty(flag) % do all to all adaptive
 else % do only those flagged
     for i = 1:nch
         [ji] = find(flag(:,i));
-        [fints1,maxrec,numint,iers] =  chnk.adapgausskerneval(r,d,n,d2,h,ct,bw,i,dens,targs(:,ji), ...
+        [fints1,maxrec,numint,iers] =  chnk.adapgausskerneval(r,d,n,d2,ct,bw,i,dens,targs(:,ji), ...
                     targd(:,ji),targn(:,ji),targd2(:,ji),kerneval,opdims,t,w,opts);
                 
         indji = (ji-1)*opdims(1);

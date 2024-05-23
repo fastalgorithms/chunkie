@@ -81,7 +81,7 @@ if strcmpi(imethod,'direct')
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
             dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
-            dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
+            dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
@@ -102,7 +102,7 @@ if strcmpi(imethod,'direct')
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
             dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
-            dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
+            dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
@@ -177,7 +177,7 @@ else
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
             dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
-            dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
+            dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 

@@ -95,33 +95,30 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 % opts.sing provides a default value for singularities if not 
 % defined for kernels
 
-if isa(kern,'function_handle')
-    kern2 = kernel(kern);
-    kern = kern2;
-elseif isa(kern,'cell')
-    sz = size(kern);
-    kern2(sz(1),sz(2)) = kernel();
-    for j = 1:sz(2)
-        for i = 1:sz(1)
-            if isa(kern{i,j},'function_handle')
-                kern2(i,j) = kernel(kern{i,j});
-            elseif isa(kern{i,j},'kernel')
-                kern2(i,j) = kern{i,j};
-            else
-                msg = "Second input is not a kernel object, function handle, " ...
-                    + "or cell array";
-                error(msg);
-            end
-        end
-    end
-    kern = kern2;
-    
-elseif ~isa(kern,'kernel')
-    msg = "Second input is not a kernel object, function handle, " ...
-                + "or cell array";
-    error(msg);
+
+% Flag for determining whether input object is a chunkergraph
+icgrph = 0;
+
+if (class(chnkobj) == "chunker")
+    chnkrs = chnkobj;
+    npttot = chnkobj.npt;
+elseif(class(chnkobj) == "chunkgraph")
+    icgrph = 1;
+    chnkrs = chnkobj.echnks;
+    npttot = chnkobj.npt;
+else
+    msg = "CHUNKERMAT: first input is not a chunker or chunkgraph object";
+    error(msg)
 end
-    
+
+if ~isa(kern,'kernel')
+    try 
+        kern = kernel(kern);
+    catch
+        error('CHUNKERMAT: second input kern not of supported type');
+    end
+end
+
 if nargin < 3
     opts = [];
 end
@@ -175,21 +172,6 @@ end
 
 if (isfield(opts,'adaptive_correction'))
     adaptive_correction = opts.adaptive_correction;
-end
-
-% Flag for determining whether input object is a chunkergraph
-icgrph = 0;
-
-if (class(chnkobj) == "chunker")
-    chnkrs = chnkobj;
-    npttot = chnkobj.npt;
-elseif(class(chnkobj) == "chunkgraph")
-    icgrph = 1;
-    chnkrs = chnkobj.echnks;
-    npttot = chnkobj.npt;
-else
-    msg = "First input is not a chunker or chunkgraph object";
-    error(msg)
 end
 
 nchunkers = length(chnkrs);
@@ -728,14 +710,13 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
-h = chnkr.h;
 
 for i = 1:nch
     jmat = 1 + (i-1)*k*opdims(2);
     jmatend = i*k*opdims(2);
                     
     [ji] = find(flag(:,i));
-    mat1 =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+    mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
                 targd(:,ji),targn(:,ji),targd2(:,ji),kernev,opdims,t,w,opts);
             
     js1 = jmat:jmatend;

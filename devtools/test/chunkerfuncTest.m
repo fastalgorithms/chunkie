@@ -83,6 +83,9 @@ assert(info.ier == 0,'adjacency issues after chunk build circle');
 
 a = area(chnkr);
 assert(abs(a - pi*r^2) < 1e-12,'area wrong for circle domain')
+chnkr = refine(chnkr,struct('nover',1));
+a = area(chnkr);
+assert(abs(a - pi*r^2) < 1e-12,'area wrong for circle domain')
 
 
 % subplot(1,3,3)

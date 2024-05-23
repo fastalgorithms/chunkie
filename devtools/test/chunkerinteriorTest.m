@@ -82,5 +82,11 @@ start = tic; in5 = chunkerinterior(chnkr,chnkr2,opts); t5 = toc(start);
 fprintf('%5.2e s : time for chunkerinterior (chunker, with fmm)\n',t5);
 assert(all(in5(:) == 1));
 
+% test axissym option 
+chnkr = chunkerfunc(@(t) starfish(t),struct('ta',-pi/2,'tb',pi/2,'ifclosed',0));
+nt = 1000;
+ttarg = -pi/2+pi*rand(nt,1); scal = 2*rand(1,nt);
+targs = starfish(ttarg).*scal;
 
-
+in = chunkerinterior(chnkr,targs,struct('axissym',true));
+assert(all(in(:) == (scal(:) <= 1)));

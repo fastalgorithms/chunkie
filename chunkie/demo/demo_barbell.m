@@ -21,12 +21,13 @@ edgevals = randn(1,nv);
 % parameters for curve rounding/chunking routine to oversample boundary
 cparams = [];
 cparams.widths = 0.1*ones(size(verts,2),1);% width to cut about each corner
-cparams.eps = 1e-6; % tolerance at which to resolve curve
+cparams.eps = 1e-12; % tolerance at which to resolve curve
 cparams.rounded = true;
 
 % call smoothed-polygon chunking routine
 % a smoothed version of edgevals is returned in 
 % chnkr.data
+
 chnkr = chunkerpoly(verts,cparams,[],edgevals);
 chnkr = chnkr.refine();
 

@@ -67,11 +67,12 @@ else
     pref = chunkerpref(pref);
 end
 
+chnkr = chunker(pref); % empty chunker
 
 ta = 0.0; tb = 2*pi; ifclosed=true;
 chsmall = Inf; nover = 0;
 eps = 1.0e-6;
-lvlr = 'a'; maxchunklen = Inf; lvlrfac = 2.0;
+lvlr = 'a'; maxchunklen = Inf; lvlrfac = 2;
 nout = 1;
 
 if isfield(cparams,'ta')
@@ -152,11 +153,11 @@ end
 tsplits = sort(unique(tsplits),'ascend');
 lab = length(tsplits);
 if (lab-1 > nchmax)
-    error(['nchmax exceeded in chunkerfunc on initial splits.\n ',...
+    error(['CHUNKERFUNC: nchmax exceeded in chunkerfunc on initial splits.\n ',...
         'try increasing nchmax in preference struct']);
 end
 if (any(tsplits > tb) || any(tsplits < ta))
-    error(['tsplits outside of interval of definition.\n', ...
+    error(['CHUNKERFUNC: tsplits outside of interval of definition.\n', ...
           'check definition of splits, ta and tb']);
 end
 
@@ -258,7 +259,7 @@ for ijk = 1:maxiter_res
               %       . . . if here, not resolved
               %       divide - first update the adjacency list
                 if (nch +1 > nchmax)
-                    error('too many chunks')
+                    error('CHUNKERFUNC: nchmax=%d exceeded. Unable to resolve curve.',nchmax)
                 end
 
                 ifprocess(ich)=0;
@@ -366,7 +367,7 @@ if or(strcmpi(lvlr,'a'),strcmpi(lvlr,'t'))
     %       split chunk i now, and recalculate nodes, ders, etc
 
                 if (nch + 1 > nchmax)
-                    error('too many chunks')
+                    error('CHUNKERFUNC: nchmax=%d exceeded during level restriction (curve resolved).',nchmax);
                 end
 
 
@@ -436,7 +437,7 @@ if (nover > 0)
             fbkm1 = fbk;
             bkm1 = bk;
             
-            for iter = 1:200
+            for iter = 1:52
                 m = (ak+bk)/2;
                 s = m;
                 if fbkm1 ~= fbk
@@ -486,7 +487,7 @@ if (nover > 0)
             end
 
             if (nch + 1 > nchmax)
-                error('too many chunks')
+                error('CHUNKERFUNC: nchmax=%d exceeded while oversampling by nover=%d',nchmax,nover);
             end
 
             adjs(1,nch+1)=i;
@@ -507,7 +508,6 @@ end
 %       . . . finally evaluate the k nodes on each chunk, along with 
 %       derivatives and chunk lengths
 
-chnkr = chunker(pref); % empty chunker
 chnkr = chnkr.addchunk(nch);
 
 
@@ -520,10 +520,10 @@ for i = 1:nch
     for j = nout+1:3
         out{j} = out{j-1}*dermat*(2/(b-a));
     end
+    h = (b-a)/2;
     chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
-    chnkr.dstor(:,:,i) = reshape(out{2},dim,k);
-    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k);
-    chnkr.hstor(i) = (b-a)/2;
+    chnkr.dstor(:,:,i) = reshape(out{2},dim,k)*h;
+    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k)*h*h;
 end
 
 chnkr.adjstor(:,1:nch) = adjs(:,1:nch);

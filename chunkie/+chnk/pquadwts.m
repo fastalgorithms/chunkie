@@ -1,4 +1,4 @@
-function mat = pquadwts(r,d,n,d2,h,ct,bw,j,...
+function mat = pquadwts(r,d,n,d2,ct,bw,j,...
     rt,dt,nt,d2t,kern,opdims,t,w,opts,intp_ab,intp)
 %CHNK.INTERPQUADWTS product integration for interaction of kernel on chunk 
 % at targets
@@ -14,7 +14,6 @@ function mat = pquadwts(r,d,n,d2,h,ct,bw,j,...
 %   d - chnkr derivatives at nodes
 %   n - chnkr normals at nodes
 %   d2 - chnkr 2nd derivatives at nodes
-%   h - lengths of chunks in parameter space
 %   ct - Legendre nodes at order of chunker
 %   bw - barycentric interpolation weights for Legendre nodes at order of
 %   chunker
@@ -34,11 +33,11 @@ function mat = pquadwts(r,d,n,d2,h,ct,bw,j,...
 %
 
 % Helsing-Ojala (interior/exterior?)
-h_i = h(j);
+
 xlohi = intp_ab*(r(1,:,j)'+1i*r(2,:,j)');         % panel end points
 r_i = intp*(r(1,:,j)'+1i*r(2,:,j)');              % upsampled panel
-d_i = h_i*(intp*(d(1,:,j)'+1i*d(2,:,j)'));        % r'
-d2_i = h_i^2*(intp*(d2(1,:,j)'+1i*d2(2,:,j)'));   % r''
+d_i = (intp*(d(1,:,j)'+1i*d(2,:,j)'));        % r'
+d2_i = (intp*(d2(1,:,j)'+1i*d2(2,:,j)'));   % r''
 sp = abs(d_i); tang = d_i./sp;                    % speed, tangent
 n_i = -1i*tang;                                   % normal
 cur = -real(conj(d2_i).*n_i)./sp.^2;              % curvature

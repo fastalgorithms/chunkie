@@ -21,7 +21,6 @@ end
 r = chnkr.rstor;
 d = chnkr.dstor;
 d2 = chnkr.d2stor;
-h = chnkr.hstor;
 n = chnkr.nstor;
 
 [dim,k,~] = size(r);
@@ -34,10 +33,10 @@ d2s = reshape(d2s,dim,k*length(j)); d2t = reshape(d2t,dim,k*length(i));
 
 srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; srcinfo.d2 = d2s; srcinfo.n = ns;
 targinfo = []; targinfo.r = rt; targinfo.d = dt; targinfo.d2 = d2t; targinfo.n = nt;
-hs = h(j); ht = h(i);
+
 
 dsnrms = sqrt(sum(ds.^2,1));
-ws = kron(hs(:),wts(:));
+ws = repmat(wts(:),length(j),1);
 
 dsdt = dsnrms(:).*ws;
 

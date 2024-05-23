@@ -12,9 +12,6 @@ classdef chunker
 %   npt - returns k*nch, the total number of points on the curve
 %   r - dim x k x nch array, r(:,i,j) gives the coordinates of the ith 
 %         node on the jth chunk of the chunker
-%   h - nch array of scaling factors for chunks. the chunk derivatives are
-%         scaled as if the coordinates in r(:,:,j) are sampled on an 
-%         interval of length 2*h(j). This affects integration formulas.
 %   d - dim x k x nch array, d(:,i,j) gives the time derivative of the 
 %         coordinate at the ith node on the jth chunk of the chunker
 %   d2 - dim x k x nch array, d(:,i,j) gives the 2nd time derivative of the 
@@ -79,7 +76,6 @@ classdef chunker
         d
         d2
         adj
-        h
         n
         wts
         data
@@ -89,7 +85,6 @@ classdef chunker
         dstor
         d2stor
         adjstor
-        hstor
         nstor
         wtsstor
         datastor
@@ -130,9 +125,12 @@ classdef chunker
                 p = chunkerpref(p);
             end
             k = p.k;
+            assert(k >= 2,'CHUNKER: order k of panels must be at least 2');
             if nargin < 3
                 [obj.tstor,obj.wstor] = lege.exps(k);
             else
+                assert(length(t)==k && length(w)==k,...
+                    'CHUNKER: precomputed Legendre nodes appear to be wrong order');
                 obj.tstor = t;
                 obj.wstor = w;
             end
@@ -149,7 +147,6 @@ classdef chunker
             obj.wtsstor = zeros(k,nchstor);
             obj.d2stor = zeros(dim,k,nchstor);
             obj.adjstor = zeros(2,nchstor);
-            obj.hstor = zeros(nchstor,1);
             obj.vert = {};
             obj.hasdata = false;
             obj.datastor = [];
@@ -167,9 +164,6 @@ classdef chunker
         end
         function adj = get.adj(obj)
             adj = obj.adjstor(:,1:obj.nch);
-        end
-        function h = get.h(obj)
-            h = obj.hstor(1:obj.nch);
         end
         function n = get.n(obj)
             n = obj.nstor(:,:,1:obj.nch);
@@ -200,9 +194,6 @@ classdef chunker
         end
         function obj = set.adj(obj,val)
             obj.adjstor(:,1:obj.nch) = val;
-        end
-        function obj = set.h(obj,val)
-            obj.hstor(1:obj.nch) = val;
         end
         function k = get.k(obj)
             k = size(obj.rstor,2);
@@ -253,7 +244,6 @@ classdef chunker
             wtstemp = obj.wts;
             d2temp = obj.d2;
             adjtemp = obj.adj;
-            htemp = obj.h;
             datatemp = obj.data;
             obj.rstor = zeros(obj.dim,obj.k,nchstornew);
             obj.dstor = zeros(obj.dim,obj.k,nchstornew);
@@ -261,7 +251,6 @@ classdef chunker
             obj.wtsstor = zeros(obj.k,nchstornew);
             obj.d2stor = zeros(obj.dim,obj.k,nchstornew);
             obj.adjstor = zeros(2,nchstornew);
-            obj.hstor = zeros(nchstornew,1);
             obj.datastor = zeros(obj.datadim,obj.k,nchstornew);
             obj.r = rtemp;
             obj.d = dtemp;
@@ -269,7 +258,6 @@ classdef chunker
             obj.wts = wtstemp;
             obj.d2 = d2temp;
             obj.adj = adjtemp;
-            obj.h = htemp;
             obj.data = datatemp;            
             obj.nchstor = nchstornew;
         end

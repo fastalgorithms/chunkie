@@ -33,8 +33,6 @@ cparams = [];
 cparams.nover = 2;
 [cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
 
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
 cgrph = balance(cgrph);
 
 
