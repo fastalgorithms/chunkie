@@ -33,6 +33,15 @@ if strcmpi(type,'stau')
     submat = (-grad(:,:,1).*ny + grad(:,:,2).*nx);
 end
 
+if strcmpi(type,'hilb')
+    srcnorm = chnk.normal2d(srcinfo);
+    [~,grad] = chnk.lap2d.green(src,targ,true);
+    nx = repmat((srcnorm(1,:)),nt,1);
+    ny = repmat((srcnorm(2,:)),nt,1);
+
+    submat = 2*(grad(:,:,1).*ny - grad(:,:,2).*nx);
+end
+
 if strcmpi(type,'sgrad')
     [~,grad] = chnk.lap2d.green(src,targ,true);
     submat = reshape(permute(grad,[3,1,2]),2*nt,ns);
