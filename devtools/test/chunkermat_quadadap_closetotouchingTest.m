@@ -72,20 +72,24 @@ utarg = kernmatstarg*strengths;
 % use adaptive routine to build matrix (self done by ggq, nbor by adaptive)
 
 eta = 1;
-fkern = @(s,t) chnk.lap2d.kern(s,t,'C',[1,eta]);
+fkern = kernel('laplace','c',[1,eta]);
 
 type = 'log';
 opts = []; opts.robust = true;
+opts.adaptive_correction = true;
 opdims = [1 1];
 start = tic;
-mata = chnk.quadadap.buildmat(chnkr,fkern,opdims,type,opts);
+mata = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix (adaptive)\n',t1)
-start = tic; mato = chunkermat(chnkr,fkern);
+opts.adaptive_correction = false;
+start = tic; 
+mato = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix (original GGQ)\n',t1)
 start = tic; 
 opts.forcepquad = true; targs_bd = [chnkr.r(1,:);chnkr.r(2,:)];
+opts.side = 'e';
 matho = chunkerkernevalmat(chnkr,fkern,targs_bd,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix (Helsing-Ojala)\n',t1)
@@ -122,6 +126,7 @@ t1 = toc(start);
 start=tic; layersolo = chunkerkerneval(chnkr,fkern,solo,targs,opts); 
 t1 = toc(start);
 opts.forcepquad = true;
+opts.side = 'e';
 start=tic; layersolho = chunkerkerneval(chnkr,fkern,solho,targs,opts); 
 t1 = toc(start);
 %

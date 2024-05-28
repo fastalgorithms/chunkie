@@ -1,55 +1,63 @@
-function mat = pquadwts(r,d,n,d2,ct,bw,j,...
-    rt,dt,nt,d2t,kern,opdims,t,w,opts,intp_ab,intp)
-%CHNK.INTERPQUADWTS product integration for interaction of kernel on chunk 
+function [varargout] = pquadwts(r,d,n,d2,wts,j,...
+    rt,t,w,opts,intp_ab,intp,types)
+%CHNK.pquadwts product integration for interaction of kernel on chunk 
 % at targets
 %
 % WARNING: this routine is not designed to be user-callable and assumes 
 %   a lot of precomputed values as input
 %
-% Syntax: mat = interpquadwts(r,d,d2,h,ct,bw,j, ...
-%   rt,dt,d2t,kern,opdims,t,w,opts)
+% Syntax: [varargout] = pquadwts(r,d,n,d2,wts,j,...
+%    rt,t,w,opts,intp_ab,intp,types)
 %
 % Input:
 %   r - chnkr nodes
 %   d - chnkr derivatives at nodes
 %   n - chnkr normals at nodes
 %   d2 - chnkr 2nd derivatives at nodes
-%   ct - Legendre nodes at order of chunker
-%   bw - barycentric interpolation weights for Legendre nodes at order of
-%   chunker
+%   wts - chnkr integration weights for smooth functions
 %   j - chunk of interest
-%   rt,dt,nt,d2t - position, derivative, normal,second derivative of select 
-%               target points. if any are not used by kernel (or not well
-%               defined, e.g. when not on curve), a dummy array
-%               of the appropriate size should be supplied
-%   kern - kernel function of form kern(srcinfo,targinfo)
-%   opdims - dimensions of kernel
-%   t - (Legendre) integration nodes for adaptive integration
-%   w - integration nodes for adaptive integrator (t and w not necessarily 
-%       same order as chunker order)
+%   rt - position of target points. if any are not used by kernel 
+%               (or not well defined, e.g. when not on curve), a 
+%               dummy array of the appropriate size should be supplied
+%   t - (Legendre) integration nodes
+%   w - (Legendre) integration weights
+%   opts - opts.side
+%   intp_ab - panel endpoints interpolation matrix
+%   types - specified singularity types
 %
 % Output
-%   mat - integration matrix
+%   varargout - integration matrices for specified singularity types
 %
 
 % Helsing-Ojala (interior/exterior?)
-
 xlohi = intp_ab*(r(1,:,j)'+1i*r(2,:,j)');         % panel end points
 r_i = intp*(r(1,:,j)'+1i*r(2,:,j)');              % upsampled panel
-d_i = (intp*(d(1,:,j)'+1i*d(2,:,j)'));        % r'
-d2_i = (intp*(d2(1,:,j)'+1i*d2(2,:,j)'));   % r''
+d_i = (intp*(d(1,:,j)'+1i*d(2,:,j)'));            % r'
+d2_i = (intp*(d2(1,:,j)'+1i*d2(2,:,j)'));         % r''
+wts_i = wts(:,j)';                                %
 sp = abs(d_i); tang = d_i./sp;                    % speed, tangent
 n_i = -1i*tang;                                   % normal
 cur = -real(conj(d2_i).*n_i)./sp.^2;              % curvature
-wxp_i = w.*d_i;                                     % complex speed weights (Helsing's wzp)
+wxp_i = w.*d_i;                                   % complex speed weights (Helsing's wzp)
 
-mat_ho_slp = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),'e');
-mat_ho_dlp = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),'e');
+varargout = cell(size(types));
 
-mat = (mat_ho_slp+real(mat_ho_dlp))*intp;  % depends on kern, different mat1?
+for j = 1:length(types)
+    type0 = types{j};
 
+    if (all(type0 == [0 0 0 0]))
+      varargout{j} = ones(size(rt,2),numel(wts_i)).*wts_i;
+    elseif (all(type0 == [1 0 0 0]))
+        varargout{j} = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+              struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+    elseif (all(type0 == [0 0 -1 0]))
+            varargout{j} = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+                          struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+    else
+        error("split panel quad type " + join(string([1 2 3]),",") + " not available");
+    end
+
+end
 end
 
 function [A, A1, A2] = Sspecialquad(t,s,a,b,side)
@@ -66,6 +74,7 @@ function [A, A1, A2] = Sspecialquad(t,s,a,b,side)
 % Efficient only if multiple targs, since O(p^3).
 % See Helsing-Ojala 2008 (special quadr Sec 5.1-2), Helsing 2009 mixed (p=16),
 % and Helsing's tutorial demo11b.m LGIcompRecFAS()
+% See https://github.com/ahbarnett/BIE2D/blob/master/panels/LapSLP_closepanel.m
 if nargin<5, side = 'i'; end     % interior or exterior
 zsc = (b-a)/2; zmid = (b+a)/2; % rescaling factor and midpoint of src segment
 y = (s.x-zmid)/zsc; x = (t.x-zmid)/zsc;  % transformed src nodes, targ pts
@@ -146,6 +155,7 @@ function [A, A1, A2, A3, A4] = Dspecialquad(t,s,a,b,side)
 % Efficient only if multiple targs, since O(p^3).
 % See Helsing-Ojala 2008 (special quadr Sec 5.1-2), Helsing 2009 mixed (p=16),
 % and Helsing's tutorial demo11b.m M1IcompRecFS()
+% See https://github.com/ahbarnett/BIE2D/blob/master/panels/LapDLP_closepanel.m
 if nargin<5, side = 'i'; end     % interior or exterior
 zsc = (b-a)/2; zmid = (b+a)/2; % rescaling factor and midpoint of src segment
 y = (s.x-zmid)/zsc; x = (t.x-zmid)/zsc;  % transformed src nodes, targ pts
