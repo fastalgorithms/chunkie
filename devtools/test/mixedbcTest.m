@@ -20,17 +20,17 @@ iind = [iind iind];
 jind = [jind jind + 1];
 jind(jind>nverts) = 1;
 svals = [-ones(1,nverts) ones(1,nverts)];
-edge2verts = sparse(iind,jind,svals,nverts,nverts);
-edge2verts = [edge2verts, 0*edge2verts; 0*edge2verts, edge2verts];
+
+edgesendverts = [1 2 3 4 5 6 7 8; 2 3 4 1 8 5 6 7];
 
 edir = 1:4; % indices of edges with Dirichlet conditions
 eneu = 5:8; % indices of edges with Neumann conditions
 
-fchnks = cell(1,size(edge2verts,1));
+fchnks = cell(1,size(edgesendverts,2));
 
 cparams = [];
 cparams.nover = 2;
-[cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
+[cgrph] = chunkgraph(verts,edgesendverts,fchnks,cparams);
 
 vstruc = procverts(cgrph);
 rgns = findregions(cgrph);
@@ -39,18 +39,23 @@ cgrph = balance(cgrph);
 % dirichlet and neumann test
 zk = 30;
 
+% scale matrices so diagonal is identity (using RCIP here so required)
 kerns(length([edir,eneu]),length([edir,eneu])) = kernel();
 kerns(edir,edir) = -2*kernel('helm', 'd', zk); % Dirichlet conditions
 kerns(eneu,edir) = -2*kernel('helm', 'dp', zk); % Neumann conditions
 
-kerns(edir,eneu) = -2*kernel('helm', 's', zk);
-kerns(eneu,eneu) = -2*kernel('helm', 'sp', zk);
+kerns(edir,eneu) = 2*kernel('helm', 's', zk);
+kerns(eneu,eneu) = 2*kernel('helm', 'sp', zk);
 
 
 start = tic; sysmat = chunkermat(cgrph,kerns); t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 
-sys = eye(size(sysmat,1)) + sysmat;
+indsdir = cgrph.edgeinds(edir);
+indsneu = cgrph.edgeinds(eneu);
+dval = zeros(cgrph.npt,1);
+dval(indsdir) = 1; dval(indsneu) = 1;
+sys = diag(dval) + sysmat;
 
 fkernsrc = kernel('helm','s',zk);
 sources = [1;1];
@@ -65,19 +70,27 @@ targinfo = []; targinfo.r = merge(cgrph.echnks(eneu)).r(:,:);
 targinfo.d = merge(cgrph.echnks(eneu)).d(:,:);
 targinfo.n = merge(cgrph.echnks(eneu)).n(:,:);
 bdrydatan = fkernsrc.fmm(1e-12,srcinfo,targinfo,charges);
-bdrydata = [bdrydatad;bdrydatan];
+bdrydata = -[bdrydatad;bdrydatan];
 
 sol1 = sys\bdrydata;
 
 cormat = chunkermat(cgrph,kerns,struct("corrections",true));
-sysapply = @(sigma) chunkermatapply(cgrph,kerns,1,sigma,cormat);
+sysapply = @(sigma) chunkermatapply(cgrph,kerns,1,sigma,cormat,struct("forcefmm",true));
+sysapply2 = @(sigma) chunkermatapply(cgrph,kerns,dval,sigma,cormat);
+
+sol2 = gmres(sysapply,bdrydata,100,1e-6,100);
+
+norm(sol1-sol2)
 
 xapply1 = sys*bdrydata;
 xapply2 = sysapply(bdrydata);
+xapply3 = sysapply2(bdrydata);
 relerr = norm(xapply1-xapply2)/norm(xapply1);
 fprintf('relative matrix free apply error %5.2e\n',relerr);
 assert(relerr < 1e-10)
-
+relerr = norm(xapply1-xapply3)/norm(xapply1);
+fprintf('relative matrix free apply error %5.2e\n',relerr);
+assert(relerr < 1e-10)
 
 rmin = min(cgrph.r(:,:)'); rmax = max(cgrph.r(:,:)');
 xl = rmax(1)-rmin(1);
@@ -100,7 +113,7 @@ fprintf('%5.2e s : time to find points in domain\n',t1)
 % compute layer potential based on oversample boundary
 
 start = tic;
-fkernd = 2*kernel('helm', 'd', zk);
+fkernd = -2*kernel('helm', 'd', zk);
 iddir = 1:merge(cgrph.echnks(edir)).npt;
 uscat = chunkerkerneval(merge(cgrph.echnks(edir)),fkernd,sol1(iddir), ...
     targets(:,in));

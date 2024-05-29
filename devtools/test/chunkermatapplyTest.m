@@ -13,6 +13,7 @@ rng(seed);
 
 cparams = [];
 cparams.eps = 1.0e-4;
+cparams.nover = 3;
 pref = []; 
 pref.k = 16;
 narms = 5;
@@ -38,7 +39,8 @@ targinfo.d = chnkr.d(:,:);
 dens = fkernsrc.fmm(1e-12,srcinfo,targinfo,strengths);
 
 udense = sys*dens;
-cormat = chunkermat(chnkr,fkern,struct("corrections",true));
+start = tic; cormat = chunkermat(chnkr,fkern,struct("corrections",true)); 
+toc(start)
 sysapply = @(sigma) chunkermatapply(chnkr,fkern,-0.5,sigma,cormat);
 start = tic; u = sysapply(dens); t1 = toc(start);
 
@@ -47,9 +49,9 @@ relerr = norm(udense-u)/norm(udense);
 fprintf('relative apply error %5.2e\n',relerr);
 assert(relerr < 1e-13)
 
-sol1 = sys\dens;
+start = tic; sol1 = sys\dens; toc(start)
 
-sol2 = gmres(sysapply, dens, [], 1e-14, 100);
+start = tic; sol2 = gmres(sysapply, dens, [], 1e-14, 100); toc(start)
 relerr = norm(sol1-sol2)/norm(sol1);
 fprintf('relative solve error %5.2e\n',relerr);
 assert(relerr < 1e-13)
@@ -87,7 +89,7 @@ sys = eye(chnkr.k*chnkr.nch*2) + sysmat;
 
 udense = sys*bdry_data;
 cormat = chunkermat(chnkr,kerns,struct("corrections",true));
-sysapply = @(sigma) chunkermatapply(chnkr,kerns,1,sigma,cormat);
+sysapply = @(sigma) chunkermatapply(chnkr,kerns,eye(2),sigma,cormat);
 
 start = tic; u = sysapply(bdry_data); t1 = toc(start);
 fprintf('%5.2e s : time for matrix free apply\n',t1)
@@ -213,9 +215,6 @@ sol2 = gmres(sysapply, bdry_data, [], 1e-12, 200);
 relerr = norm(sol1-sol2)/norm(sol1);
 fprintf('relative solve error %5.2e\n',relerr);
 assert(relerr < 1e-10)
-
-
-
 
 
 function [r,d,d2] = sinearc(t,amp,frq)
