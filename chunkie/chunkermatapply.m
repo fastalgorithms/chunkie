@@ -1,7 +1,7 @@
-function u = chunkermatapply(chnkr,kern,dval,dens,cormat,opts)
+function u = chunkermatapply(chnkr,kern,dens,cormat,opts)
 %CHUNKERMATAPPLY - apply chunkermat system on chunker defined by kern
 %
-% Syntax:  u = chunkermatapply(chnkr,kern,dval,dens,sigma,opts)
+% Syntax:  u = chunkermatapply(chnkr,kern,dens,sigma,opts)
 %
 % Input:
 %   chnkobj - chunker object describing boundary
@@ -14,13 +14,6 @@ function u = chunkermatapply(chnkr,kern,dval,dens,cormat,opts)
 %                ptinfo.n - unit normals (2,:)
 %                ptinfo.d2 - second derivative in underlying
 %                     parameterization (2,:)
-%   dval - (default 0.0) float or float array. Let A be the matrix 
-%           corresponding to on-curve convolution with the provided kernel. 
-%           If a scalar is provided, the system matrix is 
-%                   A + dval*eye(size(A))  
-%           If a vector is provided, it should be length size(A,1). The
-%           system matrix is then
-%                   A + diag(dval)
 %   dens - density on boundary, should have size opdims(2) x k x nch
 %          where k = chnkr.k, nch = chnkr.nch, where opdims is the 
 %           size of kern for a single src,targ pair
@@ -120,10 +113,10 @@ elseif ~isa(kern,'kernel')
     error(msg);
 end
     
-if nargin < 5
+if nargin < 4
     cormat = [];
 end
-if nargin < 6
+if nargin < 5
     opts = [];
 end
 
@@ -203,7 +196,7 @@ end
 
 
 % apply local corrections and diagonal scaling
-u = dval*dens + cormat*dens;
+u = cormat*dens;
 
 % apply smooth quadratures
 if size(kern) == 1

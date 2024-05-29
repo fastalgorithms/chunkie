@@ -256,7 +256,7 @@ for i = 1:nchunkers
     chnkri = chnkrs(i);
     for j = 1:nchunkers
         chnkrj = chnkrs(j);
-        if (chnkri.nch < 1 || chnkri.k < 1 || chnkrj.nch<1 || chnkri.k<1)
+        if (chnkri.nch < 1 || chnkri.k < 1 || chnkrj.nch<1 || chnkrj.k<1)
             sysmat_tmp = [];
             break
         end

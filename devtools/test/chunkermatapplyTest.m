@@ -41,7 +41,7 @@ dens = fkernsrc.fmm(1e-12,srcinfo,targinfo,strengths);
 udense = sys*dens;
 start = tic; cormat = chunkermat(chnkr,fkern,struct("corrections",true)); 
 toc(start)
-sysapply = @(sigma) chunkermatapply(chnkr,fkern,-0.5,sigma,cormat);
+sysapply = @(sigma) -0.5*sigma + chunkermatapply(chnkr,fkern,sigma,cormat);
 start = tic; u = sysapply(dens); t1 = toc(start);
 
 fprintf('%5.2e s : time for matrix free apply\n',t1)
@@ -89,7 +89,7 @@ sys = eye(chnkr.k*chnkr.nch*2) + sysmat;
 
 udense = sys*bdry_data;
 cormat = chunkermat(chnkr,kerns,struct("corrections",true));
-sysapply = @(sigma) chunkermatapply(chnkr,kerns,eye(2),sigma,cormat);
+sysapply = @(sigma) sigma + chunkermatapply(chnkr,kerns,sigma,cormat);
 
 start = tic; u = sysapply(bdry_data); t1 = toc(start);
 fprintf('%5.2e s : time for matrix free apply\n',t1)
@@ -153,7 +153,7 @@ dens = fkernsrc.fmm(1e-12,srcinfo,targinfo,strengths);
 
 udense = sys*dens;
 cormat = chunkermat(cgrph,fkern,struct("corrections",true));
-sysapply = @(sigma) chunkermatapply(cgrph,fkern,1,sigma,cormat);
+sysapply = @(sigma) sigma + chunkermatapply(cgrph,fkern,sigma,cormat);
 
 start = tic; u = sysapply(dens); t1 = toc(start);
 fprintf('%5.2e s : time for matrix free apply\n',t1)
@@ -201,7 +201,7 @@ sys = eye(size(sysmat,1)) + sysmat;
 
 udense = sys*bdry_data;
 cormat = chunkermat(cgrph,kerns,struct("corrections",true));
-sysapply = @(sigma) chunkermatapply(cgrph,kerns,1,sigma,cormat);
+sysapply = @(sigma) sigma + chunkermatapply(cgrph,kerns,sigma,cormat);
 start = tic; u = sysapply(bdry_data); t1 = toc(start);
 fprintf('%5.2e s : time for matrix free apply\n',t1)
 
