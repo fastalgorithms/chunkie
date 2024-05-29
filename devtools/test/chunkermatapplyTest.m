@@ -13,7 +13,6 @@ rng(seed);
 
 cparams = [];
 cparams.eps = 1.0e-4;
-cparams.nover = 3;
 pref = []; 
 pref.k = 16;
 narms = 5;
