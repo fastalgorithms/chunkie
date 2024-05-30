@@ -24,7 +24,9 @@ end
 
 % mandatory setting
 pref.k = chnkrs(1).k;
-chnkrout = chunker(pref);
+t = chnkrs(1).tstor;
+w = chnkrs(1).wstor;
+chnkrout = chunker(pref,t,w);
 
 for i = 1:length(chnkrs)
   chnkrtemp = chnkrs(i);
