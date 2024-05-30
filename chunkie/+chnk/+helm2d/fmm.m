@@ -78,6 +78,10 @@ end
 
 pg = 0;
 pgt = min(nargout, 2);
+switch lower(type)
+    case {'sprime', 'dprime', 'cprime'}
+        pgt = max(pgt, 2);
+end
 U = hfmm2d(eps, zk, srcuse, pg, targuse, pgt);
 
 % Assign potentials

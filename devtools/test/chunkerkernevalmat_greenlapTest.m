@@ -6,7 +6,7 @@
 clearvars; close all;
 seed = 8675309;
 rng(seed);
-%addpaths_loc();
+addpaths_loc();
 
 doadap = false;
 
@@ -81,17 +81,26 @@ opts=[];
 start=tic; Dmat = chunkerkernevalmat(chnkr,kernd,targets,opts); 
 Du = Dmat*densu;
 toc(start)
+opts=[]; opts.forceadap=true;
+start=tic; Dmat = chunkerkernevalmat(chnkr,kernd,targets,opts); 
+Du2 = Dmat*densu;
+toc(start)
+opts=[];
 start=tic; Smat = chunkerkernevalmat(chnkr,kerns,targets,opts); 
 Sun = Smat*densun;
 toc(start)
 
 utarg2 = Sun-Du;
+utarg3 = Sun-Du2;
 
 %
 
 relerr = norm(utarg-utarg2,'fro')/norm(utarg,'fro');
+assert(relerr < 1e-11);
 
 fprintf('relative frobenius error %5.2e\n',relerr);
 
+relerr = norm(utarg-utarg3,'fro')/norm(utarg,'fro');
 assert(relerr < 1e-11);
+
 

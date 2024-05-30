@@ -1,4 +1,4 @@
-function mat = chunkerkernevalmat(chnkr,kern,targobj,opts)
+    function mat = chunkerkernevalmat(chnkr,kern,targobj,opts)
 %CHUNKERKERNEVALMAT compute the matrix which maps density values on 
 % the chunk geometry to the value of the convolution of the given
 % integral kernel with the density at the specified target points
@@ -273,28 +273,13 @@ if isempty(flag)
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
-    h = chnkr.h;
     
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
-        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs, ...
-                    targd,targd2,kern,opdims,t,w,opts);
-                
-        js1 = jmat:jmatend;
-        js1 = repmat( (js1(:)).',1,opdims(1)*numel(ji));
-                
-        indji = (ji-1)*opdims(1);
-        indji = repmat( (indji(:)).', opdims(1),1) + ( (1:opdims(1)).');
-        indji = indji(:);
-        indji = repmat(indji,1,opdims(2)*k);
-        
-        iend = istart+numel(mat1)-1;
-        is(istart:iend) = indji(:);
-        js(istart:iend) = js1(:);
-        vs(istart:iend) = mat1(:);
-        istart = iend+1;
+        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs, ...
+                    targd,targn,targd2,kern,opdims,t,w,opts);
     end
     
 else
@@ -310,13 +295,12 @@ else
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
-    h = chnkr.h;
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
         [ji] = find(flag(:,i));
-        mat1 =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+        mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
                     targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
                 
         js1 = jmat:jmatend;
@@ -388,7 +372,6 @@ else
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
-    h = chnkr.h;
 
     % interpolation matrix 
     intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -401,7 +384,7 @@ else
         [ji] = find(flag(:,i));
 
         % Helsing-Ojala (interior/exterior?)
-        mat1 = chnk.pquadwts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+        mat1 = chnk.pquadwts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
                     targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
                 
         js1 = jmat:jmatend;

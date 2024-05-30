@@ -18,6 +18,7 @@ narms = 5;
 amp = 0.5;
 chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams);
 
+
 % scalar function on boundary
 
 fscal = @(xx) cos(xx(1,:)-1.0) + sin(xx(2,:)-0.5);
@@ -37,4 +38,3 @@ fscal_int4 = chunkerintegral(chnkr,fscal,opts);
 assert(abs(fscal_int1-fscal_int2)/abs(fscal_int2) < 1e-9);
 assert(abs(fscal_int3-fscal_int2)/abs(fscal_int2) < 1e-9);
 assert(abs(fscal_int4-fscal_int2)/abs(fscal_int2) < 1e-9);
-

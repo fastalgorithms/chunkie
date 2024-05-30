@@ -39,6 +39,9 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %                         entries for which a special quadrature is used
 %                         (e.g. self and neighbor interactions) and return
 %                         in a sparse array.
+%           opts.corrections = boolean (false), if true, only compute the
+%                         corrections to the smooth quadrature rule and 
+%                         return in a sparse array, see opts.nonsmoothonly
 %           opts.l2scale = boolean (false), if true scale rows by 
 %                           sqrt(whts) and columns by 1/sqrt(whts)
 %           opts.auxquads = struct, struct storing auxilliary nodes 
@@ -92,33 +95,30 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 % opts.sing provides a default value for singularities if not 
 % defined for kernels
 
-if isa(kern,'function_handle')
-    kern2 = kernel(kern);
-    kern = kern2;
-elseif isa(kern,'cell')
-    sz = size(kern);
-    kern2(sz(1),sz(2)) = kernel();
-    for j = 1:sz(2)
-        for i = 1:sz(1)
-            if isa(kern{i,j},'function_handle')
-                kern2(i,j) = kernel(kern{i,j});
-            elseif isa(kern{i,j},'kernel')
-                kern2(i,j) = kern{i,j};
-            else
-                msg = "Second input is not a kernel object, function handle, " ...
-                    + "or cell array";
-                error(msg);
-            end
-        end
-    end
-    kern = kern2;
-    
-elseif ~isa(kern,'kernel')
-    msg = "Second input is not a kernel object, function handle, " ...
-                + "or cell array";
-    error(msg);
+
+% Flag for determining whether input object is a chunkergraph
+icgrph = 0;
+
+if (class(chnkobj) == "chunker")
+    chnkrs = chnkobj;
+    npttot = chnkobj.npt;
+elseif(class(chnkobj) == "chunkgraph")
+    icgrph = 1;
+    chnkrs = chnkobj.echnks;
+    npttot = chnkobj.npt;
+else
+    msg = "CHUNKERMAT: first input is not a chunker or chunkgraph object";
+    error(msg)
 end
-    
+
+if ~isa(kern,'kernel')
+    try 
+        kern = kernel(kern);
+    catch
+        error('CHUNKERMAT: second input kern not of supported type');
+    end
+end
+
 if nargin < 3
     opts = [];
 end
@@ -129,6 +129,7 @@ end
 
 quad = 'ggq';
 nonsmoothonly = false;
+corrections = false;
 l2scale = false;
 isrcip = true;
 nsub = 40;
@@ -149,6 +150,12 @@ end
 if isfield(opts,'nonsmoothonly')
     nonsmoothonly = opts.nonsmoothonly;
 end
+if isfield(opts,'corrections')
+    corrections = opts.corrections;
+end
+if corrections
+    nonsmoothonly = true;
+end
 
 if(isfield(opts,'rcip'))
     isrcip = opts.rcip;
@@ -165,19 +172,6 @@ end
 
 if (isfield(opts,'adaptive_correction'))
     adaptive_correction = opts.adaptive_correction;
-end
-
-% Flag for determining whether input object is a chunkergraph
-icgrph = 0;
-
-if (class(chnkobj) == "chunker")
-    chnkrs = chnkobj;
-elseif(class(chnkobj) == "chunkgraph")
-    icgrph = 1;
-    chnkrs = chnkobj.echnks;
-else
-    msg = "First input is not a chunker or chunkgraph object";
-    error(msg)
 end
 
 nchunkers = length(chnkrs);
@@ -216,11 +210,27 @@ end
 irowlocs = zeros(nchunkers+1,1);
 icollocs = zeros(nchunkers+1,1);
 
+idrowchnk = zeros(2,npttot);
+idcolchnk = zeros(2,npttot);
+
+
 irowlocs(1) = 1;
 icollocs(1) = 1;
 for i=1:nchunkers
    icollocs(i+1) = icollocs(i) + lchunks(i)*opdims_mat(2,1,i);
    irowlocs(i+1) = irowlocs(i) + lchunks(i)*opdims_mat(1,i,1);
+
+    % which chunker
+    idrowchnk(1,irowlocs(i):(irowlocs(i+1)-1)) = i;
+    % which chunk in the chunker
+    idrowchnk(2,irowlocs(i):(irowlocs(i+1)-1)) = ceil((1:lchunks(i)*opdims_mat(1,i,1))/ ...
+        (opdims_mat(1,i,1)*chnkrs(i).k));
+
+    % which chunker
+    idcolchnk(1,icollocs(i):(icollocs(i+1)-1)) = i;
+    % which chunk in the chunker
+    idcolchnk(2,icollocs(i):(icollocs(i+1)-1)) = ceil((1:lchunks(i)*opdims_mat(2,1,i))/ ...
+        (opdims_mat(2,1,i)*chnkrs(i).k));
 end    
 
 nrows = irowlocs(end)-1;
@@ -487,6 +497,7 @@ if(icgrph && isrcip)
             chnk.rcip.setup(ngl,ndim,nedge,isstart);
         optsrcip = opts;
         optsrcip.nonsmoothonly = false;
+        optsrcip.corrections = false;
 
         R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
             Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
@@ -520,6 +531,132 @@ if (nonsmoothonly)
     sysmat = sparse(isysmat(idx),jsysmat(idx),vsysmat(idx),nrows,ncols);
 end
 
+
+
+if (corrections)
+    % subtract out the smooth quadrature rule in the points computed using
+    % a special quadrature rule
+    sys_loc = sysmat;
+    iinds = isysmat(idx);
+    jinds = jsysmat(idx);
+    icorinds = [];
+    jcorinds = [];
+    vcors = [];
+
+    iselfinds = [];
+    jselfinds = [];
+
+    for ichkr = 1:nchunkers
+        for i = 1:chnkrs(ichkr).npt
+            targinfo = [];
+	        targinfo.r  = chnkrs(ichkr).r(:,i); 
+            targinfo.d  = chnkrs(ichkr).d(:,i); 
+	        targinfo.d2 = chnkrs(ichkr).d2(:,i); 
+            targinfo.n  = chnkrs(ichkr).n(:,i);
+    
+            icortmp = (i-1)*opdims_mat(1,ichkr,1) ...
+                        +(1:opdims_mat(1,ichkr,1)) + irowlocs(ichkr) - 1;
+            jsrc = [];
+            for l = 1:opdims_mat(1,ichkr,1)
+                jsrc = [jsrc;jinds(iinds == icortmp(l))];
+            end
+        
+            jchnks = unique(idcolchnk(:,jsrc)','rows')';
+            jchnkrs = unique(jchnks(1,:));
+            if (size(kern) == 1)
+                srcinfo = []; 
+                srcinfo.r  = [];
+                srcinfo.d  = [];
+                srcinfo.d2 = [];
+                srcinfo.n  = [];
+                srcw = [];
+                for jchkr = jchnkrs
+                    jchnklgth = opdims_mat(2,1,jchkr)*chnkrs(jchkr).k;
+        
+                    jcortmp = jchnklgth*(jchnks(2,jchnks(1,:)==jchkr)-1)...
+                            + ((1:jchnklgth)')+icollocs(jchkr)-1;
+                    jcortmp = jcortmp(:); % global density j indices
+        
+                    icortmp2 = repmat(icortmp(:),1,length(jcortmp));
+                    icorinds = [icorinds; icortmp2(:)];
+
+                    jcortmp2 = repmat(jcortmp,1,opdims_mat(1,ichkr,1))';
+                    jcorinds = [jcorinds; jcortmp2(:)];
+                    
+                    jloc = chnkrs(jchkr).k*(jchnks(2,jchnks(1,:)==jchkr)-1) + ...
+                        ((1:chnkrs(jchkr).k)'); % local pt j indices
+                    jloc = jloc(:)';
+                    srcinfo.r  = [srcinfo.r, chnkrs(jchkr).r(:,jloc)]; 
+                    srcinfo.d  = [srcinfo.d, chnkrs(jchkr).d(:,jloc)]; 
+                    srcinfo.d2 = [srcinfo.d2,chnkrs(jchkr).d2(:,jloc)]; 
+                    srcinfo.n  = [srcinfo.n, chnkrs(jchkr).n(:,jloc)];
+        
+                    srcwj = repmat(chnkrs(jchkr).wts(jloc), ...
+                        opdims_mat(2,1,jchkr),1);
+                    srcw = [srcw, srcwj(:)'];
+                end
+                vcorvals = kern.eval(srcinfo, targinfo).*srcw;
+                vcors = [vcors; vcorvals(:)];
+            else
+                for jchkr = jchnkrs
+                    jchnklgth = opdims_mat(2,1,jchkr)*chnkrs(jchkr).k;
+        
+                    jcortmp = jchnklgth*(jchnks(2,jchnks(1,:)==jchkr)-1) + ...
+                        ((1:jchnklgth)')+icollocs(jchkr)-1;
+                    jcortmp = jcortmp(:); % global density j indices
+        
+                    icortmp2 = repmat(icortmp(:),1,length(jcortmp));
+                    icorinds = [icorinds; icortmp2(:)];
+
+                    jcortmp2 = repmat(jcortmp,1,opdims_mat(1,ichkr,1))';
+                    jcorinds = [jcorinds; jcortmp2(:)];
+                    
+                    jloc = chnkrs(jchkr).k*(jchnks(2,jchnks(1,:)==jchkr)-1) + ...
+                        ((1:chnkrs(jchkr).k)'); % local pt j indices
+                    jloc = jloc(:)';
+        
+                    srcinfo = []; 
+                    srcinfo.r  = chnkrs(jchkr).r(:,jloc); 
+                    srcinfo.d  = chnkrs(jchkr).d(:,jloc); 
+                    srcinfo.d2 = chnkrs(jchkr).d2(:,jloc); 
+                    srcinfo.n  = chnkrs(jchkr).n(:,jloc);
+
+                    srcw = repmat(chnkrs(jchkr).wts(jloc), ...
+                        opdims_mat(2,1,jchkr),1);
+                    srcw = srcw(:)';
+                    
+                    vcorvals = kern(ichkr,jchkr).eval(srcinfo, targinfo) ...
+                        .*srcw;
+                    vcors = [vcors; vcorvals(:)];
+                end
+            end
+        end
+
+        % identify self interactions to be set to zero
+        ids = 1:lchunks(ichkr);
+        jds = ids;
+
+        opdims = opdims_mat(:,ichkr,ichkr);
+        islf = repmat((1:opdims(1))',opdims(2),1) + opdims(1)*(ids-1) ...
+            + irowlocs(ichkr)-1;
+        tmp = repmat((1:opdims(2)),opdims(1),1); 
+        jslf = tmp(:) + opdims(2)*(jds-1)+ icollocs(ichkr)-1;
+
+        iselfinds = [iselfinds; islf(:)];
+        jselfinds = [jselfinds; jslf(:)];
+
+    end
+    icorinds = icorinds(:);
+    jcorinds = jcorinds(:);
+    vcors = vcors(:);
+
+    vcormat = sparse(icorinds,jcorinds,vcors,nrows,ncols);
+
+    linsp = iselfinds + (jselfinds-1)*nrows;
+    vcormat(linsp) = 0; % set self interactions to zero to avoid NaNs
+
+    sysmat = sys_loc-vcormat;
+end
 
 if (nargout >1) 
 	varargout{1} = opts;
@@ -573,14 +710,13 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
-h = chnkr.h;
 
 for i = 1:nch
     jmat = 1 + (i-1)*k*opdims(2);
     jmatend = i*k*opdims(2);
                     
     [ji] = find(flag(:,i));
-    mat1 =  chnk.adapgausswts(r,d,n,d2,h,ct,bw,i,targs(:,ji), ...
+    mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
                 targd(:,ji),targn(:,ji),targd2(:,ji),kernev,opdims,t,w,opts);
             
     js1 = jmat:jmatend;

@@ -24,6 +24,6 @@ function wts = weights(chnkr)
   nch = chnkr.nch;
   w = chnkr.wstor;
   wts = reshape(sqrt(sum((chnkr.d).^2,1)),k,nch);
-  wts = wts.*bsxfun(@times,w(:),(chnkr.h(:)).');
+  wts = wts.*w(:);
 
 end

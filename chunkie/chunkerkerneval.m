@@ -122,7 +122,7 @@ end
 if (dim ~= 2); warning('only dimension two tested'); end
 
 if opts_use.forcesmooth
-    fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens,targinfo, ...
+    fints = chnk.chunkerkerneval_smooth(chnkr,kern,opdims,dens,targinfo, ...
         [],opts_use);
     return
 end
@@ -137,7 +137,7 @@ end
 if opts_use.forcepquad
     optsflag = []; optsflag.fac = opts_use.fac;
     flag = flagnear(chnkr,targinfo.r,optsflag);
-    fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens,targinfo, ...
+    fints = chnk.chunkerkerneval_smooth(chnkr,kern,opdims,dens,targinfo, ...
         flag,opts_use);
 
     fints = fints + chunkerkerneval_ho(chnkr,kern,opdims,dens, ...
@@ -157,7 +157,7 @@ nlegnew = chnk.ellipse_oversample(rho,npoly,opts_use.eps);
 nlegnew = max(nlegnew,chnkr.k);
 
 [chnkr2,dens2] = upsample(chnkr,nlegnew,dens);
-fints = chunkerkerneval_smooth(chnkr2,kern,opdims,dens2,targinfo, ...
+fints = chnk.chunkerkerneval_smooth(chnkr2,kern,opdims,dens2,targinfo, ...
     flag,opts_use);
 
 fints = fints + chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
@@ -179,7 +179,6 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
-h = chnkr.h;
 
 % interpolation matrix
 intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -207,7 +206,7 @@ for j=1:size(chnkr.r,3)
 
 
         % Helsing-Ojala (interior/exterior?)
-        mat1 = chnk.pquadwts(r,d,n,d2,h,ct,bw,j,targs(:,ji), ...
+        mat1 = chnk.pquadwts(r,d,n,d2,ct,bw,j,targs(:,ji), ...
             targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
 
         fints(ji) = fints(ji) + mat1*dens(idxjmat);
@@ -216,190 +215,6 @@ end
 end
 
 
-function fints = chunkerkerneval_smooth(chnkr,kern,opdims,dens, ...
-    targinfo,flag,opts)
-
-if isa(kern,'kernel')
-    kerneval = kern.eval;
-else
-    kerneval = kern;
-end
-
-flam = false;
-accel = true;
-forcefmm = false;
-
-if nargin < 6
-    flag = [];
-end
-if nargin < 7
-    opts = [];
-end
-if isfield(opts,'flam'); flam = opts.flam; end
-if isfield(opts,'accel'); accel = opts.accel; end
-if isfield(opts,'forcefmm'); forcefmm = opts.forcefmm; end
-
-k = chnkr.k;
-nch = chnkr.nch;
-
-assert(numel(dens) == opdims(2)*k*nch,'dens not of appropriate size')
-dens = reshape(dens,opdims(2),k,nch);
-
-[~,w] = lege.exps(k);
-[~,nt] = size(targinfo.r);
-
-fints = zeros(opdims(1)*nt,1);
-
-% assume smooth weights are good enough
-
-% Sequence of checks, first see ifflam is set as it supercedes
-% everything, if not flam, then check to see if the fmm
-% exists and whether it should be used
-% The number of sources set to 200 is currently a hack, 
-% must be set based on opdims, accuracy, and kernel type
-% considerations
-
-imethod = 'direct';
-if flam
-    imethod = 'flam';
-elseif isa(kern,'kernel') && ~isempty(kern.fmm)
-    if forcefmm
-        imethod = 'fmm';
-    elseif accel
-        if nt > 200 || chnkr.npt > 200
-            imethod = 'fmm';
-         end
-     end
-end
-
-    
-    
-
-if strcmpi(imethod,'direct')
-    % do dense version
-    if isempty(flag)
-        % nothing to ignore
-        for i = 1:nch
-            densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
-            dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
-            dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
-            densvals = densvals.*(dsdtdt(:));
-            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
-            srcinfo.n = chnkr.n(:,:,i);
-            srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
-            kernmat = kerneval(srcinfo,targinfo);
-            fints = fints + kernmat*densvals;
-        end
-    else
-        % ignore interactions in flag array
-        for i = 1:nch
-            densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
-            dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
-            dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
-            densvals = densvals.*(dsdtdt(:));
-            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
-            srcinfo.n = chnkr.n(:,:,i);
-            srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
-            kernmat = kerneval(srcinfo,targinfo);
-
-            rowkill = find(flag(:,i)); 
-            rowkill = (opdims(1)*(rowkill(:)-1)).' + (1:opdims(1)).';
-            kernmat(rowkill,:) = 0;
-
-            fints = fints + kernmat*densvals;
-        end
-    end
-else
-
-    wts = chnkr.wts;
-    wts = wts(:);
-    
-    if strcmpi(imethod,'flam')
-        xflam1 = chnkr.r(:,:);
-        xflam1 = repmat(xflam1,opdims(2),1);
-        xflam1 = reshape(xflam1,chnkr.dim,numel(xflam1)/chnkr.dim);
-
-        targinfo_flam = [];
-        targinfo_flam.r = repelem(targinfo.r(:,:),1,opdims(1));
-        if isfield(targinfo, 'd')
-            targinfo_flam.d = repelem(targinfo.d(:,:),1,opdims(1));
-        end
-        
-        if isfield(targinfo, 'd2')
-            targinfo_flam.d2 = repelem(targinfo.d2(:,:),1,opdims(1));
-        end
-        
-        if isfield(targinfo, 'n')
-            targinfo_flam.n = repelem(targinfo.n(:,:),1,opdims(1));
-        end
-
-% TODO: Pull through data?
-
-        matfun = @(i,j) chnk.flam.kernbyindexr(i, j, targinfo_flam, ...,
-                           chnkr, kerneval, opdims);
-    
-
-        width = max(abs(max(chnkr)-min(chnkr)))/3;
-        tmax = max(targinfo.r(:,:),[],2); tmin = min(targinfo.r(:,:),[],2);
-        wmax = max(abs(tmax-tmin));
-        width = max(width,wmax/3);  
-        npxy = chnk.flam.nproxy_square(kerneval,width);
-        [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
-
-        pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr,kerneval,opdims,pr,ptau,pw,pin);
-
-        optsifmm=[]; optsifmm.Tmax=Inf;
-        F = ifmm(matfun,targinfo_flam.r,xflam1,200,1e-14,pxyfun,optsifmm);
-        fints = ifmm_mv(F,dens(:),matfun);
-    else
-        wts2 = repmat(wts(:).', opdims(2), 1);
-        sigma = wts2(:).*dens(:);
-        fints = kern.fmm(1e-14, chnkr, targinfo.r(:,:), sigma);
-    end
-    % delete interactions in flag array (possibly unstable approach)
-    
-    
-    if ~isempty(flag)
-        for i = 1:nch
-            densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
-            dsdtdt = dsdtdt(:).*w(:)*chnkr.h(i);
-            dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
-            densvals = densvals.*(dsdtdt(:));
-            srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
-            srcinfo.n = chnkr.n(:,:,i);
-            srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
-
-            delsmooth = find(flag(:,i)); 
-            delsmoothrow = (opdims(1)*(delsmooth(:)-1)).' + (1:opdims(1)).';
-            delsmoothrow = delsmoothrow(:);
-
-            targinfo_use = [];
-            targinfo_use.r = targinfo.r(:,delsmooth);
-
-            if isfield(targinfo, 'd')
-                targinfo_use.d = targinfo.d(:,delsmooth);
-            end
-        
-            if isfield(targinfo, 'd2')
-                targinfo_use.d2 = targinfo.d2(:,delsmooth);
-            end
-        
-            if isfield(targinfo, 'n')
-                targinfo_use.n = targinfo.n(:,delsmooth);
-            end
-
-
-            kernmat = kerneval(srcinfo,targinfo_use);
-            fints(delsmoothrow) = fints(delsmoothrow) - kernmat*densvals;
-        end
-    end    
-end
-
-end
 
 function fints = chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
     targinfo,flag,opts)
@@ -452,14 +267,12 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
-h = chnkr.h;
-
 
 
 if isempty(flag) % do all to all adaptive
     for i = 1:nch
         for j = 1:nt
-            fints1 = chnk.adapgausskerneval(r,d,n,d2,h,ct,bw,i,dens,targs(:,j), ...
+            fints1 = chnk.adapgausskerneval(r,d,n,d2,ct,bw,i,dens,targs(:,j), ...
                     targd(:,j),targn(:,j),targd2(:,j),kerneval,opdims,t,w,opts);
             
             indj = (j-1)*opdims(1);
@@ -470,7 +283,7 @@ if isempty(flag) % do all to all adaptive
 else % do only those flagged
     for i = 1:nch
         [ji] = find(flag(:,i));
-        [fints1,maxrec,numint,iers] =  chnk.adapgausskerneval(r,d,n,d2,h,ct,bw,i,dens,targs(:,ji), ...
+        [fints1,maxrec,numint,iers] =  chnk.adapgausskerneval(r,d,n,d2,ct,bw,i,dens,targs(:,ji), ...
                     targd(:,ji),targn(:,ji),targd2(:,ji),kerneval,opdims,t,w,opts);
                 
         indji = (ji-1)*opdims(1);

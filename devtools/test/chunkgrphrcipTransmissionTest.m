@@ -84,13 +84,14 @@ opts.sources{2} = sources{2};
 opts.charges = cell(1,2);
 opts.charges{1} = charges{1};
 opts.charges{2} = charges{2};
-[kerns,bdry_data] = chnk.helm2d.transmission_helper(cgrph,ks,cs,coefs,opts);
+
+[kerns, bdry_data] = chnk.helm2d.transmission_helper(cgrph,ks,cs,coefs,opts);
 
 
 opts = [];
 opts.nonsmoothonly = false;
 opts.rcip = true;
-[sysmat] = chunkermat(cgrph,kerns,opts);
+[sysmat] = chunkermat(cgrph, kerns, opts);
 sysmat = sysmat + eye(size(sysmat,2));
 
 

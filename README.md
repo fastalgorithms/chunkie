@@ -80,7 +80,7 @@ the library will not function without FLAM and its subdirectories included in th
 
 chunkie has benefitted from the contributions of several developers: Travis Askham, 
 Manas Rachh, Michael O'Neil, Jeremy Hoskins, Dan Fortunato, Shidong Jiang, 
-Fredrik Fryklund, Hai Yang Wang, and Hai Zhu.
+Fredrik Fryklund, Hai Yang Wang, Hai Zhu, and Tristan Goodwill.
 
 James Bremer and Zydrunas Gimbutas provided generalized Gaussian quadrature rules (chunkie/+chnk/+quadggq)
 

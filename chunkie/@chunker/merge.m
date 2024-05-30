@@ -42,7 +42,6 @@ for i = 1:length(chnkrs)
   ipos = chnkrtemp.adj > 0;
   chnkrtemp.adj(ipos) = chnkrtemp.adj(ipos)+nchold;
   chnkrout.adj(:,istart:iend) = chnkrtemp.adj;
-  chnkrout.h(istart:iend) = chnkrtemp.h;
   chnkrout.wts(:,istart:iend) = chnkrtemp.wts;
   chnkrout.n(:,:,istart:iend) = chnkrtemp.n;
 end

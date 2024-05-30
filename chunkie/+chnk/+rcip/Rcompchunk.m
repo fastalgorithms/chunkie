@@ -106,7 +106,6 @@ for i = 1:nedge
     d2 = chnkri.d2(:,:,ie);    
     il = chnkri.adj(1,ie);
     ir = chnkri.adj(2,ie);
-    h = chnkri.h(ie);
     if (il > 0 && ir < 0)
         nextchunk(i) = il;
         ileftright(i) = 1;
@@ -116,8 +115,8 @@ for i = 1:nedge
         rcs(:,:,i) = sbcrmat*(r.');
         dcs(:,:,i) = u*(d.');
         d2cs(:,:,i) = u*(d2.');
-        dscal(i) = h*2;
-        d2scal(i) = h^2*4; 
+        dscal(i) = 2;
+        d2scal(i) = 4; 
     elseif (il < 0 && ir > 0)
         nextchunk(i) = ir;
         ileftright(i) = -1;
@@ -126,8 +125,8 @@ for i = 1:nedge
         rcs(:,:,i) = sbclmat*(r.');
         dcs(:,:,i) = u*(d.');
         d2cs(:,:,i) = u*(d2.');
-        dscal(i) = h*2;
-        d2scal(i) = h^2*4; 
+        dscal(i) = 2;
+        d2scal(i) = 4; 
     else
         error('RCIP: edge chunk not adjacent to one vertex and one neighbor')
     end
@@ -156,7 +155,37 @@ nsys = 3*k*nedge*ndim;
 nR = 2*k*nedge*ndim;
 
 ts = cell(nedge,1);
-chnkrlocal(1,nedge) = chunker();
+pref = [];
+pref.k = k;
+chnkrlocal(1,nedge) = chunker(pref);
+
+
+
+if(size(fkern)==1)
+    fkernlocal = fkern;
+    if isa(fkern, 'kernel')
+        if isa(fkern.shifted_eval, 'function_handle')
+            fkernlocal.eval = @(s,t) fkern.shifted_eval(s, t, ctr(:,1));
+        end
+    end
+else
+    fkernlocal(nedge,nedge) = kernel();
+    for i=1:nedge
+        ici = iedgechunks(1,i);
+        for j=1:nedge
+            icj = iedgechunks(1,j);
+            fkernlocal(i,j) = fkern(ici,icj);
+            if isa(fkern(ici,icj), 'kernel')
+                if isa(fkern(ici,icj).shifted_eval, 'function_handle')
+                    fkernlocal(i,j).eval = ...
+                      @(s,t) fkern(ici,icj).shifted_eval(s,t,ctr(:,i));
+                end
+            end
+        end
+    end
+end
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % begin recursion proper
@@ -197,7 +226,7 @@ for level=1:nsub
             chnkrlocal(i).r(:,:,nchi+1) = chnkr(ic).r(:,:,nc)-ctr(:,i);
             chnkrlocal(i).d(:,:,nchi+1) = chnkr(ic).d(:,:,nc);                
             chnkrlocal(i).d2(:,:,nchi+1) = chnkr(ic).d2(:,:,nc); 
-            chnkrlocal(i).h(nchi+1) = chnkr(ic).h(nc);
+
             if ileftright(i) == -1
                 chnkrlocal(i).adj(1,nchi+1) = nchi;
                 chnkrlocal(i).adj(2,nchi+1) = -1;
@@ -212,6 +241,7 @@ for level=1:nsub
             chnkrlocal(i).wts = weights(chnkrlocal(i));
         end
     end
+
     
 % construct the system matrix for local chunks
     if level == 1
@@ -221,7 +251,7 @@ for level=1:nsub
     end
 
     % test for opdims ~= [1,1]
-    [MAT,opts] = chunkermat(chnkrlocal,fkernlocal,opts,ilistl);
+    [MAT,opts] = chunkermat(chnkrlocal, fkernlocal, opts, ilistl);
     
 
 %

@@ -36,7 +36,6 @@ chnkrup.d= permute(reshape(upmat*reshape( ...
 chnkrup.d2= permute(reshape(upmat*reshape( ...
     permute(chnkr.d2,[2,1,3]),k,nn),kup,dim,nch),[2,1,3]);
 chnkrup.adj= chnkr.adj;
-chnkrup.h= chnkr.h;
 
 chnkrup.n = normals(chnkrup);
 chnkrup.wts = weights(chnkrup);
