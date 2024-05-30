@@ -63,10 +63,10 @@ saveas(figure(3),"guide_chunkers_starfish.png");
 
 %%%%%%%%%%%%% rounded polygons
 % START ROUNDED POLY
-% roundedpolygon provides a chunk discretization of a rounded polygon
+% chunkerpoly provides a chunk discretization of a rounded polygon
 
 verts = chnk.demo.barbell(2.0,2.0,1.0,1.0); % vertices of a barbell
-chnkr4 = roundedpolygon(verts);
+chnkr4 = chunkerpoly(verts);
 
 figure(4)
 clf
