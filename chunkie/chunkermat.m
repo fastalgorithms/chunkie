@@ -282,7 +282,7 @@ for i = 1:nchunkers
             if adaptive_correction
                 flag = flagnear(chnkrj,chnkri.r(:,:));
                 sysmat_tmp_adap = chunkermat_adap(chnkrj,ftmp,opdims, ...
-                    chnkri,flag,opts);
+                    chnkri,flag,opts,corrections);
                 if (~nonsmoothonly)
                     [isys,jsys,vsys] = find(sysmat_tmp_adap);
                     ijsys = isys + (jsys-1)*size(sysmat_tmp_adap,1);
@@ -385,7 +385,7 @@ for i=1:nchunkers
             end
         end
         if nonsmoothonly
-            sysmat_tmp = chnk.quadggq.buildmattd(chnkr,ftmp,opdims,type,auxquads,jlist);
+            sysmat_tmp = chnk.quadggq.buildmattd(chnkr,ftmp,opdims,type,auxquads,jlist,corrections);
         else
             sysmat_tmp = chnk.quadggq.buildmat(chnkr,ftmp,opdims,type,auxquads,jlist);
         end
@@ -417,7 +417,7 @@ for i=1:nchunkers
         end
         
         sysmat_tmp_adap = chunkermat_adap(chnkr, ftmp, opdims, chnkr, ...
-           flag,opts);
+           flag,opts,corrections);
 
         [isys,jsys,vsys] = find(sysmat_tmp_adap);
 
@@ -450,10 +450,9 @@ end
 if(icgrph && isrcip)
     [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k);
     nch_all = horzcat(chnkobj.echnks.nch);
+    npt_all = horzcat(chnkobj.echnks.npt);
     [~,nv] = size(chnkobj.verts);
     ngl = chnkrs(1).k;
-    glxs = lege.exps(k);
-    
     
     for ivert=1:nv
         clist = chnkobj.vstruc{ivert}{1};
@@ -482,17 +481,19 @@ if(icgrph && isrcip)
             break
         end
         starind = zeros(1,2*ngl*ndim*nedge);
+        corinds = cell(nedge,1);
         for i=1:nedge
             i1 = (i-1)*2*ngl*ndim+1;
             i2 = i*2*ngl*ndim;
             if(isstart(i))
                 starind(i1:i2) = irowlocs(clist(i))+(1:2*ngl*ndim)-1;
+                corinds{i} = 1:2*ngl;
             else
                 starind(i1:i2) = irowlocs(clist(i)+1)-fliplr(0:2*ngl*ndim-1)-1;
+                corinds{i} = (npt_all(clist(i))-2*ngl + 1):npt_all(clist(i));
             end
         end
         
-
         [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = ...
             chnk.rcip.setup(ngl,ndim,nedge,isstart);
         optsrcip = opts;
@@ -508,6 +509,51 @@ if(icgrph && isrcip)
             
             sysmat(starind,starind) = sysmat_tmp;
         else
+
+            if corrections
+                cormat = zeros(size(sysmat_tmp));
+                jstart = 1;
+                for jj = 1:nedge
+                    jch = clist(jj);
+                    srcinfo = [];
+                    jinds = corinds{jj};
+                    srcinfo.r = chnkrs(jch).r(:,jinds);
+                    srcinfo.d = chnkrs(jch).d(:,jinds);
+                    srcinfo.d2 = chnkrs(jch).d2(:,jinds);
+                    srcinfo.n = chnkrs(jch).n(:,jinds);
+                    wtsj = chnkrs(jch).wts(jinds);
+                    op2 = opdims_mat(2,1,jch);
+                    wtsj = repmat(wtsj(:).',op2,1);
+                    wtsj = wtsj(:);
+                    jflat = jstart:(jstart-1+length(jinds)*op2);
+                    jstart = jstart+length(jinds)*op2;
+                    istart = 1;
+                    for ii = 1:nedge
+                        ich = clist(ii);
+                        iinds = corinds{ii};
+                        targinfo = [];
+                        targinfo.r = chnkrs(ich).r(:,iinds);
+                        targinfo.d = chnkrs(ich).d(:,iinds);
+                        targinfo.d2 = chnkrs(ich).d2(:,iinds);
+                        targinfo.n = chnkrs(ich).n(:,iinds);
+                        op1 = opdims_mat(1,ich,1);
+                        iflat = istart:(istart-1+length(iinds)*op1);
+                        istart = istart + length(iinds)*op1;
+                        if size(kern) == 1
+                            ktmp = kern.eval;
+                        else
+                            ktmp = kern(ich,jch).eval;
+                        end
+                        submat = ktmp(srcinfo,targinfo).*(wtsj(:).');
+                        if (ii == jj)
+                            submat(kron(eye(length(iinds)),ones(op1,op2)) > 0) = 0;
+                        end
+                        cormat(iflat,jflat) = submat;
+                    end
+                end
+                sysmat_tmp = sysmat_tmp - cormat;
+            end
+                       
             [jind,iind] = meshgrid(starind);
             
             isysmat = [isysmat;iind(:)];
@@ -532,132 +578,6 @@ if (nonsmoothonly)
 end
 
 
-
-if (corrections)
-    % subtract out the smooth quadrature rule in the points computed using
-    % a special quadrature rule
-    sys_loc = sysmat;
-    iinds = isysmat(idx);
-    jinds = jsysmat(idx);
-    icorinds = [];
-    jcorinds = [];
-    vcors = [];
-
-    iselfinds = [];
-    jselfinds = [];
-
-    for ichkr = 1:nchunkers
-        for i = 1:chnkrs(ichkr).npt
-            targinfo = [];
-	        targinfo.r  = chnkrs(ichkr).r(:,i); 
-            targinfo.d  = chnkrs(ichkr).d(:,i); 
-	        targinfo.d2 = chnkrs(ichkr).d2(:,i); 
-            targinfo.n  = chnkrs(ichkr).n(:,i);
-    
-            icortmp = (i-1)*opdims_mat(1,ichkr,1) ...
-                        +(1:opdims_mat(1,ichkr,1)) + irowlocs(ichkr) - 1;
-            jsrc = [];
-            for l = 1:opdims_mat(1,ichkr,1)
-                jsrc = [jsrc;jinds(iinds == icortmp(l))];
-            end
-        
-            jchnks = unique(idcolchnk(:,jsrc)','rows')';
-            jchnkrs = unique(jchnks(1,:));
-            if (size(kern) == 1)
-                srcinfo = []; 
-                srcinfo.r  = [];
-                srcinfo.d  = [];
-                srcinfo.d2 = [];
-                srcinfo.n  = [];
-                srcw = [];
-                for jchkr = jchnkrs
-                    jchnklgth = opdims_mat(2,1,jchkr)*chnkrs(jchkr).k;
-        
-                    jcortmp = jchnklgth*(jchnks(2,jchnks(1,:)==jchkr)-1)...
-                            + ((1:jchnklgth)')+icollocs(jchkr)-1;
-                    jcortmp = jcortmp(:); % global density j indices
-        
-                    icortmp2 = repmat(icortmp(:),1,length(jcortmp));
-                    icorinds = [icorinds; icortmp2(:)];
-
-                    jcortmp2 = repmat(jcortmp,1,opdims_mat(1,ichkr,1))';
-                    jcorinds = [jcorinds; jcortmp2(:)];
-                    
-                    jloc = chnkrs(jchkr).k*(jchnks(2,jchnks(1,:)==jchkr)-1) + ...
-                        ((1:chnkrs(jchkr).k)'); % local pt j indices
-                    jloc = jloc(:)';
-                    srcinfo.r  = [srcinfo.r, chnkrs(jchkr).r(:,jloc)]; 
-                    srcinfo.d  = [srcinfo.d, chnkrs(jchkr).d(:,jloc)]; 
-                    srcinfo.d2 = [srcinfo.d2,chnkrs(jchkr).d2(:,jloc)]; 
-                    srcinfo.n  = [srcinfo.n, chnkrs(jchkr).n(:,jloc)];
-        
-                    srcwj = repmat(chnkrs(jchkr).wts(jloc), ...
-                        opdims_mat(2,1,jchkr),1);
-                    srcw = [srcw, srcwj(:)'];
-                end
-                vcorvals = kern.eval(srcinfo, targinfo).*srcw;
-                vcors = [vcors; vcorvals(:)];
-            else
-                for jchkr = jchnkrs
-                    jchnklgth = opdims_mat(2,1,jchkr)*chnkrs(jchkr).k;
-        
-                    jcortmp = jchnklgth*(jchnks(2,jchnks(1,:)==jchkr)-1) + ...
-                        ((1:jchnklgth)')+icollocs(jchkr)-1;
-                    jcortmp = jcortmp(:); % global density j indices
-        
-                    icortmp2 = repmat(icortmp(:),1,length(jcortmp));
-                    icorinds = [icorinds; icortmp2(:)];
-
-                    jcortmp2 = repmat(jcortmp,1,opdims_mat(1,ichkr,1))';
-                    jcorinds = [jcorinds; jcortmp2(:)];
-                    
-                    jloc = chnkrs(jchkr).k*(jchnks(2,jchnks(1,:)==jchkr)-1) + ...
-                        ((1:chnkrs(jchkr).k)'); % local pt j indices
-                    jloc = jloc(:)';
-        
-                    srcinfo = []; 
-                    srcinfo.r  = chnkrs(jchkr).r(:,jloc); 
-                    srcinfo.d  = chnkrs(jchkr).d(:,jloc); 
-                    srcinfo.d2 = chnkrs(jchkr).d2(:,jloc); 
-                    srcinfo.n  = chnkrs(jchkr).n(:,jloc);
-
-                    srcw = repmat(chnkrs(jchkr).wts(jloc), ...
-                        opdims_mat(2,1,jchkr),1);
-                    srcw = srcw(:)';
-                    
-                    vcorvals = kern(ichkr,jchkr).eval(srcinfo, targinfo) ...
-                        .*srcw;
-                    vcors = [vcors; vcorvals(:)];
-                end
-            end
-        end
-
-        % identify self interactions to be set to zero
-        ids = 1:lchunks(ichkr);
-        jds = ids;
-
-        opdims = opdims_mat(:,ichkr,ichkr);
-        islf = repmat((1:opdims(1))',opdims(2),1) + opdims(1)*(ids-1) ...
-            + irowlocs(ichkr)-1;
-        tmp = repmat((1:opdims(2)),opdims(1),1); 
-        jslf = tmp(:) + opdims(2)*(jds-1)+ icollocs(ichkr)-1;
-
-        iselfinds = [iselfinds; islf(:)];
-        jselfinds = [jselfinds; jslf(:)];
-
-    end
-    icorinds = icorinds(:);
-    jcorinds = jcorinds(:);
-    vcors = vcors(:);
-
-    vcormat = sparse(icorinds,jcorinds,vcors,nrows,ncols);
-
-    linsp = iselfinds + (jselfinds-1)*nrows;
-    vcormat(linsp) = 0; % set self interactions to zero to avoid NaNs
-
-    sysmat = sys_loc-vcormat;
-end
-
 if (nargout >1) 
 	varargout{1} = opts;
 end  
@@ -665,7 +585,7 @@ end
 end
 
 function mat = chunkermat_adap(chnkr,kern,opdims, ...
-			       chnkrt,flag,opts)
+			       chnkrt,flag,opts,corrections)
 
   if isa(kern,'kernel')
     kernev = kernel.eval;
@@ -684,6 +604,9 @@ if nargin < 5
 end
 if nargin < 6
     opts = [];
+end
+if nargin < 7
+    corrections = false;
 end
 
 targs = chnkrt.r(:,:); targn = chnkrt.n(:,:); 
@@ -704,12 +627,14 @@ vs = is;
 istart = 1;
 
 [t,w] = lege.exps(2*k+1);
-ct = lege.exps(k);
-bw = lege.barywts(k);
+ct = chnkr.tstor;
+bw = lege.barywts(k,ct);
 r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
+
+wtss = chnkr.wts;
 
 for i = 1:nch
     jmat = 1 + (i-1)*k*opdims(2);
@@ -719,6 +644,14 @@ for i = 1:nch
     mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
                 targd(:,ji),targn(:,ji),targd2(:,ji),kernev,opdims,t,w,opts);
             
+    if corrections
+        targinfo = []; targinfo.r = targs(:,ji); targinfo.d = targd(:,ji);
+        targinfo.n = targn(:,ji); targinfo.d2 = targd2(:,ji);
+        srcinfo = []; srcinfo.r = r(:,:,i); srcinfo.d = d(:,:,i); 
+        srcinfo.n = n(:,:,i); srcinfo.d2 = d2(:,:,i);
+        wtsi = wtss(:,i); wtsi = repmat(wtsi(:).',opdims(2),1);
+        mat1 = mat1 - kernev(srcinfo,targinfo).*(wtsi(:).');
+    end
     js1 = jmat:jmatend;
     js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);
             

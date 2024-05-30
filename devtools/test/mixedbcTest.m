@@ -74,21 +74,16 @@ bdrydata = -[bdrydatad;bdrydatan];
 
 sol1 = sys\bdrydata;
 
-cormat = chunkermat(cgrph,kerns,struct("corrections",true));
-sysapply = @(sigma) chunkermatapply(cgrph,kerns,1,sigma,cormat,struct("forcefmm",true));
-sysapply2 = @(sigma) chunkermatapply(cgrph,kerns,dval,sigma,cormat);
-
-sol2 = gmres(sysapply,bdrydata,100,1e-6,100);
-
-norm(sol1-sol2)
+start = tic; cormat = chunkermat(cgrph,kerns,struct("corrections",true));
+t1 = toc(start);
+fprintf('%5.2e s : time to build corrections matrix\n',t1)
+sysapply = @(sigma) sigma + chunkermatapply(cgrph,kerns,sigma,cormat,struct("forcefmm",true));
 
 xapply1 = sys*bdrydata;
-xapply2 = sysapply(bdrydata);
-xapply3 = sysapply2(bdrydata);
+start = tic; xapply2 = sysapply(bdrydata); t1 = toc(start);
+fprintf('%5.2e s : time to do matrix-free apply\n',t1)
+
 relerr = norm(xapply1-xapply2)/norm(xapply1);
-fprintf('relative matrix free apply error %5.2e\n',relerr);
-assert(relerr < 1e-10)
-relerr = norm(xapply1-xapply3)/norm(xapply1);
 fprintf('relative matrix free apply error %5.2e\n',relerr);
 assert(relerr < 1e-10)
 
@@ -103,7 +98,7 @@ targets = zeros(2,length(xxtarg(:)));
 targets(1,:) = xxtarg(:); targets(2,:) = yytarg(:);
 
 start = tic; in1 = chunkerinterior(merge(cgrph.echnks(edir)),{xtarg,ytarg});
-in2 = chunkerinterior(merge(cgrph.echnks(eneu)),{xtarg,ytarg}); 
+in2 = chunkerinterior(reverse(merge(cgrph.echnks(eneu))),{xtarg,ytarg}); 
 t1 = toc(start);
 in = in1 & ~in2;
 out = ~in;
@@ -160,6 +155,7 @@ relerr = max(abs(utot));
 fprintf('relative field error %5.2e\n',relerr);
 assert(relerr < 1e-4)
 
+%
 % dirichlet and transmission test
 nregions = 2;
 ks = [1.1;2.1]*30;
@@ -172,12 +168,13 @@ kerntmp = @(s,t) -2*[chnk.helm2d.kern(ks(1),s,t,'d'); ...
     -chnk.helm2d.kern(ks(1),s,t,'dprime')];
 kerns(eneu,edir) = (kerntmp);
 
-kerntmp = @(s,t) -chnk.helm2d.kern(ks(1),s,t,'trans_rep',[-1,-1]);
+trepcf = [-1,1];
+kerntmp = @(s,t) chnk.helm2d.kern(ks(1),s,t,'trans_rep',[-1,1]);
 kerns(edir,eneu) = (kerntmp);
 
-cc1 = [-1,-1;1,1];
+cc1 = [-1,1;-1,1];
 cc2 = cc1;
-kerntmp = @(s,t) -(chnk.helm2d.kern(ks(1),s,t,'all',cc1)- ...
+kerntmp = @(s,t) (chnk.helm2d.kern(ks(1),s,t,'all',cc1)- ...
                  chnk.helm2d.kern(ks(2),s,t,'all',cc2));
 kerns(eneu,eneu) = (kerntmp);
 
@@ -201,13 +198,13 @@ targinfo = [];
 targinfo.sources = merge(cgrph.echnks(eneu)).r(:,:); 
 targinfo.n = merge(cgrph.echnks(eneu)).n(:,:);
 U = hfmm2d(1e-12,ks(1),srcinfo,0,targinfo.sources,2);
-bdrydatat = [U.pottarg; -sum(targinfo.n.*U.gradtarg,1)];
+bdrydatat = [U.pottarg; sum(targinfo.n.*U.gradtarg,1)];
 bdrydata = [bdrydatad;bdrydatat(:)];
 
 sol1 = sys\bdrydata;
 
 cormat = chunkermat(cgrph,kerns,struct("corrections",true));
-sysapply = @(sigma) chunkermatapply(cgrph,kerns,1,sigma,cormat);
+sysapply = @(sigma) sigma + chunkermatapply(cgrph,kerns,sigma,cormat);
 
 xapply1 = sys*bdrydata;
 xapply2 = sysapply(bdrydata);
@@ -216,18 +213,18 @@ fprintf('relative matrix free apply error %5.2e\n',relerr);
 assert(relerr < 1e-10)
 
 start = tic;
-fkernd = 2*kernel('helm', 'd', ks(1));
+fkernd = -2*kernel('helm', 'd', ks(1));
 iddir = 1:merge(cgrph.echnks(edir)).npt;
 uscat1 = chunkerkerneval(merge(cgrph.echnks(edir)),fkernd,sol1(iddir), ...
     targets(:,in));
 
-kerntmp = @(s,t) -chnk.helm2d.kern(ks(1),s,t,'trans_rep',[1,1]);
+kerntmp = @(s,t) chnk.helm2d.kern(ks(1),s,t,'trans_rep',trepcf);
 fkern  = kernel(kerntmp);
 idneu = (1:2*merge(cgrph.echnks(eneu)).npt) + merge(cgrph.echnks(edir)).npt;
 uscat1 = uscat1 - chunkerkerneval(merge(cgrph.echnks(eneu)),fkern, ...
     sol1(idneu),targets(:,in));
 
-kerntmp = @(s,t) -chnk.helm2d.kern(ks(2),s,t,'trans_rep',[1,1]);
+kerntmp = @(s,t) chnk.helm2d.kern(ks(2),s,t,'trans_rep',trepcf);
 fkern  = kernel(kerntmp);
 uscat2 = chunkerkerneval(merge(cgrph.echnks(eneu)),fkern,sol1(idneu), ...
     targets(:,in2)); 
@@ -237,7 +234,7 @@ fprintf('%5.2e s : time for kernel eval (for plotting)\n',t1)
 fkernsrc = kernel('helm','s',ks(1));
 targinfo = []; targinfo.r = targets(:,in); 
 uin1 = fkernsrc.fmm(1e-12,srcinfo,targinfo,charges);
-utot1 = uscat1(:)-uin1(:);
+utot1 = uscat1(:)+uin1(:);
 utot2 = uscat2(:);
 
 figure(3)

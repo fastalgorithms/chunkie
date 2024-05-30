@@ -158,6 +158,7 @@ opdims_mat = zeros(2,nchunkers,nchunkers);
 lchunks    = zeros(nchunkers,1);
 
 %TODO: figure out a way to avoid this nchunkers^2 loop
+fmmall = true;
 for i=1:nchunkers
     
     targinfo = [];
@@ -175,14 +176,23 @@ for i=1:nchunkers
 
         if (size(kern) == 1)
             ftemp = kern.eval(srcinfo,targinfo);
+            fmmall = fmmall && ~isempty(kern.fmm);
         else
             ktmp = kern(i,j).eval;
             ftemp = ktmp(srcinfo,targinfo);
+            fmmall = fmmall && ~isempty(kern(i,j).fmm);
         end   
         opdims = size(ftemp);
         opdims_mat(:,i,j) = opdims;
     end
 end    
+
+if ~fmmall
+    msg = "chunkermatapply: this routine only recommended if fmm" + ...
+        " is defined for all relevant kernels. Consider forming the dense matrix" + ...
+        " or using chunkerflam instead";
+    warning(msg);
+end
 
 irowlocs = zeros(nchunkers+1,1);
 icollocs = zeros(nchunkers+1,1);
@@ -193,7 +203,6 @@ for i=1:nchunkers
    icollocs(i+1) = icollocs(i) + lchunks(i)*opdims_mat(2,1,i);
    irowlocs(i+1) = irowlocs(i) + lchunks(i)*opdims_mat(1,i,1);
 end
-
 
 % apply local corrections and diagonal scaling
 u = cormat*dens;
