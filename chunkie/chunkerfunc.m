@@ -72,7 +72,7 @@ chnkr = chunker(pref); % empty chunker
 ta = 0.0; tb = 2*pi; ifclosed=true;
 chsmall = Inf; nover = 0;
 eps = 1.0e-6;
-lvlr = 'a'; maxchunklen = Inf; lvlrfac = 2;
+lvlr = 'a'; maxchunklen = Inf; lvlrfac = chunker.lvlrfacdefault;
 nout = 1;
 
 if isfield(cparams,'ta')
