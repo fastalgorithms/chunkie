@@ -353,6 +353,9 @@ chnkr.nstor(:,:,1:nch) = normals(chnkr);
 % update weights
 chnkr.wtsstor(:,1:nch) = weights(chnkr);
 
+chnkr = chnkr.refine();
+chnkr = chnkr.sort();
+
 end
 
 function [r,d,d2] = fround(t,m,h,dim)

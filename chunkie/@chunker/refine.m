@@ -18,9 +18,10 @@ function chnkr = refine(chnkr,opts)
 %                   (10*chnkr.nch)
 %       opts.lvlr = level restriction flag ('a'), if 'a', enforce that no
 %                   two adjacent chunks should differ in length by more 
-%                   than a factor of approx 2 (see lvlrfac). if 'n'
+%                   than a factor of approx 2.1 (see lvlrfac). if 'n'
 %                   don't enforce (not recommended)
-%       opts.lvlrfac = (2.0) factor for enforcing level restriction
+%       opts.lvlrfac = (2.1, see chunker.lvlrfacdefault) factor for
+%                      enforcing level restriction
 %       opts.maxchunklen = maximum chunk length (Inf). enforce that no
 %                   chunk is larger than this maximum length
 %       opts.nover = oversample boundary nover times (0)
@@ -44,7 +45,7 @@ if nargin < 2
 end
 
 lvlr = 'a';
-lvlrfac = 2.0;
+lvlrfac = chunker.lvlrfacdefault;
 maxchunklen = Inf;
 nover = 0;
 splitchunks = [];

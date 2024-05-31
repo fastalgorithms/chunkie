@@ -366,5 +366,9 @@ classdef chunker
     end
     methods(Static)
         obj = chunkerfunc(fcurve,varargin)
+        obj = chunkerpoly(verts,varargin)
+        function lvlrfac = lvlrfacdefault()
+            lvlrfac = 2.1;
+        end
     end
 end

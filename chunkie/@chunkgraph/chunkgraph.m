@@ -44,8 +44,9 @@ classdef chunkgraph
             obj.verts = verts;
 
             nverts = size(verts(:,:),2);
-            assert(nverts == size(edgesendverts,2),'edge specification not compatible with number of vertices');
-            if (size(edgesendverts,1) ~= 2)
+            if (size(edgesendverts,1) ~= 2 || any(edgesendverts(:) <= 0))
+                assert(nverts == size(edgesendverts,2),'edge specification not compatible with number of vertices');
+
                 nedge = size(edgesendverts,1);
                 edgevertends_new = zeros(2,nedge);
                 nedge = size(edgesendverts,1);
