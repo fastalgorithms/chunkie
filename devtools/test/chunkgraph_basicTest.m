@@ -94,10 +94,12 @@ x1 = linspace(-pi,pi);
 targs = [xx(:).'; yy(:).'];
 
 ids = chunkgraphinregion(cg,targs);
+ids2 = chunkgraphinregion(cg,{x1,x1});
 
 idstrue = polygonids(cg,xx,yy);
 
 assert(nnz(ids(:)-idstrue(:)) == 0)
+assert(nnz(ids(:)-ids2(:)) == 0)
 
 % nested triangles
 
