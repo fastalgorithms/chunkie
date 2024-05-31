@@ -1,4 +1,4 @@
-function w = barywts(k)
+function w = barywts(k,x)
 %LEGE.BARYWTS
 %
 % returns the weights for barycentric Lagrange interpolation
@@ -16,7 +16,9 @@ function w = barywts(k)
 %
 % where x(j) is the jth Legendre node of order k
 
-x = lege.exps(k);
+if nargin < 2
+    x = lege.exps(k);
+end
 
 xx = bsxfun(@minus,x,x.');
 xx(1:k+1:end) = 1;

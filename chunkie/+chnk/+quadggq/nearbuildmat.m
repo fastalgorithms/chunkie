@@ -1,5 +1,5 @@
 function submat = nearbuildmat(r,d,n,d2,data,i,j,fkern,opdims,...
-				      xs1,whts1,ainterp1kron,ainterp1)
+				      xs1,whts1,ainterp1kron,ainterp1,corrections,wtss)
 %CHNKR.QUADGGQ.NEARBUILDMAT
 
 % grab specific boundary data
@@ -12,6 +12,12 @@ if(isempty(data))
 else
     dd = data(:,:,i);
 end
+
+if nargin < 14
+    corrections = false;
+    wtss = [];
+end
+
 % interpolate boundary info
 
 % get relevant coefficients
@@ -72,6 +78,13 @@ dsdtndim2 = dsdtndim2(:);
 % get kernel values and then premultiply by interpolating matrix
 smatbig = fkern(srcinfo,targinfo);
 submat = smatbig*diag(dsdtndim2)*ainterp1kron;
+
+if corrections
+    srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; 
+    srcinfo.d2 = d2s; srcinfo.n = ns; 
+
+    wtsj = wtss(:,j);
+    submat = submat - fkern(srcinfo,targinfo).*(wtsj(:).');
 
  end
    

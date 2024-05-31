@@ -296,12 +296,19 @@ classdef chunkgraph
             sourceinfo.d2= d2s;
             sourceinfo.w = ws;
         end
-            
+        function inds = edgeinds(obj,edgelist)
+            ladr = cumsum([1,obj.echnks.npt]);
+            inds = [];
+            for j = 1:length(edgelist)
+                ej = edgelist(j);
+                inds = [inds,ladr(ej):(ladr(ej+1)-1)];
+            end
+        end
+
         % defined in other files 
         spmat = build_v2emat(obj)
     end
 
     methods(Static)
-        
     end
 end

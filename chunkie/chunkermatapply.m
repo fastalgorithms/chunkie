@@ -1,7 +1,7 @@
-function u = chunkermatapply(chnkr,kern,dval,dens,cormat,opts)
+function u = chunkermatapply(chnkr,kern,dens,cormat,opts)
 %CHUNKERMATAPPLY - apply chunkermat system on chunker defined by kern
 %
-% Syntax:  u = chunkermatapply(chnkr,kern,dval,dens,sigma,opts)
+% Syntax:  u = chunkermatapply(chnkr,kern,dens,sigma,opts)
 %
 % Input:
 %   chnkobj - chunker object describing boundary
@@ -14,13 +14,6 @@ function u = chunkermatapply(chnkr,kern,dval,dens,cormat,opts)
 %                ptinfo.n - unit normals (2,:)
 %                ptinfo.d2 - second derivative in underlying
 %                     parameterization (2,:)
-%   dval - (default 0.0) float or float array. Let A be the matrix 
-%           corresponding to on-curve convolution with the provided kernel. 
-%           If a scalar is provided, the system matrix is 
-%                   A + dval*eye(size(A))  
-%           If a vector is provided, it should be length size(A,1). The
-%           system matrix is then
-%                   A + diag(dval)
 %   dens - density on boundary, should have size opdims(2) x k x nch
 %          where k = chnkr.k, nch = chnkr.nch, where opdims is the 
 %           size of kern for a single src,targ pair
@@ -120,10 +113,10 @@ elseif ~isa(kern,'kernel')
     error(msg);
 end
     
-if nargin < 5
+if nargin < 4
     cormat = [];
 end
-if nargin < 6
+if nargin < 5
     opts = [];
 end
 
@@ -165,6 +158,7 @@ opdims_mat = zeros(2,nchunkers,nchunkers);
 lchunks    = zeros(nchunkers,1);
 
 %TODO: figure out a way to avoid this nchunkers^2 loop
+fmmall = true;
 for i=1:nchunkers
     
     targinfo = [];
@@ -182,14 +176,23 @@ for i=1:nchunkers
 
         if (size(kern) == 1)
             ftemp = kern.eval(srcinfo,targinfo);
+            fmmall = fmmall && ~isempty(kern.fmm);
         else
             ktmp = kern(i,j).eval;
             ftemp = ktmp(srcinfo,targinfo);
+            fmmall = fmmall && ~isempty(kern(i,j).fmm);
         end   
         opdims = size(ftemp);
         opdims_mat(:,i,j) = opdims;
     end
 end    
+
+if ~fmmall
+    msg = "chunkermatapply: this routine only recommended if fmm" + ...
+        " is defined for all relevant kernels. Consider forming the dense matrix" + ...
+        " or using chunkerflam instead";
+    warning(msg);
+end
 
 irowlocs = zeros(nchunkers+1,1);
 icollocs = zeros(nchunkers+1,1);
@@ -201,9 +204,8 @@ for i=1:nchunkers
    irowlocs(i+1) = irowlocs(i) + lchunks(i)*opdims_mat(1,i,1);
 end
 
-
 % apply local corrections and diagonal scaling
-u = dval*dens + cormat*dens;
+u = cormat*dens;
 
 % apply smooth quadratures
 if size(kern) == 1
