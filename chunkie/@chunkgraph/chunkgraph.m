@@ -107,6 +107,12 @@ classdef chunkgraph
                 if (numel(fchnks)<i || isempty(fchnks{i}))
                     i1 = edgesendverts(1,i);
                     i2 = edgesendverts(2,i);
+                    if (i1 == i2)
+                        msg = "chunkgraph constructor: connecting a " + ...
+                            "vertex to itself by a line " + ...
+                            "may have unexpected behavior";
+                        warning(msg);
+                    end
                     v1 = verts(:,i1);
                     v2 = verts(:,i2);
                     fcurve = @(t) chnk.curves.linefunc(t,v1,v2);
@@ -115,24 +121,37 @@ classdef chunkgraph
                     %chnkr.vert = [v1,v2];
                     echnks(i) = chnkr;
                 elseif (~isempty(fchnks{i}) && isa(fchnks{i},'function_handle'))
-                    [vs,~,~] =fchnks{i}([0,1]);
+                    vs =fchnks{i}([0,1]);
                     chnkr = chunkerfunc(fchnks{i},cploc,pref);
                     chnkr = sort(chnkr);
                     i1 = edgesendverts(1,i);
                     i2 = edgesendverts(2,i);
-                    vfin0 = verts(:,i1);
-                    vfin1 = verts(:,i2);
-                    r0 = vs(:,1);
-                    r1 = vfin0;
-                    scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
-                    xdfin = vfin1(1)-vfin0(1);
-                    ydfin = vfin1(2)-vfin0(2);
-                    tfin = atan2(ydfin,xdfin);
-                    xdini = vs(1,2)-vs(1,1);
-                    ydini = vs(2,2)-vs(2,1);
-                    tini = atan2(ydini,xdini);
-                    trotat = tfin - tini;
-                    chnkr = move(chnkr,r0,r1,trotat,scale);
+                    if i1 ~= i2
+                        vfin0 = verts(:,i1);
+                        vfin1 = verts(:,i2);
+                        r0 = vs(:,1);
+                        r1 = vfin0;
+                        scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
+                        xdfin = vfin1(1)-vfin0(1);
+                        ydfin = vfin1(2)-vfin0(2);
+                        tfin = atan2(ydfin,xdfin);
+                        xdini = vs(1,2)-vs(1,1);
+                        ydini = vs(2,2)-vs(2,1);
+                        tini = atan2(ydini,xdini);
+                        trotat = tfin - tini;
+                        chnkr = move(chnkr,r0,r1,trotat,scale);
+                    else
+                        vfin = verts(:,i1);
+                        if norm(vs(:,1)-vs(:,2))/max(abs(chnkr.r(:))) > 1e-14
+                            msg = "chunkgraph constructor: edge " + ...
+                            num2str(i) + " is defined as a loop but " + ...
+                            "curve defining the edge does not reconnect " + ...
+                            "to high precision";
+                            warning(msg);
+                        end
+                        chnkr = move(chnkr,zeros(size(vs(:,1))),vfin-vs(:,1),0,1);
+                    end
+
                     echnks(i) = chnkr;
                 end
             end
