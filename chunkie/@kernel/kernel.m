@@ -58,6 +58,8 @@ classdef kernel
         sing           % Singularity type
         splitinfo      % Kernel-split information
         opdims = [0 0] % Dimension of the operator
+        isnan  = false % Boolean, determines if NaN kernel
+        iszero = false % Boolean, determines if zero kernel
 
     end
 
@@ -83,6 +85,8 @@ classdef kernel
                       obj = kernel.elast2d(varargin{:});
                   case {'zeros', 'zero', 'z'}
                       obj = kernel.zeros(varargin{:});
+                  case {'nans', 'nan'}
+                      obj = kernel.nans(varargin{:});
                   case {'axis sym helmholtz', 'axissymh', 'axissymhelm'}
                       obj = kernel.axissymhelm2d(varargin{:});
                   case {'axis sym helmholtz difference', 'axissymhdiff' ...
@@ -93,6 +97,15 @@ classdef kernel
               end
           elseif ( isa(kern, 'function_handle') )
               obj.eval = kern;
+              try
+                  s = []; s.r = randn(2,1); s.d = randn(2,1); 
+                  s.d2 = randn(2,1); s.n = randn(2,1);
+                  t = []; t.r = randn(2,1); t.d = randn(2,1); 
+                  t.d2 = randn(2,1); t.n = randn(2,1);
+                  obj.opdims = size(kern(s,t));
+              catch
+                  % unable to determine opdims automatically, set empty
+              end
           elseif ( isa(kern, 'kernel') )
               if (numel(kern) == 1)
 		obj = kern;
@@ -125,6 +138,7 @@ classdef kernel
         obj = axissymhelm2d(varargin);
         obj = axissymhelm2ddiff(varargin);
         obj = zeros(varargin);
+        obj = nans(varargin);
 
     end
 
@@ -132,6 +146,10 @@ end
 
 function K = interleave(kerns)
 %INTERLEAVE   Create a kernel from a matrix of kernels by interleaving.
+
+if any([kerns.isnan])
+    error("kernel.interleave: interleave not supported for nan kernels");
+end
 
 [m, n] = size(kerns);
 
@@ -291,5 +309,14 @@ end
 if ( all(cellfun('isclass', {kerns.fmm}, 'function_handle')) )
     K.fmm  = @fmm_;
 end
+
+% 
+if all([kerns.iszero])
+    K = kernel.zeros(opdims(1),opdims(2));
+else
+    K.iszero = false;
+end
+
+
 
 end
