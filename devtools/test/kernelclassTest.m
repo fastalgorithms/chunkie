@@ -89,3 +89,12 @@ fprintf('relative frobenius error %5.2e\n',relerr);
 
 assert(relerr < 1e-11);
 
+nankern = kernel.nans();
+assert(nankern.isnan);
+
+kerntmp = kernd + nankern;
+assert(kerntmp.isnan);
+
+kerntmp = nan*kerns;
+assert(kerntmp.isnan);
+

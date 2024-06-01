@@ -186,7 +186,7 @@ for i=1:nchunkers
     targinfo = [];
    	targinfo.r = chnkrs(i).r(:,2); targinfo.d = chnkrs(i).d(:,2); 
    	targinfo.d2 = chnkrs(i).d2(:,2); targinfo.n = chnkrs(i).n(:,2);
-    lchunks(i) = size(chnkrs(i).r(:,:),2);
+    lchunks(i) = chnkrs(i).npt;
     
     for j=1:nchunkers
         

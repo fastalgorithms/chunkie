@@ -103,6 +103,9 @@ t1 = toc(start);
 in = in1 & ~in2;
 out = ~in;
 
+ids= chunkgraphinregion(cgrph,{xtarg,ytarg});
+nnz(in-(ids==2))
+
 fprintf('%5.2e s : time to find points in domain\n',t1)
 
 % compute layer potential based on oversample boundary
@@ -118,6 +121,15 @@ idneu = (1:merge(cgrph.echnks(eneu)).npt) + merge(cgrph.echnks(edir)).npt;
 uscat = uscat + chunkerkerneval(merge(cgrph.echnks(eneu)),fkern, ...
     sol1(idneu),targets(:,in)); 
 t1 = toc(start);
+
+nedge = length(cgrph.echnks); nregion = length(cgrph.regions);
+kernsplot(nregion,nedge) = kernel();
+kernsplot([1,3],:) = kernel.nans();
+kernsplot(2,edir) = -2*kernel('helm','d',zk);
+kernsplot(2,eneu) = 2*kernel('helm','s',zk);
+
+uscat_new = chunkerkerneval(cgrph,kernsplot,sol1,targets);
+
 
 fprintf('%5.2e s : time for kernel eval (for plotting)\n',t1)
 fkernsrc = kernel('helm','s',zk);
@@ -155,7 +167,7 @@ relerr = max(abs(utot));
 fprintf('relative field error %5.2e\n',relerr);
 assert(relerr < 1e-4)
 
-%
+%%
 % dirichlet and transmission test
 nregions = 2;
 ks = [1.1;2.1]*30;
@@ -221,7 +233,7 @@ uscat1 = chunkerkerneval(merge(cgrph.echnks(edir)),fkernd,sol1(iddir), ...
 kerntmp = @(s,t) chnk.helm2d.kern(ks(1),s,t,'trans_rep',trepcf);
 fkern  = kernel(kerntmp);
 idneu = (1:2*merge(cgrph.echnks(eneu)).npt) + merge(cgrph.echnks(edir)).npt;
-uscat1 = uscat1 - chunkerkerneval(merge(cgrph.echnks(eneu)),fkern, ...
+uscat1 = uscat1 + chunkerkerneval(merge(cgrph.echnks(eneu)),fkern, ...
     sol1(idneu),targets(:,in));
 
 kerntmp = @(s,t) chnk.helm2d.kern(ks(2),s,t,'trans_rep',trepcf);
@@ -231,10 +243,24 @@ uscat2 = chunkerkerneval(merge(cgrph.echnks(eneu)),fkern,sol1(idneu), ...
 t1 = toc(start);
 fprintf('%5.2e s : time for kernel eval (for plotting)\n',t1)
 
-fkernsrc = kernel('helm','s',ks(1));
+kernsplotdt(length(cgrph.regions),length(cgrph.echnks)) = kernel();
+kernsplotdt(1,edir) = kernel.nans(1,1);
+kernsplotdt(1,eneu) = kernel.nans(1,2);
+kernsplotdt(2,edir) = -2*kernel('helm','d',ks(1));
+kernsplotdt(3,edir) = kernel.zeros();
+kernsplotdt(2,eneu) = kernel(@(s,t) chnk.helm2d.kern(ks(1),s,t,'trans_rep',trepcf));
+kernsplotdt(3,eneu) = kernel(@(s,t) chnk.helm2d.kern(ks(2),s,t,'trans_rep',trepcf));
+
+uscat_new = chunkerkerneval(cgrph,kernsplotdt,sol1, ...
+    targets); 
+
+assert(norm(uscat1-uscat_new(in))/norm(uscat1) < 1e-13)
+assert(norm(uscat2-uscat_new(in2))/norm(uscat2) < 1e-5)
+
+kernsrc = kernel('helm','s',ks(1));
 targinfo = []; targinfo.r = targets(:,in); 
 uin1 = fkernsrc.fmm(1e-12,srcinfo,targinfo,charges);
-utot1 = uscat1(:)+uin1(:);
+utot1 = uscat1(:)-uin1(:);
 utot2 = uscat2(:);
 
 figure(3)
