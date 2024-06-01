@@ -50,7 +50,7 @@ assert(nnz(cg1.v2emat-cg2.v2emat) == 0);
 
 % testing multiply connected
 
-verts = [1 0 -1 4 3 2; 0 1 0 0 1 0]; 
+verts = [1 0 -1 2 0 -2; 0 1 0 -0.5 2 -0.5]; 
 edgends = [1 2 3 4 5 6; 2 3 1 5 6 4];
 cg1 = chunkgraph(verts,edgends);
 
