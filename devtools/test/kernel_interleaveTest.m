@@ -4,6 +4,19 @@ rng(iseed);
 
 addpaths_loc();
 
+% dumb test 
+
+K0 = [kernel.lap2d('d'), kernel.nans()];
+didfail = false;
+try 
+    K0 = interleave(K0);
+catch
+    didfail = true;
+end
+assert(didfail)
+
+% solver test
+
 zk = 1.1;
 
 cparams = [];
