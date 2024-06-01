@@ -2,7 +2,7 @@ function [] = startup(varargin)
 
 opts = [];
 if(nargin == 1)
-   opts = nargin;
+   opts = varargin{1};
 end
 
 ifflam = true;
@@ -57,7 +57,6 @@ end
 if(iffmm)
   if(exist('chunkie/fmm2d/matlab','dir'))
       cd './chunkie/fmm2d';
-      !make clean;
       !make matlab;  
       addpath './matlab';
       cd matlab;
