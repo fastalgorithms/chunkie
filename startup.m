@@ -1,3 +1,9 @@
+iremopts = 0;
+if ~exist('opts','var')
+    opts = [];
+    iremopts = 1;
+end
+
 ifflam = true;
 if(isfield(opts,'ifflam'))
    ifflam = opts.ifflam;
@@ -72,3 +78,9 @@ if(iffmm)
       fprintf('Manual installation required');
   end
 end
+
+clear ifflam iftest iffmm0 cmdout cmdout2 icheck iffmm path1 status
+if iremopts
+    clear opts
+end
+clear iremopts
