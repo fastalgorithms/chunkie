@@ -38,9 +38,9 @@ addpath('./chunkie')
 if(exist('./chunkie/FLAM/startup.m','file'))
     run 'chunkie/FLAM/startup.m';
 else
-    msg = "STARTUP: warning FLAM not found in usual location " + ...
+    msg = "CHUNKIE STARTUP: warning FLAM not found in usual location\n " + ...
         "Check that the submodule was included. ";
-    warning(msg);
+    warning('CHUNKIESTARTUP:flamnotfoundwarn',msg);
 end
 
 % install fmm2d if needed, add to path if found
@@ -68,15 +68,15 @@ if(exist('chunkie/fmm2d/matlab','dir'))
                 testfmm = true; % test if new install
 
             else    
-                msg = "STARTUP: unable to find a suitable compiler for FMM2D. " + ...
+                msg = "CHUNKIE STARTUP: unable to find a suitable compiler for FMM2D. " + ...
                     "See manual install instructions on github";
-                warning(msg)
+                warning('CHUNKIESTARTUP:compilerwarn',msg)
             end
                 
         else
-            msg = "STARTUP: automatic install not supported on your operating system. " + ...
+            msg = "CHUNKIE STARTUP: automatic install not supported on your operating system. " + ...
                 "See manual install instructions on github";
-            warning(msg)
+            warning('CHUNKIESTARTUP:OSnosupport',msg)
         end        
     end
     cd matlab;
@@ -86,31 +86,26 @@ if(exist('chunkie/fmm2d/matlab','dir'))
     cd ../../../;
 else
     if fmmremex || fmmrecompile
-        msg = "STARTUP: fmm2d reinstall requested but source files not found in usual location" + ...
+        msg = "CHUNKIE STARTUP: fmm2d reinstall requested but source files not found in usual location.\n" + ...
         "Check that the submodule was included. ";
-        warning(msg);
+        warning('CHUNKIESTARTUP:fmm2dsourcenotfoundwarn',msg);
     end
-    dir1 = pwd();
     icheck = exist(['fmm2d.' mexext], 'file');
     if icheck == 3
-        fname = which(['fmm2d.' mexext]);
-        dir0 = dir(fname);
-        msg = "STARTUP: fmm2d mex file found on PATH but not in usual location " + ...
-        "adding " + dir0.folder + " to path";
-        warning(msg);
-        addpath(dir0.folder);
+        msg = "CHUNKIE STARTUP: fmm2d mex file found on PATH but not in usual location " + ...
+        "There may be unexpected behavior if this is a different fmm2d version or if other fmm2d MATLAB files are not known to MATLAB.";
+        warning('CHUNKIESTARTUP:fmm2ddifflocwarn',msg);
         
         if testfmm
-            msg = "STARTUP: testing fmm2d not supported if not installed in usual location";
-            warning(msg);
+            msg = "CHUNKIE STARTUP: testing fmm2d not supported if not installed in usual location";
+            warning('CHUNKIESTARTUP:fmm2dnotestwarn',msg);
         end
     else
-        msg = "STARTUP: warning fmm2d folder not found in usual location " + ...
-            "and no fmm2d mex file is known to MATLAB. If mex file exists " + ...
-            " in another location, add that location to path. " + ...
-        "Else, check that the submodule was included. " + ...
-        "Else, check that startup is run from its folder. ";
+        msg = ['CHUNKIE STARTUP: warning fmm2d folder not found in usual location ' ...
+            'and no fmm2d mex file is known to MATLAB.\n If mex file exists ' ...
+            'in another location, add that location to path.\n '...
+            'Else, check that the submodule was included. '];
         
-        warning(msg);
+        warning('CHUNKIESTARTUP:fmm2dmexnotfoundwarn',msg);
     end
 end
