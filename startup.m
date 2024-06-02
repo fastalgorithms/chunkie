@@ -1,15 +1,13 @@
-function [] = startup(varargin)
-
-opts = [];
-if(nargin == 1)
-   opts = varargin{1};
-end
-
 ifflam = true;
 if(isfield(opts,'ifflam'))
    ifflam = opts.ifflam;
 end
 
+iftest= false;
+
+if isfield(opts, 'iftest')
+  iftest = opts.iftest;
+end
 
 addpath('./chunkie')
 if(ifflam)
@@ -26,6 +24,7 @@ if(isfield(opts,'iffmm'))
 end
 
 iffmm = true;
+
 if(iffmm0)
     if ismac || isunix
         [status,cmdout] = system('which gfortran');
@@ -57,10 +56,16 @@ end
 if(iffmm)
   if(exist('chunkie/fmm2d/matlab','dir'))
       cd './chunkie/fmm2d';
-      !make matlab;  
       addpath './matlab';
+      icheck = exist(['fmm2d.' mexext], 'file');
+      if icheck ~=3
+        !make matlab;  
+      end
+      
       cd matlab;
-      runtests;
+      if iftest
+        runtests;
+      end
       cd ../../../;
   else
       fprintf('Fmm installation not in standard location\n');
