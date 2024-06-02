@@ -52,6 +52,7 @@ if(exist('chunkie/fmm2d/matlab','dir'))
         if ismac || isunix
             [status,cmdout] = system('which gfortran');
             if(~status)
+                fprintf('------- chunkIE startup: building fmm2d ----- \n');
                 fprintf('fortran compiler found at: %s\n',cmdout);
                 iffmm = true;
                 path1 = getenv('PATH');
