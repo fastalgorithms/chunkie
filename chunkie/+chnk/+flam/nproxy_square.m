@@ -1,4 +1,4 @@
-function npxy = nproxy_square(kern,width,opts)
+function npxy = nproxy_square(kern, width, opts)
 %CHNK.FLAM.NPROXY_SQUARE find the number of points to place on a
 % side of a proxy surface for given kernel, width, and tolerance
 %
@@ -50,11 +50,21 @@ function npxy = nproxy_square(kern,width,opts)
     targinfo.d2 = zeros(2,npxy);
     targinfo.n = [-ptau(2,:);ptau(1,:)] ./ sqrt(sum(ptau.^2,1));
 
+    if npxy > nsrc
+      nsrc = ceil(1.2*npxy);
+      srcinfo = [];
+      srcinfo.r = [-0.5;-0.5]*width + rand(2,nsrc)*width;
+  
+      srcinfo.d = randn(2,nsrc);
+      srcinfo.d2 = randn(2,nsrc);
+      srcinfo.n = [-srcinfo.d(2,:);srcinfo.d(1,:)] ./ sqrt(sum(srcinfo.d.^2,1));
+    end
+
     mat = proxy_square_mat(kern,srcinfo,targinfo);
 
     [sk,~] = id(mat,rank_or_tol);
     
-    if length(sk) < min(nsrc,npxy)
+    if length(sk) < npxy 
       npxy = floor((length(sk)-1)/4+1.1)*4;
       return;
     end
