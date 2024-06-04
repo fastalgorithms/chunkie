@@ -51,9 +51,7 @@ edge2verts(18,17)= -1;
 fchnks = [];
 
 
-prefs      = [];
-% prefs.chsmall = 1d-4;
-[cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks);
 
 vstruc = procverts(cgrph);
 cgrph = balance(cgrph);

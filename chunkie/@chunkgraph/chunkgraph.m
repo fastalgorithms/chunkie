@@ -1,17 +1,65 @@
 classdef chunkgraph
-%CHUNKGRAPH chunk graph class for storing complex domains
+%CHUNKGRAPH chunk graph class which describes a domain using "graph"
+% terminology. Singular points of the geometry (or of the
+% boundary value problem) are the vertices of the graph. Smooth, regular
+% curves are the edges of the graph. A vertex must be the end point of at
+% least one edge. The interiors of distinct edges should not intersect. For
+% such domains, a vertex should be introduced at the point of intersection
+% and the curves broken so that they do not intersect.
 %
-% We describe a complex domain by a planar graph. Smooth boundary components
-% (discretized by chunkers) specify the edges of the graph and the
-% coordinates of free ends of the edges or points where the ends of multiple
-% edges meet specify the vertices. The interiors of distinct edges are not 
-% allowed to intersect (i.e. intersecting curves should be split at the
-% point where they intersect. 
+% Syntax:
 %
-% The chunkgraph is specified by an array of chunkers called echnks (the
-% edges), an array of points called verts (the vertices), and an array of
-% indices specifying the vertices at the left and right ends of any 
+%      cg = chunkgraph(verts,edgesendverts,fchnks,cparams,pref)
 %
+% will construct a chunkgraph.
+%
+% Input:
+%   verts - (2 x nverts) array specifying vertex locations, verts(:,j) is
+%     the jth vertex.
+%   edgesendverts - (2 x nedges) array specifying starting and ending
+%     vertices of an edge. 
+% Optional input:
+%   fchnks - (nedges x 1) cell array of function handles, specifying a
+%     smooth curve to connect the given vertices. fchnk{j} should be a
+%     function in the format expected by CHUNKERFUNC but with the default
+%     that fchnk{j} is a function from [0,1] to the curve. If the specified
+%     curve does not actually connect the given vertices, the curve will be
+%     translated, rotated, and scaled to connect them. If the specified
+%     curve should be a loop, it is only translated to start at the correct
+%     vertex. 
+%   cparams - struct or (nedges x 1) cell array of structs specifying curve
+%     parameters in the format expected by CHUNKERFUNC. 
+%   pref - struct specifying CHUNKER preferences. 
+%  
+%   Note:
+%
+%   if these inputs are specified, then 
+%               echnks(j) = chunkerfun(fchnks{j},cparams{j},pref)
+%   if no function handle is specified, then echnks(j) will be the
+%   straight line connecting the given vertices. 
+%
+%  Class properties:
+%
+%  verts = 2 x nverts array of vertex locations 
+%  edgesendverts = 2 x nedges array of starting and ending vertices for
+%      each edge 
+%  echnks = nedge x 1 array of chunker objects discretizing each edge curve
+%  regions = nregions x 1 cell array specifying region information for the
+%      given graph structure. A region is a connected subset of R^2 
+%      specified by its bounding edges. If the jth region is simply 
+%      connected then abs(regions{j}{1}) is the list of edges which 
+%      comprise the boundary of region j. The sign of the edges indicate
+%      the direction of traversal for that edge. The edges are ordered
+%      according to an orientation based on nesting. The boundary of the
+%      outermost (unbounded) region is traversed clockwise. 
+%  vstruc = nverts x 1 cell array. vstruc{j}{1} gives a list of edges which
+%      are incident to a vertex. vstruc{j}{2} is a list of the same length
+%      consisting of +1 and -1. If +1 then the corresponding edge ends at
+%      the vertex, if -1 it begins at the vertex.
+%  v2emat = sparse nedge x nverts matrix, akin to a connectivity matrix.
+%      the entry v2emat(i,j) is 1 if edge i ends at vertex j, it is -1 if
+%      edge i starts at vertex j, and it is 2 if edge i starts and ends at
+%      vertex j.
 % 
     properties(SetAccess=public)
         verts
@@ -35,6 +83,8 @@ classdef chunkgraph
     
     methods
         function obj = chunkgraph(verts, edgesendverts, fchnks, cparams, pref)
+            %CHUNKGRAPH constructor. Documented above.
+            %
             if (nargin == 0)
                 return
             end
@@ -56,6 +106,8 @@ classdef chunkgraph
                 end
                 edgesendverts = edgevertends_new;
                 assert(all(edgesendverts(:) ~= 0),'edge specification had an error');
+            else
+                nedge = size(edgesendverts,2);
             end 
 
             obj.edgesendverts = edgesendverts;
@@ -67,44 +119,35 @@ classdef chunkgraph
             end
             
             if (nargin < 4)
-                cploc = [];
-                cploc.ta = 0;
-                cploc.tb = 1;
-                cploc.ifclosed = 0;
-                cploc.nover = 1;
-                cploc.eps = 1.0d-10;
-                cploc.lvlr = 'a';
-            else
-                cploc = cparams;
-                %mandatory settings
-                cploc.ta = 0;
-                cploc.tb = 1;
-                cploc.ifclosed = 0;
-                if (~isfield(cparams,'lvlr'))
-                    cploc.lvlr = 'a';
-                end
-                if (~isfield(cparams,'eps'))
-                    cploc.eps = 1.0d-10;
-                end
-                if (~isfield(cparams,'nover'))
-                    cploc.nover = 1;
-                end
+                cparams = [];
             end
-            
-            if nargin <= 4
+            msg = "CHUNKGRAPH: cparams must be struct or nedge cell array of structs";
+            assert(isempty(cparams) || isstruct(cparams) || (iscell(cparams) && length(cparams) == nedge),msg);
+
+            if nargin < 5
                 pref = [];
-                pref.nchmax = 10000;
-                pref.k = 16;
             end
-            
-            if ~isfield(pref, 'nchmax')
-                pref.nchmax = 10000;
-            end
-            
             
             echnks = chunker.empty();
             for i=1:size(edgesendverts,2)
                 if (numel(fchnks)<i || isempty(fchnks{i}))
+                    if iscell(cparams)
+                        cploc = cparams{i};
+                    else
+                        cploc = cparams;
+                    end
+                    % set cploc.ifclosed in a way that makes sense
+                    cploc.ifclosed = false;
+                    % chunkgraph edges need at least 4 chunks
+                    if isfield(cploc,'nchmin')
+                        cploc.nchmin = max(4,cploc.nchmin);
+                    else
+                        cploc.nchmin = 4;
+                    end
+                    % line function uses these ta and tb
+                    cploc.ta = 0;
+                    cploc.tb = 1;
+                    
                     i1 = edgesendverts(1,i);
                     i2 = edgesendverts(2,i);
                     if (i1 == i2)
@@ -121,7 +164,32 @@ classdef chunkgraph
                     %chnkr.vert = [v1,v2];
                     echnks(i) = chnkr;
                 elseif (~isempty(fchnks{i}) && isa(fchnks{i},'function_handle'))
-                    vs =fchnks{i}([0,1]);
+                    if iscell(cparams)
+                        cploc = cparams{i};
+                    else
+                        cploc = cparams;
+                    end
+                    % set cploc.ifclosed in a way that makes sense
+                    cploc.ifclosed = false;
+                    % chunkgraph edges need at least 4 chunks
+                    if isfield(cploc,'nchmin')
+                        cploc.nchmin = max(4,cploc.nchmin);
+                    else
+                        cploc.nchmin = 4;
+                    end
+                    
+                    ta = 0; tb = 1;
+                    if isfield(cploc,'ta')
+                        ta = cploc.ta; 
+                    else
+                        cploc.ta = ta;
+                    end
+                    if isfield(cploc,'tb')
+                        tb = cploc.tb; 
+                    else
+                        cploc.tb = tb;
+                    end
+                    vs =fchnks{i}([ta,tb]);
                     chnkr = chunkerfunc(fchnks{i},cploc,pref);
                     chnkr = sort(chnkr);
                     i1 = edgesendverts(1,i);
@@ -242,6 +310,8 @@ classdef chunkgraph
             regions = rgnout;
             
             obj.regions = regions;
+
+            obj = balance(obj);
         end
         function obj = set.verts(obj,val)
             classes = {'numeric'};

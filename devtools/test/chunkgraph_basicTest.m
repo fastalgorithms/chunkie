@@ -30,9 +30,8 @@ for icurve = 1:size(edge2verts,1)
     fchnks{icurve} = @(t) sinearc(t,amp,frq);
 end
 
-prefs = [];
-[cgrph1] = chunkgraph(verts,edge2verts,fchnks,prefs);
-[cgrph2] = chunkgraph(verts,endverts,fchnks,prefs);
+[cgrph1] = chunkgraph(verts,edge2verts,fchnks);
+[cgrph2] = chunkgraph(verts,endverts,fchnks);
 
 assert(nnz(cgrph1.v2emat-cgrph2.v2emat) == 0);
 
@@ -67,9 +66,11 @@ assert(numel(cg1.regions) == 3)
 % testing a loop
 
 verts = [2;1]; edgends = [1;1];
-cfun = @(t) [cos(2*pi*t(:).'); sin(2*pi*t(:).').*sin(pi*t(:).')];
+cfun = @(t) [cos(t(:).'); sin(t(:).').*sin(0.5*t(:).')];
 fchnks = {cfun};
-cg1 = chunkgraph(verts,edgends,fchnks);
+cparams = []; cparams.ta = 0; cparams.tb = 2*pi;
+pref = []; pref.k = 12;
+cg1 = chunkgraph(verts,edgends,fchnks,cparams);
 
 assert(numel(cg1.regions) == 2)
 

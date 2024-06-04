@@ -60,9 +60,8 @@ for icurve = 1:size(edge2verts,1)
 end
 %fchnks = {};
 
-prefs      = [];
 % prefs.chsmall = 1d-4;
-[cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks);
 
 vstruc = procverts(cgrph);
 rgns = findregions(cgrph);
