@@ -14,12 +14,15 @@ curve into a panel-based format (the curve is discretized into
 chunks such that on each chunk a Legendre interpolant in parameter
 space is accurate to some prescribed accuracy).
 - chunkIE has routines for setting up system matrices
-corresponding to logarithmically singular integral equation
-kernels defined on a chunker
+corresponding to logarithmically singular and principal value
+type integral equation kernels defined on a chunker
 - chunkIE is designed to inter-operate with Ken Ho's fast
 linear algebra in MATLAB package (FLAM)
 - chunkIE includes various routines for evaluating layer
 potentials and functions defined on chunkers
+- chunkIE applies a version of Johan Helsing's recursively
+compressed inverse preconditioning (RCIP) scheme for effectively
+treating problems with corners and multiple junctions.
 
 ## Installing chunkIE
 
