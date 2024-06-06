@@ -28,7 +28,6 @@ ifhold = ishold();
 echnks =  obj.echnks;
 regions = obj.regions;
 
-hold on
 
 nr = numel(regions);
 legtext = cell(max(1,nr-1),1);
@@ -67,6 +66,7 @@ for ii=2:numel(regions)
         
     end    
     plot(plyrgn);
+    hold on
 end    
 
 if nr > 1 && iflabel > 0

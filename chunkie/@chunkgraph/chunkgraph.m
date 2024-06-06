@@ -396,6 +396,8 @@ classdef chunkgraph
 
         % defined in other files 
         spmat = build_v2emat(obj)
+        obj = refine(obj,opts)
+        obj = balance(obj)
     end
 
     methods(Static)

@@ -119,6 +119,19 @@ idstrue = polygonids(cg,xx,yy);
 
 assert(nnz(ids(:)-idstrue(:)) == 0)
 
+%% build a chunkgraph and refine 
+
+% adjacent triangles
+
+verts = [1 0 -1 0; 0 1 0 -1]; edgesendverts = [1:3, 3, 4; 2:3, 1, 4, 1];
+cg = chunkgraph(verts,edgesendverts);
+refopts = []; refopts.nover = 1;
+nchs1 = [cg.echnks.nch];
+cg = refine(cg,refopts);
+nchs2 = [cg.echnks.nch];
+
+assert(all(2*nchs1 == nchs2))
+
 function idstrue = polygonids(cg,xx,yy)
 
 verts = cg.verts;
