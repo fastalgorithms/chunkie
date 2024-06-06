@@ -88,6 +88,18 @@ Many routines were modelled after parts of the legeexps.f library (Copyright Vla
 FMMLIB2D (Copyright Leslie Greengard and Zydrunas Gimbutas, Free BSD 3-clause), and Johan Helsing's
 RCIP tutorial (https://arxiv.org/abs/1207.6737)
 
+## Citing this software
+
+If you found this software useful, we ask that you please cite the following
+works
+
+- [This software] see CITATIONS.cff for details
+- [The fast multipole method library] https://github.com/flatironinstitute/fmm2d
+- [The fast direct solver library] Ho, Kenneth L. "FLAM: Fast linear algebra in MATLAB-Algorithms for hierarchical matrices." Journal of Open Source Software 5.51 (2020): 1906.
+- [Quadrature generation routines] Bremer, James, Zydrunas Gimbutas, and Vladimir Rokhlin. "A nonlinear optimization procedure for generalized Gaussian quadratures." SIAM Journal on Scientific Computing 32.4 (2010): 1761-1788.
+- [Corner and multiple junction handling] Helsing, Johan. "Solving integral equations on piecewise smooth boundaries using the RCIP method: a tutorial." Abstract and applied analysis. Vol. 2013. Hindawi, 2013.
+- [Fast multipole method paper] Greengard, Leslie, and Vladimir Rokhlin. "A fast algorithm for particle simulations." Journal of computational physics 73.2 (1987): 325-348.
+
 ## Contributing
 
 Contributions are welcome. See the issues tab or create
