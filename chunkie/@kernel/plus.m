@@ -5,7 +5,7 @@ function f = plus(f,g)
 % or adding a scalar to a kernel class object.
 
 if (isa(g,'kernel') && isa(f,'kernel'))
-  assert(f.opdims(1) == g.opdims(1) && f.opdims(1) == g.opdims(2), ...
+  assert(f.opdims(1) == g.opdims(1) && f.opdims(2) == g.opdims(2), ...
       'kernel dimensions must agree to add');
   f.name = ['custom ',f.name,' ',g.name];
   f.eval = @(varargin) g.eval(varargin{:}) + f.eval(varargin{:});
