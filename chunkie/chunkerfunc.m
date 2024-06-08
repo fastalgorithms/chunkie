@@ -1,4 +1,4 @@
-function chnkr = chunkerfunc(fcurve,cparams,pref)
+function [chnkr,ab] = chunkerfunc(fcurve,cparams,pref)
 %CHUNKERFUNC create a chunker object corresponding to a parameterized curve
 %
 % Syntax: chnkr = chunkerfunc(fcurve,cparams,pref)
@@ -39,12 +39,14 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %       cparams.lvlrfac = factor in level restriction, i.e. check if 
 %               neighboring chunks differ in size by this factor (2.0)
 %       cparams.maxchunklen - maximum length of any chunk (Inf)
+%       cparams.nchmin - minimum number of chunks (0)
 %   pref - chunkerpref object or structure (defaults)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
 %
 % Output:
 %   chnkr - a chunker object containing the discretization of the domain
+%   ab - ab(:,i) are the start and end points of chunk i in parameter space
 %
 % Examples:
 %   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish w/ standard
@@ -73,7 +75,7 @@ ta = 0.0; tb = 2*pi; ifclosed=true;
 chsmall = Inf; nover = 0;
 eps = 1.0e-6;
 lvlr = 'a'; maxchunklen = Inf; lvlrfac = chunker.lvlrfacdefault;
-nout = 1;
+nchmin = 0;
 
 if isfield(cparams,'ta')
     ta = cparams.ta;
@@ -101,6 +103,9 @@ if isfield(cparams,'lvlrfac')
 end
 if isfield(cparams,'maxchunklen')
     maxchunklen = cparams.maxchunklen;
+end
+if isfield(cparams,'nchmin')
+    nchmin = cparams.nchmin;
 end
 
 % discover number of outputs
@@ -412,6 +417,9 @@ end
 %       go ahead and oversample by nover, updating
 %       the adjacency information adjs along the way
 
+if nchmin > 0
+    nover = max(nover,ceil(log2(nchmin/nch)));
+end
 
 if (nover > 0) 
     for ijk = 1:nover
@@ -510,6 +518,23 @@ end
 
 chnkr = chnkr.addchunk(nch);
 
+[~,isort] = sort(ab(1,1:nch));
+ab = ab(:,isort);
+
+adjs(1,1:nch) = 0:(nch-1);
+adjs(2,1:nch) = 2:(nch+1);
+if ifclosed
+    adjs(1,1)=nch;
+    adjs(2,nch)=1;
+else
+    adjs(1,1)=-1;
+    adjs(2,nch)=-1;
+end
+
+if ~ifclosed
+    adjs(1,1) = -1;
+    adjs(2,nch) = -1;
+end
 
 for i = 1:nch
     a=ab(1,i);

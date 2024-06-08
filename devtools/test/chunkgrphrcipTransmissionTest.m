@@ -7,7 +7,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %clear all
-
+clearvars
 addpaths_loc();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -53,9 +53,7 @@ for icurve = 1:ncurve
     fchnks{icurve} = @(t) sinearc(t,amp,frq);
 end
 
-prefs      = [];
-% prefs.chsmall = 1d-4;
-[cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks);
 
 
 vstruc = procverts(cgrph);

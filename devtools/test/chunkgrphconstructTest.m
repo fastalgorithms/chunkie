@@ -65,10 +65,8 @@ for icurve = 1:size(edge2verts,1)
 end
 %fchnks = {};
 
-prefs      = [];
-
-[cgrph1] = chunkgraph(verts,edge2verts,fchnks,prefs);
-[cgrph2] = chunkgraph(verts,edgesendverts,fchnks,prefs);
+[cgrph1] = chunkgraph(verts,edge2verts,fchnks);
+[cgrph2] = chunkgraph(verts,edgesendverts,fchnks);
 
 cgrph1 = balance(cgrph1);
 cgrph2 = balance(cgrph2);

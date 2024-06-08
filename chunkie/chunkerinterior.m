@@ -61,12 +61,14 @@ if isa(ptsobj, "cell")
     grid = true;
     [xx,yy] = meshgrid(x,y);
     pts = [xx(:).'; yy(:).'];
-elseif isa(ptsobj, "chunker")
+elseif isa(ptsobj, "chunker") || isa(ptsobj, "chunkgraph") || ...
+        (isstruct(ptsobj) && isfield(ptsobj,"r"))
     pts = ptsobj.r(:,:);
-elseif isa(ptsobj, "chunkgraph")
-    pts = ptsobj.r(:,:);
-else
+elseif isnumeric(ptsobj)
     pts = ptsobj;
+else
+    msg = "chunkerinterior: input 2 not a recognized type";
+    error(msg);
 end
 
 

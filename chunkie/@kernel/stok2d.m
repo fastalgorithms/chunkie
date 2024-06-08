@@ -55,6 +55,7 @@ switch lower(type)
         obj.type = 'svel';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'spres');
         obj.opdims = [1, 2];
+	obj.sing = 'pv';
 
     case {'strac', 'straction'}
         obj.type = 'svel';
@@ -72,6 +73,7 @@ switch lower(type)
         obj.type = 'dpres';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'dpres');
         obj.opdims = [1, 2];
+	obj.sing = 'hs';
 
     case {'dtrac', 'dtraction'}
         obj.type = 'dtrac';

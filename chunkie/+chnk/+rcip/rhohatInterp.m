@@ -53,7 +53,8 @@ function [rhohatinterp,srcinfo,wts] = rhohatInterp(rhohat,rcipsav,ndepth)
 % wts - a set of weights for integrating functions sampled at these
 %           points
 
-
+				% author: Travis Askham
+  
 rhohatinterp = [];
 srcinfo = [];
 wts = [];

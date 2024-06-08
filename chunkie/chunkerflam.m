@@ -223,7 +223,7 @@ else
     warning('specified quadrature method not available');
     return;
 end
-sp = chunkermat(chnkobj,kern,chunkermatopt);
+sp = chunkermat(chnkobj,kern,chunkermatopt); 
 sp = sp + spdiags(dval,0,nrows,nrows);
 
 % prep and call flam
@@ -264,7 +264,7 @@ end
 optsnpxy = []; optsnpxy.rank_or_tol = rank_or_tol;
 optsnpxy.nsrc = occ;
 
-npxy = chnk.flam.nproxy_square(kern,width,optsnpxy);
+npxy = chnk.flam.nproxy_square(kern, width, optsnpxy);
 
 if npxy == -1
     warning('chunkerflam: proxy failed, defaulting to no proxy')

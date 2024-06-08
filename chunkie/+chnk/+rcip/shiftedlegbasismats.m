@@ -1,5 +1,5 @@
 function [sbclmat,sbcrmat,leftvalmat,rightvalmat,u] = shiftedlegbasismats(k)
-%shiftedlegtimestcoeffmat
+%shiftedlegbasismats
 %
 % utility for rcip. not designed for end-user 
 % 
@@ -15,7 +15,10 @@ function [sbclmat,sbcrmat,leftvalmat,rightvalmat,u] = shiftedlegbasismats(k)
 %                of the form t*\sum_{j=0}^{k-1} c_j P_j(2t+1) 
 % leftvalmat - matrix from function values to value of 
 %              interpolant at left end
+%
 
+% author: Travis Askham
+  
 [t0,~,u,v] = lege.exps(k);
 
 t = (t0+1)/2;

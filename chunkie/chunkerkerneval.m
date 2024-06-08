@@ -1,4 +1,4 @@
-function fints = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
+function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %CHUNKERKERNEVAL compute the convolution of the integral kernel with
 % the density defined on the chunk geometry. 
 %
@@ -7,10 +7,14 @@ function fints = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 % Input:
 %   chnkobj - chunker object or chunkgraph object description of curve
 %   kern - kernel class object or kernel function taking inputs 
-%                      kern(srcinfo,targinfo) 
+%                      kern(srcinfo,targinfo). if matrix of kernels 
+%                      then must have dimensions nregion x nedge or 
+%                      nregion x 1 or 1 x nedge, where nregion is the
+%                      number of regions in the chunkgraph and nedge is the
+%                      number of edges
 %   dens - density on boundary, should have size opdims(2) x k x nch
 %          where k = chnkr.k, nch = chnkr.nch, where opdims is the 
-%           size of kern for a single src,targ pair
+%          size of kern for a single src,targ pair.
 %   targobj - object describing the target points, can be specified as
 %       * array of points
 %       * chunker object
@@ -42,6 +46,9 @@ function fints = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 % output:
 %   fints - opdims(1) x nt array of integral values where opdims is the 
 %           size of kern for a single input (dimension of operator output)
+%   ids - a size nt integer array. if chnkrobj is a chunkgraph, ids(i) is
+%           the ID number of the region containing the ith target. if
+%           chnkrobj is a chunker, then ids is simply an array of all 1s.
 %
 
 % TODO: find a method for using proxy surfaces while still not performing
@@ -51,30 +58,42 @@ function fints = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 
 % determine operator dimensions using first two points
 
-if isa(kern,'kernel')
-    kerneval = kern.eval;
-else
-    kerneval = kern;
-end
-
 % Assign appropriate object to chnkr
+icgrph = false;
+nregion = 1;
+nedge = 1;
 if class(chnkobj) == "chunker"
    chnkr = chnkobj;
 elseif class(chnkobj) == "chunkgraph"
-   chnkr = merge(chnkobj.echnks);
+   chnkr = chnkobj.echnks;
+   nregion = length(chnkobj.regions);
+   nedge = length(chnkr);
+   icgrph = true;
 else
-    msg = "Unsupported object in chunkerkerneval";
+    msg = "CHUNKERKERNEVAL: first input is an unsupported object";
     error(msg)
 end
 
-srcinfo = []; targinfo = [];
-srcinfo.r = chnkr.r(:,1); srcinfo.d = chnkr.d(:,1); 
-srcinfo.n = chnkr.n(:,1); srcinfo.d2 = chnkr.d2(:,1);
-targinfo.r = chnkr.r(:,2); targinfo.d = chnkr.d(:,2); 
-targinfo.d2 = chnkr.d2(:,2); targinfo.n = chnkr.n(:,2);
+if ~isa(kern,'kernel')
+    try 
+        kern = kernel(kern);
+    catch
+        error('CHUNKERKERNEVAL: second input kern not of supported type');
+    end
+end
 
-ftemp = kerneval(srcinfo,targinfo);
-opdims = size(ftemp);
+[mk,nk] = size(kern);
+assert(or(mk == 1,mk == nregion),...
+    "CHUNKERKERNEVAL: second input not of appropriate shape " + ...
+    "number of rows in kern should be 1 or nregion")
+assert(or(nk == 1,nk == nedge),...
+    "CHUNKERKERNEVAL: second input not of appropriate shape " + ...
+    "number of cols in kern should be 1 or nedge")
+
+if nk == 1 && length(chnkr) > 1
+    chnkr = merge(chnkr);
+end
+
 
 if nargin < 5
     opts = [];
@@ -101,47 +120,138 @@ if isfield(opts,'eps'); opts_use.eps = opts.eps; end
 
 % Assign appropriate object to targinfo
 targinfo = [];
-if isa(targobj, "chunker")
+if isa(targobj, "chunker") || isa(targobj, "chunkgraph")
     targinfo.r = targobj.r(:,:);
     targinfo.d = targobj.d(:,:);
     targinfo.d2 = targobj.d2(:,:);
     targinfo.n = targobj.n(:,:);
-elseif isa(targobj, "chunkgraph")
-    targinfo.r = targobj.r(:,:);
-    targinfo.d = targobj.d(:,:);
-    targinfo.d2 = targobj.d2(:,:);
-    targinfo.n = targobj.n(:,:);
-else
+elseif isstruct(targobj)
+    if isfield(targobj,"r")
+        targinfo.r = targobj.r(:,:);
+    else
+        error("CHUNKERKERNEVAL: input 4 must at least have positions " + ...
+            "defined");
+    end
+    if isfield(targobj,"d"); targinfo.d = targobj.d(:,:); end
+    if isfield(targobj,"d2"); targinfo.d2 = targobj.d2(:,:); end
+    if isfield(targobj,"n"); targinfo.n = targobj.n(:,:); end
+elseif isnumeric(targobj)
     targinfo.r = targobj;
+else
+    error("CHUNKERKERNEVAL: input 4 is not a supported type");
 end
 
-
+if icgrph && mk > 1
+    ids = chunkgraphinregion(chnkobj,targinfo.r);
+else
+    ids = ones(size(targinfo.r,2),1);
+end
 
 [dim,~] = size(targinfo.r);
 
 if (dim ~= 2); warning('only dimension two tested'); end
 
+opdims_mat = zeros(2,mk,nk);
+ntargs = zeros(mk,1);
+npts = zeros(nk,1);
+
+for iii=1:mk
+    itarg = (ids == iii);    
+    ntargs(iii) = nnz(itarg);
+
+    targinfotmp = [];
+    targinfotmp.r = randn(dim,1); targinfotmp.d = randn(dim,1);
+    targinfotmp.d2 = randn(dim,1); targinfotmp.n = randn(dim,1);
+    
+    for jjj=1:nk
+        
+        % determine operator dimensions using a boundary point and random
+        % targ
+        
+        srcinfo = []; 
+        srcinfo.r = chnkr(jjj).r(:,1); srcinfo.d = chnkr(jjj).d(:,1); 
+        srcinfo.d2 = chnkr(jjj).d2(:,1); srcinfo.n = chnkr(jjj).n(:,1);
+        npts(jjj) = chnkr(jjj).npt;
+
+        try
+            ftemp = kern(iii,jjj).eval(srcinfo,targinfotmp);
+        catch
+            error("failed to determine size of kernel (%d, %d)",iii,jjj);
+        end
+        opdims = size(ftemp);
+        opdims_mat(:,iii,jjj) = opdims;
+    end
+end    
+
+% indexing
+
+icollocs = zeros(nk+1,1);
+icollocs(1)=1;
+for jjj=1:nk
+    icollocs(jjj+1) = icollocs(jjj) + npts(jjj)*opdims_mat(2,1,jjj);
+end
+
+rowdims = opdims_mat(1,:,1); rowdims = rowdims(:);
+nout = sum(ntargs(:).*rowdims(:));
+fints = zeros(nout,1);
+
+ntarg = size(targinfo.r(:,:),2);
+itargstart = zeros(ntarg+1,1);
+itargstart(2:end) = rowdims(ids(:));
+itargstart = 1+cumsum(itargstart);
+
+for iii = 1:mk
+% loop over relevant regions 
+itarg = (ids == iii);
+if nnz(itarg) == 0
+    continue
+end
+
+targinfo0 = [];
+targinfo0.r = targinfo.r(:,itarg);
+if isfield(targinfo,"d"); targinfo0.d = targinfo.d(:,itarg); end
+if isfield(targinfo,"d2"); targinfo0.d2 = targinfo.d2(:,itarg); end
+if isfield(targinfo,"n"); targinfo0.n = targinfo.n(:,itarg); end
+
+irow0 = kron(itargstart(itarg),ones(rowdims(iii),1)) + repmat( (0:(rowdims(iii)-1)).',nnz(itarg),1);
+
+for jjj = 1:nk
+% loop over relevant boundary components
+
+kern0 = kern(iii,jjj);
+if kern0.isnan
+    fints(irow0) = nan;
+    continue
+end
+if kern0.iszero
+    continue
+end
+
+chnkr0 = chnkr(jjj);
+opdims0 = opdims_mat(:,iii,jjj);
+dens0 = dens(icollocs(jjj):(icollocs(jjj+1)-1));
+
 if opts_use.forcesmooth
-    fints = chnk.chunkerkerneval_smooth(chnkr,kern,opdims,dens,targinfo, ...
+    fints(irow0) = fints(irow0) + chnk.chunkerkerneval_smooth(chnkr0,kern0,opdims0,dens0,targinfo0, ...
         [],opts_use);
-    return
+    continue
 end
 
 if opts_use.forceadap
-    fints = chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
-        targinfo,[],opts_use);
-    return
+    fints(irow0) = fints(irow0) + chunkerkerneval_adap(chnkr0,kern0,opdims0,dens0, ...
+        targinfo0,[],opts_use);
+    continue
 end
 
 
 if opts_use.forcepquad
     optsflag = []; optsflag.fac = opts_use.fac;
-    flag = flagnear(chnkr,targinfo.r,optsflag);
-    fints = chnk.chunkerkerneval_smooth(chnkr,kern,opdims,dens,targinfo, ...
+    flag = flagnear(chnkr0,targinfo.r,optsflag);
+    fints(irow0) = fints(irow0) + chnk.chunkerkerneval_smooth(chnkr0,kern0,opdims0,dens0,targinfo0, ...
         flag,opts_use);
 
-    fints = fints + chunkerkerneval_ho(chnkr,kern,opdims,dens, ...
-        targinfo,flag,opts_use);
+    fints(irow0) = fints(irow0) + chunkerkerneval_ho(chnkr0,kern0,opdims0,dens0, ...
+        targinfo0,flag,opts_use);
 
     return
 end
@@ -150,18 +260,21 @@ end
 
 rho = 1.8;
 optsflag = [];  optsflag.rho = rho;
-flag = flagnear_rectangle(chnkr,targinfo.r,optsflag);
+flag = flagnear_rectangle(chnkr0,targinfo0.r,optsflag);
 
-npoly = chnkr.k*2;
+npoly = chnkr0.k*2;
 nlegnew = chnk.ellipse_oversample(rho,npoly,opts_use.eps);
-nlegnew = max(nlegnew,chnkr.k);
+nlegnew = max(nlegnew,chnkr0.k);
 
-[chnkr2,dens2] = upsample(chnkr,nlegnew,dens);
-fints = chnk.chunkerkerneval_smooth(chnkr2,kern,opdims,dens2,targinfo, ...
+[chnkr02,dens02] = upsample(chnkr0,nlegnew,dens0);
+fints(irow0) = fints(irow0) + chnk.chunkerkerneval_smooth(chnkr02,kern0,opdims0,dens02,targinfo0, ...
     flag,opts_use);
 
-fints = fints + chunkerkerneval_adap(chnkr,kern,opdims,dens, ...
-        targinfo,flag,opts_use);
+fints(irow0) = fints(irow0) + chunkerkerneval_adap(chnkr0,kern0,opdims0,dens0, ...
+        targinfo0,flag,opts_use);
+
+end
+end
 
 end
 

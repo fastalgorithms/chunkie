@@ -15,7 +15,8 @@ function [R,rcipsav]=Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
 % will not work with scaled version of identity
 %
 
-% author: Shidong Jiang
+% author: Shidong Jiang, derived from Rcomp.m by Johan Helsing in the
+% RCIP tutorial 
 % modified: Jeremy Hoskins, Manas Rachh
 
 

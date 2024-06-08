@@ -27,6 +27,13 @@ elseif (isscalar(g))
     else
         f.fmm = [];
     end
+
+    if or(f.isnan,isnan(g))
+        f = kernel.nans(f.opdims(1),f.opdims(2));
+    end
+    if ~f.isnan && (g==0) || f.iszero && ~isnan(g)
+        f = kernel.zeros(f.opdims(1),f.opdims(2));
+    end
     
 else
     error('KERNEL:times:invalid', ...

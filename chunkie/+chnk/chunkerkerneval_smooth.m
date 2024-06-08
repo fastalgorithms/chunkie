@@ -27,7 +27,7 @@ nch = chnkr.nch;
 assert(numel(dens) == opdims(2)*k*nch,'dens not of appropriate size')
 dens = reshape(dens,opdims(2),k,nch);
 
-[~,w] = lege.exps(k);
+w = chnkr.wstor;
 [~,nt] = size(targinfo.r);
 
 fints = zeros(opdims(1)*nt,1);
@@ -59,19 +59,26 @@ diamtarg = max(abs(targinfo.r(:)));
 diam = max(diamsrc, diamtarg);
 
 % flag targets that are within 1e-14 of sources
-flagslf = chnk.flagself(targinfo.r, chnkr.r, 1e-14*diam);
-if isempty(flagslf)
+% these are automatically ignored by the fmm and 
+% in chunkermat corrections
+if ~(strcmpi(imethod,'fmm') && isempty(flag))
+    flagslf = chnk.flagself(targinfo.r, chnkr.r, 1e-14*diam);
+    if isempty(flagslf)
+        selfzero = sparse(opdims(1)*size(targinfo.r(:,:),2), ...
+            opdims(2)*chnkr.npt);
+    else
+        tmp = repmat((1:opdims(1))',opdims(2),1) + opdims(1)*(flagslf(1,:)-1);
+        flagslftarg = tmp(:);
+        tmp = repmat((1:opdims(2)),opdims(1),1);
+        tmp = tmp(:) + opdims(2)*(flagslf(2,:)-1);
+        flagslfsrc = tmp(:);
+        
+        selfzero = sparse(flagslftarg,flagslfsrc, 1e-300, ...
+            opdims(1)*size(targinfo.r(:,:),2), opdims(2)*chnkr.npt);
+    end
+else
     selfzero = sparse(opdims(1)*size(targinfo.r(:,:),2), ...
         opdims(2)*chnkr.npt);
-else
-    tmp = repmat((1:opdims(1))',opdims(2),1) + opdims(1)*(flagslf(1,:)-1);
-    flagslftarg = tmp(:);
-    tmp = repmat((1:opdims(2)),opdims(1),1);
-    tmp = tmp(:) + opdims(2)*(flagslf(2,:)-1);
-    flagslfsrc = tmp(:);
-    
-    selfzero = sparse(flagslftarg,flagslfsrc, 1e-300, ...
-        opdims(1)*size(targinfo.r(:,:),2), opdims(2)*chnkr.npt);
 end
 
 if strcmpi(imethod,'direct')
@@ -168,7 +175,7 @@ else
     else
         wts2 = repmat(wts(:).', opdims(2), 1);
         sigma = wts2(:).*dens(:);
-        fints = kern.fmm(1e-14, chnkr, targinfo.r(:,:), sigma);
+        fints = kern.fmm(1e-14, chnkr, targinfo, sigma);
     end
     % delete interactions in flag array (possibly unstable approach)
     

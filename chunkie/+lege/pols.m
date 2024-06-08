@@ -1,16 +1,27 @@
 function [pols,ders] = pols(xs,n)
-%LEGE.POLS evaluate up to nth order Legendre polynomial via recursion
+%LEGE.POLS evaluate up to nth degree Legendre polynomial via recursion
 %
-% output is (n+1) x size(xs) array
+% Syntax:
+%
+%   [pols,ders] = lege.pols(xs,n);
+%
+% Input:
+%   xs - points where you want to evaluate the Legendre polynomials
+%   n - highest degree polynomial of interest 
+%
+% Output:
+%   pols - (n+1) x size(xs) array of polynomial values. pols(i,j) has the
+%                 value P_{i-1}(xs(j))
+%   ders - (n+1) x size(xs) array of polynomial derivative values. 
+%                 ders(i,j) has the value P'_{i-1}(xs(j))
+%
+% see also LEGE.POL
+
 %
 % Copyright (C) 2009: Vladimir Rokhlin
 % 
 % This software is being released under a modified FreeBSD license
 %
-
-% 
-%        if n=0 or n=1 - exit
-% 
 
 assert(n>=0,'n must be non-negative');
 szx = size(xs);

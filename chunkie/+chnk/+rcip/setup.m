@@ -20,6 +20,10 @@ function [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = ...
   % starL1, circL1 - bad and good indices for arrays of nodes, normals, etc
   % starS, circS - bad and good indices for the preconditioner R
   %
+
+  % author: Shidong Jiang, parts drawn from Johan Helsing's RCIP tutorial
+  % modified: Manas Rachh, Jeremy Hoskins
+  
   [T,W] = lege.exps(ngl);  
   [IP,IPW]=chnk.rcip.IPinit(T,W);
   Pbc = chnk.rcip.Pbcinit(IP,nedge,ndim);

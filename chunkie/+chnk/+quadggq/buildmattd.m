@@ -1,4 +1,4 @@
-function [spmat] = buildmattd(chnkr,kern,opdims,type,auxquads,ilist)
+function [spmat] = buildmattd(chnkr,kern,opdims,type,auxquads,ilist,corrections)
 %CHNK.QUADGGQ.BUILDMAT build matrix for given kernel and chnkr 
 % description of boundary, using special quadrature for self
 % and neighbor panels.
@@ -14,6 +14,9 @@ end
 
 if (nargin <6)
     ilist = [];
+end
+if nargin < 7
+    corrections = false;
 end
 
 k = chnkr.k;
@@ -54,6 +57,17 @@ end
 
 % do smooth weight for all
 %sysmat = chnk.quadnative.buildmat(chnkr,kern,opdims,1:nch,1:nch,wts);
+
+if corrections
+    wtss = chnkr.wts;
+    wtss = repmat(wtss(:).',opdims(2),1); wtss = reshape(wtss,opdims(2)*k,nch);
+    indd = kron(eye(k),true(opdims(1),opdims(2)));
+    indd = indd(:) > 0;
+else
+    wtss = [];
+    indd = [];
+end
+
 mmat = k*nch*opdims(1); nmat = k*nch*opdims(2);
 
 nnz = k*nch*opdims(1)*k*3*opdims(2);
@@ -89,7 +103,7 @@ for j = 1:nch
         % skip construction if both chunks are in the "bad" chunk list
         else
             submat = chnk.quadggq.nearbuildmat(r,d,n,d2,data,ibefore,j, ...
-                kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
+                kern,opdims,xs1,wts1,ainterp1kron,ainterp1,corrections,wtss);
     
             imat = 1 + (ibefore-1)*k*opdims(1);
             induse = ict:ict+nnz1-1;
@@ -106,7 +120,7 @@ for j = 1:nch
         % skip construction if both chunks are in the "bad" chunk list
       else      
         submat = chnk.quadggq.nearbuildmat(r,d,n,d2,data,iafter,j, ...
-            kern,opdims,xs1,wts1,ainterp1kron,ainterp1);
+            kern,opdims,xs1,wts1,ainterp1kron,ainterp1,corrections,wtss);
         
 
         imat = 1 + (iafter-1)*k*opdims(1);
@@ -124,7 +138,7 @@ for j = 1:nch
       % skip construction if the chunk is in the "bad" chunk list  
     else
       submat = chnk.quadggq.diagbuildmat(r,d,n,d2,data,j,kern,opdims,...
-          xs0,wts0,ainterps0kron,ainterps0);
+          xs0,wts0,ainterps0kron,ainterps0,corrections,wtss,indd);
 
       imat = 1 + (j-1)*k*opdims(1);
       
