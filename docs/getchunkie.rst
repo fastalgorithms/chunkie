@@ -1,27 +1,62 @@
+.. role:: matlab(code)
+   :language: matlab   
+
 Get chunkIE
 ============
 
-Installation Instructions
---------------------------
+Installation From Source 
+---------------------------
 
-Clone the repository with the submodules 
+Installation directly from source is not recommended for Windows
+machines. See source code with binaries below.
 
-.. code:: bash
+- Get the source code:
+  
+  * You can download the latest `stable release <https://github.com/fastalgorithms/chunkie/releases/download/v1.0.0/chunkie-v1.0.0.zip>`_
+    
+  * For the latest and greatest, you can download from the git repository using
+  
+  .. code:: bash
 	  
-    git clone --recurse-submodules https://github.com/fastalgorithms/chunkie.git
+     git clone --recurse-submodules https://github.com/fastalgorithms/chunkie.git
 
-and run startup.m in the install directory. 
-This will download the FLAM and fmm2d submodules, include FLAM in 
-the matlab path, and generate the fmm2d mex file if a fortran compiler
-exists. 
+- Once you have the source code, you run startup.m in the install directory. This will compile fmm2d binaries and create a mex file, which are the main source of installation trouble (see troubleshooting below). Installation succeeded if the fmm tests run successfully (startup will automatically run these after installing).
+- The chunkie library will function without the fmm2d binaries, but it will
+  be slower for some calculations. 
+  
+Install with Precompiled Windows Binaries
+------------------------------------------
+
+Windows compilation of fmm2d binaries and mex files has many issues.
+For intel systems, we have zip files with `pre-compiled binaries Windows
+available <https://github.com/fastalgorithms/chunkie/releases/tag/v1.0.0>`_.
+
+Instructions:
+
+- Select the zip file whose name has MATLAB version 2020 if your version is 2022 or older. Select 2023 otherwise.
+
+- The x86 version should work on most intel machines. The avx2 specification is also commonly available and will be faster if it is compatible with your machine.
+
+- Download the file and unzip. We recommend testing the fmm binaries by running the following in the top-level chunkie directory:
+
+.. code:: matlab
+
+   startup(struct("testfmm",true))
 
 
 Troubleshooting
 -----------------
 
-- The fmm2d mex installation is currently not supported on Windows, to
-  complete the mex installation, follow instructions on the `fmm2d documentation <https://fmm2d.readthedocs.io/en/latest/install.html>`_
-- fmm2d mex installation depends on gfortran. In case a compiler is not
+- "{chunkIE function name} is not found".
+  MATLAB needs to know the location of the chunkIE source files to be able
+  to use chunkIE routines. You can add all of the necessary files to path by
+  running startup in the top-level chunkie directory. There are ways to
+  `add these locations to the MATLAB path on startup <https://www.mathworks.com/help/matlab/matlab_env/add-folders-to-matlab-search-path-at-startup.html>`_
+- Windows install issues. The fmm2d mex installation is currently not supported on Windows. Either
+  use one of the pre-compiled options above or attempt to
+  complete the mex installation by follow instructions on the `fmm2d documentation <https://fmm2d.readthedocs.io/en/latest/install.html>`_
+- "CHUNKIE STARTUP: unable to find a suitable compiler for FMM2D."
+  fmm2d mex installation depends on gfortran. In case a compiler is not
   found, the installation will be skipped. To install dependencies follow the procedure below based on your OS
   
   * MacOS
@@ -50,4 +85,4 @@ Troubleshooting
     
        sudo yum install make gcc gcc-c++ gcc-gfortran libgomp
 
-- If installing without submodules, chunkIE depends on `FLAM <https://github.com/klho/FLAM>`_, and optionally on the `fmm2d <https://github.com/flatironinstitute/fmm2d>`_ repository. Parts of the library will not function without FLAM and its subdirectories included in the matlab path.
+- "{hypoct, rskelf, ifmm} is not found". These are part of the FLAM library. If you've already run startup.m, then it may be that you downloaded from git but forgot to recurse submodules. Do the download from git again and be sure to include the submodules.
