@@ -84,15 +84,14 @@ saveas(figure(4),"guide_chunkers_barbell.png");
 % make a copy of the random mode domain
 chnkr5 = chnkr2;
 
-% rotate it
-theta = pi/4; c = cos(theta); s = sin(theta); U = [c -s; s c];
-chnkr5.r(:,:) = U*chnkr5.r(:,:); % rotating affects position and derivatives
-chnkr5.d(:,:) = U*chnkr5.d(:,:);
-chnkr5.d2(:,:) = U*chnkr5.d2(:,:);
+% rotate it using move 
+theta = pi/4; 
+chnkr5 = chnkr5.move([],[],theta);
 
 % make a copy of the circle domain and shift it 
 chnkr6 = chnkr1;
-chnkr6.r = chnkr6.r + [-0.3;0.4]; % shifting only affects position
+r1 = [-0.3;0.4];
+chnkr6 = chnkr6.move([],r1);
 % reverse the orientation
 chnkr6 = chnkr6.reverse();
 
