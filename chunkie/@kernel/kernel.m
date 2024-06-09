@@ -39,6 +39,11 @@ classdef kernel
 %   data for working with the kernel in a standardized format. For example,
 %   for a kernel K:
 %
+%      - K.opdims: a 2-vector [m n] specifying the dimensions of the
+%        kernel values. K.eval(s,t) is an m x n matrix if s and t are a
+%        single source and target, respectively. For scalar kernels,
+%        opdims = [1 1].
+%
 %      - K.fmm: A function handle which calls the FMM for the corresponding
 %        kernel. K.fmm(eps, s, t, sigma) evaluates the kernel with density
 %        sigma from sources s to targets t with accuracy eps.
@@ -47,6 +52,8 @@ classdef kernel
 %        integrals using the Helsing-Ojala kernel-split quadrature
 %        technique.
 
+% author: Dan Fortunato
+								
     properties
 
         name           % Name of the kernel

@@ -110,7 +110,7 @@ zztarg(out) = uin;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
-colormap(brewermap([],'RdBu'));
+colormap(redblue);
 hold on
 plot(chnkr,'k','LineWidth',2)
 axis equal tight
@@ -123,7 +123,7 @@ zztarg(out) = uscat;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
-colormap(brewermap([],'RdBu'));
+colormap(redblue);
 hold on
 plot(chnkr,'k','LineWidth',2)
 axis equal tight
@@ -137,7 +137,7 @@ zztarg(out) = utot;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
-colormap(brewermap([],'RdBu'));
+colormap(redblue);
 hold on
 plot(chnkr,'k','LineWidth',2)
 axis equal tight
