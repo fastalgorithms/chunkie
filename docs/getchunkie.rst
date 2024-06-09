@@ -71,7 +71,8 @@ Troubleshooting
         cp make.inc.macos.gnu make.inc
 
   There are other make.inc templates for special situations; see the fmm2d folder. 
-  Then add the following to a new line at the end of make.inc: ``MEX=<path to mex>``. Then, run 
+  Then add the following to a new line at the end of make.inc: ``MEX=<path to mex binary>``. Note: you 
+  should use the absolute path, not a relative path. Then, run 
 
   .. code:: bash
   
