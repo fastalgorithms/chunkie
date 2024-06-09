@@ -60,8 +60,12 @@ if(exist('chunkie/fmm2d/matlab','dir'))
                 path1 = [path1 cmdout2];
                 setenv('PATH', path1);
                 if ismac
-                    fprintf('Here\n');
-                    !cp -f make.inc.macos.gnu make.inc;
+                    [~, result] = system('uname -m');
+                    if strcmpi(result, 'x86_64')
+                        !cp -f make.inc.macos.gnu make.inc;
+                    else
+                        !cp -f make.inc.macos_arm64.gnu make.inc;
+                    end
                 end
                 if fmmrecompile
                     !make clean

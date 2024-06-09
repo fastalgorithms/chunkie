@@ -58,6 +58,14 @@ Troubleshooting
 - "CHUNKIE STARTUP: unable to find a suitable compiler for FMM2D."
   fmm2d mex installation depends on gfortran. In case a compiler is not
   found, the installation will be skipped. To install dependencies follow the procedure below based on your OS
+- "mex" redirects to LaTeX compilation. This can happen on either MacOS or Linux, and in both situations the path
+  to mex is not correctly set. Find your MATLAB installation directory using ``${MATLABROOT}`` on linux, 
+  and on MacOS, typically MATLAB is installed at ``/Applications/MATLAB_R(version number)/``.
+  The mex executable can then be found in the ``bin`` directory. In the fmm2d make.inc file (if it doesn't exist create one),
+  set ``MEX=<path to mex>``.
+- On MacOS, if you open MATLAB using spotlight, the MATLAB path fails to find the gfortran compiler. In order to 
+  avoid this issue, we recommend starting MATLAB from the command line, by finding its executable in
+  the ``bin`` directory of your MATLAB installation.
   
   * MacOS
   
