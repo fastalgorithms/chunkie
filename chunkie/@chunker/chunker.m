@@ -31,6 +31,7 @@ classdef chunker
 %       precomputed Legendre nodes/weights (optional)
 %   obj = addchunk(obj,nchadd) - add nchadd chunks to the structure 
 %       (initialized with zeros)
+%   obj = obj.move(r0,r1,trotat,scale) - translate, rotate, etc
 %   obj = makedatarows(obj,nrows) - add nrows rows to the data storage.
 %   [obj,info] = sort(obj) - sort the chunks so that adjacent chunks are
 %        stored sequentially
@@ -340,6 +341,7 @@ classdef chunker
         [obj,info] = sort(obj)
         [rn,dn,d2n,dist,tn,ichn] = nearest(obj,ref,ich,opts,u,xover,aover)
         obj = reverse(obj)
+        obj = move(obj,r0,r1,trotat,scale)
         rmin = min(obj)
         rmax = max(obj)
         whts = whts(obj)

@@ -1,4 +1,4 @@
-Get Chunkie
+Get chunkIE
 ============
 
 Installation Instructions
@@ -50,4 +50,4 @@ Troubleshooting
     
        sudo yum install make gcc gcc-c++ gcc-gfortran libgomp
 
-- If installing without submodules, chunkie depends on `FLAM <https://github.com/klho/FLAM>`_, and optionally on the `fmm2d <https://github.com/flatironinstitute/fmm2d>`_ repository. Parts of the library will not function without FLAM and its subdirectories included in the matlab path.
+- If installing without submodules, chunkIE depends on `FLAM <https://github.com/klho/FLAM>`_, and optionally on the `fmm2d <https://github.com/flatironinstitute/fmm2d>`_ repository. Parts of the library will not function without FLAM and its subdirectories included in the matlab path.
