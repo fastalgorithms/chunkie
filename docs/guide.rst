@@ -1,4 +1,4 @@
-Chunkie User Guide
+chunkIE User Guide
 ===================
 
 Apologies that this guide is still under construction. There
