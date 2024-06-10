@@ -103,17 +103,17 @@ ctr = [0;0];
 chnkrouter = chunkerfunc(@(t) chnk.curves.bymode(t,modes,ctr));
 
 % inner boundaries are circles (reverse them to get orientations right)
-chnkrcirc = chunkerfunc(@(t) chnk.curves.bymode(t,0.3,[0;0]));
+chnkrcirc = chunkerfunc(@(t) chnk.curves.bymode(t,0.25,[0;0]));
 chnkrcirc = reverse(chnkrcirc);
-centers = [ [-2:2, -2:2]; [(0.7 + 0.25*(-1).^(-2:2)) , ...
-    (-0.7 + 0.25*(-1).^(-2:2))]];
+centers = [ [-2:2, -2:2]; [(0.7 + 0.2*(-1).^(-2:2)) , ...
+    (-0.7 + 0.2*(-1).^(-2:2))]];
 centers = centers + 0.1*randn(size(centers));
 
 % make a boundary out of the outer boundary and several shifted circles
 chnkrlist = [chnkrouter];
 for j = 1:size(centers,2)
     chnkr1 = chnkrcirc;
-    chnkr1.r(:,:) = chnkr1.r(:,:) + centers(:,j);
+    chnkr1 = chnkr1.move([0;0],centers(:,j));
     chnkrlist = [chnkrlist chnkr1];
 end
 chnkr = merge(chnkrlist);
@@ -127,25 +127,23 @@ rhsout = f(chnkrouter.r(:,:)); rhsout = rhsout(:);
 rhs = [rhsout; zeros(2*10*chnkrcirc.npt,1)];
 
 % define the combined layer Stokes representation kernel
+c = -1; % coefficient of S
 mu = 1; % stokes viscosity parameter
-kerndvel = kernel('stok','dvel',mu);
-kernsvel = kernel('stok','svel',mu);
+kerncvel = kernel('stok','dvel',mu) + c*kernel('stok','svel',mu);
 
 % get a matrix discretization of the boundary integral equation 
-dmat = chunkermat(chnkr,kerndvel); 
-smat = chunkermat(chnkr,kernsvel);
+cmat = chunkermat(chnkr,kerncvel); 
 
 % add the identity term and nullspace correction
-c = -1;
 W = normonesmat(chnkr);
-sysmat = dmat + c*smat - 0.5*eye(2*chnkr.npt) + W;
+sysmat = cmat - 0.5*eye(2*chnkr.npt) + W;
 
 % solve the system 
 sigma = gmres(sysmat,rhs,[],1e-10,100);
 
 % grid for plotting solution (in exterior)
-x1 = linspace(-3.75,3.75,300);
-y1 = linspace(-2,2,300);
+x1 = linspace(-3.75,3.75,200);
+y1 = linspace(-2,2,100);
 [xx,yy] = meshgrid(x1,y1);
 targs = [xx(:).'; yy(:).'];
 in = chunkerinterior(chnkr,{x1,y1});
@@ -153,16 +151,12 @@ uu = nan([2,size(xx)]);
 pres = nan(size(xx));
 
 % same kernel to evaluate as on boundary
-uu(:,in) = reshape(chunkerkerneval(chnkr,kerndvel,sigma,targs(:,in)),2,nnz(in));
-uu(:,in) = uu(:,in) + c*reshape(chunkerkerneval(chnkr,kernsvel,sigma,targs(:,in)),2,nnz(in));
-uu(:,in) = uu(:,in) + uconst;
+uu(:,in) = reshape(chunkerkerneval(chnkr,kerncvel,sigma,targs(:,in)),2,nnz(in));
 
 % can evaluate the associated pressure
-kerndpres = kernel('stok','dpres',mu);
-kernspres = kernel('stok','spres',mu);
+kerncpres = kernel('stok','dpres',mu) + c*kernel('stok','spres',mu);
 opts = []; opts.eps = 1e-3;
-pres(in) = chunkerkerneval(chnkr,kerndpres,sigma,targs(:,in),opts);
-pres(in) = pres(in) + c*chunkerkerneval(chnkr,kernspres,sigma,targs(:,in),opts);
+pres(in) = chunkerkerneval(chnkr,kerncpres,sigma,targs(:,in),opts);
 
 % plot
 figure(1); clf
