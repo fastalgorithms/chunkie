@@ -1,9 +1,16 @@
-function [val,grad,hess,der3,der4] = helmdiffgreen(k,src,targ)
+function [val,grad,hess,der3,der4] = helmdiffgreen(k,src,targ,ifr2logr)
 %HELMDIFFGREEN evaluate the difference of the 
 % Helmholtz Green function and the Laplace Green function
 % for the given sources and targets, i.e. 
 %
 % G(x,y) = i/4 H_0^(1)(k|x-y|) + 1/(2 pi) log(|x-y|)
+%
+% or the difference of the Helmholtz and Laplace Green funcions 
+% and k^2 r^2 log r/ 8 pi (a constant times the biharmonic Green function)
+% i.e. 
+%
+% G(x,y) = i/4 H_0^(1)(k|x-y|) + 1/(2 pi) log(|x-y|) + ...
+%                    - k^2/(8*pi) |x-y|^2 log(|x-y|)
 %
 % where H_0^(1) is the principal branch of the Hankel function
 % of the first kind. This routine avoids numerical cancellation
@@ -18,6 +25,26 @@ function [val,grad,hess,der3,der4] = helmdiffgreen(k,src,targ)
 % G_{x1x1x1x2}, G_{x1x1x2x2}, G_{x1x2x2x2}, G_{x2x2x2x2}
 %
 % derivatives are on the *target* variables
+%
+% input:
+%
+% src - (2,ns) array of source locations
+% targ - (2,nt) array of target locations
+% k - wave number, as above
+%
+% optional input:
+%
+% ifr2logr - boolean, default: false. If true, also subtract off the 
+%             k^2/(8pi) r^2 log r kernel
+
+if nargin < 4
+    ifr2logr = false;
+end
+
+r2logrfac = 1;
+if ifr2logr
+    r2logrfac = 0;
+end
 
 [~,ns] = size(src);
 [~,nt] = size(targ);
@@ -48,7 +75,7 @@ rm5 = rm1.*rm4;
 
 % get value and r derivatives
       
-[g0,g1,g2,g3,g4] = diff_h0log_and_rders(k,r);
+[g0,g1,g21,g3,g4] = diff_h0log_and_rders(k,r,r2logrfac);
 
 %     evaluate potential and derivatives
 
@@ -60,49 +87,57 @@ if nargout > 1
     grad(:,:,2) = dy.*g1.*rm1;
 end
 if nargout > 2
-    hess(:,:,1) = dx2.*g2.*rm2+g1.*(1.*rm1-dx2.*rm3);
-    hess(:,:,2) = dx.*dy.*(g2.*rm2-g1.*rm3);
-    hess(:,:,3) = dy2.*g2.*rm2+g1.*(1.*rm1-dy2.*rm3);
+    hess(:,:,1) = dx2.*g21.*rm2+g1.*rm1;
+    hess(:,:,2) = dx.*dy.*g21.*rm2;
+    hess(:,:,3) = dy2.*g21.*rm2+g1.*rm1;
 end
 if nargout > 3
-    der3(:,:,1) = (dx3.*g3+3*dy2.*dx.*(g2.*rm1-g1.*rm2)).*rm3;
-    der3(:,:,2) = dx2.*dy.*(g3.*rm3-3*(g2.*rm4-g1.*rm5)) + ...
-             dy.*(g2.*rm2-g1.*rm3);
-    der3(:,:,3) = dx.*dy2.*(g3.*rm3-3*(g2.*rm4-g1.*rm5)) + ...
-             dx.*(g2.*rm2-g1.*rm3);
-    der3(:,:,4) = (dy3.*g3+3*dx2.*dy.*(g2.*rm1-g1.*rm2)).*rm3;
+    der3(:,:,1) = (dx3.*g3+3*dy2.*dx.*g21.*rm1).*rm3;
+    der3(:,:,2) = dx2.*dy.*(g3.*rm3-3*g21.*rm4) + ...
+             dy.*g21.*rm2;
+    der3(:,:,3) = dx.*dy2.*(g3.*rm3-3*g21.*rm4) + ...
+             dx.*g21.*rm2;
+    der3(:,:,4) = (dy3.*g3+3*dx2.*dy.*g21.*rm1).*rm3;
 end
 
 if nargout > 4
-    der4(:,:,1) = (dx4.*(g4-6*g3.*rm1+15*(g2.*rm2-g1.*rm3))).*rm4 + ...
-             (6*dx2.*(g3-3*(g2.*rm1-g1.*rm2))).*rm3 + ...
-             (3*(g2-g1.*rm1)).*rm2;
-    der4(:,:,2) = (dx3.*dy.*(g4-6*g3.*rm1+15*(g2.*rm2-g1.*rm3))).*rm4 + ...
-             (3*dx.*dy.*(g3-3*(g2.*rm1-g1.*rm2))).*rm3;
-    der4(:,:,3) = dx2.*dy2.*(g4-6*g3.*rm1+15*g2.*rm2-15*g1.*rm3).*rm4 + ...
-             g3.*rm1 - 2*g2.*rm2 + 2*g1.*rm3;
-    der4(:,:,4) = dx.*dy3.*(g4-6*g3.*rm1+15*(g2.*rm2-g1.*rm3)).*rm4 + ...
-             3*dx.*dy.*(g3-3*(g2.*rm1-g1.*rm2)).*rm3;
-    der4(:,:,5) = dy4.*(g4-6*g3.*rm1+15*(g2.*rm2-g1.*rm3)).*rm4 + ...
-             6*dy2.*(g3-3*(g2.*rm1-g1.*rm2)).*rm3 + ...
-             3*(g2-g1.*rm1).*rm2;
+    der4(:,:,1) = (dx4.*(g4-6*g3.*rm1+15*g21.*rm2)).*rm4 + ...
+             (6*dx2.*(g3-3*g21.*rm1)).*rm3 + ...
+             3*g21.*rm2;
+    der4(:,:,2) = (dx3.*dy.*(g4-6*g3.*rm1+15*g21.*rm2)).*rm4 + ...
+             (3*dx.*dy.*(g3-3*g21.*rm1)).*rm3;
+    der4(:,:,3) = dx2.*dy2.*(g4-6*g3.*rm1+15*g21.*rm2).*rm4 + ...
+             g3.*rm1 - 2*g21.*rm2;
+    der4(:,:,4) = dx.*dy3.*(g4-6*g3.*rm1+15*g21.*rm2).*rm4 + ...
+             3*dx.*dy.*(g3-3*g21.*rm1).*rm3;
+    der4(:,:,5) = dy4.*(g4-6*g3.*rm1+15*g21.*rm2).*rm4 + ...
+             6*dy2.*(g3-3*g21.*rm1).*rm3 + ...
+             3*g21.*rm2;
 end
 
 end
 
-function [g0,g1,g2,g3,g4] = diff_h0log_and_rders(k,r)
+function [g0,g1,g21,g3,g4] = diff_h0log_and_rders(k,r,r2logrfac)
+% g0 = g
+% g1 = g'
+% g21 = g'' - g'/r
+%
+% maybe later:
+% g321 = g''' - 3*g''/r + 3g'/r^2
+% g4321 = g'''' - 6*g'''/r + 15*g''/r^2 - 15*g'/r^3
 
 g0 = zeros(size(r));
 g1 = zeros(size(r));
-g2 = zeros(size(r));
 g3 = zeros(size(r));
 g4 = zeros(size(r));
+g21 = zeros(size(r));
 
 io4 = 1i*0.25;
 o2p = 1/(2*pi);
 
 isus = abs(k)*r < 1;
 %isus = false(size(r));
+%isus = true(size(r));
 
 % straightforward formulas for sufficiently large
 
@@ -118,11 +153,14 @@ rm2 = rm1.*rm1;
 rm3 = rm1.*rm2;
 rm4 = rm1.*rm3;
 
-g0(~isus) = io4*h0 + o2p*log(rnot);
-g1(~isus) = -k*io4*h1 + o2p*rm1;
-g2(~isus) = -k*k*io4*h0 + k*io4*h1.*rm1 - o2p*rm2;
-g3(~isus) = k*k*io4*h0.*rm1 + io4*k*(k*k-2*rm2).*h1 + 2*o2p*rm3;
-g4(~isus) = k*io4*(3*rm2-k*k).*(2*h1.*rm1-k*h0) - 6*o2p*rm4;
+r2fac = (1-r2logrfac)*k*k*0.25*o2p;
+logr = log(rnot);
+g0(~isus) = io4*h0 + o2p*logr - r2fac*rnot.*rnot.*logr;
+g1(~isus) = -k*io4*h1 + o2p*rm1 - r2fac*(rnot+2*rnot.*logr);
+g21(~isus) = -k*k*io4*h0 + k*io4*h1.*rm1 - o2p*rm2 - r2fac*(3+2*logr) - ...
+    g1(~isus).*rm1;
+g3(~isus) = k*k*io4*h0.*rm1 + io4*k*(k*k-2*rm2).*h1 + 2*o2p*rm3 - r2fac*2*rm1;
+g4(~isus) = k*io4*(3*rm2-k*k).*(2*h1.*rm1-k*h0) - 6*o2p*rm4 + r2fac*2*rm2;
 
 % manually cancel when small
 
@@ -133,11 +171,12 @@ rm3 = rm1.*rm2;
 rm4 = rm1.*rm3;
 
 gam = 0.57721566490153286060651209;
-nterms = 14;
+nterms = 20;
 const1 = (io4+(log(2)-gam-log(k))*o2p);
 
 % relevant parts of hankel function represented as power series
 [cf1,cf2] = chnk.flex2d.besseldiff_etc_pscoefs(nterms);
+cf1(1) = cf1(1)*r2logrfac;
 kpow = (k*k).^(1:nterms); 
 cf1 = cf1(:).*kpow(:); cf2 = cf2(:).*kpow(:);
 
@@ -148,13 +187,15 @@ f = chnk.flex2d.even_pseval(cf2,rsus);
 
 % differentiate power series to get derivatives
 fac = 2*(1:nterms);
+d21 = fac(:).*(fac(:)-1)-fac(:);
+fd21 = chnk.flex2d.even_pseval(cf2(:).*d21,rsus).*rm2;
 cf1 = cf1.*fac(:); cf2 = cf2.*fac(:);
 j0m1d1 = chnk.flex2d.even_pseval(cf1,rsus).*rm1;
 fd1 = chnk.flex2d.even_pseval(cf2,rsus).*rm1;
 cf1 = cf1.*(fac(:)-1); cf2 = cf2.*(fac(:)-1);
 j0m1d2 = chnk.flex2d.even_pseval(cf1,rsus).*rm2;
-
 fd2 = chnk.flex2d.even_pseval(cf2,rsus).*rm2;
+
 cf1 = cf1(:).*(fac(:)-2); cf1 = cf1(2:end);
 cf2 = cf2(:).*(fac(:)-2); cf2 = cf2(2:end);
 j0m1d3 = chnk.flex2d.even_pseval(cf1,rsus).*rm1;
@@ -166,9 +207,10 @@ j0m1d4 = chnk.flex2d.even_pseval(cf1,rsus).*rm2;
 fd4 = chnk.flex2d.even_pseval(cf2,rsus).*rm2;
 
 % combine to get derivative of i/4 H + log/(2*pi)
-g0(isus) = const1*(j0m1+1) - o2p*(f  + logr.*j0m1);
-g1(isus) = const1*j0m1d1 - o2p*(fd1 + logr.*j0m1d1 + j0m1.*rm1);
-g2(isus) = const1*j0m1d2 - o2p*(fd2 + logr.*j0m1d2 + 2*j0m1d1.*rm1 - j0m1.*rm2);
+r2fac = -(1-r2logrfac)*k*k*0.25;
+g0(isus) = const1*(j0m1+1+r2fac*rsus.*rsus) - o2p*(f  + logr.*j0m1);
+g1(isus) = const1*(j0m1d1+2*r2fac*rsus) - o2p*(fd1 + logr.*j0m1d1 + j0m1.*rm1);
+g21(isus) = const1*(j0m1d2-j0m1d1.*rm1) - o2p*(fd21 + logr.*(j0m1d2-j0m1d1.*rm1) + 2*j0m1d1.*rm1 - 2*j0m1.*rm2);
 g3(isus) = const1*j0m1d3 - o2p*(fd3 + logr.*j0m1d3 + 3*j0m1d2.*rm1 - ...
     3*j0m1d1.*rm2 + 2*j0m1.*rm3);
 g4(isus) = const1*j0m1d4 - o2p*(fd4 + logr.*j0m1d4 + 4*j0m1d3.*rm1 - ...
