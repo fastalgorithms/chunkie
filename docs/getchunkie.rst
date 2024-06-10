@@ -78,10 +78,9 @@ Troubleshooting
   
         make matlab
 
-- On MacOS, if you open MATLAB using spotlight, the MATLAB path fails to find the gfortran compiler. In order to 
-  avoid this issue, we recommend starting MATLAB from the command line, by finding its executable in
-  the ``bin`` directory of your MATLAB installation.
-  
+
+- "CHUNKIE STARTUP: unable to find a suitable compiler for FMM2D". You may not have gfortran installed (if you do and you're on MacOS, see further below). To install gfortran, try:
+
   * MacOS
   
     Get xcode, command line tools by running
@@ -107,5 +106,11 @@ Troubleshooting
     .. code:: bash
     
        sudo yum install make gcc gcc-c++ gcc-gfortran libgomp
+
+- "CHUNKIE STARTUP: unable to find a suitable compiler for FMM2D". If you have gfortran installed but you still get this message on MacOS, try starting MATLAB from the command line (as opposed to opening MATLAB via spotlight). To do this, you may have to find the location of the MATLAB binary in the bin folder of MATLAB's install directory and run that path directly. See also `instructions from MathWorks <https://www.mathworks.com/help/matlab/ref/matlabmacos.html>`_
+
+  .. code:: bash
+    
+        ./<path to MATLAB executable>
 
 - "{hypoct, rskelf, ifmm} is not found". These are part of the FLAM library. If you've already run startup.m, then it may be that you downloaded from git but forgot to recurse submodules. Do the download from git again and be sure to include the submodules.
