@@ -314,6 +314,46 @@ using the built-in kernels:
 A Stokes Flow Problem
 ----------------------
 
+Below, we show a chunkIE solution of a Stokes flow problem in a multiply
+connected domain. This uses a combined layer representation for
+Stokes, :math:`u = (D-S)[\sigma]` which results in the boundary integral
+equation
+
+.. math::
+
+   f(x_0) = \left [\left ( -\frac{1}{2} \mathcal{I} + \mathcal{D} - \mathcal{S} \right ) \sigma
+   \right ] (x_0) \; ,
+
+
+where :math:`f` is a prescribed velocity on the boundary. This equation
+also has a nullspace, so we add the operator
+
+.. math::
+
+   \mathcal{W}\sigma (x) = \int_{\Gamma} n(x) (n(y)\cdot \sigma(y)) \, ds(y) 
+
+The data :math:`f` must have that its normal component integrates to zero.
+In that case, the equation
+
+.. math::
+
+   f(x_0) = \left [\left ( -\frac{1}{2} \mathcal{I} + \mathcal{W} + \mathcal{D} - \mathcal{S} \right ) \sigma
+   \right ] (x_0) \; ,
+
+   
+.. include:: ../../chunkie/guide/guide_simplebvps.m
+   :literal:
+   :code: matlab
+   :start-after: % START STOKES VELOCITY PROBLEM
+   :end-before: % END STOKES VELOCITY PROBLEM
+
+
+.. image:: ../../chunkie/guide/guide_stokesvelocity.png
+   :width: 500px
+   :alt: pipe flow with obstacles
+   :align: center
+		
+
 
 References
 ------------
