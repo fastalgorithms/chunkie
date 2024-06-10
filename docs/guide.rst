@@ -4,7 +4,8 @@ chunkIE User Guide
 Apologies that this guide is still under construction. There
 are examples for the most common uses. 
 
-Some `tutorial worksheets <https://www.dropbox.com/scl/fo/q8af87j35at93sey05n0q/AKPfyEsFlx-83x6lTjNIYCk?rlkey=yjtgmnncf8e88amr155g0bvwr&st=1eub3ndn&dl=0>`_ are available.
+Some `tutorial worksheets <https://www.dropbox.com/scl/fi/kuanqclb47l342gcogsw8/worksheets-day1.zip?rlkey=uru8agpmmre0ndct0pc84cbex&st=z697gn6j&dl=0>`_ are available.
+
 
 Detailed documentation of all high-level functions and
 classes can be obtained by viewing the source file or by
