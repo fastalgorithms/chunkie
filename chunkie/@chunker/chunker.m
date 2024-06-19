@@ -88,6 +88,7 @@ classdef chunker
         nstor
         wtsstor
         datastor
+        kappa
     end        
     properties(SetAccess=private)
         nchmax
