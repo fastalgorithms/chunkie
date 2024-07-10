@@ -37,8 +37,12 @@ function mat = kernbyindex(i,j,chnkobj,kern,opdims_mat,spmat,l2scale)
 % l2scale - boolean type that determines if we should 
 %    rescale the matrix by l2scale. the default value is false. 
 
-if isa(kern,'kernel')
-    kern = kern.eval;
+if ~isa(kern,'kernel')
+    try 
+        kern = kernel(kern);
+    catch
+        error('KERNBYINDEX: fourth input kern not of supported type');
+    end
 end
 
 if nargin < 7
@@ -145,9 +149,9 @@ for itrg=1:nchunkers
             
         
         if size(kern) == 1
-            matuni = kern(srcinfo,targinfo);
+            matuni = kern.eval(srcinfo,targinfo);
         else
-            matuni = kern{itrg,isrc}(srcinfo,targinfo);
+            matuni = kern(itrg,isrc).eval(srcinfo,targinfo);
         end
         
         % scale matrix by weights

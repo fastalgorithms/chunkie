@@ -40,7 +40,7 @@ function submat = kern(zk, srcinfo, targinfo, origin, type, varargin)
 %                type == 'sprime', normal derivative of single
 %                      layer S'
 %                type == 'dprime', normal derivative of double layer D'
-%                type == 'ddiff', D_{k}' - D_{ik}', for this routine k must be real
+%                type == 'dprimediff', D_{k}' - D_{ik}', for this routine k must be real
 %                type == 'c', combined layer kernel coef(1) D + coef(2) S
 %
 %   varargin{1} - coef: length 2 array in the combined layer 

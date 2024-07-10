@@ -41,13 +41,14 @@ function [Kpxy,nbr] = proxyfun(slf,nbr,l,ctr,chnkrs,kern,opdims_mat, ...
 %    rescale the matrix by l2scale. the default value is false. 
 % 
 
-if isa(kern,'kernel')
-    kern = kern.eval;
+if ~isa(kern,'kernel')
+    try 
+        kern = kernel(kern);
+    catch
+        error('PROXYFUN: sixth input kern not of supported type');
+    end
 end
 
-if nargin < 13
-    l2scale = false;
-end
 
 % scaled proxy points and weights (no scaling necessary on tangents)
 
@@ -153,9 +154,9 @@ for j=1:nchunkers
         opdims_trans = opdims_mat(:,j,i);
 
         if length(kern) == 1
-            matuni = kern(srcinfo,targinfo);
+            matuni = kern.eval(srcinfo,targinfo);
         else
-            matuni = kern{i,j}(srcinfo,targinfo);
+            matuni = kern(i,j).eval(srcinfo,targinfo);
         end
 
         wsrc = wts(juni);
@@ -180,9 +181,9 @@ for j=1:nchunkers
 
         if ifaddtrans
             if length(kern) == 1
-                matuni2 = kern(targinfo,srcinfo);
+                matuni2 = kern.eval(targinfo,srcinfo);
             else
-                matuni2 = kern{j,i}(targinfo,srcinfo);
+                matuni2 = kern(j,i).eval(targinfo,srcinfo);
             end
 
             wsrc = pw(:);

@@ -48,12 +48,15 @@ frq = 6;
 ncurve = size(edge2verts,1);
 
 fchnks    = cell(1,ncurve);
+cparams = cell(ncurve,1);
 for icurve = 1:ncurve
     fchnks{icurve} = @(t) circulararc(t,cpars{1});
     fchnks{icurve} = @(t) sinearc(t,amp,frq);
+    cparams{icurve}.ta = 0;
+    cparams{icurve}.tb = 1;
 end
 
-[cgrph] = chunkgraph(verts,edge2verts,fchnks);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
 
 
 vstruc = procverts(cgrph);
@@ -63,7 +66,7 @@ plot(cgrph); hold on;
 quiver(cgrph);
 
 nregions = 2;
-ks = [1.1;2.1]*30;
+ks = [1.1;2.1]*10;
 coefs = [1.0;1.0];
 cs(1,1:ncurve) = 1;
 cs(2,1:ncurve) = 2;
