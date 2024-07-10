@@ -26,10 +26,9 @@ ifflam = true;
 opts = [];
 opts.ifflam = ifflam;
 
-%% Get matrix
+%% Test analytic solution
 tic, A = get_linop(chnkr1, chnkr2, [zk1, zk2], opts); toc
 
-%% Test analytic solution
 src1 = zeros(2,2);
 src1(1,1) = 0.01;
 src1(2,1) = 0.03;
