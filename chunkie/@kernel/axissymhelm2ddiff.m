@@ -27,8 +27,12 @@ end
 zr1 = real(zks(1)); zi1 = imag(zks(1));
 zr2 = real(zks(2)); zi2 = imag(zks(2));
 
+ifreal = 0;
 if zi1 ~=0 || zr2 ~=0 || zr1 ~= zi2
-    error('Wave numbers must be of the form zk, 1i*zk with zk real');
+    ifreal = 1;
+    if (zi1~= 0 || zi2 ~= 0)
+        error('Wave numbers must be of the form zk, 1i*zk with zk real');
+    end
 end
 
 obj = kernel();
@@ -89,11 +93,19 @@ switch lower(type)
             error('Coefs must be of form [c c]');   
         end
         obj.type = 'dp';
+        if(~ifreal)
         obj.eval = @(s,t) coefs(1)*chnk.axissymhelm2d.kern(real(zks(1)),  ... 
                                                 s, t, [0,0], 'dprimediff');
         obj.shifted_eval = @(s,t,o) coefs(1)*chnk.axissymhelm2d.kern(real(zks(1)),  ... 
                                                 s, t, o, 'dprimediff');
         obj.fmm = [];
+        else
+        obj.eval = @(s,t) coefs(1)*chnk.axissymhelm2d.kern(zks,  ... 
+                                                s, t, [0,0], 'dprime_re_diff');
+        obj.shifted_eval = @(s,t,o) coefs(1)*chnk.axissymhelm2d.kern(zks,  ... 
+                                                s, t, o, 'dprime_re_diff');
+        obj.fmm = [];
+        end
         if ( abs(coefs(1)-coefs(2)) < eps )
             obj.sing = 'log';
         else

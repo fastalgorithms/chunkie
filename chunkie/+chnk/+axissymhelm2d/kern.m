@@ -1,4 +1,4 @@
-function submat = kern(zk, srcinfo, targinfo, origin, type, varargin)
+function submat = kern(zks, srcinfo, targinfo, origin, type, varargin)
 %CHNK.AXISSYMHELM2D.KERN axissymmetric Helmholtz layer potential kernels in 2D
 % 
 % Syntax: submat = chnk.axissymhelm2d.kern(zk,srcinfo,targingo,type,htables)
@@ -60,6 +60,13 @@ targ = targinfo.r;
 
 [~, ns] = size(src);
 [~, nt] = size(targ);
+
+if (numel(zks) == 1)
+    zk = zks(1);
+else
+    zk1 = zks(1);
+    zk2 = zks(2);
+end
 
 if strcmpi(type, 'd')
     srcnorm = srcinfo.n;
@@ -181,6 +188,31 @@ if strcmpi(type, 'dprime')
   nytarg = repmat((targnorm(2,:)).',1,ns);
   submat = hess(:,:,4).*nxsrc.*nxtarg - hess(:,:,5).*nysrc.*nxtarg ... 
               - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
+end
+
+if strcmpi(type, 'dprime_re_diff')
+
+  targnorm = targinfo.n;
+  srcnorm = srcinfo.n;
+  ifdiff = 2;
+  [~,~,hess] = chnk.axissymhelm2d.green(zk1, src, targ, origin,ifdiff);
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+  submat1 = hess(:,:,4).*nxsrc.*nxtarg - hess(:,:,5).*nysrc.*nxtarg ... 
+              - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
+  ifdiff = 2;
+  [~,~,hess] = chnk.axissymhelm2d.green(zk2, src, targ, origin,ifdiff);
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+  submat2 = hess(:,:,4).*nxsrc.*nxtarg - hess(:,:,5).*nysrc.*nxtarg ... 
+              - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
+
+  submat = submat1-submat2;
+
 end
 
 

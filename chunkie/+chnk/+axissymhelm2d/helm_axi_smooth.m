@@ -68,7 +68,7 @@ function [sout] ...
     s{6} = kernsdaa;
     s{4} = kernsdkk;
 
-    if (ifun == 1 || ifun==4)
+    if (ifun == 1 || ifun==4 || ifun==5)
         sout.rk = s;
     end
     if (ifun ==2)
@@ -105,6 +105,36 @@ function [sout] ...
         end
         sout.dk = dk;
     end
+
+
+    if (ifun == 5)
+        r0t = 0;
+        efac = exp(1i*r0t.*rts)./rts.*wle;
+        r2   = rts.^2;
+        k2   = 1i*r0t.*rts;
+        kern2_v = sum(asymint_v(rts,r0t,efac),1);
+        kern2dk_v = sum(asymintdk_v(rts,r0t,efac),1);
+        kern2da_v = sum(asymintda_v(xle,rts,r0t,efac),1);
+        kern2daa_v = sum(asymintdaa_v(xle,rts,r0t,efac,k2,r2),1);
+        kern2dak_v = sum(asymintdak_v(xle,rts,r0t,efac),1);
+        kern2dkk_v = sum(asymintdkk_v(xle,rts,r0t,efac),1);
+
+        ik = {};
+        ik{1} = kern2_v;
+        ik{2} = kern2da_v;
+        ik{3} = 0*kern2dk_v;
+        ik{6} = kern2daa_v;
+        ik{5} = 0*kern2dak_v;
+        ik{4} = 0*kern2dkk_v;
+        sout.k0 = ik;
+
+        dk = {};
+        for ii=1:6
+            dk{ii} = sout.rk{ii}-sout.k0{ii};
+        end
+        sout.dk = dk;
+    end
+
 
 end
 
