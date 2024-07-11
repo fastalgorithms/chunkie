@@ -8,6 +8,7 @@ zk = 10.1;
 
 type = 'chnkr-star';
 % type = 'chnkr-torus';
+%type = 'cgrph';
 
 pref = [];
 pref.k = 16;
@@ -19,6 +20,8 @@ maxchunklen = 0.5;
 
 [chnkr, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen);
 wts = chnkr.wts; wts = wts(:);
+sources(1,:) = abs(sources(1,:));
+targets(1,:) = abs(targets(1,:));
 
 l2scale = false;
 fprintf('Done building geometry\n');

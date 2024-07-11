@@ -7,7 +7,8 @@ rng(iseed);
 zk = 10.1;
 
 type = 'chnkr-star';
-% type = 'chnkr-torus';
+%type = 'chnkr-torus';
+type = 'cgrph';
 
 pref = [];
 pref.k = 16;
@@ -29,7 +30,11 @@ strengths_out = randn(nt, 1);
 
 
 % targets
-
+sources(1,:) = abs(sources(1,:));
+targets(1,:) = abs(targets(1,:));
+sr = sources;
+sources = targets;
+targets = sr;
 
 % Plot everything
 
@@ -41,6 +46,7 @@ hold on
 scatter(sources(1,:), sources(2,:), 'o')
 scatter(targets(1,:), targets(2,:), 'x')
 axis equal
+
 
 
 % For solving the transmission boundary value problem, we
@@ -264,7 +270,7 @@ if strcmpi(type, 'cgrph')
     edge2verts = sparse(iind, jind, svals, nverts-1, nverts);
 
     amp = 0.1;
-    frq = 2;
+    frq = 2/(2*pi);
     fchnks    = cell(1,size(edge2verts,1));
     for icurve = 1:size(edge2verts,1)
         fchnks{icurve} = @(t) sinearc(t, amp, frq);
