@@ -118,6 +118,14 @@ classdef chunkgraph
                 fchnks = [];
             end
             
+            if isa(fchnks,"function_handle")
+                fchnks0 = fchnks;
+                fchnks = cell(nedge,1);
+                for j = 1:nedge
+                    fchnks{j} = fchnks0;
+                end
+            end
+
             if (nargin < 4)
                 cparams = [];
             end

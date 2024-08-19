@@ -143,8 +143,8 @@ else
     error(msg)
 end
 
-for chnkr = chnkrs
-    if or(chnkr.nch < 1,chnkr.k < 1)
+for i=1:length(chnkrs)
+    if chnkrs(i).nch < 1 || chnkrs(i).k < 1
         warning('empty chunker, doing nothing')
         return
     end

@@ -132,6 +132,19 @@ nchs2 = [cg.echnks.nch];
 
 assert(all(2*nchs1 == nchs2))
 
+%% 
+
+verts = exp(1i*2*pi*(0:4)/5);
+verts = [real(verts);imag(verts)];
+
+endverts = [1:5; [2:5 1]];
+
+amp = 0.5;
+frq = 6;
+fchnks = @(t) sinearc(t,amp,frq);
+% simpler calling sequence if all edges same function
+cgrph = chunkgraph(verts,endverts,fchnks);
+
 function idstrue = polygonids(cg,xx,yy)
 
 verts = cg.verts;

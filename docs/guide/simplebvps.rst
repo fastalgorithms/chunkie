@@ -228,18 +228,131 @@ can be solved with very little coding:
 
 .. image:: ../../chunkie/guide/guide_simplebvps_laplaceneumann.png
    :width: 500px
-   :alt: combined chunker
+   :alt: solution of Laplace equation
    :align: center
 		
 
 A Helmholtz Scattering Problem
 -------------------------------
 
+In a scattering problem, an incident field $u^{\\textrm{inc}}$ is specified
+in the exterior of an object and a scattered field $u^{\\textrm{scat}}$ is
+determined so that the total field $u = u^{\\textrm{inc}}+u^{\\textrm{scat}}$
+satisfies the PDE and a given boundary condition. It is also required that 
+the scattered field radiates outward from the object. For a sound-soft object
+in acoustic scattering, the total field is zero on the object boundary.
+This results in the following boundary value problem for $u^{\\textrm{scat}}$
+in the exterior of the object:
+
+.. math::
+
+   \begin{align*}
+   (\Delta + k^2) u^{\textrm{scat}} &= 0 & \textrm{ in } \mathbb{R}^2 \setminus \Omega \; , \\
+   u^{\textrm{scat}} &= -u^{\textrm{inc}} & \textrm{ on } \Gamma \; , \\
+   \sqrt{|x|} \left( \frac{x}{|x|} \cdot \nabla u^{\textrm{scat}} - ik u^{\textrm{scat}} \right )
+   &\to 0 & \textrm{ as } |x|\to \infty \; ,
+   \end{align*}
+
+The Green function for the Helmholtz equation is
+
+.. math::
+
+   G_k (x,y) = \frac{i}{4} H_0^{(1)}( k|x-y|) \; .
+
+Analogous to the above, this Green function can be used to define
+single and double layer potential operators
+
+.. math::
+
+   \begin{align*}
+   [S\sigma](x) &:= \int_\Gamma G_k(x,y) \sigma(y) ds(y)  \\
+   [D\sigma](x) &:= \int_\Gamma n(y)\cdot \nabla_y G_k(x,y) \sigma(y) ds(y) 
+   \end{align*}
+   
+A robust choice for the layer potential representation for this problem is
+a *combined field* layer potential, which is a linear combination
+of the single and double layer potentials:
+
+.. math::
+
+   u^{\textrm{scat}}(x) = [(D - ik S)\sigma](x) \; .
+
+Then, imposing the boundary conditions on this representation
+results in the equation
+
+.. math::
+
+   \begin{align*}
+   -u^{\textrm{inc}}(x_0) &= \lim_{x\in \mathbb{R}^2\setminus \Omega, x\to x_0} [(D-ik S)\sigma](x)  \\
+   &= \frac{1}{2} \sigma(x_0) + [ (\mathcal{D} -ik \mathcal{S})\sigma ](x_0)
+   \end{align*}
+
+where we have used the exterior jump condition for the double layer potential.
+As above, the integrals in the operators restricted to the boundary must sometimes
+be interpreted in the principal value or Hadamard finite-part sense.
+The above is a second kind integral equation and is invertible.
+
+
+As before, this is relatively straightforward to implement in :matlab:`chunkie`
+using the built-in kernels:
+
+.. include:: ../../chunkie/guide/guide_simplebvps.m
+   :literal:
+   :code: matlab
+   :start-after: % START BASIC SCATTERING
+   :end-before: % END BASIC SCATTERING
+
+
+.. image:: ../../chunkie/guide/guide_simplebvps_basicscattering.png
+   :width: 500px
+   :alt: acoustic scattering around a peanut shape
+   :align: center
+		
 
 
 
 A Stokes Flow Problem
 ----------------------
+
+Below, we show a chunkIE solution of a Stokes flow problem in a multiply
+connected domain. This uses a combined layer representation for
+Stokes, :math:`u = (D-S)[\sigma]` which results in the boundary integral
+equation
+
+.. math::
+
+   f(x_0) = \left [\left ( -\frac{1}{2} \mathcal{I} + \mathcal{D} - \mathcal{S} \right ) \sigma
+   \right ] (x_0) \; ,
+
+
+where :math:`f` is a prescribed velocity on the boundary. This equation
+also has a nullspace, so we add the operator
+
+.. math::
+
+   \mathcal{W}\sigma (x) = \int_{\Gamma} n(x) (n(y)\cdot \sigma(y)) \, ds(y) 
+
+The data :math:`f` must have that its normal component integrates to zero.
+In that case, the equation
+
+.. math::
+
+   f(x_0) = \left [\left ( -\frac{1}{2} \mathcal{I} + \mathcal{W} + \mathcal{D} - \mathcal{S} \right ) \sigma
+   \right ] (x_0) \; ,
+
+   
+.. include:: ../../chunkie/guide/guide_simplebvps.m
+   :literal:
+   :code: matlab
+   :start-after: % START STOKES VELOCITY PROBLEM
+   :end-before: % END STOKES VELOCITY PROBLEM
+
+
+.. image:: ../../chunkie/guide/guide_stokesvelocity.png
+   :width: 500px
+   :alt: pipe flow with obstacles
+   :align: center
+		
 
 
 References

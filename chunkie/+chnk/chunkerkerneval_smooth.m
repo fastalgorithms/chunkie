@@ -87,7 +87,7 @@ if strcmpi(imethod,'direct')
         % nothing to ignore
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
+            dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
             dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
@@ -108,7 +108,7 @@ if strcmpi(imethod,'direct')
         % ignore interactions in flag array
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
+            dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
             dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
@@ -183,7 +183,7 @@ else
     if ~isempty(flag)
         for i = 1:nch
             densvals = dens(:,:,i); densvals = densvals(:);
-            dsdtdt = sqrt(sum(abs(chnkr.d(:,:,i)).^2,1));
+            dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
             dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
             densvals = densvals.*(dsdtdt(:));
