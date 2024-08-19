@@ -124,7 +124,7 @@ switch lower(type)
         Kyy = mu/pi * ( -8*ry.^2.*rn_t.*rn_s ./ r6 + ...
             (ry.*ny_t.*rn_s + ry.^2.*nn + rn_t.*rn_s + ny_s.*ry.*rn_t) ./ r4 + ...
             ny_t.*ny_s ./ r2 );
-        Kxy = mu/pi * ( -8*rx.*ry.*rn_r.*rn_s ./ r6 + ...
+        Kxy = mu/pi * ( -8*rx.*ry.*rn_t.*rn_s ./ r6 + ...
             (rx.*ny_t.*rn_s + rx.*ry.*nn + nx_s.*ry.*rn_t) ./ r4 + ...
             nx_t.*ny_s ./ r2 );
         Kyx = mu/pi * ( -8*ry.*rx.*rn_t.*rn_s ./ r6  + ...
@@ -163,6 +163,46 @@ switch lower(type)
         else
             varargout = {Kxx, Kxy, Kyy};
         end
+    case 'cpres'
+
+        eta = varargin{1};
+        [Sx, Sy] = chnk.stok2d.kern(mu, srcinfo, targinfo, 'spres');
+        [Dx, Dy] = chnk.stok2d.kern(mu, srcinfo, targinfo, 'dpres');
+        Kx = Dx + eta*Sx;
+        Ky = Dy + eta*Sy;    
+
+        if ( nargout == 1 )
+            % Interleave
+            K = zeros(Nt, 2*Ns);
+            K(:,1:2:end) = Kx;
+            K(:,2:2:end) = Ky;
+            varargout = {K};
+        else
+            varargout = {Kx, Ky};
+        end
+
+    case 'ctrac'
+
+        eta = varargin{1};
+        [Sxx, Sxy, Syy] = chnk.stok2d.kern(mu, srcinfo, targinfo, 'strac');
+        [Dxx, Dxy, Dyy] = chnk.stok2d.kern(mu, srcinfo, targinfo, 'dtrac');
+        Kxx = Dxx + eta*Sxx;
+        Kxy = Dxy + eta*Sxy;
+        Kyy = Dyy + eta*Syy;
+        
+        if ( nargout == 1 )
+            % Interleave
+            K = zeros(2*Nt, 2*Ns);
+            K(1:2:end, 1:2:end) = Kxx;
+            K(1:2:end, 2:2:end) = Kxy;
+            K(2:2:end, 1:2:end) = Kxy;
+            K(2:2:end, 2:2:end) = Kyy;
+            varargout = {K};
+        else
+            varargout = {Kxx, Kxy, Kyy};
+        end
+
+        
 
     otherwise
         error('Unknown Stokes kernel type ''%s''.', type);
