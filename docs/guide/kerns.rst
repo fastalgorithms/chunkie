@@ -90,6 +90,9 @@ entries
 Defining your own kernel class object
 --------------------------------------
 
+While the integral kernels for many common PDEs are available
+as built-ins in chunkIE, the utilities will work for a broad range
+of integral kernels. 
 To define your own kernel class object you can first obtain an
 empty kernel via :matlab:`kern=kernel()` and then update the
 properties as needed. It is generally simpler to define the :matlab:`eval`
