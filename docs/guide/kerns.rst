@@ -26,15 +26,140 @@ in the object
    :start-after: classdef kernel
    :end-before: % author
 
-The :matlab:`ptinfo` format
-----------------------------
+The :matlab:`eval` property and the :matlab:`ptinfo` format
+---------------------------------------------------------------
+
+The :matlab:`eval` property in the kernel class is the function which
+actually evaluates the interaction between sources and targets. It
+expects two structs, usually denoted :matlab:`s` and :matlab:`t`,
+which specify the sources and targets respectively.
+
+Points are specified as structs, with the same naming conventions
+as the properties of a :matlab:`chunker` object. We refer to this
+specification as the :matlab:`ptinfo` format. In particular, if
+:matlab:`pts` is a collection of points in the :matlab:`ptinfo` format,
+then it has the following properties:
+
+- pts.r - 2 x npts array of (x,y) coordinates for each point [required]
+- pts.d - 2 x npts array of (x,y) coordinates of derivative for each point [optional]
+- pts.d2 - 2 x npts array of (x,y) coordinates of second derivative for each point [optional]
+- pts.n - 2 x npts array of (x,y) normal vector for each point [optional]
+- pts.data - m x npts array of m-vectors of data for each point [optional, not fully supported]
+
+Aside from the :matlab:`pts.r` property, the remaining properties are optional
+and most are only meaningful for points on a curve.
+
+Suppose that :matlab:`kern` is the kernel object corresponding to a
+scalar kernel function of the form $K(x,y)$ and that :matlab:`s` and
+:matlab:`t` are structs specifying a collection of :matlab:`ns` sources and
+:matlab:`nt` targets, respectively. Then, :matlab:`kern.eval(s,t)` will
+return an :matlab:`nt x ns` matrix with the entries
+
+.. math::
+
+   \begin{bmatrix}
+   K(x^{(1)},y^{(1)}) & K(x^{(1)},y^{(2)}) & \cdots & K(x^{(1)},y^{(\texttt{ns})}) \\
+   K(x^{(2)},y^{(1)}) & K(x^{(2)},y^{(2)}) & \cdots & K(x^{(2)},y^{(\texttt{ns})}) \\
+   \vdots & \vdots & & \vdots \\
+   K(x^{(\texttt{nt})},y^{(1)}) & K(x^{(\texttt{nt})},y^{(2)}) & \cdots & K(x^{(\texttt{nt})},y^{(\texttt{ns})}) 
+   \end{bmatrix}
+
+where $x^{(i)}$ is the $i$th target with coordinates :matlab:`t.r(:,i)` and
+$y^{(j)}$ is the $j$th source with coordinates :matlab:`s.r(:,j)`.
+
+If $K$ is a vector- or matrix-valued kernel, then the dimensions of the kernel
+are stored in the :matlab:`opdims` property and the output is a
+:matlab:`(nt*kern.opdims(1)) x (ns*kern.opdims(2))` matrix. The matrix
+is organized into :matlab:`nt x ns` blocks, each of size
+:matlab:`kern.opdims(1) x kern.opdims(2)`. For example, if $K$ is a $2 \times 2$
+matrix valued kernel, then :matlab:`opdims = [2 2]` and :matlab:`kern.eval(s,t)` will
+return a :matlab:`(nt*kern.opdims(1)) x (ns*kern.opdims(2))` matrix with the
+entries
+
+.. math::
+
+   \begin{bmatrix}
+   K_{11}(x^{(1)},y^{(1)}) & K_{12}(x^{(1)},y^{(1)}) & \cdots & K_{11}(x^{(1)},y^{(\texttt{ns})}) & K_{12}(x^{(1)},y^{(\texttt{ns})}) \\
+   K_{21}(x^{(1)},y^{(1)}) & K_{22}(x^{(1)},y^{(1)}) & \cdots & K_{21}(x^{(1)},y^{(\texttt{ns})}) & K_{22}(x^{(1)},y^{(\texttt{ns})}) \\
+   \vdots & \vdots & & \vdots & \vdots \\
+   K_{11}(x^{(\texttt{nt})},y^{(1)}) & K_{12}(x^{(\texttt{nt})},y^{(1)}) & \cdots & K_{11}(x^{(\texttt{nt})},y^{(\texttt{ns})}) & K_{12}(x^{(\texttt{nt})},y^{(\texttt{ns})}) \\
+   K_{21}(x^{(\texttt{nt})},y^{(1)}) & K_{22}(x^{(\texttt{nt})},y^{(1)}) & \cdots & K_{21}(x^{(\texttt{nt})},y^{(\texttt{ns})}) & K_{22}(x^{(\texttt{nt})},y^{(\texttt{ns})}) \\
+   \end{bmatrix}
+
+  
+Defining your own kernel class object
+--------------------------------------
+
+To define your own kernel class object you can first obtain an
+empty kernel via :matlab:`kern=kernel()` and then update the
+properties as needed. It is generally simpler to define the :matlab:`eval`
+function in a separate file. The example below implements the kernel
+evaluator for the kernel $K(x,y) = \exp(\imath k|x-y|)$ in a file called
+``expkernel.m``. 
+
+.. include:: ../../chunkie/guide/expkernel.m
+   :literal:
+   :code: matlab
+
+You can then create an empty kernel object and point the eval
+property to this function:
+
+.. include:: ../../chunkie/guide/guide_kernels.m
+   :literal:
+   :code: matlab
+   :start-after: % START CREATE KERNEL
+   :end-before: % END CREATE KERNEL		
 
 
+Combining kernel objects
+--------------------------
 
+Given two kernel objects with compatible dimensions, it is
+possible to add and scale them.
+
+.. include:: ../../chunkie/guide/guide_kernels.m
+   :literal:
+   :code: matlab
+   :start-after: % START ADDING KERNELS
+   :end-before: % END ADDING KERNELS
+
+For a :matlab:`chunkgraph` with :matlab:`ne` edges, it is
+possible to specify interactions between each pair of edges
+in a :matlab:`ne x ne` matrix of kernel objects. Note that
+most chunkIE routines will require that
+the :matlab:`opdims(2)` property is the same for
+all kernels within any column of the kernel matrix and 
+the :matlab:`opdims(1)` property is the same for
+all kernels within any row of the kernel matrix.
+
+A simple way to create a matrix of kernel objects is to
+first build an empty matrix of the desired size and then
+to assign each entry a kernel.
+
+
+.. include:: ../../chunkie/guide/guide_kernels.m
+   :literal:
+   :code: matlab
+   :start-after: % START MATRIX OF KERNELS
+   :end-before: % END MATRIX OF KERNELS
+
+
+A matrix of kernels object can also be used to
+create matrix-valued kernels. A matrix of kernels can
+be merged into a single matrix-valued kernel using the
+:matlab:`kernel` constructor.
+
+.. include:: ../../chunkie/guide/guide_kernels.m
+   :literal:
+   :code: matlab
+   :start-after: % START INTERLEAVE
+   :end-before: % END INTERLEAVE
+
+	
 Built-in Kernels  
 ---------------------
 
-Chunkie includes built-in kernels that arise in the solution of the
+chunkIE includes built-in kernels that arise in the solution of the
 following PDEs.
 
 - :ref:`lap`
@@ -219,22 +344,5 @@ Stokes case.
    :code: matlab
    :start-line: 1
    :end-before: % author
-
-   
-Defining your own kernel class object
---------------------------------------
-
-
-Combining kernel objects
---------------------------
-
-
-Defining a matrix of kernel objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-Adding and scaling kernel objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
    

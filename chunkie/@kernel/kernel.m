@@ -44,6 +44,15 @@ classdef kernel
 %        single source and target, respectively. For scalar kernels,
 %        opdims = [1 1].
 %
+%      - K.sing: a string/character array specifying the singularity  
+%        strength of the kernel for sources and targets which are on
+%        the same curve. Currently recognized singularities are considered
+%        as part of a hierarchy
+%        - 'smooth' a smooth integral kernel
+%        - 'log' sum of above type kernel and phi(s)log(s-t)
+%        - 'pv' sum of above type kernels and phi(s)/(s-t)
+%        - 'hs' sum of above type kernels and phi(s)/(s-t)^2
+%
 %      - K.fmm: A function handle which calls the FMM for the corresponding
 %        kernel. K.fmm(eps, s, t, sigma) evaluates the kernel with density
 %        sigma from sources s to targets t with accuracy eps.
