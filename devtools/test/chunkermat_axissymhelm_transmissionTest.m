@@ -4,10 +4,10 @@ rng(iseed);
 
 addpaths_loc();
 
-zk = 10.1;
+zk = 5.1;
 
-type = 'cgrph';
-% type = 'chnkr-torus';
+% type = 'cgrph';
+type = 'chnkr-torus';
 
 pref = [];
 pref.k = 16;
@@ -15,7 +15,7 @@ ns = 10;
 nt = 10;
 ppw = 80;   % points per wavelength;
 maxchunklen = pref.k/ppw/real(zk)*2*pi;
-maxchunklen = 0.5;
+maxchunklen = 1.0;
 
 [chnkr, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen);
 wts = chnkr.wts; wts = wts(:);

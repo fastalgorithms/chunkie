@@ -7,12 +7,12 @@ addpaths_loc();
 zk = 1.1;
 
 type = 'chnkr-star';
-% type = 'chnkr-torus';
-type = 'cgrph';
+type = 'chnkr-torus';
+% type = 'cgrph';
 % type = 'cgrph-sphere';
 
-irep = 'rpcomb';
-% irep = 'sk';
+% irep = 'rpcomb';
+irep = 'sk';
 
 pref = [];
 pref.k = 16;

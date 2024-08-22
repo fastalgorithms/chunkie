@@ -44,6 +44,9 @@ function varargout = fmm(eps, mu, srcinfo, targinfo, type, sigma, varargin)
 %                   note that targinfo must contain targ.n
 %                type = 'ctrac' traction corresponding to combined layer,
 %                   note that targinfo must contain targ.n
+%                type = 'sgrad' gradient corresponding to single layer,
+%                type = 'dgrad' gradient corresponding to double layer,
+%                type = 'cgad' gradient corresponding to combined layer,
 %   sigma - density
 %   varargin{1} - coef in the combined layer formula, otherwise
 %                 does nothing
@@ -64,12 +67,12 @@ srcuse.sources = srcinfo.r(1:2,:);
 [m, ns] = size(srcuse.sources);
 sigma = reshape(sigma, [m, ns]);
 switch lower(type)
-    case {'svel', 'strac', 'spres'}
-        srcuse.stoklet = 1/(2*pi)*sigma;
-    case {'dvel', 'dtrac', 'dpres'}
+    case {'svel', 'strac', 'spres', 'sgrad'}
+        srcuse.stoklet = 1/(2*pi*mu)*sigma;
+    case {'dvel', 'dtrac', 'dpres', 'dgrad'}
         srcuse.strslet = -1/(2*pi)*sigma;
         srcuse.strsvec = srcinfo.n(1:2,:);
-    case {'cvel', 'ctrac', 'cpres'}
+    case {'cvel', 'ctrac', 'cpres', 'cgrad'}
         coef = varargin{1};
         srcuse.stoklet = 1/(2*pi*mu)*coef(2)*sigma;
         srcuse.strslet  = -1/(2*pi)*coef(1)*sigma;
@@ -89,7 +92,7 @@ switch lower(type)
         ifppregtarg = 1;
     case {'spres', 'dpres', 'cpres'}
         ifppregtarg = 2;
-    case {'strac', 'dtrac', 'ctrac'}
+    case {'strac', 'dtrac', 'ctrac', 'sgrad', 'dgrad', 'cgrad'}
         ifppregtarg = 3;
 end
 
@@ -112,23 +115,35 @@ if ( nargout > 0 )
                 varargout{2} = reshape(U.pretarg, [nt,1])*mu;
             end
             if nargout > 2
-                varargout{3} = reshape(U.gradtarg, [m, m, nt])*mu;
+                varargout{3} = reshape(U.gradtarg, [m, m, nt]);
             end
             if nargout > 3
-                str_err = ['CHUNKIE:stok2d:fmm:pgrad',...
-                    'Pressure gradients not currently supported for', ...
-                    'Stokes kernel ''%s''.'];
+                str_err = ['CHUNKIE:stok2d:fmm: too many output ',...
+                    'arguments for Stokes kernel ''%s''.'];
                 error(str_err, type);
             end
         case {'spres', 'dpres', 'cpres'}
             varargout{1} = U.pretarg.'*mu;
+            if nargout > 1
+                str_err = ['CHUNKIE:stok2d:fmm: too many output ',...
+                    'arguments for Stokes kernel ''%s''.'];
+                error(str_err, type);
+            end
+        case {'sgrad', 'dgrad', 'cgrad'}
+            varargout{1} = reshape(U.gradtarg, [m*m*nt, 1]);
+            if nargout > 1
+                str_err = ['CHUNKIE:stok2d:fmm: too many output ',...
+                    'arguments for Stokes kernel ''%s''.'];
+                error(str_err, type);
+            end
+
         case {'strac', 'dtrac', 'ctrac'}
             if ( ~isfield(targinfo, 'n') )
                 error('CHUNKIE:stok2d:fmm:normals', ...
                     'Targets require normal info when evaluating Stokes kernel ''%s''.', type);
             end
             du = reshape(U.gradtarg, [m, m, nt]);
-            dut = permute(u, [2,1,3]);
+            dut = permute(du, [2,1,3]);
             eu = du + dut;
             euxx = squeeze(eu(1,1,:));
             euxy = squeeze(eu(1,2,:));
@@ -140,6 +155,11 @@ if ( nargout > 0 )
             f(1:2:end) = -p.*ntx + euxx.*ntx + euxy.*nty;
             f(2:2:end) = -p.*nty + euxy.*ntx + euyy.*nty;
             varargout{1} = mu*f;
+            if nargout > 1
+                str_err = ['CHUNKIE:stok2d:fmm: too many output ',...
+                    'arguments for Stokes kernel ''%s''.'];
+                error(str_err, type);
+            end
         otherwise
             error('CHUNKIE:stok2d:fmm:pot', ...
                 'Potentials not supported for Stokes kernel ''%s''.', type);

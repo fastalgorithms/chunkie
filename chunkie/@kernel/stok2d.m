@@ -13,6 +13,10 @@ function obj = stok2d(type, mu, coefs)
 %   constructs the single-layer Stokes kernel for traction with viscosity
 %   MU.
 %
+%   KERNEL.STOK2D('sgrad', MU) or KERNEL.ELAST2D('sgradient', MU)
+%   constructs the single-layer Stokes kernel for velocity gradient with 
+%   viscosity MU.
+%
 %   KERNEL.STOK2D('dvel', MU) or KERNEL.ELAST2D('dvelocity', MU)
 %   constructs the double-layer Stokes kernel for velocity with viscosity
 %   MU. KERNEL.STOK2D('d', MU) and KERNEL.STOK2D('double', MU) are
@@ -26,7 +30,10 @@ function obj = stok2d(type, mu, coefs)
 %   constructs the double-layer Stokes kernel for traction with viscosity
 %   MU.
 %
-%  %
+%   KERNEL.STOK2D('dgrad', MU) or KERNEL.ELAST2D('dgradient', MU)
+%   constructs the double-layer Stokes kernel for velocity gradient with 
+%   viscosity MU.
+%  
 %   KERNEL.STOK2D('cvel', MU) or KERNEL.ELAST2D('cvelocity', MU)
 %   constructs the combined-layer Stokes kernel for velocity with viscosity
 %   MU. KERNEL.STOK2D('c', MU) and KERNEL.STOK2D('comb', MU) are
@@ -40,6 +47,10 @@ function obj = stok2d(type, mu, coefs)
 %   constructs the combined-layer Stokes kernel for traction with viscosity
 %   MU.
 %
+%   KERNEL.STOK2D('cgrad', MU) or KERNEL.ELAST2D('cgradient', MU)
+%   constructs the combined-layer Stokes kernel for velocity gradient with 
+%   viscosity MU.
+%  
 %
 
 % See also CHNK.STOK2D.KERN.
@@ -69,18 +80,25 @@ switch lower(type)
         obj.sing = 'log';
 
     case {'spres', 'spressure'}
-        obj.type = 'svel';
+        obj.type = 'spres';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'spres');
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'spres', sigma);
         obj.opdims = [1, 2];
 	obj.sing = 'pv';
 
     case {'strac', 'straction'}
-        obj.type = 'svel';
+        obj.type = 'strac';
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'strac');
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'strac', sigma);
         obj.opdims = [2, 2];
         obj.sing = 'smooth';
+
+    case {'sgrad', 'sgradient'}
+        obj.type = 'sgrad';
+        obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'sgrad');
+        obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'sgrad', sigma);
+        obj.opdims = [4, 2];
+        obj.sing = 'pv';    
 
     case {'dvel', 'dvelocity', 'd', 'double'}
         obj.type = 'dvel';
@@ -102,6 +120,14 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'dtrac', sigma);
         obj.opdims = [2, 2];
         obj.sing = 'hs';
+
+    case {'dgrad', 'dgradient'}
+        obj.type = 'dgrad';
+        obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'dgrad');
+        obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'dgrad', sigma);
+        obj.opdims = [4, 2];
+        obj.sing = 'hs';    
+
 
     case {'cvel', 'cvelocity', 'c', 'comb'}
         if ( nargin < 2 )
@@ -141,6 +167,14 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'ctrac', sigma, coefs);
         obj.opdims = [2, 2];
         obj.sing = 'hs';
+
+    case {'cgrad', 'cgradient'}
+        obj.type = 'cgrad';
+       obj.eval = @(s,t) coefs(1)*chnk.stok2d.kern(mu, s, t, 'dgrad') + ...
+                          coefs(2)*chnk.stok2d.kern(mu, s, t, 'sgrad');
+        obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'cgrad', sigma, coefs);
+        obj.opdims = [4, 2];
+        obj.sing = 'hs';    
 
     otherwise
         error('Unknown Stokes kernel type ''%s''.', type);
