@@ -12,8 +12,12 @@ classdef kernel
 %                                                   'cp'
 %      'helmholtz difference' ('helmdiff', 'hdiff') 's', 'd', 'sp', 'dp'
 %      'elasticity' ('elast', 'e')                  's', 'strac', 'd', 'dalt'
-%      'stokes'     ('stok', 's')                   'svel', 'spres', 'strac',
-%                                                   'dvel', 'dpres', 'dtrac'
+%      'stokes'     ('stok', 's')                   'svel', 'spres', 
+%                                                   'strac', 'sgrad'
+%                                                   'dvel', 'dpres',
+%                                                   'dtrac', 'dgrad'
+%                                                   'cvel', 'cpres',
+%                                                   'ctrac', 'cgrad'
 %      'zeros'       ('zero','z') 
 %      'axis sym helmholtz'                         's' 'd' 'sp' 'c'
 %         ('axissymh', 'axissymhelm')

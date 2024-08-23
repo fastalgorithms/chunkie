@@ -64,6 +64,7 @@ nregion = 1;
 nedge = 1;
 if class(chnkobj) == "chunker"
    chnkr = chnkobj;
+   nedge = length(chnkr);
 elseif class(chnkobj) == "chunkgraph"
    chnkr = chnkobj.echnks;
    nregion = length(chnkobj.regions);
