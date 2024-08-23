@@ -87,6 +87,25 @@ chnkr = refine(chnkr,struct('nover',1));
 a = area(chnkr);
 assert(abs(a - pi*r^2) < 1e-12,'area wrong for circle domain')
 
+% iflcosed flag testing 
+
+lastwarn(''); %clears warning state
+cparams = [];
+chnkr = chunkerfunc(@(t) [cos(t(:).'); sin(t(:).'/2)],cparams);
+[warnmsg,warnID] = lastwarn;
+assert(~isempty(warnmsg));
+
+lastwarn(''); %clears warning state
+cparams = []; cparams.ta=0; cparams.tb=2*pi-1e-3;
+chnkr = chunkerfunc(@(t) [cos(t(:).'); sin(t(:).')],cparams);
+[warnmsg,warnID] = lastwarn;
+assert(~isempty(warnmsg));
+
+lastwarn(''); %clears warning state
+cparams = []; cparams.ta=0; cparams.tb=2*pi-1e-3; cparams.ifclosed = false;
+chnkr = chunkerfunc(@(t) [cos(t(:).'); sin(t(:).')],cparams);
+[warnmsg,warnID] = lastwarn;
+assert(isempty(warnmsg));
 
 % subplot(1,3,3)
 % plot(chnkr)

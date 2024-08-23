@@ -110,7 +110,7 @@ end
 
 % discover number of outputs
 try         
-    [r,d,d2] = fcurve(t);
+    [r,d,d2] = fcurve(ta);
     nout = 3;
 catch
     try 
@@ -313,6 +313,9 @@ for ijk = 1:maxiter_res
     
     rad_curr = max(xmax-xmin,ymax-ymin);
 end
+
+%   
+
 
 
 %       the curve should be resolved to precision eps now on
@@ -549,6 +552,32 @@ for i = 1:nch
     chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
     chnkr.dstor(:,:,i) = reshape(out{2},dim,k)*h;
     chnkr.d2stor(:,:,i) = reshape(out{3},dim,k)*h*h;
+end
+
+% check ends 
+lrinterpmat = lege.matrin(k,[-1;1],us);
+left1 = lrinterpmat(1,:)*(chnkr.rstor(:,:,1).');
+rightnch = lrinterpmat(2,:)*(chnkr.rstor(:,:,nch).');
+dleft1 = lrinterpmat(1,:)*(chnkr.dstor(:,:,1).');
+dleft1 = dleft1(:)/norm(dleft1(:));
+drightnch = lrinterpmat(2,:)*(chnkr.dstor(:,:,nch).');
+drightnch = drightnch(:)/norm(drightnch(:));
+
+msgbase = "CHUNKERFUNC: ";
+if norm(left1(:)-rightnch(:))/rad_curr > eps && ifclosed
+    msg = msgbase + ...
+        "start and end points of curve parameterization are not the same" + ...
+        " to target precision but ifclosed flag is true." + ...
+        " Check curve parameterization or if not a closed curve" + ...
+        " set flag appropriately and consider creating a chunkgraph object";
+    warning(msg);
+elseif norm(dleft1(:)-drightnch(:)) > eps*k && ifclosed
+    msg = msgbase + ...
+        "unit tangent vectors at start and end points of curve are not the same" + ...
+        " to target precision but ifclosed flag is true." + ...
+        " Check curve parameterization or if not a closed curve" + ...
+        " set flag appropriately and consider creating a chunkgraph object";
+    warning(msg);
 end
 
 chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
