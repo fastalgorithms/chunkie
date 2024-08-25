@@ -63,11 +63,6 @@ end
 % prefs.chsmall = 1d-4;
 [cgrph] = chunkgraph(verts,edge2verts,fchnks);
 
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
-
 
 ncurve = 1;
 
@@ -110,11 +105,6 @@ end
 prefs      = [];
 % prefs.chsmall = 1d-4;
 [cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
-
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
 
 
 zk = 1.0;

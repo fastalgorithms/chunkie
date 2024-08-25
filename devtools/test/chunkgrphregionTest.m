@@ -41,56 +41,31 @@ vertc(1,:) = vertc(1,:)+12;
 evert = [1.1;0];
 verts = [vertc,vertd,vertb,verta,evert];
 v2e = [1,-1,0,0;0,1,-1,0;0,0,1,-1;-1,0,0,1];
-edge2verts = zeros(18,size(verts,2));
-edge2verts(1:16,1:16) = kron(eye(4),v2e);
-edge2verts(17,11) = 1;
-edge2verts(17,17)=-1;
-edge2verts(18,12) = 1;
-edge2verts(18,17)= -1;
 
-fchnks = [];
+edgesendverts = [2, 3, 4, 1, 6, 7, 8, 5, 10, 11, 12, 9, 14, 15, 16, 13, 17, 17, NaN;
+                 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 11, 12, NaN];
 
+% edgesendverts = [2, 3, 4, 1, 6, 7, 8, 5, 10, 11, 12, 9, 14, 15, 16, 13, 17, 17;
+%                 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 11, 12];
 
-[cgrph] = chunkgraph(verts,edge2verts,fchnks);
+[~, nedges] = size(edgesendverts);
 
-vstruc = procverts(cgrph);
-cgrph = balance(cgrph);
+fchnks = cell(nedges,1);
+cparams = cell(nedges,1);
+for i = 1:nedges
+    fchnks{i} = [];
+    cparams{i} = [];
+end
 
-% rgns = cgrph.regions;
-% rgn1 = rgns{1};
-% rgn2 = rgns{2};
-% 
-% r2ub = rgn2{1};
-% 
-% e2 = rgn2{1}{1}(1);
-% v2 = find(cgrph.edge2verts(:,abs(e2))==1);
-% v2 = verts(:,v2);
-% 
-% irgn = 0;
-% for ii=1:numel(rgn1)
-%     nin = pointinregion(cgrph,rgn1{ii},v2);
-%     if (nin > 0 && mod(nin,2)==1)
-%         if (irgn ~= 0)
-%             display("Warning: an unsupported geometry error has occurred");
-%         end
-%         irgn = ii;
-%     end
-% end
-% 
-% if (irgn == 0)
-%     
-% end    
-% 
-% rgnout = rgns{1};
-% if (numel(rgns)>1)
-%     rgn2 = rgns{2};
-%     [rgnout] = mergeregions(cgrph,rgnout,rgn2);
-%     for ii=3:numel(rgns)
-%         rgn2 = rgns{ii};
-%         [rgnout] = mergeregions(cgrph,rgnout,rgn2);
-%     end
-% end    
-%%%% [in] = inpolygon(xquery,yquery,xverts,yverts)
+if nedges == 19
+    narms = 3;
+    amp = 0.3;
+    fchnks{19} = @(t) starfish(t,narms,amp, [12;0], 0, 0.3);
+    cparams{19}.ta = 0;
+    cparams{19}.tb = 2*pi;
+end
+
+[cgrph] = chunkgraph(verts,edgesendverts,fchnks,cparams);
 
 
 
