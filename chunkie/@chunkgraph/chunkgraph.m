@@ -8,11 +8,12 @@ classdef chunkgraph
 %
 % chunkgraph properties:
 %
-%  verts - 2 x nverts array of vertex locations 
-%  edgesendverts - 2 x nedges array of starting and ending vertices for
-%      each edge 
-%  echnks - nedge x 1 array of chunker objects discretizing each edge curve
-%  regions - nregions x 1 cell array specifying region information for the
+%   verts - 2 x nverts array of vertex locations 
+%   edgesendverts - 2 x nedges array of starting and ending vertices for
+%      each edge. edgesendverts(:,i) should be NaNs for closed loops,
+%      and a corresponding function handle must be provided
+%   echnks - nedge x 1 array of chunker objects discretizing each edge curve
+%   regions - nregions x 1 cell array specifying region information for the
 %      given graph structure. A region is a connected subset of R^2 
 %      specified by its bounding edges. If the jth region is simply 
 %      connected then abs(regions{j}{1}) is the list of edges which 
@@ -20,20 +21,40 @@ classdef chunkgraph
 %      the direction of traversal for that edge. The edges are ordered
 %      according to an orientation based on nesting. The boundary of the
 %      outermost (unbounded) region is traversed clockwise. 
-%  vstruc - nverts x 1 cell array. vstruc{j}{1} gives a list of edges which
+%   vstruc - nverts x 1 cell array. vstruc{j}{1} gives a list of edges which
 %      are incident to a vertex. vstruc{j}{2} is a list of the same length
 %      consisting of +1 and -1. If +1 then the corresponding edge ends at
 %      the vertex, if -1 it begins at the vertex.
-%  v2emat - sparse nedge x nverts matrix, akin to a connectivity matrix.
+%   v2emat - sparse nedge x nverts matrix, akin to a connectivity matrix.
 %      the entry v2emat(i,j) is 1 if edge i ends at vertex j, it is -1 if
 %      edge i starts at vertex j, and it is 2 if edge i starts and ends at
 %      vertex j.
+%   k - integer, number of Legendre nodes on each chunk
+%   dim - integer, dimension of the ambient space in which the curve is 
+%             embedded
+%   In the rest, nch = \sum_{j} chunkgraph.echnks(j).nch;
+%   npt - returns k*nch, the total number of points on the curve
+%   r - dim x k x nch array, r(:,i,j) gives the coordinates of the ith 
+%         node on the jth chunk of the chunkgraph
+%   d - dim x k x nch array, d(:,i,j) gives the time derivative of the 
+%         coordinate at the ith node on the jth chunk of the chunkgraph
+%   d2 - dim x k x nch array, d(:,i,j) gives the 2nd time derivative of the 
+%         coordinate at the ith node on the jth chunk of the chunkgraph
+%   n - dim x k x nch array of normals to the curve
+%   data - datadim x k x nch array of data attached to chunkgraph points 
+%         this data will be refined along with the chunkgraph
+%   adj - 2 x nch integer array. adj(1,j) is i.d. of the chunk that 
+%         precedes chunk j in parameter space. adj(2,j) is the i.d. of the
+%         chunk which follows. If adj(i,j) is 0 then that end of the chunk
+%         is a free end. if adj(i,j) is negative than that end of the chunk
+%         meets with other chunk ends in a vertex. 
 %
 % chunkgraph methods:
 %   plot(obj, varargin) - plot the chunkgraph
 %   quiver(obj, varargin) - quiver plot of chunkgraph points and normals
 %   plot_regions(obj, iflabel) - plot the chunkgraph with region and 
 %                  and edge labels
+%   scatter(obj,varargin) - scatter plot of the chunkgraph nodes
 %   obj = refine(obj,varargin) - refine the curve
 %   wts = weights(obj) - scaled integration weights on curve
 %   rn = normals(obj) - recompute normal vectors
@@ -47,12 +68,11 @@ classdef chunkgraph
 %             the chunkgraph
 %   tau = tangents(obj) - unit tangents to curve
 %   kappa = signed_curvature(obj) - get signed curvature along curve
+%   obj = makedatarows(obj,nrows) - add nrows rows to the data storage.
+%   rflag = datares(obj,opts) - check if data in data rows is resolved
 %
 %   To add:
-%     scatter
-%     make data rows
-%     datares
-%
+%     flagnear
 %
 % Syntax:
 %
@@ -220,6 +240,13 @@ classdef chunkgraph
                     end
                     % set cploc.ifclosed in a way that makes sense
                     cploc.ifclosed = false;
+                    i1 = edgesendverts(1,i);
+                    i2 = edgesendverts(2,i);
+
+                    if isnan(i1) || isnan(i2)
+                        cploc.ifclosed = true;
+                    end
+
                     % chunkgraph edges need at least 4 chunks
                     if isfield(cploc,'nchmin')
                         cploc.nchmin = max(4,cploc.nchmin);
@@ -239,10 +266,8 @@ classdef chunkgraph
                         cploc.tb = tb;
                     end
                     vs =fchnks{i}([ta,tb]);
-                    chnkr = chunkerfunc(fchnks{i},cploc,pref);
+                    chnkr = chunkerfunc(fchnks{i}, cploc, pref);
                     chnkr = sort(chnkr);
-                    i1 = edgesendverts(1,i);
-                    i2 = edgesendverts(2,i);
                     if ~isnan(i1) && ~isnan(i2)
                         if i1 ~= i2 
                             vfin0 = verts(:,i1);
@@ -364,13 +389,13 @@ classdef chunkgraph
 
         % defined in other files 
         spmat = build_v2emat(obj)
-        obj = refine(obj,opts)
+        obj = refine(obj, opts)
         obj = balance(obj)
-        obj = move(obj,r0,r1,trotat,scale)
+        obj = move(obj, r0, r1, trotat, scale)
         rmin = min(obj)
         rmax = max(obj)
-        plot(obj,varargin)
-        quiver(obj,varargin)
+        plot(obj, varargin)
+        quiver(obj, varargin)
         plot_regions(obj, iflabel)
         wts = weights(obj)
         rnorm = normals(obj)
@@ -378,6 +403,9 @@ classdef chunkgraph
         rnormonesmat = normonesmat(obj)
         tau = tangents(obj)
         kappa = signed_curvature(obj)
+        obj = makedatarows(obj, nrows)
+        scatter(obj, varargin)
+        rres = datares(obj, opts)
 
         
     end

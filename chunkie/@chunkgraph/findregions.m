@@ -2,7 +2,7 @@ function [regions] = findregions(obj_in)
 %FINDREGIONS determins the regions of a chunkgraph. This routine handles
 % the situations involving nested chunkers inside the chunkgraph
 %
-% Syntax: [regions] = findregions(obj, iverts);
+% Syntax: [regions] = findregions(obj_in, iverts);
 %
 % Input:
 %   obj_in           - a chunkgraph object
