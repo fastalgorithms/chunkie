@@ -52,19 +52,19 @@ switch lower(type)
     case {'sp', 'sprime'}
         obj.type = 'sp';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sprime');
-        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'sprime', sigma);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'sprime', sigma);
         obj.sing = 'smooth';
 
     case {'st', 'stau'}
         obj.type = 'st';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'stau');
-        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'stau', sigma);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'stau', sigma);
         obj.sing = 'pv';
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'dprime');
-        obj.fmm  = @(eps,s,t,sigma) chnk.lap.fmm(eps, s, t, 'dprime', sigma);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'dprime', sigma);
         obj.sing = 'hs';
 
     case {'sg', 'sgrad'}

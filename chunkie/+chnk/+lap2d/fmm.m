@@ -76,6 +76,10 @@ end
 
 pg = 0;
 pgt = min(nargout, 3);
+switch lower(type)
+    case {'sprime', 'dprime', 'cprime','sp','dp','cp'}
+        pgt = max(pgt, 2);
+end
 U = rfmm2d(eps, srcuse, pg, targuse, pgt);
 
 % Assign potentials
@@ -85,7 +89,7 @@ if ( nargout > 0 )
             varargout{1} = U.pottarg.';
         case 'sgrad'
             varargout{1} = U.gradtarg;
-        case {'sprime', 'dprime'}
+        case {'sprime', 'dprime','cprime','sp','dp','cp'}
             if ( ~isfield(targinfo, 'n') )
                 error('CHUNKIE:lap2d:fmm:normals', ...
                     'Targets require normal info when evaluating Laplace kernel ''%s''.', type);

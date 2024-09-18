@@ -79,7 +79,7 @@ end
 pg = 0;
 pgt = min(nargout, 2);
 switch lower(type)
-    case {'sprime', 'dprime', 'cprime'}
+    case {'sprime', 'dprime', 'cprime','sp','dp','cp'}
         pgt = max(pgt, 2);
 end
 U = hfmm2d(eps, zk, srcuse, pg, targuse, pgt);
@@ -89,7 +89,7 @@ if ( nargout > 0 )
     switch lower(type)
         case {'s', 'd', 'c'}
             varargout{1} = U.pottarg.';
-        case {'sprime', 'dprime', 'cprime'}
+        case {'sprime', 'dprime', 'cprime','sp','dp','cp'}
             if ( ~isfield(targinfo, 'n') )
                 error('CHUNKIE:helm2d:fmm:normals', ...
                     'Targets require normal info when evaluating Helmholtz kernel ''%s''.', type);
