@@ -7,6 +7,9 @@
 % across the rounded corners
 %
 
+% profile clear
+% profile on
+
 clearvars; close all;
 iseed = 8675309;
 rng(iseed,'twister');
@@ -113,3 +116,4 @@ fprintf('%5.2e : Relative max error\n',error);
 % 
 
 assert(error < 1e-10)
+% profile viewer

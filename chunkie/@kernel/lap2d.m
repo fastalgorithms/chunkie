@@ -42,7 +42,6 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 's');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 's', sigma);
         obj.sing = 'log';
-        obj.sing = 'log';
         obj.splitinfo = [];
         obj.splitinfo.type = {[1 0 0 0]};
         obj.splitinfo.action = {'r'};

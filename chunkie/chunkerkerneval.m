@@ -344,15 +344,19 @@ for j=1:size(chnkr.r,3)
 %        fints(ji) = fints(ji) + matcfield*dens(idxjmat);
         for l = 1:length(allmats)
             switch kern.splitinfo.action{l}
-                case 'r'
+                case 'r' % real part
                     mat0 = real(allmats{l});
-                case 'i'
+                case 'i' % imaginary part
                     mat0 = imag(allmats{l});
-                case 'c'
+                case 'c' % complex
                     mat0 = allmats{l};
             end
-            fints(ji) = fints(ji) + (kron(mat0,ones(opdims')).* ...
-                kern.splitinfo.function{l}(srcinfo,targinfoji))*dens(idxjmat);
+            mat0opdim = kron(mat0,ones(opdims'));
+            % this is reevaluating more or less the same kernel multiple times...
+            % think of a better kernel split format...
+            mat0xsplitfun = mat0opdim.* ...
+                            kern.splitinfo.function{l}(srcinfo,targinfoji);
+            fints(ji) = fints(ji) + mat0xsplitfun*dens(idxjmat);
         end
     end
 end
