@@ -40,12 +40,28 @@ switch lower(type)
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 's');
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 's', sigma);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 0 0],[1 0 0 0]};
+        obj.splitinfo.action = {'r','r'};
+        obj.splitinfo.function = cell(2,1);
+        obj.splitinfo.function{1} = @(s,t) obj.eval(s,t) ...
+                                         + 1/(2*pi)*4*log(abs((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)'))).*imag(obj.eval(s,t));
+        obj.splitinfo.function{2} = @(s,t) 4*imag(obj.eval(s,t));
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'd');
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'd', sigma);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r','r'};
+        obj.splitinfo.function = cell(3,1);
+        obj.splitinfo.function{1} = @(s,t) obj.eval(s,t) ...
+                                           + 1/(2*pi)*4*log(abs((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)'))).*imag(obj.eval(s,t)) ... 
+                                           + 1/(2*pi)*real((s.n(1,:)+1i*s.n(2,:))./((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)')));
+        obj.splitinfo.function{2} = @(s,t) 4*imag(obj.eval(s,t));
+        obj.splitinfo.function{3} = @(s,t) ones(size(t.r,2),size(s.r,2));
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
@@ -69,6 +85,20 @@ switch lower(type)
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c', coefs);
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, coefs);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r','r'};
+        deval = @(s,t) chnk.helm2d.kern(zk, s, t, 'd', coefs(1));
+        seval = @(s,t) chnk.helm2d.kern(zk, s, t, 's', coefs(2));
+        obj.splitinfo.function = cell(3,1);
+        obj.splitinfo.function{1} = @(s,t) coefs(1) * (deval(s,t) ...
+                                                       + 1/(2*pi)*4*log(abs((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)'))).*imag(deval(s,t)) ... 
+                                                       + 1/(2*pi)*real((s.n(1,:)+1i*s.n(2,:))./((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)')))) ...
+                                         + coefs(2) * (seval(s,t) ...
+                                                       + 1/(2*pi)*4*log(abs((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)'))).*imag(seval(s,t)));
+        obj.splitinfo.function{2} = @(s,t) coefs(1) * (4*imag(deval(s,t))) ...
+                                         + coefs(2) * (4*imag(seval(s,t)));
+        obj.splitinfo.function{3} = @(s,t) coefs(1)*ones(size(t.r,2),size(s.r,2));
 
     case {'cp', 'cprime'}
         if ( nargin < 3 )

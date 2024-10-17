@@ -42,12 +42,21 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 's');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 's', sigma);
         obj.sing = 'log';
+        obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0]};
+        obj.splitinfo.action = {'r'};
+        obj.splitinfo.function = {@(s,t) ones(size(t.r,2),size(s.r,2))};
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'd');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'd', sigma);
         obj.sing = 'smooth';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 -1 0]};
+        obj.splitinfo.action = {'r'};
+        obj.splitinfo.function = {@(s,t) ones(size(t.r,2),size(s.r,2))};
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
