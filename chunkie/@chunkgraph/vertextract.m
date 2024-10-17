@@ -26,6 +26,13 @@ function [inds,isgn] = vertextract(ivert,cgrph)
 % author: Jeremy Hoskins
 
 irel = find(cgrph.v2emat(:,ivert) ~= 0);
+if isempty(irel)
+     % if vertex is not connected, do nothing
+    inds = [];
+    isgn = [];
+    return
+end
+
 % extract the indices of the edges which terminate at ivert.
 ieplus = find(cgrph.edgesendverts(2,irel) ==  ivert);
 ieplus = irel(ieplus); ieplus = ieplus(:).';

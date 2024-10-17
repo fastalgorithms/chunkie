@@ -64,6 +64,7 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %           opts.rcip = boolean (true), flag for whether to include rcip
 %                      corrections for near corners if input chnkobj is
 %                      of type chunkergraph
+%           opts.rcip_ignore = [], list of vertices to ignore in rcip
 %           opts.nsub_or_tol = (40) specify the level of refinements in rcip
 %                    or a tolerance where the number of levels is given by
 %                    ceiling(log_{2}(1/tol^2));
@@ -132,6 +133,7 @@ nonsmoothonly = false;
 corrections = false;
 l2scale = false;
 isrcip = true;
+rcip_ignore = [];
 nsub = 40;
 adaptive_correction = false;
 sing = 'log';
@@ -159,6 +161,13 @@ end
 
 if(isfield(opts,'rcip'))
     isrcip = opts.rcip;
+end
+if(isfield(opts,'rcip_ignore'))
+    rcip_ignore = opts.rcip_ignore;
+    if ~isrcip && isempty(rcip_ignore)
+        fprintf('in chunkermat: provided list of vertices to ignore in RCIP\n')
+        fprintf('while RCIP is not enabled.\n')
+    end
 end
 
 if(isfield(opts,'nsub_or_tol'))
@@ -454,7 +463,7 @@ if(icgrph && isrcip)
     [~,nv] = size(chnkobj.verts);
     ngl = chnkrs(1).k;
     
-    for ivert=1:nv
+    for ivert=setdiff(1:nv,rcip_ignore)
         clist = chnkobj.vstruc{ivert}{1};
         isstart = chnkobj.vstruc{ivert}{2};
         isstart(isstart==1) = 0;
