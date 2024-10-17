@@ -1,11 +1,130 @@
-function [regions] = findregions(obj,iverts)
-%FINDREGIONS a relatively crude method for determining the regions of 
+function [regions] = findregions(obj_in)
+%FINDREGIONS determins the regions of a chunkgraph. This routine handles
+% the situations involving nested chunkers inside the chunkgraph
+%
+% Syntax: [regions] = findregions(obj_in, iverts);
+%
+% Input:
+%   obj_in           - a chunkgraph object
+%   iverts(optional) - the indices of the subset of vertices for which regions 
+%              are to be found.
+%
+% Output:
+%   regions - a cell array of length nregions (the number of regions 
+%             found). Each region is specified by a vector of 
+%             indices of edges which traverse the boundary.
+
+% author: Jeremy Hoskins
+    
+    obj = obj_in;
+    [~, c] = find(isnan(obj.edgesendverts));
+    c = unique(c);
+    nnew = length(c);
+    [~, nv] = size(obj.verts);
+    nvnew = nv + nnew;
+    verts_new = zeros(2,nvnew);
+    verts_new(:,1:nv) = obj.verts;
+   
+    for i = 1:nnew
+       verts_new(:,nv+i) = obj.echnks(c(i)).r(:,1);
+       obj.edgesendverts(:, c(i)) = nv + i;
+    end
+    obj.verts = verts_new;
+    obj.v2emat = build_v2emat(obj);
+    obj.vstruc = procverts(obj);
+
+    g = graph(obj.edgesendverts(1,:),obj.edgesendverts(2,:));
+    ccomp = conncomp(g);
+    
+    chnkcomp = {};
+    regions = {};
+    
+    for i=1:max(ccomp)
+        inds = find(ccomp==i);
+        chnkcomp{i} = inds;
+        [region_comp] = findregions_verts(obj,inds);
+        [region_comp] = findunbounded(obj,region_comp);
+        regions{i} = region_comp;
+    end
+    
+    gmat = zeros(numel(regions), numel(regions));
+    
+    for ii=1:numel(regions)
+       rgna = regions{ii};
+       ilist = [];
+       for jj=1:numel(regions)
+           if (ii ~=jj)
+                rgnb = regions{jj};
+                [inc] = regioninside(obj,rgnb,rgna);
+                if (inc)
+                    ilist = [ilist,jj];
+                end
+           end
+           gmat(ii,ilist) = 1;
+           gmat(ilist,ii) = 1;
+       end
+       imin = min(ilist);   
+    end    
+    
+    ccomp_reg = conncomp(graph(gmat));
+    [s,inds] = sort(ccomp_reg);
+    regions = regions(inds);
+    
+    for ii = 1:numel(s)
+        si = s(ii);
+        for jj=1:(numel(s)-1)
+            sj = s(jj);
+            if (si == sj)
+                rgna = regions{jj};
+                rgnb = regions{jj+1};
+                [inc] = regioninside(obj,rgna,rgnb);
+                if (inc)
+                    regions([jj,jj+1])= regions([jj+1,jj]);
+                end
+            end
+        end    
+    end
+
+    
+    rgns = regions;
+    rgnso= {};
+    
+    for ii=1:max(s)
+        inds = find(s==ii);
+        rgnout = rgns{inds(1)};
+        for jj=2:numel(inds)
+            indj = inds(jj);
+            [rgnout] = mergeregions(obj,rgnout,rgns{indj});
+        end
+        rgnso{ii} = rgnout;
+    end    
+    
+    regions = rgnso;
+    rgns = regions;
+    rgnout = rgns{1};
+    if (numel(rgns)>1)
+        rgn2 = rgns{2};
+        [rgnout] = mergeregions(obj,rgnout,rgn2);
+        for ii=3:numel(rgns)
+            rgn2 = rgns{ii};
+            [rgnout] = mergeregions(obj,rgnout,rgn2);
+        end
+    end
+    
+    regions = rgnout;
+
+
+end
+
+
+function [regions] = findregions_verts(obj, iverts)
+%FINDREGIONS_VERTS a relatively crude method for determining the regions of 
 % a chunkgraph associated with the subset of its vertices stored in iverts.
 % NOTE: if iverts is not provided then all vertices will be considered. The
 % Matlab routine conncomp can be used to provide subsets of vertices which 
 % will define meaningful subregions.
 %
-% Syntax: [regions] = findregions(obj,iverts);
+% Syntax: [regions] = findregions_verts(obj, iverts);
 %
 % Input:
 %   obj              - a chunkgraph object
@@ -16,9 +135,6 @@ function [regions] = findregions(obj,iverts)
 %   regions - a cell array of length nregions (the number of regions 
 %             found). Each region is specified by a vector of 
 %             indices of edges which traverse the boundary.
-%  
-%
-%
 
 % author: Jeremy Hoskins
 

@@ -58,10 +58,6 @@ end
 
 [cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
 
-
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
 plot(cgrph); hold on;
 quiver(cgrph);
 

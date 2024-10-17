@@ -32,10 +32,6 @@ cparams = [];
 cparams.nover = 2;
 [cgrph] = chunkgraph(verts,edgesendverts,fchnks,cparams);
 
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
 % dirichlet and neumann test
 zk = 30;
 
