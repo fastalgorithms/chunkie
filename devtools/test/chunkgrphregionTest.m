@@ -39,7 +39,8 @@ vertd = vertc;
 vertc(1,:) = vertc(1,:)+12;
 
 evert = [1.1;0];
-verts = [vertc,vertd,vertb,verta,evert];
+vertf = [12;0];
+verts = [vertc,vertd,vertb,verta,evert,vertf];
 v2e = [1,-1,0,0;0,1,-1,0;0,0,1,-1;-1,0,0,1];
 
 edgesendverts = [2, 3, 4, 1, 6, 7, 8, 5, 10, 11, 12, 9, 14, 15, 16, 13, 17, 17, NaN;
@@ -67,7 +68,19 @@ end
 
 [cgrph] = chunkgraph(verts,edgesendverts,fchnks,cparams);
 
-
+rgntrue = cell(7,1);
+rgntrue{1} = {[1 4 3 2], [5 8 7 6]};
+rgntrue{2} = {[-1 -2 -3 -4], [19]};
+rgntrue{3} = {[-19]};
+rgntrue{4} = {[-5 -6 -7 -8], [9 12 -18 17 10]};
+rgntrue{5} = {[11 -17 18]};
+rgntrue{6} = {[-9 -10 -11 -12], [13 16 15 14]};
+rgntrue{7} = {[-13 -14 -15 -16]};
+for i = 1:7
+   for j = 1:length(rgntrue{i})
+        assert(all(rgntrue{i}{j}==cgrph.regions{i}{j}))
+   end
+end
 
 function [r,d,d2] = circulararc(t,cpars)
 %%circulararc
