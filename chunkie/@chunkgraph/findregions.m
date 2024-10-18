@@ -15,7 +15,6 @@ function [regions] = findregions(obj_in)
 %             indices of edges which traverse the boundary.
 
 % author: Jeremy Hoskins
-    
     obj = obj_in;
     [~, c] = find(isnan(obj.edgesendverts));
     c = unique(c);
@@ -38,13 +37,17 @@ function [regions] = findregions(obj_in)
     
     chnkcomp = {};
     regions = {};
-    
+    ictr = 0;
     for i=1:max(ccomp)
         inds = find(ccomp==i);
         chnkcomp{i} = inds;
         [region_comp] = findregions_verts(obj,inds);
+        if isempty(region_comp)
+            continue
+        end
         [region_comp] = findunbounded(obj,region_comp);
-        regions{i} = region_comp;
+        ictr = ictr+1;
+        regions{ictr} = region_comp;
     end
     
     gmat = zeros(numel(regions), numel(regions));
