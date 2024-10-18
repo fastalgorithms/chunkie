@@ -57,9 +57,15 @@ opts = [];
 opts.corrections = true;
 cormat = chunkerkernevalmat(chnkr,dkern,targets,opts);
 opts = [];
+opts.forcesmooth = true;
 opts.cormat = cormat;
 u_eval_cor = chunkerkerneval(chnkr,dkern,sol,targets,opts);
 
 assert(norm(utrue-u_eval_cor,inf)<1e-11)
+opts = [];
+opts.forcesmooth = true;
+u_eval = chunkerkerneval(chnkr,dkern,sol,targets,opts);
+
+assert(norm(utrue-u_eval,inf)>1e-10)
 
 
