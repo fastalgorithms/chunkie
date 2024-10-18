@@ -1,12 +1,17 @@
-function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
+function [kerns, varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
 %CHNK.HELM2D.TRANSMISSION_HELPER builds the matrix of kernels required to call
 % chunkermat and generate boundary data which is appropriately scaled for the linear
 % system if requested.
 %
 % Syntax: kerns = transmission_helper(chnkrs,ks,cs,coefs), returns a matrix of kernels
-%         [kerns,bdrydata] = transmission_helper(chnkrs,ks,cs,coefs,opts), returns
+%         [kerns, bdrydata] = transmission_helper(chnkrs,ks,cs,coefs,opts), returns
 %            a matrix of kernels and the boundary data due to point sources or
 %            waves as prescribed by opts
+%         [kerns, bdrydata, kerns_eval] = 
+%            transmission_helper(chnkrs,ks,cs,coefs,opts), returns
+%            a matrix of kernels, the boundary data due to point sources or
+%            waves as prescribed by opts, and the evaluation matrix of
+%            kernels
 %
 % Note: Here we always assume that the transmission problem is either in
 %    the 'TE' or 'TM' polarization, which implies that the boundary conditions
@@ -22,9 +27,9 @@ function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
 %    of the form
 %    [\beta u] = f. 
 %
-% Input:
+%  Input arguments:
 %   chnkrs - cell array of chunker objects describing the geometry (1,ncurve)
-%   ks - wavenumbers in different regions of teh plane
+%   ks - wavenumbers in different regions of the plane
 %   cs - cs(1,i), cs(2,i) denote the region number in the direction of the normal
 %          and opposite of the direction of the normal for curve chnkrs(i)
 %   coefs - denotes the scaling parameter for the jump in the neumann data, depends
@@ -38,6 +43,11 @@ function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
 %      array of size (1,ncurve), with  opts.sources{i}.locs (2,m) locations 
 %      of charges which generate the data for region i, and .charges are the
 %      corresponding charge strengths
+%
+%  Output arguments:
+%    kerns - matrix of kernels for solving transmission boundary value problem
+%    bdrydata - boundary data
+%    kerns_eval - matrix of kernels for postprocessing transmission problem
 %           
 %
     
@@ -66,6 +76,8 @@ function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
         error(msg)
     end
 
+    nreg = length(ks);
+
     
     bdry_data_type = 'pw';
     direction = 0;
@@ -93,11 +105,6 @@ function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
     if(isfield(opts,'exposed_curves'))
         exposed_curves = opts.exposed_curves;
     end
-     
-    
-     
-    
-    kerns = cell(ncurve,ncurve);
         
     k1 = ks(cs(1,:));
     k2 = ks(cs(2,:));
@@ -108,7 +115,9 @@ function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
     
 % First build system matrix without any corner corrections
     cc1 = zeros(2,2);
-    cc2 = zeros(2,2);  
+    cc2 = zeros(2,2); 
+
+    kerns(ncurve, ncurve) = kernel();
     for i=1:ncurve
         
         c1 = coefs(cs(1,i));
@@ -124,10 +133,12 @@ function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
         
         cc1(2,2) = alpha2(i)/c1;
         cc2(2,2) = alpha2(i)/c2;
-        
         for j=1:ncurve
-            kerns{i,j} = @(s,t) -(chnk.helm2d.kern(k1(i),s,t,'all',cc1)- ...
-                 chnk.helm2d.kern(k2(i),s,t,'all',cc2));
+            zks = [k1(i), k2(i)];
+            cc_use = cat(3, -cc1, -cc2);
+            kerns(i,j) = kernel('helmdiff', 'all', zks, cc_use);            
+%            kerns{i,j} = @(s,t) -(chnk.helm2d.kern(k1(i),s,t,'all',cc1)- ...
+%                 chnk.helm2d.kern(k2(i),s,t,'all',cc2));
         end  
     end
     
@@ -220,8 +231,15 @@ function [kerns,varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
             
         end
         varargout{1} = bdry_data;
-        
     end
-    
 
+    if nargout > 2
+        kerns_eval(nreg,1) = kernel();
+        for i=1:nreg
+            Dk = coefs(i)*kernel('helm', 'd', ks(i));
+            Sk = kernel('helm', 's', ks(i));
+            kerns_eval(i) = kernel([Dk, Sk]);
+        end
+        varargout{2} = kerns_eval;
+    end
 end
