@@ -1,4 +1,4 @@
-function [kerns, varargout] = transmission_helper2(chnkobj,ks,cs,coefs,varargin)
+function [kerns, varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
 %CHNK.HELM2D.TRANSMISSION_HELPER builds the matrix of kernels required to call
 % chunkermat and generate boundary data which is appropriately scaled for the linear
 % system if requested.
