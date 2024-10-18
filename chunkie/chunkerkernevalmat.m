@@ -399,6 +399,7 @@ else
               t,w,opts,intp_ab,intp,kern.splitinfo.type);
 
         mat1 = zeros(size(allmats{1}));
+        funs = kern.splitinfo.functions(srcinfo,targinfoji);
         for l = 1:length(allmats)
             switch kern.splitinfo.action{l}
                 case 'r'
@@ -408,8 +409,9 @@ else
                 case 'c'
                     mat0 = allmats{l};
             end
-            mat1 = mat1 + (kron(mat0,ones(opdims)).* ...
-                kern.splitinfo.function{l}(srcinfo,targinfoji));
+            mat0opdim = kron(mat0,ones(opdims));
+            mat0xsplitfun = mat0opdim.*funs{l};
+            mat1 = mat1 + mat0xsplitfun;
         end
 
         js1 = jmat:jmatend;
