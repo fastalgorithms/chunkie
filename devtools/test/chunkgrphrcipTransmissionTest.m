@@ -5,12 +5,8 @@
 %            and tests the Helmholtz transmission problem
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%clear all
 clearvars
-addpaths_loc();
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 a = -1.0;
 b = 1.0;
 
@@ -37,15 +33,12 @@ cpars{2}.theta = theta(2); cpars{2}.ifconvex = 2; cpars{2}.islocal = -1;
 verts = exp(1i*2*pi*(0:4)/5);
 verts = [real(verts);imag(verts)];
 
-edge2verts = [-1, 1, 0, 0, 0; ...
-               0,-1, 1, 0, 0; ...
-               0, 0,-1, 1, 0; ...
-               0, 0, 0,-1, 1; ...
-               1, 0, 0, 0,-1];
-edge2verts = sparse(edge2verts);
+[~, nv] = size(verts);
+
+edgesendverts = [1:nv; [2:nv 1]];
+[~, ncurve] = size(edgesendverts);
 amp = 0.5;
 frq = 6;
-ncurve = size(edge2verts,1);
 
 fchnks    = cell(1,ncurve);
 cparams = cell(ncurve,1);
@@ -56,7 +49,7 @@ for icurve = 1:ncurve
     cparams{icurve}.tb = 1;
 end
 
-[cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
+[cgrph] = chunkgraph(verts, edgesendverts, fchnks, cparams);
 
 plot(cgrph); hold on;
 quiver(cgrph);
@@ -82,7 +75,8 @@ opts.charges = cell(1,2);
 opts.charges{1} = charges{1};
 opts.charges{2} = charges{2};
 
-[kerns, bdry_data] = chnk.helm2d.transmission_helper(cgrph,ks,cs,coefs,opts);
+[kerns, bdry_data, kerns_eval] = chnk.helm2d.transmission_helper(cgrph, ...
+                                   ks, cs, coefs, opts);
 
 
 opts = [];
@@ -94,7 +88,7 @@ sysmat = sysmat + eye(size(sysmat,2));
 
 tic, dens = sysmat\bdry_data; toc;
 
-%%
+%% Postprocessing
 
 % generate some targets...
 
@@ -103,53 +97,25 @@ ys = -2:0.01:2;
 [X,Y] = meshgrid(xs,ys);
 targs = [X(:).';Y(:).'];
 
-srcinfo = [];
-srcinfo.sources = cgrph.r(:,:);
-w = weights(cgrph);
-n = normals(cgrph);
+opts_eval = [];
+opts_eval.forcesmooth = true;
+[utarg, targdomain] = chunkerkerneval(cgrph, kerns_eval, dens, targs, ...
+      opts_eval);
 
-% a quick hack to find the interior points
-
-srcinfo.dipstr = w(:).';
-srcinfo.dipvec = n(:,:); 
-eps = 1E-8;
-pg  = 0;
-pgt = 1;
-[U] = lfmm2d(eps,srcinfo,pg,targs,pgt);
-U = U.pottarg;
-
-[~,nt] = size(targs);
-targdomain = ones(nt,1);
-inds = find(abs(U-2*pi)<pi/10);
-targdomain(inds) = 2;
-
-utarg = zeros(nt,1);
-
-nsys = size(sysmat,1);
-
-srcinfo.dipstr = (coefs(1)*w(:).*dens(1:2:nsys)).';
-srcinfo.charges = (w(:).*dens(2:2:nsys)).';
-srcinfo.dipvec = n(:,:); 
+[~, nt] = size(targs);
+true_sol = zeros(nt,1);
 
 iind1 = (targdomain == 1);
-fints = hfmm2d(eps,ks(1),srcinfo,pg,targs(:,iind1),pgt);
-utarg(iind1) = fints.pottarg;
-
-true_sol = zeros(nt,1);
 t.r = targs(:,iind1);
 s = [];
 s.r = sources{1};
-true_sol(iind1) = charges{1}*chnk.helm2d.kern(ks(1),s,t,'s');
+true_sol(iind1) = charges{1}*chnk.helm2d.kern(ks(1), s, t, 's');
 
 
-srcinfo.dipstr = (coefs(2)*w(:).*dens(1:2:nsys)).';
 iind2 = (targdomain == 2);
-fints = hfmm2d(eps,ks(2),srcinfo,pg,targs(:,iind2),pgt);
-utarg(iind2) = fints.pottarg;
 t.r = targs(:,iind2);
 s.r = sources{2};
 true_sol(iind2) = charges{2}*chnk.helm2d.kern(ks(2),s,t,'s');
-
 
 
 uerr = utarg - true_sol;
@@ -160,13 +126,6 @@ set(h,'EdgeColor','None'); hold on;
 plot(cgrph,'w-','LineWidth',2);
 caxis([-16,0])
 colorbar
-% 
-% utarg = reshape(utarg,size(X));
-% figure
-% h = pcolor(X,Y,imag(utarg));
-% set(h,'EdgeColor','None'); hold on;
-% plot(cgrph,'w-','LineWidth',2);
-% colorbar
 
 true_sol = reshape(true_sol,size(X));
 figure
