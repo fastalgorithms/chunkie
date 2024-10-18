@@ -27,6 +27,8 @@ function [varargout] = pquadwts(r,d,n,d2,wts,j,...
 %       [0 0  0 0] - smooth quadr
 %       [1 0  0 0] - log singularity
 %       [0 0 -1 0] - cauchy singularity
+%       each [a, b, c, d] 
+%       corresponds to (log(z-w))^a (log(zc-wc))^b (z-w)^c (zc-wc)^d
 %
 % Output
 %   varargout - integration matrices for specified singularity types
