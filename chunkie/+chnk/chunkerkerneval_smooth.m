@@ -172,13 +172,14 @@ else
         optsifmm=[]; optsifmm.Tmax=Inf;
         F = ifmm(matfun,targinfo_flam.r,xflam1,200,1e-14,pxyfun,optsifmm);
         fints = ifmm_mv(F,dens(:),matfun);
+        fints = fints(:);
     else
         wts2 = repmat(wts(:).', opdims(2), 1);
         sigma = wts2(:).*dens(:);
         fints = kern.fmm(1e-14, chnkr, targinfo, sigma);
+        fints = fints(:);
     end
     % delete interactions in flag array (possibly unstable approach)
-    
     
     if ~isempty(flag)
         for i = 1:nch
