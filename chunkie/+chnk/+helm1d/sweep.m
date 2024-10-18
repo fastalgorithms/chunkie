@@ -7,7 +7,7 @@ function pot = sweep(uin,inds,ts,wts,zkE)
     u(inds) = uin;
 
     nt = numel(u);
-    chrg = u.*(wts); %got rid of scaling: %dm^2*u.*(wts)/zkE;
+    chrg = u.*(wts);
     
     voutp = zeros([nt,1]);
     voutp(1) = chrg(1);
