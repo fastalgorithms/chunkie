@@ -80,7 +80,7 @@ fprintf('%5.2e s : time for dense gmres\n',t1)
 % evaluate at targets and plot
 
 rmin = min(chnkr); rmax = max(chnkr);
-nplot = 200;
+nplot = 300;
 hx = (rmax(1)-rmin(1))/nplot;
 hy = (rmax(2)-rmin(2))/nplot;
 xtarg = linspace(rmin(1)+hx/2,rmax(1)-hx/2,nplot); 

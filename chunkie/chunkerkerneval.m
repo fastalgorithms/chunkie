@@ -341,7 +341,7 @@ for j=1:size(chnkr.r,3)
         [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
               t,w,opts,intp_ab,intp,kern.splitinfo.type);
     
-%        fints(ji) = fints(ji) + matcfield*dens(idxjmat);
+        funs = kern.splitinfo.functions(srcinfo,targinfoji);
         for l = 1:length(allmats)
             switch kern.splitinfo.action{l}
                 case 'r' % real part
@@ -352,10 +352,7 @@ for j=1:size(chnkr.r,3)
                     mat0 = allmats{l};
             end
             mat0opdim = kron(mat0,ones(opdims'));
-            % this is reevaluating more or less the same kernel multiple times...
-            % think of a better kernel split format...
-            mat0xsplitfun = mat0opdim.* ...
-                            kern.splitinfo.function{l}(srcinfo,targinfoji);
+            mat0xsplitfun = mat0opdim.*funs{l};
             fints(ji) = fints(ji) + mat0xsplitfun*dens(idxjmat);
         end
     end

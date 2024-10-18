@@ -88,17 +88,7 @@ switch lower(type)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r','r'};
-        deval = @(s,t) chnk.helm2d.kern(zk, s, t, 'd', coefs(1));
-        seval = @(s,t) chnk.helm2d.kern(zk, s, t, 's', coefs(2));
-        obj.splitinfo.function = cell(3,1);
-        obj.splitinfo.function{1} = @(s,t) coefs(1) * (deval(s,t) ...
-                                                       + 1/(2*pi)*4*log(abs((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)'))).*imag(deval(s,t)) ... 
-                                                       + 1/(2*pi)*real((s.n(1,:)+1i*s.n(2,:))./((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)')))) ...
-                                         + coefs(2) * (seval(s,t) ...
-                                                       + 1/(2*pi)*4*log(abs((s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)'))).*imag(seval(s,t)));
-        obj.splitinfo.function{2} = @(s,t) coefs(1) * (4*imag(deval(s,t))) ...
-                                         + coefs(2) * (4*imag(seval(s,t)));
-        obj.splitinfo.function{3} = @(s,t) coefs(1)*ones(size(t.r,2),size(s.r,2));
+        obj.splitinfo.functions = @(s,t) helm2d_c(zk,s,t,coefs);
 
     case {'cp', 'cprime'}
         if ( nargin < 3 )
@@ -123,3 +113,17 @@ end
 
 
 end
+
+function f = helm2d_c(zk,s,t,coefs)
+seval = chnk.helm2d.kern(zk, s, t, 's');
+deval = chnk.helm2d.kern(zk, s, t, 'd');
+dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
+logeval = log(abs(dist));
+cauchyeval = (s.n(1,:)+1i*s.n(2,:))./(dist);
+f = cell(3, 1);
+f{1} = coefs(1) * (deval + 2/pi*logeval.*imag(deval) + 1/(2*pi)*real(cauchyeval)) + ...
+       coefs(2) * (seval + 2/pi*logeval.*imag(seval));
+f{2} = coefs(1) * (4*imag(deval)) + coefs(2) * (4*imag(seval));
+f{3} = coefs(1)*ones(size(t.r,2),size(s.r,2));
+end
+
