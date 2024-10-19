@@ -33,7 +33,7 @@ function [val,grad,hess,hess_sig] = gpsi_all(dx,dy,dr,dsigt)
     hess(:,1,1) = eterm./(dr.*dr);
     hess(:,2,2) = eterm./(dr.*dr);
 
-    fact = -(2*dsigt.^2+dr.^2)./(dsigt.^2*dr.^2).*eterm;
+    fact = -(2*dsigt.^2+dr.^2)./(dsigt.^2.*dr.^2).*eterm;
     hess(:,1,1) = hess(:,1,1) + (dx.*dx./dr.^2).*fact;
     hess(:,1,2) = hess(:,1,2) + (dx.*dy./dr.^2).*fact;
     hess(:,2,1) = hess(:,2,1) + (dx.*dy./dr.^2).*fact;
@@ -59,7 +59,7 @@ function [val,grad,hess,hess_sig] = gpsi_all(dx,dy,dr,dsigt)
 
 
     fact = eterm./(dsigt.^3)/(2*pi);
-    hess_sig(:,1) = -dx*fact;
-    hess_sig(:,2) = -dy*fact;
+    hess_sig(:,1) = -dx.*fact;
+    hess_sig(:,2) = -dy.*fact;
 
 end

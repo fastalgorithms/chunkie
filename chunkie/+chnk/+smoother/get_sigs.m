@@ -1,7 +1,7 @@
-function [val,grad] = get_sigs(src_input,rt,sig0,dlam)
+function [val,grad] = get_sigs(umesh,rt,sig0,dlam)
 
-        rc = src_input.centroids;
-        dlens = src_input.lengths;
+        rc = umesh.centroids;
+        dlens = umesh.lengths;
 
         [~,ns] = size(rc);
         [~,nt] = size(rt);
