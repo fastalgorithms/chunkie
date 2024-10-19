@@ -174,8 +174,8 @@ end
 if forcepquad
     optsflag = []; optsflag.fac = fac;
     flag = flagnear(chnkr,targinfo.r,optsflag);
-    spmat = chunkerkernevalmat_ho(chnkr,ftmp,opdims, ...
-        targinfo,flag,optsadap);
+    spmat = chunkerkernevalmat_pquad(chnkr,kern,opdims, ...
+        targinfo,flag,opts);
     mat = chunkerkernevalmat_smooth(chnkr,ftmp,opdims,targinfo, ...
         flag,opts);
     mat = mat + spmat;
@@ -343,7 +343,7 @@ end
 
 end
 
-function mat = chunkerkernevalmat_ho(chnkr,kern,opdims, ...
+function mat = chunkerkernevalmat_pquad(chnkr,kern,opdims, ...
     targinfo,flag,opts)
 
 k = chnkr.k;
@@ -391,6 +391,7 @@ else
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
+    wts = chnkr.wts;
 
     % interpolation matrix 
     intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -402,10 +403,36 @@ else
                         
         [ji] = find(flag(:,i));
 
+        targinfoji = [];
+        targinfoji.r = targinfo.r(:,ji);
+
+        srcinfo = [];
+        srcinfo.r = r(:,:,i);
+        srcinfo.d = d(:,:,i);
+        srcinfo.d2 = d2(:,:,i);
+        srcinfo.n = n(:,:,i);
+
         % Helsing-Ojala (interior/exterior?)
-        mat1 = chnk.pquadwts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
-                    targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
-                
+        allmats = cell(size(kern.splitinfo.type));
+        [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,i,targs(:,ji), ...
+              t,w,opts,intp_ab,intp,kern.splitinfo.type);
+
+        mat1 = zeros(size(allmats{1}));
+        funs = kern.splitinfo.functions(srcinfo,targinfoji);
+        for l = 1:length(allmats)
+            switch kern.splitinfo.action{l}
+                case 'r'
+                    mat0 = real(allmats{l});
+                case 'i'
+                    mat0 = imag(allmats{l});
+                case 'c'
+                    mat0 = allmats{l};
+            end
+            mat0opdim = kron(mat0,ones(opdims));
+            mat0xsplitfun = mat0opdim.*funs{l};
+            mat1 = mat1 + mat0xsplitfun;
+        end
+
         js1 = jmat:jmatend;
         js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);
         
