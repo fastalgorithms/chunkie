@@ -130,41 +130,6 @@ end
 eps_local = 1e-3;
 
 rho = 1.2;
-optsflag = [];  optsflag.rho = rho; optsflag.occ = 5;
-if grid
-    %flag = flagnear_rectangle_grid(chnkr,x,y,optsflag);
-else
-    %flag = flagnear_rectangle(chnkr,pts,optsflag);
-end
-
-% looking for closest point might fail if an inaccurate panel for a target
-% is not the closest panel to that target
-% here we look for other boundary pieces that are close each panel
-
-%flag2 = flagnear_rectangle(chnkr,chnkr.r(:,:),optsflag);
-
-% ignore self and adjacent
-% inds = 1:chnkr.npt;
-% slf = repmat(1:chnkr.nch,chnkr.k,1); slf = slf(:);
-% left = chnkr.adj(1,slf); right = chnkr.adj(2,slf);
-% indsl = inds(left > 0); left = left(left> 0); 
-% indsr = inds(right > 0); right = right(right >0);
-% ii = [inds(:); indsl(:); indsr(:)]; jj = [slf(:); left(:); right(:)];
-% linind = sub2ind([chnkr.npt,chnkr.nch],ii,jj);
-%flag2(linind) = 0;
-
-% for any target that was in the inaccurate region of a panel, also need to
-% check any panel that is similarly close to that panel for closest normal
-% for j = 1:chnkr.nch
-%    ibdrypt = find(flag2(:,j));
-%    ich = unique(slf(ibdrypt));
-%    ipt = find(flag(:,j));
-% 
-%    ii = repmat(ipt(:),length(ich),1);
-%    jj = repmat(ich(:).',length(ipt),1); jj = jj(:);
-%    linind = sub2ind(size(flag),ii,jj);
-%    flag(linind) = 1;
-% end
 
 % do Cauchy integral with oversampling 
 
