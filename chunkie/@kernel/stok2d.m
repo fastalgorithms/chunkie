@@ -78,6 +78,10 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'svel', sigma);
         obj.opdims = [2, 2];
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r','i'};
+        obj.splitinfo.functions = @(s,t) stok2d_s_split(mu, s, t);
 
     case {'spres', 'spressure'}
         obj.type = 'spres';
@@ -187,4 +191,28 @@ if icheck ~=3
 end
 
 
+end
+
+function f = stok2d_s_split(mu,s,t)
+dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
+distr = real(dist);
+disti = imag(dist);
+f = cell(3, 1);
+ntarg = numel(t.r(1,:));
+nsrc = numel(s.r(1,:));
+sn1mat = repmat(s.n(1,:),[ntarg 1]);
+sn2mat = repmat(s.n(2,:),[ntarg 1]);
+f{1} = zeros(2*ntarg,2*nsrc);
+f{2} = zeros(2*ntarg,2*nsrc);
+f{3} = zeros(2*ntarg,2*nsrc);
+f{1}(1:2:end,1:2:end) = 1/(2*mu);
+f{1}(2:2:end,2:2:end) = 1/(2*mu);
+f{2}(1:2:end,1:2:end) = -sn1mat.*distr/(2*mu);     
+f{2}(1:2:end,2:2:end) = -sn2mat.*distr/(2*mu);
+f{2}(2:2:end,1:2:end) = -sn1mat.*disti/(2*mu); 
+f{2}(2:2:end,2:2:end) = -sn2mat.*disti/(2*mu);
+f{3}(1:2:end,1:2:end) = -sn2mat.*distr/(2*mu);
+f{3}(1:2:end,2:2:end) =  sn1mat.*distr/(2*mu);
+f{3}(2:2:end,1:2:end) = -sn2mat.*disti/(2*mu);
+f{3}(2:2:end,2:2:end) =  sn1mat.*disti/(2*mu);
 end
