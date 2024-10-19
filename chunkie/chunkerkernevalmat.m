@@ -38,6 +38,9 @@
 %                         entries for which a special quadrature is used
 %                         (e.g. self and neighbor interactoins) and return
 %                         in a sparse array.
+%           opts.corrections = boolean (false), if true, only compute the
+%                         corrections to the smooth quadrature rule and 
+%                         return in a sparse array, see opts.nonsmoothonly
 
 %
 % output:
@@ -104,12 +107,16 @@ forcesmooth = false;
 forceadap = false;
 forcepquad = false;
 nonsmoothonly = false;
+corrections = false;
 fac = 1.0;
 eps = 1e-12;
 if isfield(opts,'forcesmooth'); forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); forceadap = opts.forceadap; end
 if isfield(opts,'forcepquad'); forcepquad = opts.forcepquad; end
 if isfield(opts,'nonsmoothonly'); nonsmoothonly = opts.nonsmoothonly; end
+if isfield(opts,'corrections'); corrections = opts.corrections; end
+if corrections; nonsmoothonly = true; forcesmooth=false; end
+
 if isfield(opts,'fac'); fac = opts.fac; end
 if isfield(opts,'eps'); eps = opts.eps; end
 
@@ -146,11 +153,23 @@ if forcesmooth
     return
 end
 
+
+if corrections
+    mat = chunkerkernevalmat_adap(chnkr,ftmp,opdims, ...
+        targinfo,[],optsadap);
+    mat = mat-chunkerkernevalmat_smooth(chnkr,ftmp,opdims,targinfo, ...
+        [],opts);
+    mat = sparse(mat);
+    return
+end
+
 if forceadap
     mat = chunkerkernevalmat_adap(chnkr,ftmp,opdims, ...
         targinfo,[],optsadap);
     return
 end
+
+
 
 if forcepquad
     optsflag = []; optsflag.fac = fac;
