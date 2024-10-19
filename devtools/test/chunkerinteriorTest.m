@@ -5,7 +5,6 @@
 clearvars; close all;
 seed = 8675309;
 rng(seed);
-addpaths_loc();
 
 doadap = false;
 
@@ -90,3 +89,40 @@ targs = starfish(ttarg).*scal;
 
 in = chunkerinterior(chnkr,targs,struct('axissym',true));
 assert(all(in(:) == (scal(:) <= 1)));
+
+%% 
+
+% a stress test. previously this triggered a bug for the old version which
+% used the normals to determine interior points
+
+amp = 0.25;
+scale = .3;
+
+ctr = [-2;-1.6];
+chnkr_int= chunkerfunc(@(t) starfish(t,3,amp,ctr,pi/4,scale)); 
+chnkr_int = sort(reverse(chnkr_int));
+
+a = max(vecnorm(chnkr_int.r(:,:)))*1.01;
+chnkr_ext = chunkerfunc(@(t) [a*cos(t(:).'); a*sin(t(:).')]); 
+chnkr = merge([chnkr_ext,chnkr_int]);
+
+% return
+
+L = max(abs(chnkr.r),[],"all");
+x1 = linspace(-L,L,100);
+[xx,yy] = meshgrid(x1,x1);
+targs = [xx(:).'; yy(:).']; 
+xv=[chnkr_ext.r(1,:),nan,chnkr_int.r(1,:)];
+yv=[chnkr_ext.r(2,:),nan,chnkr_int.r(2,:)];
+tic; in0 = inpolygon(xx(:),yy(:),xv,yv); toc
+tic; in = chunkerinterior(chnkr,{x1,x1}); toc
+
+% clf
+% plot(chnkr,'g-o')
+% hold on
+% scatter(xx(in(:)),yy(in(:)),'bo')
+% scatter(xx(~in(:)),yy(~in(:)),'rx')
+
+assert(all(in0 == in));
+
+

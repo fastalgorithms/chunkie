@@ -132,18 +132,47 @@ eps_local = 1e-3;
 rho = 1.2;
 optsflag = [];  optsflag.rho = rho; optsflag.occ = 5;
 if grid
-    flag = flagnear_rectangle_grid(chnkr,x,y,optsflag);
+    %flag = flagnear_rectangle_grid(chnkr,x,y,optsflag);
 else
-    flag = flagnear_rectangle(chnkr,pts,optsflag);
+    %flag = flagnear_rectangle(chnkr,pts,optsflag);
 end
+
+% looking for closest point might fail if an inaccurate panel for a target
+% is not the closest panel to that target
+% here we look for other boundary pieces that are close each panel
+
+%flag2 = flagnear_rectangle(chnkr,chnkr.r(:,:),optsflag);
+
+% ignore self and adjacent
+% inds = 1:chnkr.npt;
+% slf = repmat(1:chnkr.nch,chnkr.k,1); slf = slf(:);
+% left = chnkr.adj(1,slf); right = chnkr.adj(2,slf);
+% indsl = inds(left > 0); left = left(left> 0); 
+% indsr = inds(right > 0); right = right(right >0);
+% ii = [inds(:); indsl(:); indsr(:)]; jj = [slf(:); left(:); right(:)];
+% linind = sub2ind([chnkr.npt,chnkr.nch],ii,jj);
+%flag2(linind) = 0;
+
+% for any target that was in the inaccurate region of a panel, also need to
+% check any panel that is similarly close to that panel for closest normal
+% for j = 1:chnkr.nch
+%    ibdrypt = find(flag2(:,j));
+%    ich = unique(slf(ibdrypt));
+%    ipt = find(flag(:,j));
+% 
+%    ii = repmat(ipt(:),length(ich),1);
+%    jj = repmat(ich(:).',length(ipt),1); jj = jj(:);
+%    linind = sub2ind(size(flag),ii,jj);
+%    flag(linind) = 1;
+% end
+
+% do Cauchy integral with oversampling 
 
 npoly = chnkr.k;
 nlegnew = chnk.ellipse_oversample(rho,npoly,eps_local);
 nlegnew = max(nlegnew,chnkr.k);
 
 [chnkr2] = upsample(chnkr,nlegnew);
-
-
 
 icont = false;
 if usefmm_final
@@ -182,61 +211,22 @@ if ~usefmm_final || icont
 end
 in = abs(vals1+1) < abs(vals1);
 
-% for points where the integral might be inaccurate:
-% find close boundary point and check normal direction
+% for points where integral rule is less definitive, use inpolygon
 
+ingood = or(abs(vals1+1) < 0.05,abs(vals1) < 0.05);
 
-nnzpt = sum(flag~=0,2);
-ipt = find(nnzpt);
+[inds,~,info] = sortinfo(chnkr);
+rr = chnkr.r(:,:,inds(:));
+ncomp = info.ncomp;
+nchs = info.nchs;
+ladr = cumsum([1;nchs(:)]);
 
-npts = numel(pts)/2;
-distmins = inf(npts,1);
-dss = zeros(2,npts);
-rss = zeros(2,npts);
-
-k = chnkr.k;
-[t,~,u] = lege.exps(k);
-
-for i = 1:chnkr.nch
-
-    % check side based on closest boundary node
-    rval = chnkr.r(:,:,i);
-    dval = chnkr.d(:,:,i);
-    nval = chnkr.n(:,:,i);
-    [ji] = find(flag(:,i));
-    ptsi = pts(:,ji);
-    nptsi = size(ptsi,2);
-    dist2all = reshape(sum( abs(reshape(ptsi,2,1,nptsi) ...
-                    - reshape(rval,2,k,1)).^2, 1),k,nptsi);
-    [dist2all,ipti] = min(dist2all,[],1);
-    for j = 1:length(ji)
-        jj = ji(j);
-        if dist2all(j) < distmins(jj)
-            distmins(jj) = dist2all(j);
-            rss(:,jj) = rval(:,ipti(j));
-            dss(:,jj) = dval(:,ipti(j));
-        end
-    end
-
-    % if angle is small do a refined search for closest point
-    ptsn = nval(:,ipti);
-    diffs = rval(:,ipti)-ptsi;
-    dots = sum(ptsn.*diffs,1);
-    
-    jsus = abs(dots) < 2e-1*sqrt(dist2all);
-    jii = ji(jsus);
-    [~,rs,ds,~,dist2s] = chnk.chunk_nearparam(rval,pts(:,jii),[],t,u);
-    for j = 1:length(jii)
-        jj = jii(j);
-        if dist2s(j) < distmins(jj)
-            distmins(jj) = dist2s(j);
-            rss(:,jj) = rs(:,j);
-            dss(:,jj) = ds(:,j);
-        end
-    end
+xv = []; yv = [];
+for j = 1:ncomp
+    xt = rr(1,:,ladr(j):(ladr(j+1)-1));
+    yt = rr(2,:,ladr(j):(ladr(j+1)-1));
+    xv = [xv; nan; xt(:)];
+    yv = [yv; nan; yt(:)];
 end
 
-for i = 1:length(ipt)
-    jj = ipt(i);
-    in(jj) = (rss(:,jj)-pts(:,jj)).'*[dss(2,jj);-dss(1,jj)] > 0;
-end
+in(~ingood) = inpolygon(pts(1,~ingood),pts(2,~ingood),xv,yv);
