@@ -295,7 +295,8 @@ end
 % target
 [~,nt] = size(targinfo.r);
 fints = zeros(opdims(1)*nt,1);
-k = size(chnkr.r,2);
+k = chnkr.k;
+nch = chnkr.nch;
 [t,w] = lege.exps(2*k);
 ct = lege.exps(k);
 bw = lege.barywts(k);
@@ -304,6 +305,9 @@ d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
 wts = chnkr.wts;
+
+assert(numel(dens) == opdims(2)*k*nch,'dens not of appropriate size')
+dens = reshape(dens,opdims(2),k,nch);
 
 % interpolation matrix
 intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -335,6 +339,9 @@ for j=1:size(chnkr.r,3)
         srcinfo.d = d(:,:,j);
         srcinfo.d2 = d2(:,:,j);
         srcinfo.n = n(:,:,j);
+        densj = dens(:,:,j);
+        indji = (ji-1)*opdims(1);
+        ind = (indji(:)).' + (1:opdims(1)).';
 
         % Helsing-Ojala (interior/exterior?)
         allmats = cell(size(kern.splitinfo.type));
@@ -353,7 +360,7 @@ for j=1:size(chnkr.r,3)
             end
             mat0opdim = kron(mat0,ones(opdims'));
             mat0xsplitfun = mat0opdim.*funs{l};
-            fints(ji) = fints(ji) + mat0xsplitfun*dens(idxjmat);
+            fints(ind(:)) = fints(ind(:)) + mat0xsplitfun*densj(:);
         end
     end
 end

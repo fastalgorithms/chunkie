@@ -38,6 +38,7 @@ nt = 10000;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
 targets = targets.*repmat(rand(1,nt),2,1)*0.75;
+% targets = targets.*repmat(rand(1,nt),2,1)*0.99;
 
 plot(chnkr, 'r.'); hold on;
 plot(targets(1,:), targets(2,:), 'kx')
@@ -93,6 +94,19 @@ start=tic; Dsol = chunkerkerneval(chnkr,fkern,sol,targets,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
+% test stokes slp velocity pquad...
+% targets = targets.*repmat(rand(1,nt),2,1)*0.99 seems to break below stokes kernel test...
+fkerns = kernel('stok', 'svel', mu);
+Ssol = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
+opts.forcepquad=true;
+opts.side = 'i';
+Ssol_pquad = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
+err = abs(Ssol - Ssol_pquad);
+assert(norm(err) < 1e-10);
+% figure(1),clf,
+% plot(chnkr), hold on
+% scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
+opts.forcepquad=false;
 %
 
 wchnkr = chnkr.wts;
