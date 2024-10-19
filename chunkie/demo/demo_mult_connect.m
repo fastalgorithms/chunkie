@@ -1,6 +1,6 @@
 %DEMO_MULT_CONNECT
 %
-% Solve the capicator problem
+% Solve the capacitor problem
 % 
 % Solve Laplace's equation with Dirichlet boundary condition +-1 on each
 % boundary

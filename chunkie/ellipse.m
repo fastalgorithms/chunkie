@@ -1,6 +1,6 @@
 function [r, d, d2] = ellipse(t,varargin) 
-%ELLIPSE return position, first and second derivatives of a starfish 
-% domain with the parameterization 
+%ELLIPSE return position, first and second derivatives of an ellipse 
+% with the parameterization 
 %
 % x(t) = a*cos(t)
 % y(t) = b*sin(t)
@@ -21,7 +21,7 @@ function [r, d, d2] = ellipse(t,varargin)
 %
 % Examples:
 %   [r,d,d2] = ellipse(t); % circle parameterization
-%   [r,d,d2] = ellipse(t,a,b); % stretch circle some settings
+%   [r,d,d2] = ellipse(t,a,b); % stretch circle into ellipse
 %
 a = 1;
 b = 1;
