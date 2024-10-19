@@ -77,9 +77,10 @@ else
 end
 
 nr = numel(cg.regions);
+
 for ir = 1:nr
     ncomp = numel(cg.regions{ir});
-    intmp = zeros(npts,1);
+    chnkrscomp(ncomp) = chunker(p,t,w);
     for ic = 1:ncomp
         edgelist = cg.regions{ir}{ic};
         nedge = numel(edgelist);
@@ -87,23 +88,27 @@ for ir = 1:nr
         for ie = 1:nedge
             eid = edgelist(ie);
             if eid > 0
-                if ir == 1
-                    chnkrs(ie) = cg.echnks(eid);
-                else
-                    chnkrs(ie) = reverse(cg.echnks(eid));
-                end
+                chnkrs(ie) = cg.echnks(eid);
             else
-                if ir == 1
-                    chnkrs(ie) = reverse(cg.echnks(-eid));
-                else
-                    chnkrs(ie) = cg.echnks(-eid);
-                end
+                chnkrs(ie) = sort(reverse(cg.echnks(-eid)));
             end
         end
-        intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts),npts,1);
+        nchs = [chnkrs(1:nedge).nch];
+        ladr = cumsum([1, nchs(:).']);
+        chnkrtmp = merge(chnkrs(1:nedge));
+        chnkrtmp.adj(1,1) = ladr(end)-1;
+        chnkrtmp.adj(2,end) = 1;
+        for jj = 1:(nedge-1)
+            ich1 = ladr(jj+1)-1; ich2 = ladr(jj+1); 
+            chnkrtmp.adj(1,ich2) = ich1;
+            chnkrtmp.adj(2,ich1) = ich2;
+        end
+        if ir ~= 1
+            chnkrtmp = reverse(chnkrtmp);
+        end
+        chnkrscomp(ic) = chnkrtmp;
     end
-
-    intmp = intmp > 0;
+    intmp = reshape(chunkerinterior(merge(chnkrscomp(1:ncomp)),ptsobj,opts),npts,1);
     if ir == 1
         ids(~intmp) = ir;
     else
