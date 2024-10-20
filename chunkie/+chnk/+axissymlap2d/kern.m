@@ -1,7 +1,7 @@
 function submat = kern(srcinfo, targinfo, origin, type)
 %CHNK.AXISSYMLAP2D.KERN axissymmetric Laplace layer potential kernels in 2D
 % 
-% Syntax: submat = chnk.axissymlap2d.kern(srcinfo,targingo,type)
+% Syntax: submat = chnk.axissymlap2d.kern(srcinfo,targinfo,type)
 %
 % Let x be targets and y be sources for these formulas, with
 % n_x and n_y the corresponding unit normals at those points

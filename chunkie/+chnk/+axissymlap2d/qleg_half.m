@@ -1,8 +1,17 @@
 function [q0,q1,q0d] = qleg_half(t)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%   caveat utilitor: this function evaluates Q_{-1/2} and 
-%                    Q_{1/2} at t+1;
+%   caveat utilitor: this function evaluates Q_{-1/2} (and its
+%    derivative) and Q_{1/2} at t+1;
+%
+% Input:
+%     t - value between 0 \to \infty, corresponds to actual argument
+%        of t+1 to Q funs
+%
+% Output:
+%     q0 - value of Q_{-1/2}
+%     q1 - value of Q_{1/2}
+%     q0d - value of Q'_{-1/2}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
