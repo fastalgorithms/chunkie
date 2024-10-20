@@ -67,7 +67,7 @@ fprintf('%5.2e s : time to find points in domain\n',t1)
 opts.forcepquad = true; 
 opts.side = 'i'; % 'i' for interior, 'e' for exterior, for positively oriented curve.
 start = tic;
-tic; Csolpquad = chunkerkerneval(chnkr,fkern,sol,targets(:,in),opts); 
+Csolpquad = chunkerkerneval(chnkr,fkern,sol,targets(:,in),opts); 
 % below check slp and dlp
 % fkernd = kernel('helmholtz','d',zk);
 % fkerns = kernel('helmholtz','s',zk);
