@@ -1,3 +1,10 @@
+% Defines a smooth, 1D interface and solves the corresponding 2D
+% time-harmonic Klein Gordon equation on either side of the interface.
+% We impose continuity and a jump in the normal derivative across the
+% interface. We also impose outgoing radiation conditions at infinity 
+% along the interface.
+
+
 clear all
 close('all')
 ifsvdplot = false;
