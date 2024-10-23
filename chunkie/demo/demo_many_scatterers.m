@@ -10,7 +10,7 @@
 % planewave direction
 phi = 0;
 % ambient wavenumber
-zk1 = 15;
+zk1 = 20;
 kvec = zk1*[cos(phi);sin(phi)];
 % inclusion wavenumber
 zk2 = 1.5*zk1;
@@ -32,11 +32,11 @@ ntry = 1000;
 
 % make interior boundaries with random locations
 chnkr = [];
-L = 5;
+L = 3;
 theta = 2*pi*rand();
 ctrs = L*rand()*[cos(theta);sin(theta)];
 n_pts = [];
-nscat = 10;
+nscat = 3;
 for i  = 1:nscat
     % each boundary is rotated starfish with a random number of arms
     phi = 2*pi*rand();
@@ -124,8 +124,8 @@ uin(out) = planewave(kvec(:),targs(:,out));
 % get solution
 tic;
 uscat = zeros(size(xx));
-uscat(out) = chunkerkerneval(chnkr,fkern_eval(1),sol,targs(:,out),opts);
-uscat(in) = chunkerkerneval(chnkr,fkern_eval(2),sol,targs(:,in),opts);
+uscat(out) = chunkerkerneval(chnkr,fkern_eval(1),sol,targs(:,out));
+uscat(in) = chunkerkerneval(chnkr,fkern_eval(2),sol,targs(:,in));
 tplot = toc
 
 utot = uin + uscat;
