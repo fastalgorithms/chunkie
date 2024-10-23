@@ -265,7 +265,19 @@ classdef chunkgraph
                     else
                         cploc.tb = tb;
                     end
+
                     vs =fchnks{i}([ta,tb]);
+                    if isfield(cploc,'maxchunklen')
+                        if ~isnan(i1) && ~isnan(i2)
+                            if i1 ~= i2 
+                                vfin0 = verts(:,i1);
+                                vfin1 = verts(:,i2);
+                                scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
+                                cploc.maxchunklen = cploc.maxchunklen/scale;
+                            end
+                        end
+                    end
+                    
                     chnkr = chunkerfunc(fchnks{i}, cploc, pref);
                     chnkr = sort(chnkr);
                     if ~isnan(i1) && ~isnan(i2)

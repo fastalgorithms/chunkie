@@ -116,6 +116,7 @@ cormat = [];
 if isfield(opts,'forcesmooth'); opts_use.forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); opts_use.forceadap = opts.forceadap; end
 if isfield(opts,'forcepquad'); opts_use.forcepquad = opts.forcepquad; end
+if isfield(opts,'side'); opts_use.side = opts.side; end
 if isfield(opts,'flam')
     opts_use.flam = opts.flam;
 end
@@ -266,7 +267,12 @@ if opts_use.forcepquad
     fints(irow0) = fints(irow0) + chnk.chunkerkerneval_smooth(chnkr0,kern0,opdims0,dens0,targinfo0, ...
         flag,opts_use);
 
-    fints(irow0) = fints(irow0) + chunkerkerneval_ho(chnkr0,kern0,opdims0,dens0, ...
+    if ~isfield(opts_use,'side')
+        msg = "Error: for pquad, set opts.side to 'i' or 'e' ";
+        error(msg)  
+    end
+
+    fints(irow0) = fints(irow0) + chunkerkerneval_pquad(chnkr0,kern0,opdims0,dens0, ...
         targinfo0,flag,opts_use);
 
     return
@@ -298,13 +304,18 @@ end
 
 end
 
-function fints = chunkerkerneval_ho(chnkr,kern,opdims,dens, ...
+function fints = chunkerkerneval_pquad(chnkr,kern,opdims,dens, ...
     targinfo,flag,opts)
+
+if ~isa(kern,'kernel') || isempty(kern.splitinfo)
+    error('Helsing-Ojala quad only available for kernel class objects with splitinfo defined');
+end
 
 % target
 [~,nt] = size(targinfo.r);
 fints = zeros(opdims(1)*nt,1);
-k = size(chnkr.r,2);
+k = chnkr.k;
+nch = chnkr.nch;
 [t,w] = lege.exps(2*k);
 ct = lege.exps(k);
 bw = lege.barywts(k);
@@ -312,6 +323,10 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
+wts = chnkr.wts;
+
+assert(numel(dens) == opdims(2)*k*nch,'dens not of appropriate size')
+dens = reshape(dens,opdims(2),k,nch);
 
 % interpolation matrix
 intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -319,30 +334,53 @@ intp_ab = lege.matrin(k,[-1;1]);  % interpolation from k to end points
 
 targs = targinfo.r;
 
-targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
-targn = zeros(chnkr.dim,nt);
-if isfield(targinfo, 'd')
-    targd = targinfo.d;
-end
-
-if isfield(targinfo, 'd2')
-    targd2 = targinfo.d2;
-end
-
-if isfield(targinfo, 'n')
-    targn = targinfo.n;
-end
 for j=1:size(chnkr.r,3)
     [ji] = find(flag(:,j));
     if(~isempty(ji))
         idxjmat = (j-1)*k+(1:k);
 
+        targinfoji = [];
+        targinfoji.r = targinfo.r(:,ji);
+        if isfield(targinfo, 'd')
+            targinfoji.d = targinfo.d(:,ji);
+        end
+
+        if isfield(targinfo, 'd2')
+            targinfoji.d2 = targinfo.d2(:,ji);
+        end
+
+        if isfield(targinfo, 'n')
+            targinfoji.n = targinfo.n(:,ji);
+        end        
+
+        srcinfo = [];
+        srcinfo.r = r(:,:,j);
+        srcinfo.d = d(:,:,j);
+        srcinfo.d2 = d2(:,:,j);
+        srcinfo.n = n(:,:,j);
+        densj = dens(:,:,j);
+        indji = (ji-1)*opdims(1);
+        ind = (indji(:)).' + (1:opdims(1)).';
 
         % Helsing-Ojala (interior/exterior?)
-        mat1 = chnk.pquadwts(r,d,n,d2,ct,bw,j,targs(:,ji), ...
-            targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
-
-        fints(ji) = fints(ji) + mat1*dens(idxjmat);
+        allmats = cell(size(kern.splitinfo.type));
+        [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
+              t,w,opts,intp_ab,intp,kern.splitinfo.type);
+    
+        funs = kern.splitinfo.functions(srcinfo,targinfoji);
+        for l = 1:length(allmats)
+            switch kern.splitinfo.action{l}
+                case 'r' % real part
+                    mat0 = real(allmats{l});
+                case 'i' % imaginary part
+                    mat0 = imag(allmats{l});
+                case 'c' % complex
+                    mat0 = allmats{l};
+            end
+            mat0opdim = kron(mat0,ones(opdims'));
+            mat0xsplitfun = mat0opdim.*funs{l};
+            fints(ind(:)) = fints(ind(:)) + mat0xsplitfun*densj(:);
+        end
     end
 end
 end

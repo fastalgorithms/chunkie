@@ -42,12 +42,20 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 's');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 's', sigma);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0]};
+        obj.splitinfo.action = {'r'};
+        obj.splitinfo.functions = @(s,t) lap2d_s_split(s,t);
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'd');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'd', sigma);
         obj.sing = 'smooth';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 -1 0]};
+        obj.splitinfo.action = {'r'};
+        obj.splitinfo.functions = @(s,t) lap2d_d_split(s,t);
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
@@ -91,6 +99,22 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'c', coefs);
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'c', sigma, coefs);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r'};
+        obj.splitinfo.functions = @(s,t) lap2d_c_split(s,t,coefs);
+
+    case {'cg', 'cgrad'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cg';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cgrad',coefs);
+        obj.fmm = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'cgrad', sigma,coefs);
+        obj.sing = 'hs';
+        obj.opdims = [2,1];
 
     otherwise
         error('Unknown Laplace kernel type ''%s''.', type);
@@ -103,3 +127,20 @@ if icheck ~=3
 end
 
 end
+
+function f = lap2d_s_split(s,t)
+f = cell(1,1);
+f{1} = ones(size(t.r,2),size(s.r,2));
+end
+
+function f = lap2d_d_split(s,t)
+f = cell(1,1);
+f{1} = ones(size(t.r,2),size(s.r,2));
+end
+
+function f = lap2d_c_split(s,t,coefs)
+f = cell(2,1);
+f{1} = coefs(2)*ones(size(t.r,2),size(s.r,2));
+f{2} = coefs(1)*ones(size(t.r,2),size(s.r,2));
+end
+
