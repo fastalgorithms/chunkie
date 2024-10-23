@@ -4,7 +4,6 @@
 %
 % Demonstrate transmission problem with interleaved kernel
 % Demonstrate derived quantity
-% PSA: Code takes a five minutes to run
 
 
 % planewave direction

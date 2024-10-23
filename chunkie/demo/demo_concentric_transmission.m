@@ -1,4 +1,4 @@
-%DEMO_CONCENTRIC_DOMAIN
+%DEMO_CONCENTRIC_TRANSMISSION
 %
 % demonstrate Helmholtz transmission helper
 % demonstrate chunkgraph regions
