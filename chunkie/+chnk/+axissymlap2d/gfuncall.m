@@ -1,6 +1,6 @@
 function [gvals, gdzs, gdrs, gdrps] = gfuncall(zk, r, rp, dr, z, zp, dz, maxm)
 %
-% chnk.axissymlap2d.gfuncall evaluates a collection of axisymmetric Laplace
+% chnk.axissymlap2d.gfuncall evaluates a collection of axisymmetric Helmholtz
 % Green's functions, defined by the expression:
 %
 %     gfunc(n) = pi*rp * \int_0^{2\pi} e^(i*k*|x-x'|)/|x - x'| e^(-i n t) dt 

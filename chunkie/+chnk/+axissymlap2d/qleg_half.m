@@ -1,4 +1,5 @@
 function [q0,q1,q0d] = qleg_half(t)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   caveat utilitor: this function evaluates Q_{-1/2} (and its
