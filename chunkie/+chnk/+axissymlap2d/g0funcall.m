@@ -19,10 +19,6 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     done = 1.0;
     ima = 1i;
 
-    
-
-    %r = targ(1)
-    %z = targ(2)
     r0 = rp;
     z0 = zp;
     rzero = sqrt(r*r + r0*r0 + dz*dz);
@@ -39,8 +35,8 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     %! if xminus is very small, use the forward recurrence
     %!
 
-    %!!!!print *, 'inside g0mall, x = ', x
-
+    %disp(['inside g0mall, x = ' num2str(x)])
+    %return
 
     
     iffwd = 0;
@@ -69,224 +65,168 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     end
 
 
-    %iffwd
-    
-
     gvals = zeros(maxm+1,1);
     gdzs = zeros(maxm+1,1);
     gdrs = zeros(maxm+1,1);
     gdrps = zeros(maxm+1,1);
     
+
     if (iffwd == 1)
 
         [q0, q1, dq0] = chnk.axissymlap2d.qleg_half(xminus);
         dq1 = (-q0 + x*q1)/2/(x+1)/xminus;
         
-        %call axi_q2lege01(x, xminus, q0, q1, dq0, dq1)
-
         half = done/2;
     
         %fac = done/sqrt(r*r0)/4/pi^2;
-        gvals(1) = 2*pi*sqrt(rp/r)*q0;
-        gvals(2) = 2*pi*sqrt(rp/r)*q1;
+        fac = 2*pi*sqrt(rp/r);
+        gvals(1) = fac*q0;
+        gvals(2) = fac*q1;
 
-        %derprev = dq0
-        %der = dq1
+        derprev = fac*dq0;
+        der = fac*dq1;
+        
+        % the z derivatives
+        gdzs(1) = derprev*dxdz;
+        gdzs(2) = der*dxdz;
+        
+        % the r derivatives
+        gdrs(1) = fac*(dq0*dxdr - q0/2/r);
+        gdrs(2) = fac*(dq1*dxdr - q1/2/r);
 
-        
-        
-        %grads(1,0) = (dq0*dxdr - q0/2/r)
-        %grads(1,1) = (dq1*dxdr - q1/2/r)
-        
-        %grads(2,0) = dq0*dxdz
-        %grads(2,1) = dq1*dxdz
-        
-        %grad0s(1,0) = (dq0*dxdr0 - q0/2/r0)
-        %grad0s(1,1) = (dq1*dxdr0 - q1/2/r0)
-        
+        % the rp derivatives
+        gdrps(1) = fac*(dq0*dxdr0 - q0/2/r0);
+        gdrps(2) = fac*(dq1*dxdr0 - q1/2/r0);
+
+        % don't compute the zp derivatives, just minus the z derivatives
         %grad0s(2,0) = dq0*dxdz0
         %grad0s(2,1) = dq1*dxdz0
-        
+
+        % run upward recursion for the Q's to calculate them things
         for i = 1:(maxm-1)
             gvals(i+2) = (2*i*x*gvals(i+1) - (i-half)*gvals(i))/(i+half);
-            %dernext = (2*i*(vals(i)+x*der) - (i-half)*derprev)/(i+half)
-            %grads(1,i+1) = (dernext*dxdr - vals(i+1)/2/r)
-            %grads(2,i+1) = dernext*dxdz
-            %grad0s(1,i+1) = (dernext*dxdr0 - vals(i+1)/2/r0)
-            %grad0s(2,i+1) = dernext*dxdz0
-            %derprev = der
-            %der = dernext
+            dernext = (2*i*(gvals(i+1)+x*der) - (i-half)*derprev)/(i+half);
+            gdrs(i+2) = (dernext*dxdr - gvals(i+2)/2/r);
+            gdzs(i+2) = dernext*dxdz;
+            gdrps(i+2) = (dernext*dxdr0 - gvals(i+2)/2/r0);
+            derprev = der;
+            der = dernext;
         end
 
-        for i = 1:(maxm+1)
-            %gvals(i) = gvals(i)*fac;
-            %grads(1,i) = grads(1,i)*fac
-            %grads(2,i) = grads(2,i)*fac
-            %grad0s(1,i) = grad0s(1,i)*fac
-            %grad0s(2,i) = grad0s(2,i)*fac
-            %vals(-i) = vals(i)
-            %grads(1,-i) = grads(1,i)
-            %grads(2,-i) = grads(2,i)
-            %grad0s(1,-i) = grad0s(1,i)
-            %grad0s(2,-i) = grad0s(2,i)
-        end
-
-        %gvals
-
-
-
-        % check the scaling here correctly
-
-        %mode = 5;
-        
-        % m = 4000;
-        % dint = 0;
-        % h = 2*pi/m;
-        % for i = 1:m
-        %     s = (i-1)*h;
-        %     x = r;
-        %     y = 0;
-        %     xp = rp*cos(s);
-        %     yp = rp*sin(s);
-        %     dist = sqrt( (x-xp)^2 + (y-yp)^2 + (z-zp)^2 );
-        %     dint = dint + exp(-ima*mode*s)*h/dist;
-        % end
-
-        %dint = dint*pi*rp;
-        
-        %zk = 0;
-        %nq = 2000;
-        %dint = chnk.axissymlap2d.gkm_brute(r, rp, z, zp, zk, mode, nq);
-        %dint = dint*4*pi*pi*rp;
-
-        %error = dint-dint2
-    
-        %disp(['gval = ' num2str(gvals(mode+1))]);
-        %disp(['dint = ' num2str(dint)]);
-        %disp(['error = ' num2str(abs((gvals(mode+1) - dint)/dint))]);
-        %disp(['ratio = ' num2str(gvals(mode+1)/dint)]);
-        
-
-
-        
         return
     end
 
 
 
-
     
-  %   %!
-  %   %! if here, xminus > .005, so run forward and backward recurrence
-  %   %!
+    %!
+    %! if here, xminus > .005, so run forward and backward recurrence
+    %!
 
-  %   %!
-  %   %! run the recurrence, starting from maxm, until it has exploded
-  %   %! for BOTH the values and derivatives
-  %   %!
-  %   done = 1
-  %   half = done/2
-  %   f = 1
-  %   fprev = 0
-  %   der = 1
-  %   derprev = 0
-  %   maxiter = 100000
-  %   upbound = 1.0d19
+    %!
+    %! run the recurrence, starting from maxm, until it has exploded
+    %! for BOTH the values and derivatives
+    %!
+    done = 1;
+    half = done/2;
+    f = 1;
+    fprev = 0;
+    der = 1;
+    derprev = 0;
+    maxiter = 100000;
+    upbound = 1.0e19;
   
-  %   for i = maxm:maxiter
-  %       fnext = (2*i*x*f - (i-half)*fprev)/(i+half)
-  %       dernext = (2*i*(x*der+f) - (i-half)*derprev)/(i+half)
-  %       if (abs(fnext) .ge. upbound) 
-  %           if (abs(dernext) .ge. upbound)
-  %               nterms = i+1
-  %               exit
-  %           end
-  %       end
-  %       fprev = f
-  %       f = fnext
-  %       derprev = der
-  %       der = dernext
-  %   end
-    
-  %   %!
-  %   %! now start at nterms and recurse down to maxm
-  %   %!
+    for i = maxm:maxiter
+        fnext = (2*i*x*f - (i-half)*fprev)/(i+half);
+        dernext = (2*i*(x*der+f) - (i-half)*derprev)/(i+half);
+        if (abs(fnext) >= upbound) 
+            if (abs(dernext) >= upbound)
+                nterms = i+1;
+                break
+            end
+        end
+        fprev = f;
+        f = fnext;
+        derprev = der;
+        der = dernext;
+    end
 
-  %   if (nterms .lt. 10) then
-  %       nterms = 10
-  %   end
+    %!
+    %! now start at nterms and recurse down to maxm
+    %!
 
-  %   fnext = 0
-  %   f = 1
-  %   dernext = 0
-  %   der = 1
+    if (nterms < 10)
+        nterms = 10;
+    end
+
+    fnext = 0;
+    f = 1;
+    dernext = 0;
+    der = 1;
 
 
-  %   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-  %   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%555
-  %   % Make correct downwrd recurrence
-    
-  % for i = nterm,maxm,-1
-  %   fprev = (2*i*x*f - (i+half)*fnext)/(i-half)
-  %   fnext = f
-  %   f = fprev
-  %   derprev = (2*i*(x*der+f) - (i+half)*dernext)/(i-half)
-  %   dernext = der
-  %   der = derprev
-  % enddo
+    % run the downware recurrence
+    for j = 1:(nterms-maxm+1)
+        i = nterms-i+1;
+        fprev = (2*i*x*f - (i+half)*fnext)/(i-half);
+        fnext = f;
+        f = fprev;
+        derprev = (2*i*(x*der+f) - (i+half)*dernext)/(i-half);
+        dernext = der;
+        der = derprev;
+    end
 
-  % vals(maxm-1) = f
-  % vals(maxm) = fnext
+    gvals(maxm) = f;
+    gvals(maxm+1) = fnext;
 
-  % ders(maxm-1) = der
-  % ders(maxm) = dernext
+    % ders(maxm-1) = der
+    % ders(maxm) = dernext
   
-  % do i = maxm-1,1,-1
-  %   vals(i-1) = (2*i*x*vals(i) - (i+half)*vals(i+1))/(i-half)
-  %   ders(i-1) = (2*i*(x*ders(i)+vals(i)) &
-  %       - (i+half)*ders(i+1))/(i-half)
-  % end do
+    for j = 1:(maxm-1)
+        i = maxm-1-j+1;
+        gvals(i) = (2*i*x*gvals(i+1) - (i+half)*gvals(i+2))/(i-half);
+        %ders(i-1) = (2*i*(x*ders(i)+vals(i)) &
+        % - (i+half)*ders(i+1))/(i-half)
+   end
 
 
-  % !
-  % ! normalize the values, and use a formula for the derivatives
-  % !
-  % call axi_q2lege01(x, xminus, q0, q1, dq0, dq1)
+    % !
+    % ! normalize the values, and use a formula for the derivatives
+    % !
+    [q0, q1, dq0] = chnk.axissymlap2d.qleg_half(xminus);
+    dq1 = (-q0 + x*q1)/2/(x+1)/xminus;
+    % call axi_q2lege01(x, xminus, q0, q1, dq0, dq1)
 
-  % done = 1
-  % pi = 4*atan(done)
-  % ratio = q0/vals(0)
-
-  % do i = 0,maxm
-  %   vals(i) = vals(i)*ratio
-  % enddo
-
-  % ders(0) = dq0
-  % ders(1) = dq1
-  % do i = 2,maxm
-  %   ders(i) = -(i-.5d0)*(vals(i-1) - x*vals(i))/(1+x)/xminus
-  % end do
-
-  % !
-  % ! and scale everyone...
-  % !
-  % fac = 1/sqrt(r*r0)/4/pi^2
-  
-  % do i = 0,maxm
-  %   grads(1,i) = (ders(i)*dxdr - vals(i)/2/r)*fac
-  %   grads(2,i) = ders(i)*dxdz*fac
-  %   grad0s(1,i) = (ders(i)*dxdr0 - vals(i)/2/r0)*fac
-  %   grad0s(2,i) = ders(i)*dxdz0*fac
-  %   vals(i) = vals(i)*fac
-  %   vals(-i) = vals(i)
-  %   grads(1,-i) = grads(1,i)
-  %   grads(2,-i) = grads(2,i)
-  %   grad0s(1,-i) = grad0s(1,i)
-  %   grad0s(2,-i) = grad0s(2,i)
-  % end do
+    ratio = q0/gvals(1)*2*pi*sqrt(rp/r);;
     
+    for i = 1:(maxm+1)
+        gvals(i) = gvals(i)*ratio;
+    end
 
+    % ders(0) = dq0
+    % ders(1) = dq1
+    % do i = 2,maxm
+    %   ders(i) = -(i-.5d0)*(vals(i-1) - x*vals(i))/(1+x)/xminus
+    % end do
+    
+    %
+    % and scale everyone...
+    %
+    
+    %fac = 1/sqrt(r*r0)/4/pi^2
 
+    %for i = 0=:(maxm+1)
+    %   grads(1,i) = (ders(i)*dxdr - vals(i)/2/r)*fac
+    %   grads(2,i) = ders(i)*dxdz*fac
+    %   grad0s(1,i) = (ders(i)*dxdr0 - vals(i)/2/r0)*fac
+    %   grad0s(2,i) = ders(i)*dxdz0*fac
+    %    gvals(i) = gvals(i)*fac;
+    %   vals(-i) = vals(i)
+    %   grads(1,-i) = grads(1,i)
+    %   grads(2,-i) = grads(2,i)
+    %   grad0s(1,-i) = grad0s(1,i)
+    %   grad0s(2,-i) = grad0s(2,i)
+    % end do
 
 
 end
