@@ -73,9 +73,18 @@ disp(['from 0 mode gfunc, gdrp = ' num2str(gdrp) ' error = ' num2str(abs(gdrp-ex
 [gvals, gdzs, gdrs, gdrps] = chnk.axissymlap2d.g0funcall(r, rp, dr, z, zp, dz, maxm);
 
 
+disp(' ')
 disp('errors in all modes')
-
 errors = abs(gvals-exact)
-%errors_gdz = abs(gdzs-exact_gdz)
-%errors_gdr = abs(gdrs-exact_gdr)
-%errors_gdrp = abs(gdrps-exact_gdrp)
+
+disp(' ')
+disp('errors in all modes for d/dz')
+errors_gdz = abs(gdzs-exact_gdz)
+
+disp(' ')
+disp('errors in all modes for d/dr')
+errors_gdr = abs(gdrs-exact_gdr)
+
+disp(' ')
+disp('errors in all modes for d/drp')
+errors_gdrp = abs(gdrps-exact_gdrp)

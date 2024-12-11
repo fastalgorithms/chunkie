@@ -165,7 +165,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     der = 1;
 
 
-    % run the downware recurrence
+    % run the downward recurrence
     for j = 1:(nterms-maxm+1)
         i = nterms-i+1;
         fprev = (2*i*x*f - (i+half)*fnext)/(i-half);
@@ -179,14 +179,14 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     gvals(maxm) = f;
     gvals(maxm+1) = fnext;
 
-    % ders(maxm-1) = der
-    % ders(maxm) = dernext
+    ders = zeros(maxm+1,1);
+    ders(maxm) = der
+    ders(maxm+1) = dernext
   
     for j = 1:(maxm-1)
         i = maxm-1-j+1;
         gvals(i) = (2*i*x*gvals(i+1) - (i+half)*gvals(i+2))/(i-half);
-        %ders(i-1) = (2*i*(x*ders(i)+vals(i)) &
-        % - (i+half)*ders(i+1))/(i-half)
+        ders(i) = (2*i*(x*ders(i+1)+gvals(i+1)) - (i+half)*ders(i+2))/(i-half)
    end
 
 
@@ -197,27 +197,34 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     dq1 = (-q0 + x*q1)/2/(x+1)/xminus;
     % call axi_q2lege01(x, xminus, q0, q1, dq0, dq1)
 
-    ratio = q0/gvals(1)*2*pi*sqrt(rp/r);;
+    ratio = q0/gvals(1)*2*pi*sqrt(rp/r);
     
     for i = 1:(maxm+1)
         gvals(i) = gvals(i)*ratio;
     end
 
-    % ders(0) = dq0
-    % ders(1) = dq1
-    % do i = 2,maxm
-    %   ders(i) = -(i-.5d0)*(vals(i-1) - x*vals(i))/(1+x)/xminus
-    % end do
-    
+    ders(1) = dq0*2*pi*sqrt(rp/r);
+    ders(2) = dq1*2*pi*sqrt(rp/r);
+    for i = 2:maxm
+       ders(i+1) = -(i-.5d0)*(gvals(i) - x*gvals(i+1))/(1+x)/xminus
+    end
+
     %
-    % and scale everyone...
+    % and scale the gradients properly everyone...
     %
     
     %fac = 1/sqrt(r*r0)/4/pi^2
 
-    %for i = 0=:(maxm+1)
+    gdzs = ders*dxdz;
+    gdrs = ders*dxdr - gvals/2/r;
+    gdrps = ders*dxdr0 - gvals/2/r0;
+
+    
+    %for i = 1:(maxm+1)
     %   grads(1,i) = (ders(i)*dxdr - vals(i)/2/r)*fac
-    %   grads(2,i) = ders(i)*dxdz*fac
+    % grads(2,i) = ders(i)*dxdz*fac
+    %gdrs(i) = ders(i)*dxdr - gvals(i)/2/r;
+        %gdzs(i) = ders(i)*dxdz;
     %   grad0s(1,i) = (ders(i)*dxdr0 - vals(i)/2/r0)*fac
     %   grad0s(2,i) = ders(i)*dxdz0*fac
     %    gvals(i) = gvals(i)*fac;
@@ -226,7 +233,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     %   grads(2,-i) = grads(2,i)
     %   grad0s(1,-i) = grad0s(1,i)
     %   grad0s(2,-i) = grad0s(2,i)
-    % end do
+    %end
 
 
 end
