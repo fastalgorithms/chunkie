@@ -25,6 +25,10 @@ zk = 0;
 nq = 2000;
 hhh = 0.000001
 
+% evaluate the kernel using brute force trapezoidal integration, and then
+% compare with the recurrence relation code. Note: The "exact" derivatives are
+% estimated using finite difference, so it is expected that the error is O(h^2)
+
 for m = 1:(maxm+1)
     dint = chnk.axissymlap2d.gkm_brute(r, rp, z, zp, zk, m-1, nq);
     exact(m) = dint*4*pi*pi*rp;

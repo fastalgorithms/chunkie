@@ -4,7 +4,11 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
 % chnk.axissymlap2d.g0funcall evaluates a collection of axisymmetric Laplace
 % Green's functions, defined by the expression:
 %
-%     gfunc(n) = pi*rp * \int_0^{2\pi} 1/|x - x'| e^(-i n t) dt 
+%     gfunc(n) = pi*rp * \int_0^{2\pi} 1/|x - x'| e^(-i n t) dt
+%
+% it is assumed that x = (x,0,z) otherwise the integral above should pick up a
+% phase factor out front of exp(i*n*phi), where phi is the azimuthal coordinate
+% of x in cylindrical coordinates.
 %
 % The extra factor of rp (and maybe pi?) out front makes subsequent interfacing
 % with RCIP slightly easier. Modes 0 through maxm are returned, with gval(1) =
