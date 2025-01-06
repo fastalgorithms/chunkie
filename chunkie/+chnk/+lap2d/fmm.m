@@ -56,12 +56,12 @@ end
 srcuse = [];
 srcuse.sources = srcinfo.r(1:2,:);
 switch lower(type)
-    case {'s', 'sgrad', 'sprime'}
+    case {'s', 'sgrad', 'sprime', 'sp'}
         srcuse.charges = -1/(2*pi)*sigma(:).';
-    case {'d', 'dprime'}
+    case {'d', 'dgrad', 'dprime', 'dp'}
         srcuse.dipstr = -1/(2*pi)*sigma(:).';
         srcuse.dipvec = srcinfo.n(1:2,:);
-    case 'c'
+    case {'c', 'cgrad', 'cprime', 'cp'}
         coef = varargin{1};
         srcuse.charges = -1/(2*pi)*coef(2)*sigma(:).';
         srcuse.dipstr  = -1/(2*pi)*coef(1)*sigma(:).';
@@ -77,7 +77,8 @@ end
 pg = 0;
 pgt = min(nargout, 3);
 switch lower(type)
-    case {'sprime', 'dprime', 'cprime','sp','dp','cp'}
+    case {'sprime', 'dprime', 'cprime','sp','dp','cp','sgrad','dgrad','cgrad','sg','dg','cg'}
+        pgt = min(nargout+1,3);
         pgt = max(pgt, 2);
 end
 U = rfmm2d(eps, srcuse, pg, targuse, pgt);
@@ -87,7 +88,7 @@ if ( nargout > 0 )
     switch lower(type)
         case {'s', 'd', 'c'}
             varargout{1} = U.pottarg.';
-        case 'sgrad'
+        case {'sgrad', 'dgrad', 'cgrad'}
             varargout{1} = U.gradtarg;
         case {'sprime', 'dprime','cprime','sp','dp','cp'}
             if ( ~isfield(targinfo, 'n') )
@@ -116,7 +117,7 @@ if ( nargout > 1 )
     switch lower(type)
         case {'s', 'd', 'c'}
             varargout{2} = U.gradtarg;
-        case 'sgrad'
+        case {'sgrad', 'dgrad', 'cgrad'}
             varargout{2} = U.hesstarg([1 2 2 3],:);
         otherwise
             error('CHUNKIE:lap2d:fmm:grad', ...

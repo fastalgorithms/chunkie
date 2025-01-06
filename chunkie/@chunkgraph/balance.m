@@ -27,7 +27,10 @@ function [obj] = balance(obj)
     nverts = size(obj.verts,2);
     % Loop over all vertices in the cgraph structure
     for iii=1:nverts
-      
+        if isempty(vstruc{iii}{1})
+            % if vertex is not connected, do nothing
+            continue
+        end
     vedge = vstruc{iii}{1};
     vsign = vstruc{iii}{2};
     

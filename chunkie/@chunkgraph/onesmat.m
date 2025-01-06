@@ -1,4 +1,4 @@
-function mat = onesmat(chnkr)
+function mat = onesmat(cgrph)
 %ONESMAT Forms the matrix for the operator 
 %
 %  W[\mu](x) = \int \mu(y) dl
@@ -10,11 +10,11 @@ function mat = onesmat(chnkr)
 % Syntax: mat = onesmat(chnkr)
 %
 % Input:
-%   chnkr - chunker object
+%   cgrph - chunkgraph object
 %
 % Output:
 %   mat - the matrix discretization of the operator W above. mat is 
-%       (chnkr.npt) x (chnkr.npt)
+%       (cgrph.npt) x (cgrph.npt)
 %
 % Examples:
 %   mat = onesmat(chnkr)
@@ -23,7 +23,7 @@ function mat = onesmat(chnkr)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-wts = chnkr.wts; 
+wts = cgrph.wts; 
 wts = wts(:);
 temp = ones(size(wts));
 mat = bsxfun(@times,temp,wts.');

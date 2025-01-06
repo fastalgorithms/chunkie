@@ -46,7 +46,7 @@ function varargout = fmm(eps, zk, srcinfo, targinfo, type, sigma, varargin)
 %
 % Optional Output:
 %   pot - potential/neumann data corresponding to the kernel at the target locations
-%   grad  - gradient at target locations
+%   grad - gradient at target locations
 %   hess - hessian at target locations
 
 if ( nargout == 0 )

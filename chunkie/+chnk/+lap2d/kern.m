@@ -70,3 +70,12 @@ if strcmpi(type,'c')
     ny = repmat(srcnorm(2,:),nt,1);
     submat = -coef(1)*(grad(:,:,1).*nx + grad(:,:,2).*ny) + coef(2)*s;
 end
+
+if strcmpi(type,'cgrad')
+    coef = ones(2,1);
+    if(nargin == 4); coef = varargin{1}; end
+    [~,grad,hess] = chnk.lap2d.green(src,targ,true);
+    submat = -(hess(:,:,1:2).*srcinfo.n(1,:)+hess(:,:,2:3).*srcinfo.n(2,:));
+    submat = coef(1)*reshape(permute(submat,[3,1,2]),2*nt,ns);
+    submat = submat+coef(2)*reshape(permute(grad,[3,1,2]),2*nt,ns);
+end
