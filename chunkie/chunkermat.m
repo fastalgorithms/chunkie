@@ -420,7 +420,9 @@ for i=1:nchunkers
 
         % mark off the near and self interactions
         for ich = 1:chnkr.nch
-            for jch = [ich,chnkr.adj(1,ich),chnkr.adj(2,ich)]
+	    jlist = [ich,chnkr.adj(1,ich),chnkr.adj(2,ich)];
+	    jlist = jlist(jlist > 0);
+            for jch = jlist
                 flag((jch - 1)*chnkr.k+(1:chnkr.k), ich) = 0;
             end
         end
