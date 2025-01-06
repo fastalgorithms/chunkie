@@ -166,11 +166,20 @@ else
         npxy = chnk.flam.nproxy_square(kerneval,width);
         [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
-        pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr,kerneval,opdims,pr,ptau,pw,pin);
+        verb = false; % TODO: make this an option to chunkerkerneval?
+        optsnpxy = []; optsnpxy.rank_or_tol = opts.eps;
+        pxyfun = @(lvl) proxyfunrbylevel(width,lvl,optsnpxy, ...
+            chnkr,wts,kerneval,opdims,verb && opts.proxybylevel);
+        if ~opts.proxybylevel
+            % if not using proxy-by-level, always use pxyfunr from level 1
+            pxyfun = pxyfun(1);
+        end
 
-        optsifmm=[]; optsifmm.Tmax=Inf;
-        F = ifmm(matfun,targinfo_flam.r,xflam1,200,1e-14,pxyfun,optsifmm);
+        optsifmm=[]; 
+        optsifmm.Tmax=Inf; 
+        optsifmm.proxybylevel = opts.proxybylevel;
+        optsifmm.verb = verb;
+        F = ifmm(matfun,targsflam,xflam1,200,1e-14,pxyfun,optsifmm);
         fints = ifmm_mv(F,dens(:),matfun);
         fints = fints(:);
     else
@@ -223,4 +232,17 @@ else
     end    
 end
 % sum(fints)
+end
+
+function pxyfunrlvl = proxyfunrbylevel(width,lvl,optsnpxy, ...
+    chnkr,wts,kern,opdims,verb ...
+    )
+    npxy = chnk.flam.nproxy_square(kern,width/2^(lvl-1),optsnpxy);
+    [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
+
+    if verb; fprintf('%3d | npxy = %i\n', lvl, npxy); end
+
+    % return the FLAM-style pxyfunr corresponding to lvl
+    pxyfunrlvl = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
+        ctr,chnkr,wts,kern,opdims,pr,ptau,pw,pin);
 end

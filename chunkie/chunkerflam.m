@@ -46,7 +46,10 @@ function [F] = chunkerflam(chnkobj,kern,dval,opts)
 %                           up the FLAM compression. It may be desirable to
 %                           turn this off if there appear to be precision
 %                           issues.
-%
+%           opts.proxybylevel = boolean (false), determine the number of
+%                           necessary proxy points adaptively at each 
+%                           level of the factorization. Typically needed 
+%                           only for moderate / high frequency problems. 
 %           opts.quad = string ('ggqlog'), specify quadrature routine to 
 %                       use. 
 %
@@ -126,6 +129,7 @@ verb = false;           if isfield(opts,'verb'),    verb = opts.verb;end
 lvlmax = inf;           if isfield(opts,'lvlmax'),  lvlmax = opts.lvlmax;end
 adaptive_correction = false; if isfield(opts,'adaptive_correction'), ...
     adaptive_correction = opts.adaptive_correction;end
+proxybylevel = false;   if isfield(opts,'proxybylevel'), proxybylevel = opts.proxybylevel;end
 
 eps = rem(rank_or_tol,1);
 
@@ -264,10 +268,11 @@ end
 optsnpxy = []; optsnpxy.rank_or_tol = rank_or_tol;
 optsnpxy.nsrc = occ;
 
-npxy = chnk.flam.nproxy_square(kern, width, optsnpxy);
+% compute number of proxy in largest box
+npxy = chnk.flam.nproxy_square(kern,width,optsnpxy);
 
 if npxy == -1
-    warning('chunkerflam: proxy failed, defaulting to no proxy')
+    warning('chunkerflam: proxy failed at highest level, defaulting to no proxy')
     if strcmpi(flamtype,'rskelf')
         F = rskelf(matfun,xflam,occ,rank_or_tol,[],struct('verb',verb,'lvlmax',lvlmax));
     end
@@ -277,24 +282,55 @@ if npxy == -1
     return
 end
 
-
-[pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
-
 if strcmpi(flamtype,'rskelf')
     ifaddtrans = true;
-    pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkrs, ...
-        kern,opdims_mat,pr,ptau,pw,pin,ifaddtrans,l2scale);
-    F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun,struct('verb',verb,...
-        'lvlmax',lvlmax));
+    pxyfun = @(lvl) proxyfunbylevel(width,lvl,optsnpxy, ...
+        chnkrs,kern,opdims_mat,ifaddtrans,l2scale,verb && proxybylevel);
+    if ~proxybylevel
+        % if not using proxy-by-level, always use pxyfun from level 1
+        pxyfun = pxyfun(1);
+    end
+    F = rskelf(matfun,xflam,occ,rank_or_tol,pxyfun, ...
+        struct('verb',verb,'lvlmax',lvlmax,'proxybylevel',proxybylevel));
 end
 
 if strcmpi(flamtype,'rskel') 
-    warning('chunkerflam: proxyr has not adapted for the multiple chunker case yet')
-    pxyfunr = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-        ctr,chnkr,kern,opdims,pr,ptau,pw,pin);
-    F = rskel(matfun,xflam,xflam,occ,rank_or_tol,pxyfunr);
+    warning('chunkerflam: proxyr has not been adapted for the multiple chunker case yet')
+    pxyfunr = @(lvl) proxyfunrbylevel(width,lvl,optsnpxy, ...
+        chnkr,kern,opdims,verb && proxybylevel);
+    if ~proxybylevel
+        % if not using proxy-by-level, always use pxyfunr from level 1
+        pxyfunr = pxyfunr(1);
+    end
+    F = rskel(matfun,xflam,xflam,occ,rank_or_tol,pxyfunr, ...
+        struct('verb',verb,'lvlmax',lvlmax,'proxybylevel',proxybylevel));
 end
 	 
-
-
 end
+
+function pxyfunlvl = proxyfunbylevel(width,lvl,optsnpxy, ...
+    chnkrs,kern,opdims_mat,ifaddtrans,l2scale,verb ...
+    )
+    npxy = chnk.flam.nproxy_square(kern,width/2^(lvl-1),optsnpxy);
+    [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
+
+    if verb; fprintf('%3d | npxy = %i\n', lvl, npxy); end
+
+    % return the FLAM-style pxyfun corresponding to lvl
+    pxyfunlvl = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,chnkrs, ...
+        kern,opdims_mat,pr,ptau,pw,pin,ifaddtrans,l2scale);
+end
+
+function pxyfunrlvl = proxyfunrbylevel(width,lvl,optsnpxy, ...
+    chnkr,kern,opdims,verb ...
+    )
+    npxy = chnk.flam.nproxy_square(kern,width/2^(lvl-1),optsnpxy);
+    [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
+
+    if verb; fprintf('%3d | npxy = %i\n', lvl, npxy); end
+
+    % return the FLAM-style pxyfunr corresponding to lvl
+    pxyfunrlvl = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
+        ctr,chnkr,kern,opdims,pr,ptau,pw,pin);
+end
+    
