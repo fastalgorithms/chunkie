@@ -1,4 +1,4 @@
-    function mat = chunkerkernevalmat(chnkr,kern,targobj,opts)
+function [mat,varargout] = chunkerkernevalmat(chnkr,kern,targobj,opts)
 %CHUNKERKERNEVALMAT compute the matrix which maps density values on 
 % the chunk geometry to the value of the convolution of the given
 % integral kernel with the density at the specified target points
@@ -138,8 +138,6 @@ optssmooth = [];
 optsadap = []; 
 optsadap.eps = eps;
 
-
-
 if forcesmooth
     mat = chunkerkernevalmat_smooth(chnkr,ftmp,opdims,targinfo, ...
         [],optssmooth);
@@ -165,11 +163,14 @@ end
 
 % smooth for sufficiently far, adaptive otherwise
 
-% TODO: change to chunkerkerneval system, need routine to generate
-% upsampling matrix.
+rho = 1.8;
+optsflag = [];  optsflag.rho = rho;
+flag = flagnear_rectangle(chnkr,targinfo.r,optsflag);
 
-optsflag = []; optsflag.fac = fac;
-flag = flagnear(chnkr,targinfo.r,optsflag);
+npoly = chnkr.k*2;
+nlegnew = chnk.ellipse_oversample(rho,npoly,eps);
+nlegnew = max(nlegnew,chnkr.k);
+
 spmat = chunkerkernevalmat_adap(chnkr,ftmp,opdims, ...
         targinfo,flag,optsadap);
 

@@ -411,7 +411,9 @@ for i=1:nchunkers
 
         % mark off the near and self interactions
         for ich = 1:chnkr.nch
-            for jch = [ich,chnkr.adj(1,ich),chnkr.adj(2,ich)]
+            jlist = [ich,chnkr.adj(1,ich),chnkr.adj(2,ich)];
+            jlist = jlist(jlist > 0);
+            for jch = jlist
                 flag((jch - 1)*chnkr.k+(1:chnkr.k), ich) = 0;
             end
         end
@@ -453,6 +455,7 @@ if(icgrph && isrcip)
     npt_all = horzcat(chnkobj.echnks.npt);
     [~,nv] = size(chnkobj.verts);
     ngl = chnkrs(1).k;
+    rcipsav = cell(nv,1);
     
     for ivert=1:nv
         clist = chnkobj.vstruc{ivert}{1};
@@ -500,10 +503,11 @@ if(icgrph && isrcip)
         optsrcip.nonsmoothonly = false;
         optsrcip.corrections = false;
 
-        R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
+        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
             Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
             sbclmat,sbcrmat,lvmat,rvmat,u,optsrcip);
-       
+        rcipsav{ivert}.starind = starind;
+        
         sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
         if (~nonsmoothonly)
             
@@ -560,6 +564,10 @@ if(icgrph && isrcip)
             jsysmat = [jsysmat;jind(:)];
             vsysmat = [vsysmat;sysmat_tmp(:)];
         end    
+    end
+
+    if nargout > 2
+        varargout{2} = rcipsav;
     end
     
 end

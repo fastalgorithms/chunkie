@@ -155,7 +155,7 @@ else
     tsplits = [ta;tb];
 end
    
-tsplits = sort(unique(tsplits),'ascend');
+tsplits = sort(uniquetol(tsplits,eps),'ascend');
 lab = length(tsplits);
 if (lab-1 > nchmax)
     error(['CHUNKERFUNC: nchmax exceeded in chunkerfunc on initial splits.\n ',...
@@ -184,14 +184,15 @@ nchnew=nch;
 
 maxiter_res=nchmax-nch;
 
+xmin =  Inf;
+xmax = -Inf;
+ymin =  Inf;
+ymax = -Inf;
+
 rad_curr = 0;
 for ijk = 1:maxiter_res
 
 %       loop through all existing chunks, if resolved store, if not split
-    xmin =  Inf;
-    xmax = -Inf;
-    ymin =  Inf;
-    ymax = -Inf;
     
     ifdone=1;
     for ich=1:nchnew
@@ -224,7 +225,7 @@ for ijk = 1:maxiter_res
             
             resol_speed_test = err1>eps;
             if nout < 2
-                resol_speed_test = err1>eps*k;
+                resol_speed_test = err1*(b-a) > eps*k;
             end
             
             xmax = max(xmax,max(r(1,:)));
