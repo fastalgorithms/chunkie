@@ -140,10 +140,10 @@ targs = [xx(:).'; yy(:).'];
 % identify points in computational domain
 in = chunkerinterior(chnkr,{x1,x1});
 
-% evaluate electric field
+% evaluate electric field, the negative gradient of the potential
 uu = nan(size(xx));
 uugrad = nan(2,size(xx(:),1));
-uugrad(:,in(:)) = reshape(chunkerkerneval(chnkr,ckern_grad,sol,targs(:,in(:))),2,[]);
+uugrad(:,in(:)) = -reshape(chunkerkerneval(chnkr,ckern_grad,sol,targs(:,in(:))),2,[]);
 tstream = toc(tstart)
 
 % plot fieldlines
