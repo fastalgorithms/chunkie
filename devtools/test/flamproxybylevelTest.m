@@ -68,7 +68,7 @@ ubdry = kerns.fmm(tol,srcinfo,targinfo,strengths);
 targinfo = []; targinfo.r = targets;
 utarg = kerns.fmm(tol,srcinfo,targinfo,strengths);
 
-%%
+%
 
 % build laplace dirichlet matrix * (-2)
 if compute_dense
@@ -98,7 +98,7 @@ start = tic; sig_rskelf = rskelf_sv(F,rhs); t1 = toc(start);
 
 fprintf('%5.2e s : time for rskelf solve \n',t1)
 
-%%
+%
 
 opts = [];
 opts.rank_or_tol = tol;
@@ -145,7 +145,7 @@ if compute_dense
     assert(err < 1e-12 || err < 10*tol);
 end
 
-%%
+%
 
 % evaluate at targets using adaptive quadrature
 
@@ -164,7 +164,7 @@ relerr2 = norm(utarg-sol_adap,'inf')/dot(abs(sig_rskelf(:)),wts(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
-%% evaluate at targets using FLAM's ifmm
+% evaluate at targets using FLAM's ifmm
 
 opts = [];
 opts.eps = tol;
