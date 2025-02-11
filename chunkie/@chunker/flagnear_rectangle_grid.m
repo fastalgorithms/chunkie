@@ -74,11 +74,12 @@ d2s(2,:) = -d2s(2,:);
 [xx,yy] = meshgrid(x(:),y(:));
 nx = length(x(:)); ny = length(y(:));
 
+% bin sort structure for x and y vectors
 xmin = min(x(:)); xmax = max(x(:));
-nregx = max(round(length(x)/2),1); hx = (xmax-xmin)/nregx;
+nregx = max(length(x)-1,1); hx = (xmax-xmin)/nregx;
 xids = round((x(:)-xmin)/hx);
 ymin = min(y(:)); ymax = max(y(:));
-nregy = max(round(length(y)/2),1); hy = (ymax-ymin)/nregy;
+nregy = max(length(y)-1,1); hy = (ymax-ymin)/nregy;
 yids = round((y(:)-ymin)/hy);
 
 [xidsort,ix] = sort(xids,'ascend');
@@ -114,6 +115,11 @@ for i = 1:nch
     iymin = round((rymin-ymin)/hy)+1;
     iymax = round((rymax-ymin)/hy)+1;
     
+    ixmin = max(ixmin,1);
+    ixmax = min(ixmax,length(xiladr)-1);
+    iymin = max(iymin,1);
+    iymax = min(iymax,length(yiladr)-1);
+
     ixrel = ix(xiladr(ixmin):(xiladr(ixmax+1)-1));
     iyrel = iy(yiladr(iymin):(yiladr(iymax+1)-1));
     

@@ -1,0 +1,34 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: 'chunkIE: a MATLAB integral equation toolbox'
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Travis
+    family-names: Askham
+  - given-names: Manas
+    family-names: Rachh
+  - given-names: Michael
+    family-names: O'Neil
+  - given-names: Jeremy
+    family-names: Hoskins
+  - given-names: Daniel
+    family-names: Fortunato
+  - given-names: Shidong
+    family-names: Jiang
+  - given-names: Fredrik
+    family-names: Fryklund
+  - given-names: Tristan
+    family-names: Goodwill
+  - given-names: Hai Yang
+    family-names: Wang
+  - given-names: Hai
+    family-names: Zhu
+repository-code: 'https://github.com/fastalgorithms/chunkie'
+url: 'https://chunkie.readthedocs.io/'
+version: 1.0.0
+date-released: '2024-06-08'

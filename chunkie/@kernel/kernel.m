@@ -9,13 +9,21 @@ classdef kernel
 %      ----                                         ----
 %      'laplace'    ('lap', 'l')                    's', 'd', 'sp', 'c'
 %      'helmholtz'  ('helm', 'h')                   's', 'd', 'sp', 'dp', 'c'
+%                                                   'cp'
 %      'helmholtz1d'  ('helm1d', 'h1d')             's'
 %      'helmholtz difference' ('helmdiff', 'hdiff') 's', 'd', 'sp', 'dp'
 %      'elasticity' ('elast', 'e')                  's', 'strac', 'd', 'dalt'
-%      'stokes'     ('stok', 's')                   'svel', 'spres', 'strac',
-%                                                   'dvel', 'dpres', 'dtrac'
+%      'stokes'     ('stok', 's')                   'svel', 'spres', 
+%                                                   'strac', 'sgrad'
+%                                                   'dvel', 'dpres',
+%                                                   'dtrac', 'dgrad'
+%                                                   'cvel', 'cpres',
+%                                                   'ctrac', 'cgrad'
 %      'zeros'       ('zero','z') 
-%  
+%      'axis sym helmholtz'                         's' 'd' 'sp' 'c'
+%         ('axissymh', 'axissymhelm')
+%      'axis sym helmholtz difference'              's' 'd' 'sp' 'dp'
+%         ('axissymhdiff', 'axissymhelmdiff') 
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.
@@ -36,6 +44,11 @@ classdef kernel
 %   data for working with the kernel in a standardized format. For example,
 %   for a kernel K:
 %
+%      - K.opdims: a 2-vector [m n] specifying the dimensions of the
+%        kernel values. K.eval(s,t) is an m x n matrix if s and t are a
+%        single source and target, respectively. For scalar kernels,
+%        opdims = [1 1].
+%
 %      - K.fmm: A function handle which calls the FMM for the corresponding
 %        kernel. K.fmm(eps, s, t, sigma) evaluates the kernel with density
 %        sigma from sources s to targets t with accuracy eps.
@@ -44,16 +57,21 @@ classdef kernel
 %        integrals using the Helsing-Ojala kernel-split quadrature
 %        technique.
 
+% author: Dan Fortunato
+								
     properties
 
         name           % Name of the kernel
         type           % Type of the kernel
         params         % Structure of kernel parameters
         eval           % Function handle for kernel evaluation
+        shifted_eval   % Function handle for evaluating translated kernel evaluation
         fmm            % Function handle for kernel FMM
         sing           % Singularity type
         splitinfo      % Kernel-split information
         opdims = [0 0] % Dimension of the operator
+        isnan  = false % Boolean, determines if NaN kernel
+        iszero = false % Boolean, determines if zero kernel
 
     end
 
@@ -81,23 +99,43 @@ classdef kernel
                       obj = kernel.elast2d(varargin{:});
                   case {'zeros', 'zero', 'z'}
                       obj = kernel.zeros(varargin{:});
+                  case {'nans', 'nan'}
+                      obj = kernel.nans(varargin{:});
+                  case {'axis sym helmholtz', 'axissymh', 'axissymhelm'}
+                      obj = kernel.axissymhelm2d(varargin{:});
+                  case {'axis sym helmholtz difference', 'axissymhdiff' ...
+                           'axissymhelmdiff'}
+                      obj = kernel.axissymhelm2ddiff(varargin{:});    
                   otherwise
                       error('Kernel ''%s'' not found.', kern);
               end
           elseif ( isa(kern, 'function_handle') )
               obj.eval = kern;
-          elseif ( isa(kern, 'kernel') )
-              if ( numel(kern) == 1 )
-                  obj = kern;
-              else
-                  % The input is a matrix of kernels.
-                  % Create a single kernel object by interleaving the
-                  % outputs of each sub-kernel's eval() and fmm() routines.
-                  % TODO: Check that opdims are consistent
-                  obj = interleave(kern);
+              try
+                  s = []; s.r = randn(2,1); s.d = randn(2,1); 
+                  s.d2 = randn(2,1); s.n = randn(2,1);
+                  t = []; t.r = randn(2,1); t.d = randn(2,1); 
+                  t.d2 = randn(2,1); t.n = randn(2,1);
+                  obj.opdims = size(kern(s,t));
+              catch
+                  % unable to determine opdims automatically, set empty
               end
+          elseif ( isa(kern, 'kernel') )
+              if (numel(kern) == 1)
+		obj = kern;
+	      else
+		obj = interleave(kern);
+              end
+          elseif isa(kern,'cell')
+            sz = size(kern); assert(length(sz)==2,'KERNEL: first input not of a supported type');
+            obj(sz(1),sz(2)) = kernel();
+            for j = 1:sz(2)
+                for i = 1:sz(1)
+                    obj(i,j) = kernel(kern{i,j});
+                end
+            end
           else
-              error('First input must be a string or function handle.');
+              error('KERNEL: first input not of a supported type');
           end
 
       end
@@ -112,7 +150,10 @@ classdef kernel
         obj = helm2ddiff(varargin);
         obj = stok2d(varargin);
         obj = elast2d(varargin);
+        obj = axissymhelm2d(varargin);
+        obj = axissymhelm2ddiff(varargin);
         obj = zeros(varargin);
+        obj = nans(varargin);
 
     end
 
@@ -120,6 +161,10 @@ end
 
 function K = interleave(kerns)
 %INTERLEAVE   Create a kernel from a matrix of kernels by interleaving.
+
+if any([kerns.isnan])
+    error("kernel.interleave: interleave not supported for nan kernels");
+end
 
 [m, n] = size(kerns);
 
@@ -156,6 +201,37 @@ opdims = [sum(rowdims) sum(coldims)];
         end
 
     end
+
+
+    function out = shifted_eval_(s, t, o)
+
+        [~, ns] = size(s.r);
+        [~, nt] = size(t.r);
+
+        % Compute interleaved indices
+        ridx = cell(m, 1);
+        cidx = cell(n, 1);
+        for k = 1:m
+            ridx{k} = (rowstarts(k)+1:rowstarts(k+1)).' + (0:nt-1)*opdims(1);
+            ridx{k} = ridx{k}(:).';
+        end
+        for l = 1:n
+            cidx{l} = ((colstarts(l)+1):colstarts(l+1)).' + (0:ns-1)*opdims(2);
+            cidx{l} = cidx{l}(:).';
+        end
+
+        % Evaluate each sub-kernel and assign the resulting block to the
+        % output matrix using interleaved indices
+        out = zeros(opdims(1)*nt, opdims(2)*ns);
+        for k = 1:m
+            for l = 1:n
+                out(ridx{k},cidx{l}) = kerns(k,l).shifted_eval(s,t,o);  
+            end
+        end
+
+    end
+
+
 
     function varargout = fmm_(eps, s, t, sigma)
 
@@ -226,14 +302,36 @@ if ( any(strcmpi(sings, 'log')) ),  K.sing = 'log'; end
 if ( any(strcmpi(sings, 'pv'))  ),  K.sing = 'pv';  end
 if ( any(strcmpi(sings, 'hs'))  ),  K.sing = 'hs';  end
 
+% Set params
+K.params = cell(m, n);
+for kk=1:m
+    for ll=1:n
+        K.params{kk,ll} = kerns(kk,ll).params;
+    end
+end
+
 % The new kernel has eval() only if all sub-kernels have eval()
 if ( all(cellfun('isclass', {kerns.eval}, 'function_handle')) )
     K.eval = @eval_;
+end
+
+% The new kernel has shifted_eval() only if all sub-kernels have eval()
+if ( all(cellfun('isclass', {kerns.shifted_eval}, 'function_handle')) )
+    K.shifted_eval = @shifted_eval_;
 end
 
 % The new kernel has fmm() only if all sub-kernels have fmm()
 if ( all(cellfun('isclass', {kerns.fmm}, 'function_handle')) )
     K.fmm  = @fmm_;
 end
+
+% 
+if all([kerns.iszero])
+    K = kernel.zeros(opdims(1),opdims(2));
+else
+    K.iszero = false;
+end
+
+
 
 end

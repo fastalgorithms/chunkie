@@ -36,16 +36,16 @@ chnkrup.d= permute(reshape(upmat*reshape( ...
 chnkrup.d2= permute(reshape(upmat*reshape( ...
     permute(chnkr.d2,[2,1,3]),k,nn),kup,dim,nch),[2,1,3]);
 chnkrup.adj= chnkr.adj;
-chnkrup.h= chnkr.h;
 
 chnkrup.n = normals(chnkrup);
 chnkrup.wts = weights(chnkrup);
 
 if chnkr.hasdata
-    ndata = chnkr.size(data,1);
+    ndata = size(chnkr.data,1);
     nndata = ndata*nch;
-    chnkrup.r = permute(reshape(upmat*reshape( ...
-        permute(chnkr.datastor,[2,1,3]),k,nndata),kup,ndata,nch),[2,1,3]);
+    chnkrup = chnkrup.makedatarows(ndata);
+    chnkrup.data = permute(reshape(upmat*reshape( ...
+        permute(chnkr.data,[2,1,3]),k,nndata),kup,ndata,nch),[2,1,3]);
 end
 
 if nargin > 2

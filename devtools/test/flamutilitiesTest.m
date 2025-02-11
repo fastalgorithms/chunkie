@@ -31,10 +31,8 @@ for icurve = 1:size(edge2verts,1)
 end
 cparams = [];
 cparams.nover = 2;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,cparams);
+[cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
 
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
 cgrph = balance(cgrph);
 
 
@@ -106,14 +104,16 @@ t1 = toc(start);
 fprintf('%5.2e s : time to build tridiag\n',t1)
 
 spmat = spmat + speye(npt);
+inds = find(spmat);
+spmat(inds) = sys(inds);
 
 % test matrix entry evaluator
 start = tic; 
-% opdims = [1 1];
-opdims = ones([2,1,1]);
+ opdims = [1 1];
+%opdims = ones([2,1,1]);
 
+%sys2 = chnk.flam.kernbyindex(1:npt,1:npt,cgrph,kernd,opdims,spmat);
 sys2 = chnk.flam.kernbyindex(1:npt,1:npt,cgrph,kernd,opdims,spmat);
-
 
 
 t1 = toc(start);
@@ -123,31 +123,39 @@ fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
 err2 = norm(sys2-sys,'fro')/norm(sys,'fro');
 fprintf('%5.2e   : fro error of build \n',err2)
 
+ assert(err2 < 1e-10);
+
 
 xflam = cgrph.r(:,:);
 matfun = @(i,j) chnk.flam.kernbyindex(i,j,cgrph,kernd,opdims,spmat);
-[pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
+
+tol = 1e-14;
+optsnpxy = []; optsnpxy.rank_or_tol = tol;
+% setting low occupancy to trigger proper construction of proxy points
+optsnpxy.nsrc = 10; 
+nchunkers = length(cgrph.echnks);
+
+
+mmax = [-inf;-inf];
+mmin = [inf;inf];
+
+for i=1:nchunkers
+    chnkrtmp = cgrph.echnks(i);
+    mmax = max([mmax,max(chnkrtmp)],[],2);
+    mmin = min([mmin,min(chnkrtmp)],[],2);
+end
+width = max(mmax-mmin);
+
+npxy = chnk.flam.nproxy_square(kernd, width, optsnpxy);
+
+[pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 ifaddtrans = true;
 pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,cgrph, ...
     kernd,opdims,pr,ptau,pw,pin,ifaddtrans);
 
 
-start = tic; F = rskelf(matfun,xflam,200,1e-14,[]); t1 = toc(start);
-% F = chunkerflam(cgrph,kernd,1.0);
-
-fprintf('%5.2e s : time for flam rskelf compress\n',t1)
-
-pxyfunr = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-        ctr,cgrph,kernd,opdims,pr,ptau,pw,pin);
-
-opts = [];
-start = tic; F2 = rskel(matfun,xflam,xflam,200,1e-14,pxyfunr,opts); t1 = toc(start);
-
-fprintf('%5.2e s : time for flam rskel compress\n',t1)
-
-afun = @(x) rskelf_mv(F,x);
-
-
+start = tic; F2 = rskelf(matfun,xflam,200,tol,[]); t1 = toc(start);
+F = chunkerflam(cgrph,kernd,1.0);
 
 rhs = ubdry; rhs = rhs(:);
 start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
@@ -155,15 +163,19 @@ start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
 fprintf('%5.2e s : time for dense gmres\n',t1)
 
 rhs = ubdry; rhs = rhs(:);
-start = tic; sol3 = rskelf_sv(F,rhs); t1 = toc(start);
+start = tic; sol2 = rskelf_sv(F,rhs); t1 = toc(start);
+start = tic; sol3 = rskelf_sv(F2,rhs); t1 = toc(start);
 
 fprintf('%5.2e s : time for rskelf_sv \n',t1)
 
 err = norm(sol-sol3,'fro')/norm(sol,'fro');
+err2 = norm(sol2-sol3,'fro')/norm(sol,'fro');
 
 fprintf('difference between fast-direct and iterative %5.2e\n',err)
+fprintf('difference between fast-direct and flam utils %5.2e\n',err2)
 
-% assert(err < 1e-10);
+ assert(err < 1e-10);
+ assert(err2 < 1e-10);
 
 % evaluate at targets and compare
 

@@ -1,24 +1,31 @@
-function in = chunkerinterior(chnkr,pts,opts)
-%CHUNKERINTERIOR returns an array indicating whether each point in
-% pts is inside the domain. Assumes the domain is closed.
+function [in] = chunkerinterior(chnkobj,ptsobj,opts)
+%CHUNKERINTERIOR returns an array indicating whether each point specified 
+% % by pts is inside the domain. Assumes the domain is closed.
 %
-% Syntax: in = chunkerinterior(chnkr,pts,opts)
+% Syntax: in = chunkerinterior(chnkobj,pts,opts)
+%         in = chunkerinterior(chnkobj,{x,y},opts) % meshgrid version
 %
 % Input:
-%   chnkr - chunker object describing geometry
-%   pts - (chnkr.dim,:) array of points to test
+%   chnkobj - chunker object or chunkgraph object describing geometry
+%   ptsobj - object describing the target points, can be specified as
+%       * (chnkr.dim,:) array of points to test
+%       * {x,y} - length 2 cell array. the points checked then have the
+%           coordinates of a mesh grid [xx,yy] = meshgrid(x,y)
+%       * chunker object, in which case it uses chunker.r(:,:) 
+%       * chunkgraph object, in which case it uses chunkgraph.r(:,:) 
 %
 % Optional input:
 %   opts - options structure with entries:
 %       opts.fmm = boolean, use FMM 
 %       opts.flam = boolean, use FLAM routines
+%       opts.axissym = boolean, chunker is axissymmetric
 %  Note on the default behavior: 
 %    by default it tries to use the fmm if it exists, if it doesn't
 %    then unless explicitly set to false, it tries to use flam
 %
 % Output:
 %   in - logical array, if in(i) is true, then pts(:,i) is inside the
-%       domain
+%       domain or for a mesh grid [xx(i); yy(i)] is inside the domain.
 %
 % Examples:
 %   chnkr = chunkerfunc(@(t) starfish(t));
@@ -28,11 +35,42 @@ function in = chunkerinterior(chnkr,pts,opts)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-assert(chnkr.dim == 2,'interior only well-defined for 2D');
+grid = false;
 
 if nargin < 3
     opts = [];
 end
+
+% Assign appropriate object to chnkr
+if class(chnkobj) == "chunker"
+   chnkr = chnkobj;
+elseif class(chnkobj) == "chunkgraph"
+   chnkr = merge(chnkobj.echnks);
+else
+    msg = "Unsupported object in chunkerinterior";
+    error(msg)
+end
+
+assert(chnkr.dim == 2,'interior only well-defined for 2D');
+
+% Assign appropriate object to pts
+if isa(ptsobj, "cell")
+    assert(length(ptsobj)==2,'second input should be either 2xnpts array or length 2 cell array');
+    x = ptsobj{1};
+    y = ptsobj{2};
+    grid = true;
+    [xx,yy] = meshgrid(x,y);
+    pts = [xx(:).'; yy(:).'];
+elseif isa(ptsobj, "chunker") || isa(ptsobj, "chunkgraph") || ...
+        (isstruct(ptsobj) && isfield(ptsobj,"r"))
+    pts = ptsobj.r(:,:);
+elseif isnumeric(ptsobj)
+    pts = ptsobj;
+else
+    msg = "chunkerinterior: input 2 not a recognized type";
+    error(msg);
+end
+
 
 usefmm = true;
 if isfield(opts,'fmm')
@@ -43,6 +81,34 @@ useflam = true;
 if isfield(opts,'flam')
     useflam = opts.flam;
 end
+
+axissym = false;
+if isfield(opts,'axissym')
+    axissym = opts.axissym;
+end
+
+if axissym
+    nch = chnkr.nch;
+    istart = nch+1;
+    iend = 2*nch;
+    chnkr = sort(chnkr);
+    chnkr = chnkr.addchunk(nch);
+    chnkr.r(:,:,istart:iend) = fliplr(chnkr.r(:,:,1:nch));
+    chnkr.r(1,:,istart:iend) = -chnkr.r(1,:,istart:iend);
+    chnkr.d(:,:,istart:iend) = fliplr(chnkr.d(:,:,1:nch));
+    chnkr.d(2,:,istart:iend) = -chnkr.d(2,:,istart:iend);
+
+    chnkr.d2(:,:,istart:iend) = fliplr(chnkr.d2(:,:,1:nch));
+    chnkr.d2(1,:,istart:iend) = chnkr.d2(1,:,istart:iend);
+    
+    chnkr.wts = weights(chnkr);
+    chnkr.n = normals(chnkr);
+    chnkr.adj(1,:) = 0:chnkr.nch-1;
+    chnkr.adj(2,:) = 2:chnkr.nch+1;
+    chnkr.adj(1,1) = chnkr.nch;
+    chnkr.adj(2,chnkr.nch) = 1;
+end
+
 
 usefmm_final = false;
 useflam_final = false;
@@ -58,15 +124,34 @@ else
    useflam_final = useflam;
 end
 
+% use bernstein ellipses and rectangles to flag problematic points
+%
+
+eps_local = 1e-3;
+
+rho = 1.2;
+optsflag = [];  optsflag.rho = rho; optsflag.occ = 5;
+if grid
+    flag = flagnear_rectangle_grid(chnkr,x,y,optsflag);
+else
+    flag = flagnear_rectangle(chnkr,pts,optsflag);
+end
+
+npoly = chnkr.k;
+nlegnew = chnk.ellipse_oversample(rho,npoly,eps_local);
+nlegnew = max(nlegnew,chnkr.k);
+
+[chnkr2] = upsample(chnkr,nlegnew);
+
+
 
 icont = false;
 if usefmm_final
    try
-       eps_local = 1e-3;
-       wchnkr = chnkr.wts;
-       dens1_fmm = ones(chnkr.k*chnkr.nch,1).*wchnkr(:);
+       wchnkr = chnkr2.wts;
+       dens1_fmm = ones(chnkr2.k*chnkr2.nch,1).*wchnkr(:);
        pgt = 1;
-       vals1 = chnk.lap2d.fmm(eps_local,chnkr,pts,'d',dens1_fmm,pgt);
+       vals1 = chnk.lap2d.fmm(eps_local,chnkr2,pts,'d',dens1_fmm,pgt);
    catch
        fprintf('using fmm failed due to incompatible mex, try regenrating mex\n');
        useflam_final = useflam;
@@ -76,102 +161,82 @@ end
 
 if ~usefmm_final || icont
     kernd = kernel('lap','d');
-    dens1 = ones(chnkr.k,chnkr.nch);
-    wts = chnkr.wts;
+    dens1 = ones(chnkr2.k,chnkr2.nch);
+    
 
     opdims = [1 1];
 
     if useflam_final
         xflam1 = chnkr.r(:,:);
-        matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr,kernd,opdims);
+        matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr2,kernd,opdims);
         [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
 
         pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr,kernd,opdims,pr,ptau,pw,pin);
-        F = ifmm(matfun,pts,xflam1,200,1e-14,pxyfun);
+            ctr,chnkr2,kernd,opdims,pr,ptau,pw,pin);
+        F = ifmm(matfun,pts,xflam1,200,1e-6,pxyfun);
         vals1 = ifmm_mv(F,dens1(:),matfun);
     else
         optskerneval = []; optskerneval.usesmooth = 1;
-        vals1 = chunkerkerneval(chnkr,kernd,dens1,pts,optskerneval);
+        vals1 = chunkerkerneval(chnkr2,kernd,dens1,pts,optskerneval);
     end
 end
 in = abs(vals1+1) < abs(vals1);
 
-% find nearest neighbors at certain level of refinement (here chosen
-% uniformly, for simplicity)
+% for points where the integral might be inaccurate:
+% find close boundary point and check normal direction
 
-nt = size(pts,2);
-xx = zeros(2,chnkr.npt + nt);
-xx(:,1:chnkr.npt) = chnkr.r(:,:);
-xx(:,chnkr.npt+1:chnkr.npt+nt) = pts;
 
-pt2chnk = repmat(1:chnkr.nch,chnkr.k,1);
+nnzpt = sum(flag~=0,2);
+ipt = find(nnzpt);
 
-chunklens = zeros(chnkr.nch,1);
-ws = chnkr.wts;
-chunklens(:) = sum(ws,1);
-lmax = max(chunklens)*3/chnkr.k;
+npts = numel(pts)/2;
+distmins = inf(npts,1);
+dss = zeros(2,npts);
+rss = zeros(2,npts);
 
-T = hypoct_uni(xx,lmax);
-targ_dists = Inf(nt,1);
-itarg_dists = (1:nt).';
+k = chnkr.k;
+[t,~,u] = lege.exps(k);
 
-rnorm = normals(chnkr);
-normdist_flag = false(size(targ_dists));
+for i = 1:chnkr.nch
 
-for i = 1:length(T.nodes)
-    xi = T.nodes(i).xi;
-    if nnz(xi <= chnkr.npt) > 0
-        isrc = xi(xi <= chnkr.npt);
-        inbor = [T.nodes(T.nodes(i).nbor).xi T.nodes(i).xi];
-        if nnz(inbor > chnkr.npt) > 0
-            
-            % get all pairwise distances
-            itarg = inbor(inbor > chnkr.npt)-chnkr.npt;
-            srcs = reshape(chnkr.r(:,isrc),chnkr.dim,1,length(isrc));
-            targs = reshape(pts(:,itarg),chnkr.dim,length(itarg),1);
-            dists = reshape(sqrt(sum((bsxfun(@minus,targs,srcs)).^2,1)), ...
-                length(itarg),length(isrc));
-            [mindists,inds] = min(dists,[],2);
-            isrc2 = isrc(inds);
-            
-            % if minimum distance for any targ is smaller than
-            % previously seen, we update
-            ifnew = mindists < targ_dists(itarg);
-            targ_dists(itarg(ifnew)) = mindists(ifnew);
-            itarg_dists(itarg(ifnew)) = isrc2(ifnew);
-            
-            % if vector from point to boundary point aligns 
-            % with normal, probably on inside.
-            % if angle is near right angle or distance is small,
-            % flag it for more precise testing
-            rdiff = chnkr.r(:,isrc2(ifnew)) - pts(:,itarg(ifnew));
-            rnorms = rnorm(:,isrc2(ifnew));
-            lens = chunklens(pt2chnk(isrc2(ifnew)));
-            
-            rdrn = sum(rdiff.*rnorms,1); rdrn = rdrn(:);
-            lens = lens(:);
-            in(itarg(ifnew)) = rdrn > 0;
-            normdist_flag(itarg(ifnew)) = abs(rdrn) < 0.1*lens;            
+    % check side based on closest boundary node
+    rval = chnkr.r(:,:,i);
+    dval = chnkr.d(:,:,i);
+    nval = chnkr.n(:,:,i);
+    [ji] = find(flag(:,i));
+    ptsi = pts(:,ji);
+    nptsi = size(ptsi,2);
+    dist2all = reshape(sum( abs(reshape(ptsi,2,1,nptsi) ...
+                    - reshape(rval,2,k,1)).^2, 1),k,nptsi);
+    [dist2all,ipti] = min(dist2all,[],1);
+    for j = 1:length(ji)
+        jj = ji(j);
+        if dist2all(j) < distmins(jj)
+            distmins(jj) = dist2all(j);
+            rss(:,jj) = rval(:,ipti(j));
+            dss(:,jj) = dval(:,ipti(j));
+        end
+    end
+
+    % if angle is small do a refined search for closest point
+    ptsn = nval(:,ipti);
+    diffs = rval(:,ipti)-ptsi;
+    dots = sum(ptsn.*diffs,1);
+    
+    jsus = abs(dots) < 2e-1*sqrt(dist2all);
+    jii = ji(jsus);
+    [~,rs,ds,~,dist2s] = chnk.chunk_nearparam(rval,pts(:,jii),[],t,u);
+    for j = 1:length(jii)
+        jj = jii(j);
+        if dist2s(j) < distmins(jj)
+            distmins(jj) = dist2s(j);
+            rss(:,jj) = rs(:,j);
+            dss(:,jj) = ds(:,j);
         end
     end
 end
 
-% more precise testing
-
-iflagged = find(normdist_flag);
-[~,~,u] = lege.exps(chnkr.k);
-tover = lege.exps(2*chnkr.k);
-ainterpover = lege.matrin(chnkr.k,tover);
-for i = 1:length(iflagged)
-    ii = iflagged(i);
-    ich = pt2chnk(itarg_dists(ii));
-    ich = [ich; chnkr.adj(:,ich)];
-    [rn,dn] = nearest(chnkr,pts(:,ii),ich,[],u,tover,ainterpover);
-    in(ii) = (rn(:)-pts(:,ii)).'*[dn(2);-dn(1)] > 0;
-end
-
-
-
-
+for i = 1:length(ipt)
+    jj = ipt(i);
+    in(jj) = (rss(:,jj)-pts(:,jj)).'*[dss(2,jj);-dss(1,jj)] > 0;
 end

@@ -40,7 +40,7 @@ end
 
 function [iprecs,npolys,rhos,nlegtab] = loadtab()
 iprecs = zeros(5,1);
-npolys = zeros(2,1);
+npolys = zeros(20,1);
 rhos = zeros(5,1);
 nlegtab = zeros(5,20,5);
       iprecs(  1) =    3;

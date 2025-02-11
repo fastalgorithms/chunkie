@@ -102,8 +102,8 @@ else
     srcinfo = []; srcinfo.r = pxy; srcinfo.d = ptau; 
     if (size(rslf,1) == 2)
         srcinfo.n = chnk.perp(ptau);
+        targinfo.n = chnk.perp(dslf);
     end
-    
     Kpxy = kern(srcinfo,targinfo);
 
     Kpxy = Kpxy(islfuni2,:);

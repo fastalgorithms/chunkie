@@ -143,8 +143,8 @@ else
     error(msg)
 end
 
-for chnkr = chnkrs
-    if or(chnkr.nch < 1,chnkr.k < 1)
+for i=1:length(chnkrs)
+    if chnkrs(i).nch < 1 || chnkrs(i).k < 1
         warning('empty chunker, doing nothing')
         return
     end
@@ -223,7 +223,7 @@ else
     warning('specified quadrature method not available');
     return;
 end
-sp = chunkermat(chnkobj,kern,chunkermatopt);
+sp = chunkermat(chnkobj,kern,chunkermatopt); 
 sp = sp + spdiags(dval,0,nrows,nrows);
 
 % prep and call flam
@@ -244,7 +244,7 @@ for i=1:nchunkers
     mmax = max([mmax,max(chnkr)],[],2);
     mmin = min([mmin,min(chnkr)],[],2);
 end
-
+xflam = real(xflam);
 width = max(mmax-mmin);
 
 chnkrtotal = merge(chnkrs);
@@ -264,7 +264,7 @@ end
 optsnpxy = []; optsnpxy.rank_or_tol = rank_or_tol;
 optsnpxy.nsrc = occ;
 
-npxy = chnk.flam.nproxy_square(kern,width,optsnpxy);
+npxy = chnk.flam.nproxy_square(kern, width, optsnpxy);
 
 if npxy == -1
     warning('chunkerflam: proxy failed, defaulting to no proxy')

@@ -57,18 +57,36 @@ fprintf('%5.2e s : time for chunkerinterior (no flam)\n',t1);
 fprintf('%5.2e s : time for chunkerinterior (with flam)\n',t2);
 fprintf('%5.2e s : time for chunkerinterior (with fmm)\n',t3);
 
-ifail = in2(:) ~= (scal(:) < 1);
 assert(all(in(:) == (scal(:) < 1)));
 assert(all(in2(:) == (scal(:) < 1)));
 assert(all(in3(:) == (scal(:) < 1)));
 
-%
-% 
-% figure(1)
-% clf
-% hold off
-% scatter(targs(1,in),targs(2,in),'go')
-% hold on
-% scatter(targs(1,~in),targs(2,~in),'rx')
-% plot(chnkr,'b','LineWidth',2)
-% axis equal
+x1 = linspace(-2,2,100);
+[xx,yy] = meshgrid(x1,x1);
+
+opts = [];
+opts.fmm = true;
+opts.flam = false;
+start = tic; in4 = chunkerinterior(chnkr,{x1,x1},opts); t4 = toc(start);
+fprintf('%5.2e s : time for chunkerinterior (meshgrid, with fmm)\n',t4);
+
+% Test targets specified as chunker
+narms = 3;
+amp = 0.1;
+chnkr2 = chunkerfunc(@(t) 0.3*starfish(t,narms,amp),cparams,pref); 
+
+opts = [];
+opts.fmm = true;
+opts.flam = false;
+start = tic; in5 = chunkerinterior(chnkr,chnkr2,opts); t5 = toc(start);
+fprintf('%5.2e s : time for chunkerinterior (chunker, with fmm)\n',t5);
+assert(all(in5(:) == 1));
+
+% test axissym option 
+chnkr = chunkerfunc(@(t) starfish(t),struct('ta',-pi/2,'tb',pi/2,'ifclosed',0));
+nt = 1000;
+ttarg = -pi/2+pi*rand(nt,1); scal = 2*rand(1,nt);
+targs = starfish(ttarg).*scal;
+
+in = chunkerinterior(chnkr,targs,struct('axissym',true));
+assert(all(in(:) == (scal(:) <= 1)));

@@ -14,12 +14,12 @@ function mat = onesmat(chnkr)
 %
 % Output:
 %   mat - the matrix discretization of the operator W above. mat is 
-%       (2*chnkr.npt) x (2*chnkr.npt)
+%       (chnkr.npt) x (chnkr.npt)
 %
 % Examples:
-%   mat = normonesmat(chnkr)
+%   mat = onesmat(chnkr)
 %
-% see also ONESMAT
+% see also NORMONESMAT
 
 % author: Travis Askham (askhamwhat@gmail.com)
 

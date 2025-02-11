@@ -16,10 +16,23 @@ elseif (isscalar(g))
         f.eval = [];
     end
     
+    if(isa(f.shifted_eval, 'function_handle'))        
+        f.shifted_eval = @(varargin) g*f.shifted_eval(varargin{:});
+    else
+        f.shifted_eval = [];
+    end
+    
     if(isa(f.fmm, 'function_handle'))
         f.fmm = @(varargin) g*f.fmm(varargin{:});
     else
         f.fmm = [];
+    end
+
+    if or(f.isnan,isnan(g))
+        f = kernel.nans(f.opdims(1),f.opdims(2));
+    end
+    if ~f.isnan && (g==0) || f.iszero && ~isnan(g)
+        f = kernel.zeros(f.opdims(1),f.opdims(2));
     end
     
 else

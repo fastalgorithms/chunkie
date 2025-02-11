@@ -1,8 +1,71 @@
 classdef chunker
-%CHUNKER class which describes a curve divided into chunks (panels). 
-% On each chunk the curve is represented by the values of its position, 
-% first and second derivatives in parameter space on a Legendre grid.
+%CHUNKER class which describes a curve divided into chunks (or "panels"). 
 %
+% On each chunk the curve is represented by the values of its position, 
+% first and second derivatives by scaled Legendre nodes.
+%
+% chunker properties:
+%   k - integer, number of Legendre nodes on each chunk
+%   nch - integer, number of chunks that make up the curve
+%   dim - integer, dimension of the ambient space in which the curve is 
+%             embedded
+%   npt - returns k*nch, the total number of points on the curve
+%   r - dim x k x nch array, r(:,i,j) gives the coordinates of the ith 
+%         node on the jth chunk of the chunker
+%   d - dim x k x nch array, d(:,i,j) gives the time derivative of the 
+%         coordinate at the ith node on the jth chunk of the chunker
+%   d2 - dim x k x nch array, d(:,i,j) gives the 2nd time derivative of the 
+%         coordinate at the ith node on the jth chunk of the chunker
+%   n - dim x k x nch array of normals to the curve
+%   data - datadim x k x nch array of data attached to chunker points 
+%         this data will be refined along with the chunker
+%   adj - 2 x nch integer array. adj(1,j) is i.d. of the chunk that 
+%         precedes chunk j in parameter space. adj(2,j) is the i.d. of the
+%         chunk which follows. if adj(i,j) is 0 then that end of the chunk
+%         is a free end. if adj(i,j) is negative than that end of the chunk
+%         meets with other chunk ends in a vertex. the specific negative
+%         number acts as an i.d. of that vertex.
+%
+% chunker methods: 
+%   chunker(p,t,w) - construct an empty chunker with given preferences and
+%       precomputed Legendre nodes/weights (optional)
+%   obj = addchunk(obj,nchadd) - add nchadd chunks to the structure 
+%       (initialized with zeros)
+%   obj = obj.move(r0,r1,trotat,scale) - translate, rotate, etc
+%   obj = makedatarows(obj,nrows) - add nrows rows to the data storage.
+%   [obj,info] = sort(obj) - sort the chunks so that adjacent chunks are
+%        stored sequentially
+%   [rn,dn,d2n,dist,tn,ichn] = nearest(obj,ref,ich,opts,u,xover,aover) -
+%        find nearest point on chunker to ref
+%   obj = reverse(obj) - reverse chunk orientation
+%   rmin = min(obj) - minimum of coordinate values
+%   rmax = max(obj) - maximum of coordinate values
+%   wts = weights(obj) - scaled integration weights on curve
+%   obj.n = normals(obj) - recompute normal vectors
+%   onesmat = onesmat(obj) - matrix that corresponds to integration of a
+%             density on the curve
+%   rnormonesmat = normonesmat(obj) - matrix that corresponds to
+%             integration of dot product of normal with vector density on
+%             the curve
+%   plot(obj,varargin) - plot the chunker curve
+%   plot3(obj,idata,varargin) - 3D plot of the curve and one row of the
+%             data storage
+%   quiver(obj,varargin) - quiver plot of the chnkr points and normals
+%   scatter(obj,varargin) - scatter plot of the chnkr nodes
+%   tau = taus(obj) - unit tangents to curve
+%   obj = refine(obj,varargin) - refine the curve
+%   a = area(obj) - for a closed curve, area inside 
+%   s = arclength(obj) - get values of arclength along curve
+%   kappa = signed_curvature(obj) - get signed curvature along curve
+%   rflag = datares(obj,opts) - check if data in data rows is resolved
+%   [rc,dc,d2c] = exps(obj) - get expansion coefficients for r,d,d2
+%   ier = checkadjinfo(obj) - checks that the adjacency info of the curve
+%              is consistent
+%   [inds,adjs,info] = sortinfo(obj) - attempts to sort the curve and finds
+%              number of connected components, etc
+%   [re,taue] = chunkends(obj,ich) - get the endpoints of chunks
+%   flag = flagnear(obj,pts,opts) - flag points near the boundary
+
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
@@ -14,7 +77,6 @@ classdef chunker
         d
         d2
         adj
-        h
         n
         wts
         data
@@ -24,7 +86,6 @@ classdef chunker
         dstor
         d2stor
         adjstor
-        hstor
         nstor
         wtsstor
         datastor
@@ -49,15 +110,28 @@ classdef chunker
     
     methods
         function obj = chunker(p,t,w)
+        %CHUNKER construct an empty chunker with some default settings
+        %
+        % syntax: chnkr = chunker(p,t,w);
+        %
+        % optional input: 
+        %   p - struct of preferences 
+        %        p.k - integer, order to be used on chunks (16)
+        %        p.dim - integer, dimension of ambient space (2)
+        %   t, w - arrays of Legendre nodes and weights of order p.k
+        % 
             if nargin < 1 || isempty(p)
                 p = chunkerpref();
             else
                 p = chunkerpref(p);
             end
             k = p.k;
+            assert(k >= 2,'CHUNKER: order k of panels must be at least 2');
             if nargin < 3
                 [obj.tstor,obj.wstor] = lege.exps(k);
             else
+                assert(length(t)==k && length(w)==k,...
+                    'CHUNKER: precomputed Legendre nodes appear to be wrong order');
                 obj.tstor = t;
                 obj.wstor = w;
             end
@@ -74,7 +148,6 @@ classdef chunker
             obj.wtsstor = zeros(k,nchstor);
             obj.d2stor = zeros(dim,k,nchstor);
             obj.adjstor = zeros(2,nchstor);
-            obj.hstor = zeros(nchstor,1);
             obj.vert = {};
             obj.hasdata = false;
             obj.datastor = [];
@@ -92,9 +165,6 @@ classdef chunker
         end
         function adj = get.adj(obj)
             adj = obj.adjstor(:,1:obj.nch);
-        end
-        function h = get.h(obj)
-            h = obj.hstor(1:obj.nch);
         end
         function n = get.n(obj)
             n = obj.nstor(:,:,1:obj.nch);
@@ -125,9 +195,6 @@ classdef chunker
         end
         function obj = set.adj(obj,val)
             obj.adjstor(:,1:obj.nch) = val;
-        end
-        function obj = set.h(obj,val)
-            obj.hstor(1:obj.nch) = val;
         end
         function k = get.k(obj)
             k = size(obj.rstor,2);
@@ -178,7 +245,6 @@ classdef chunker
             wtstemp = obj.wts;
             d2temp = obj.d2;
             adjtemp = obj.adj;
-            htemp = obj.h;
             datatemp = obj.data;
             obj.rstor = zeros(obj.dim,obj.k,nchstornew);
             obj.dstor = zeros(obj.dim,obj.k,nchstornew);
@@ -186,7 +252,6 @@ classdef chunker
             obj.wtsstor = zeros(obj.k,nchstornew);
             obj.d2stor = zeros(obj.dim,obj.k,nchstornew);
             obj.adjstor = zeros(2,nchstornew);
-            obj.hstor = zeros(nchstornew,1);
             obj.datastor = zeros(obj.datadim,obj.k,nchstornew);
             obj.r = rtemp;
             obj.d = dtemp;
@@ -194,7 +259,6 @@ classdef chunker
             obj.wts = wtstemp;
             obj.d2 = d2temp;
             obj.adj = adjtemp;
-            obj.h = htemp;
             obj.data = datatemp;            
             obj.nchstor = nchstornew;
         end
@@ -277,6 +341,7 @@ classdef chunker
         [obj,info] = sort(obj)
         [rn,dn,d2n,dist,tn,ichn] = nearest(obj,ref,ich,opts,u,xover,aover)
         obj = reverse(obj)
+        obj = move(obj,r0,r1,trotat,scale)
         rmin = min(obj)
         rmax = max(obj)
         whts = whts(obj)
@@ -303,5 +368,9 @@ classdef chunker
     end
     methods(Static)
         obj = chunkerfunc(fcurve,varargin)
+        obj = chunkerpoly(verts,varargin)
+        function lvlrfac = lvlrfacdefault()
+            lvlrfac = 2.1;
+        end
     end
 end

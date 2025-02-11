@@ -11,7 +11,7 @@ addpaths_loc();
 
 % planewave vec
 
-kvec = 20*[1;-1.5];
+kvec = 10*[1;-1.5];
 
 %
 
@@ -77,7 +77,7 @@ targets(1,:) = xxtarg(:); targets(2,:) = yytarg(:);
 
 %
 
-start = tic; in = chunkerinterior(chnkr,targets); t1 = toc(start);
+start = tic; in = chunkerinterior(chnkr,{xtarg,ytarg}); t1 = toc(start);
 out = ~in;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
@@ -101,42 +101,46 @@ maxu = max(max(maxin,maxsc),maxtot);
 
 figure(2)
 clf
-subplot(1,3,1)
+
+t = tiledlayout(1,3,'TileSpacing','compact');
+
+nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = uin;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
+clim([-maxu,maxu])
+colormap(redblue);
 hold on
-plot(chnkr,'LineWidth',2)
-axis equal
-axis tight
-colormap(redblue)
-caxis([-maxu,maxu])
-title('$u_{in}$','Interpreter','latex','FontSize',24)
+plot(chnkr,'k','LineWidth',2)
+axis equal tight
+set(gca, "box","off","Xtick",[],"Ytick",[]);
+title('$u^{\textrm{inc}}$','Interpreter','latex','FontSize',12)
 
-
-subplot(1,3,2)
+nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = uscat;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
+clim([-maxu,maxu])
+colormap(redblue);
 hold on
-plot(chnkr,'LineWidth',2)
-axis equal
-axis tight
-colormap(redblue)
-caxis([-maxu,maxu])
-title('$u_{scat}$','Interpreter','latex','FontSize',24)
+plot(chnkr,'k','LineWidth',2)
+axis equal tight
+set(gca, "box","off","Xtick",[],"Ytick",[]);
 
-subplot(1,3,3)
+title('$u^{\textrm{scat}}$','Interpreter','latex','FontSize',12)
+
+nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = utot;
 h=pcolor(xxtarg,yytarg,imag(zztarg));
 set(h,'EdgeColor','none')
+clim([-maxu,maxu])
+colormap(redblue);
 hold on
-plot(chnkr,'LineWidth',2)
-axis equal
-axis tight
-colormap(redblue)
-caxis([-maxu,maxu])
-title('$u_{tot}$','Interpreter','latex','FontSize',24)
+plot(chnkr,'k','LineWidth',2)
+axis equal tight
+set(gca, "box","off","Xtick",[],"Ytick",[]);
+
+title('$u^{\textrm{tot}}$','Interpreter','latex','FontSize',12)

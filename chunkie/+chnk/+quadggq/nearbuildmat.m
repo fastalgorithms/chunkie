@@ -1,17 +1,23 @@
-function submat = nearbuildmat(r,d,n,d2,h,data,i,j,fkern,opdims,...
-				      xs1,whts1,ainterp1kron,ainterp1)
+function submat = nearbuildmat(r,d,n,d2,data,i,j,fkern,opdims,...
+				      xs1,whts1,ainterp1kron,ainterp1,corrections,wtss)
 %CHNKR.QUADGGQ.NEARBUILDMAT
 
 % grab specific boundary data
                 
 rs = r(:,:,j); ds = d(:,:,j); d2s = d2(:,:,j); ns = n(:,:,j);
 rt = r(:,:,i); dt = d(:,:,i); d2t = d2(:,:,i); nt = n(:,:,i);
-hs = h(j);
+
 if(isempty(data))
     dd = [];
 else
     dd = data(:,:,i);
 end
+
+if nargin < 14
+    corrections = false;
+    wtss = [];
+end
+
 % interpolate boundary info
 
 % get relevant coefficients
@@ -64,7 +70,7 @@ targinfo.d2 = d2t; targinfo.n = nt; targinfo.data = dd;
 
 dfinenrm = sqrt(sum(dfine.^2,1));
 %dfinenrm = dfine(1,:,:); % for complex contour, by SJ 09/30/21
-dsdt = dfinenrm(:).*whts1(:)*hs;
+dsdt = dfinenrm(:).*whts1(:);
 
 dsdtndim2 = repmat(dsdt(:).',opdims(2),1);
 dsdtndim2 = dsdtndim2(:);
@@ -72,6 +78,13 @@ dsdtndim2 = dsdtndim2(:);
 % get kernel values and then premultiply by interpolating matrix
 smatbig = fkern(srcinfo,targinfo);
 submat = smatbig*diag(dsdtndim2)*ainterp1kron;
+
+if corrections
+    srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; 
+    srcinfo.d2 = d2s; srcinfo.n = ns; 
+
+    wtsj = wtss(:,j);
+    submat = submat - fkern(srcinfo,targinfo).*(wtsj(:).');
 
  end
    

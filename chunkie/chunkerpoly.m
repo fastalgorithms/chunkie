@@ -194,15 +194,15 @@ for i = 1:nv-1
         val1 = edgevals(:,i);
         chnkr.data(:,:,nch) = bsxfun(@times,val1,onek(:).');
     end
+    h = (l-w2-w1)/2.0;
     chnkr.r(:,:,nch) = r1 + bsxfun(@times,v(:),(ts(:)).');
-    chnkr.d(:,:,nch) = repmat(v(:),1,k);
-    chnkr.d2(:,:,nch) = zeros(dim,k);
+    chnkr.d(:,:,nch) = repmat(v(:),1,k)*h;
+    chnkr.d2(:,:,nch) = zeros(dim,k)*h*h;
     chnkr.adj(1,nch) = 0; chnkr.adj(2,nch) = 0;
     if nch > 1
         chnkr.adj(1,nch) = nch-1;
         chnkr.adj(2,nch-1) = nch;
     end
-    chnkr.h(nch) = (l-w2-w1)/2.0;
     
     if or(i < nv-1,ifclosed)
         if rounded
@@ -245,11 +245,9 @@ for i = 1:nv-1
             chnkr.adj(:,nch+1:nch+ncht) = chnkrt.adj+nch;
             chnkr.adj(2,nch) = nch+1;
             chnkr.adj(1,nch+1) = nch;
-            chnkr.h(nch+1:nch+ncht) = chnkrt.h;
 
             if nvals > 0
-                ds = bsxfun(@times,reshape(sum((rotmat*chnkrt.d(:,:)).^2,1),k,ncht), ...
-                    (chnkrt.h(:)).');
+                ds = reshape(sum((rotmat*chnkrt.d(:,:)).^2,1),k,ncht);
                 dsw = bsxfun(@times,w(:),ds);
                 dssums = sum(dsw,1);
                 dssums2 = cumsum([0,dssums(1:end-1)]);
@@ -286,10 +284,11 @@ for i = 1:nv-1
             ncht = depth + 1;
             chnkrt = chunker(pref);
             chnkrt = chnkrt.addchunk(ncht);
+            hall = hadap*w2/2; hall = repmat(hall(:).',k,1);
+            hall=hall(:).';
             chnkrt.r = bsxfun(@times,v,tadap)*w2 + r2;
-            chnkrt.d = repmat(v,1,k,ncht);
-            chnkrt.d2 = zeros(dim,k,ncht);
-            chnkrt.h = hadap*w2/2;
+            chnkrt.d(:,:) = repmat(v,1,k*ncht).*hall;
+            chnkrt.d2(:,:) = zeros(dim,k*ncht).*(hall.^2);
             chnkrt.adj = [0, 1:(ncht-1); 2:ncht, 0];
             chnkrt = reverse(chnkrt);
             chnkrt = sort(chnkrt);
@@ -303,7 +302,6 @@ for i = 1:nv-1
             chnkr.adj(2,nch) = nch+1;
             chnkr.adj(1,nch+1) = nch;
             chnkr.adj(2,nch+ncht) = 0;
-            chnkr.h(nch+1:nch+ncht) = chnkrt.h;
 
             if nvals > 0
                 chnkr.data(:,:,nch+1:nch+ncht) = repmat(val1,1,k,ncht);
@@ -317,9 +315,9 @@ for i = 1:nv-1
             chnkrt = chunker(pref);
             chnkrt = chnkrt.addchunk(ncht);
             chnkrt.r = bsxfun(@times,v2,tadap)*w2 + r2;
-            chnkrt.d = repmat(v2,1,k,ncht);
-            chnkrt.d2 = zeros(dim,k,ncht);
-            chnkrt.h = hadap*w2/2;
+            chnkrt.d(:,:) = repmat(v2,1,k*ncht).*hall;
+            chnkrt.d2(:,:) = zeros(dim,k*ncht).*(hall.^2);
+            
             chnkrt.adj = [0, 1:(ncht-1); 2:ncht, 0];
 
             chnkrt = sort(chnkrt);
@@ -332,7 +330,6 @@ for i = 1:nv-1
             chnkr.adj(:,nch+1:nch+ncht) = chnkrt.adj+nch;
             chnkr.adj(2,nch) = nch+1;
             chnkr.adj(1,nch+1) = nch;
-            chnkr.h(nch+1:nch+ncht) = chnkrt.h;
             
             chnkr = chnkr.addvert([nch,nch+1]);
             
@@ -355,6 +352,9 @@ chnkr.nstor(:,:,1:nch) = normals(chnkr);
 
 % update weights
 chnkr.wtsstor(:,1:nch) = weights(chnkr);
+
+chnkr = chnkr.refine();
+chnkr = chnkr.sort();
 
 end
 

@@ -17,4 +17,4 @@ function rmax = max(obj)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-rmax = max(reshape(obj.r,obj.dim,obj.k*obj.nch),[],2);
+rmax = max(real(reshape(obj.r,obj.dim,obj.k*obj.nch)),[],2);

@@ -17,4 +17,4 @@ function rmin = min(obj)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-rmin = min(reshape(obj.r,obj.dim,obj.k*obj.nch),[],2);
+rmin = min(real(reshape(obj.r,obj.dim,obj.k*obj.nch)),[],2);

@@ -24,7 +24,13 @@ function obj = helm2ddiff(type, zks, coefs)
 %   COEFS(1)*KERNEL.HELM2D('dp', ZKS(1)) -
 %   COEFS(2)*KERNEL.HELM2D('dp', ZKS(2))
 %
-%  COEFS is optional. If not given then COEFS is set to [1 1].
+%   KERNEL.HELM2DDIFF('all', ZKS, coefs) 
+%   constructs the (2x2) matrix of difference kernels of
+%   [D, S; D' S'] scaled by coefs where coefs is (2x2x2) tensor, i.e.
+%   D part is scaled as COEFS(1,1,1)*KERNEL.HELM2D('d', zks(1)) - 
+%   COEFS(1,1,2)*KERNEL.HELM2D('d', ZKS(2)), and so on.
+%
+%  COEFS is optional. If not given then COEFS is set to all ones.
 %
 % See also CHNK.HELM2D.KERN.
 
@@ -42,6 +48,9 @@ obj.params.zks = zks;
 obj.opdims = [1 1];
 if(nargin < 3)
     coefs = [1 1];
+    if strcmpi(type, 'all')
+      coefs = ones(2,2,2);
+    end
 end
 obj.params.coefs = coefs;
 
@@ -87,9 +96,27 @@ switch lower(type)
             obj.sing = 'hs';
         end
 
+    case {'all'}
+        obj.type = 'all';
+        obj.opdims = [2,2];
+        obj.eval = @(s,t) chnk.helm2d.kern(zks(1), s, t, 'all', coefs(:,:,1)) - ...
+                          chnk.helm2d.kern(zks(2), s, t, 'all', coefs(:,:,2));
+        obj.fmm  = []; 
+        if ( abs(coefs(2,1,1)-coefs(2,1,2)) < eps )
+            obj.sing = 'log';
+        else
+            obj.sing = 'hs';
+        end
+
     otherwise
         error('Unknown Helmholtz difference kernel type ''%s''.', type);
 
 end
+
+icheck = exist(['fmm2d.' mexext], 'file');
+if icheck ~=3
+    obj.fmm = [];
+end
+
 
 end

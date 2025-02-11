@@ -1,16 +1,24 @@
-function submat = diagbuildmat(r,d,n,d2,h,data,i,fkern,opdims,...
-			 xs0,whts0,ainterps0kron,ainterps0)
+function submat = diagbuildmat(r,d,n,d2,data,i,fkern,opdims,...
+			 xs0,whts0,ainterps0kron,ainterps0,corrections,wtss,indd)
 %CHNK.QUADGGQ.DIAGBUILDMAT                  
 
 % grab specific boundary data
                 
-rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i); hs = h(i); 
+rs = r(:,:,i); ds = d(:,:,i); d2s = d2(:,:,i);
 ns = n(:,:,i);
 if(isempty(data))
     dd = [];
 else
     dd = data(:,:,i);
 end
+
+if nargin < 13
+    corrections = false;
+    wtss = [];
+    indd = [];
+end
+
+
 % interpolate boundary info
 
 % get relevant coefficients
@@ -23,13 +31,13 @@ nfine = cell(k,1);
 d2fine = cell(k,1);
 dsdt = cell(k,1);
 
-for i = 1:k
-    rfine{i} = (ainterps0{i}*(rs.')).';
-    dfine{i} = (ainterps0{i}*(ds.')).';
-    d2fine{i} = (ainterps0{i}*(d2s.')).';
-    dfinenrm = sqrt(sum(dfine{i}.^2,1));
-    nfine{i} = [dfine{i}(2,:); -dfine{i}(1,:)]./dfinenrm;
-    dsdt{i} = (dfinenrm(:)).*whts0{i}*hs;
+for j = 1:k
+    rfine{j} = (ainterps0{j}*(rs.')).';
+    dfine{j} = (ainterps0{j}*(ds.')).';
+    d2fine{j} = (ainterps0{j}*(d2s.')).';
+    dfinenrm = sqrt(sum(dfine{j}.^2,1));
+    nfine{j} = [dfine{j}(2,:); -dfine{j}(1,:)]./dfinenrm;
+    dsdt{j} = (dfinenrm(:)).*whts0{j};
 end
 
 srcinfo = [];
@@ -53,6 +61,21 @@ for j = 1:k
   submat(opdims(1)*(j-1)+1:opdims(1)*j,:) = ...
     smatbigi*ainterps0kron{j};
 end
+
+if corrections
+    srcinfo.r = rs;
+    srcinfo.d = ds;
+    srcinfo.d2 = d2s;
+    srcinfo.n = ns;
+
+    targinfo.r = rs; targinfo.d = ds; targinfo.d2 = d2s; targinfo.n = ns;
+    targinfo.data = dd;
+
+    sc = fkern(srcinfo,targinfo);
+    sc(indd) = 0;
+    
+    wtsi = wtss(:,i);
+    submat = submat - sc.*(wtsi(:).');
 
 end
    

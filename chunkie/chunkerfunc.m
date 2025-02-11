@@ -1,4 +1,4 @@
-function chnkr = chunkerfunc(fcurve,cparams,pref)
+function [chnkr,ab] = chunkerfunc(fcurve,cparams,pref)
 %CHUNKERFUNC create a chunker object corresponding to a parameterized curve
 %
 % Syntax: chnkr = chunkerfunc(fcurve,cparams,pref)
@@ -13,21 +13,22 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %               [r,d] = fcurve(t);  or [r,d,d2] = fcurve(t);
 %            where d is the first derivative of r with respect to t and 
 %            d2 is the second derivative. in some situations, this will
-%            improve the convergence order. 
+%            improve the convergence order and final precision.
 %
 % Optional input:
 %	cparams - curve parameters structure (defaults)
 %       cparams.ta = left end of t interval (0)
 %       cparams.tb = right end of t interval (2*pi)
+%       cparams.tsplits = set of initial break points for discretization in
+%                 parameter space (should be in [ta,tb])
 %       cparams.ifclosed = flag determining if the curve
 %           is to be interpreted as a closed curve (true)
 %       cparams.chsmall = max size of end intervals if
 %           ifclosed == 0 (Inf)
 %       cparams.nover = oversample resolved curve nover
 %           times (0)
-%       cparams.eps = resolve coordinates, arclength,
-%          and first and second derivs of coordinates
-%          to this tolerance (1.0e-6)
+%       cparams.eps = tolerance to resolve coordinates and arclength 
+%           density (1.0e-6)
 %       cparams.lvlr = string, determines type of level
 %          restriction to be enforced
 %               lvlr = 'a' -> no chunk should have double the arc length 
@@ -38,9 +39,14 @@ function chnkr = chunkerfunc(fcurve,cparams,pref)
 %       cparams.lvlrfac = factor in level restriction, i.e. check if 
 %               neighboring chunks differ in size by this factor (2.0)
 %       cparams.maxchunklen - maximum length of any chunk (Inf)
+%       cparams.nchmin - minimum number of chunks (0)
 %   pref - chunkerpref object or structure (defaults)
 %       pref.nchmax - maximum number of chunks (10000)
 %       pref.k - number of Legendre nodes on chunks (16)
+%
+% Output:
+%   chnkr - a chunker object containing the discretization of the domain
+%   ab - ab(:,i) are the start and end points of chunk i in parameter space
 %
 % Examples:
 %   chnkr = chunkerfunc(@(t) starfish(t)); % chunk up starfish w/ standard
@@ -63,12 +69,13 @@ else
     pref = chunkerpref(pref);
 end
 
+chnkr = chunker(pref); % empty chunker
 
 ta = 0.0; tb = 2*pi; ifclosed=true;
 chsmall = Inf; nover = 0;
 eps = 1.0e-6;
-lvlr = 'a'; maxchunklen = Inf; lvlrfac = 2.0;
-nout = 1;
+lvlr = 'a'; maxchunklen = Inf; lvlrfac = chunker.lvlrfacdefault;
+nchmin = 0;
 
 if isfield(cparams,'ta')
     ta = cparams.ta;
@@ -97,10 +104,13 @@ end
 if isfield(cparams,'maxchunklen')
     maxchunklen = cparams.maxchunklen;
 end
+if isfield(cparams,'nchmin')
+    nchmin = cparams.nchmin;
+end
 
 % discover number of outputs
 try         
-    [r,d,d2] = fcurve(t);
+    [r,d,d2] = fcurve(ta);
     nout = 3;
 catch
     try 
@@ -137,28 +147,52 @@ interp_xs = reshape(polvals,[k,k2]).'*us;
 
 ab = zeros(2,nchmax);
 adjs = zeros(2,nchmax);
-ab(1,1)=ta;
-ab(2,1)=tb;
-nch=1;
+
+if (isfield(cparams,'tsplits'))
+    tsplits = cparams.tsplits;
+    tsplits = [tsplits(:); ta; tb];
+else
+    tsplits = [ta;tb];
+end
+   
+tsplits = sort(uniquetol(tsplits,eps),'ascend');
+lab = length(tsplits);
+if (lab-1 > nchmax)
+    error(['CHUNKERFUNC: nchmax exceeded in chunkerfunc on initial splits.\n ',...
+        'try increasing nchmax in preference struct']);
+end
+if (any(tsplits > tb) || any(tsplits < ta))
+    error(['CHUNKERFUNC: tsplits outside of interval of definition.\n', ...
+          'check definition of splits, ta and tb']);
+end
+
+ab(1,1:(lab-1)) = tsplits(1:end-1);
+ab(2,1:(lab-1)) = tsplits(2:end);
+
+nch=lab-1;
+adjs(1,1:nch) = 0:(nch-1);
+adjs(2,1:nch) = 2:(nch+1);
+
 if ifclosed
-    adjs(1,1)=1;
-    adjs(2,1)=1;
+    adjs(1,1)=nch;
+    adjs(2,nch)=1;
 else
     adjs(1,1)=-1;
-    adjs(2,1)=-1;
+    adjs(2,nch)=-1;
 end
 nchnew=nch;
 
-maxiter_res=nchmax;
+maxiter_res=nchmax-nch;
+
+xmin =  Inf;
+xmax = -Inf;
+ymin =  Inf;
+ymax = -Inf;
 
 rad_curr = 0;
 for ijk = 1:maxiter_res
 
 %       loop through all existing chunks, if resolved store, if not split
-    xmin =  Inf;
-    xmax = -Inf;
-    ymin =  Inf;
-    ymax = -Inf;
     
     ifdone=1;
     for ich=1:nchnew
@@ -191,7 +225,7 @@ for ijk = 1:maxiter_res
             
             resol_speed_test = err1>eps;
             if nout < 2
-                resol_speed_test = err1>eps*k;
+                resol_speed_test = err1*(b-a) > eps*k;
             end
             
             xmax = max(xmax,max(r(1,:)));
@@ -231,7 +265,7 @@ for ijk = 1:maxiter_res
               %       . . . if here, not resolved
               %       divide - first update the adjacency list
                 if (nch +1 > nchmax)
-                    error('too many chunks')
+                    error('CHUNKERFUNC: nchmax=%d exceeded. Unable to resolve curve.',nchmax)
                 end
 
                 ifprocess(ich)=0;
@@ -280,6 +314,9 @@ for ijk = 1:maxiter_res
     
     rad_curr = max(xmax-xmin,ymax-ymin);
 end
+
+%   
+
 
 
 %       the curve should be resolved to precision eps now on
@@ -339,7 +376,7 @@ if or(strcmpi(lvlr,'a'),strcmpi(lvlr,'t'))
     %       split chunk i now, and recalculate nodes, ders, etc
 
                 if (nch + 1 > nchmax)
-                    error('too many chunks')
+                    error('CHUNKERFUNC: nchmax=%d exceeded during level restriction (curve resolved).',nchmax);
                 end
 
 
@@ -384,6 +421,9 @@ end
 %       go ahead and oversample by nover, updating
 %       the adjacency information adjs along the way
 
+if nchmin > 0
+    nover = max(nover,ceil(log2(nchmin/nch)));
+end
 
 if (nover > 0) 
     for ijk = 1:nover
@@ -409,7 +449,7 @@ if (nover > 0)
             fbkm1 = fbk;
             bkm1 = bk;
             
-            for iter = 1:200
+            for iter = 1:52
                 m = (ak+bk)/2;
                 s = m;
                 if fbkm1 ~= fbk
@@ -459,7 +499,7 @@ if (nover > 0)
             end
 
             if (nch + 1 > nchmax)
-                error('too many chunks')
+                error('CHUNKERFUNC: nchmax=%d exceeded while oversampling by nover=%d',nchmax,nover);
             end
 
             adjs(1,nch+1)=i;
@@ -480,9 +520,25 @@ end
 %       . . . finally evaluate the k nodes on each chunk, along with 
 %       derivatives and chunk lengths
 
-chnkr = chunker(pref); % empty chunker
 chnkr = chnkr.addchunk(nch);
 
+[~,isort] = sort(ab(1,1:nch));
+ab = ab(:,isort);
+
+adjs(1,1:nch) = 0:(nch-1);
+adjs(2,1:nch) = 2:(nch+1);
+if ifclosed
+    adjs(1,1)=nch;
+    adjs(2,nch)=1;
+else
+    adjs(1,1)=-1;
+    adjs(2,nch)=-1;
+end
+
+if ~ifclosed
+    adjs(1,1) = -1;
+    adjs(2,nch) = -1;
+end
 
 for i = 1:nch
     a=ab(1,i);
@@ -493,10 +549,36 @@ for i = 1:nch
     for j = nout+1:3
         out{j} = out{j-1}*dermat*(2/(b-a));
     end
+    h = (b-a)/2;
     chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
-    chnkr.dstor(:,:,i) = reshape(out{2},dim,k);
-    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k);
-    chnkr.hstor(i) = (b-a)/2;
+    chnkr.dstor(:,:,i) = reshape(out{2},dim,k)*h;
+    chnkr.d2stor(:,:,i) = reshape(out{3},dim,k)*h*h;
+end
+
+% check ends 
+lrinterpmat = lege.matrin(k,[-1;1],us);
+left1 = lrinterpmat(1,:)*(chnkr.rstor(:,:,1).');
+rightnch = lrinterpmat(2,:)*(chnkr.rstor(:,:,nch).');
+dleft1 = lrinterpmat(1,:)*(chnkr.dstor(:,:,1).');
+dleft1 = dleft1(:)/norm(dleft1(:));
+drightnch = lrinterpmat(2,:)*(chnkr.dstor(:,:,nch).');
+drightnch = drightnch(:)/norm(drightnch(:));
+
+msgbase = "CHUNKERFUNC: ";
+if norm(left1(:)-rightnch(:))/rad_curr > eps && ifclosed
+    msg = msgbase + ...
+        "start and end points of curve parameterization are not the same" + ...
+        " to target precision but ifclosed flag is true." + ...
+        " Check curve parameterization or if not a closed curve" + ...
+        " set flag appropriately and consider creating a chunkgraph object";
+    warning(msg);
+elseif norm(dleft1(:)-drightnch(:)) > eps*k && ifclosed
+    msg = msgbase + ...
+        "unit tangent vectors at start and end points of curve are not the same" + ...
+        " to target precision but ifclosed flag is true." + ...
+        " Check curve parameterization or if not a closed curve" + ...
+        " set flag appropriately and consider creating a chunkgraph object";
+    warning(msg);
 end
 
 chnkr.adjstor(:,1:nch) = adjs(:,1:nch);

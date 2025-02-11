@@ -23,6 +23,12 @@ end
         out = zeros(m*nt, n*ns);
     end
 
+    function out = shifted_eval_(s, t, o)
+        [~, ns] = size(s.r);
+        [~, nt] = size(t.r);
+        out = zeros(m*nt, n*ns);
+    end
+
     function varargout = fmm_(eps, s, t, sigma)
 
         if ( isstruct(t) )
@@ -45,6 +51,8 @@ obj.name   = 'zeros';
 obj.opdims = [m n];
 obj.sing   = 'smooth';
 obj.eval   = @eval_;
+obj.shifted_eval   = @shifted_eval_;
 obj.fmm    = @fmm_;
+obj.iszero = true;
 
 end

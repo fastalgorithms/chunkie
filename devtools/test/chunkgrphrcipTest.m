@@ -60,14 +60,8 @@ for icurve = 1:size(edge2verts,1)
 end
 %fchnks = {};
 
-prefs      = [];
 % prefs.chsmall = 1d-4;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
-
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
+[cgrph] = chunkgraph(verts,edge2verts,fchnks);
 
 
 ncurve = 1;
@@ -110,12 +104,7 @@ end
 
 prefs      = [];
 % prefs.chsmall = 1d-4;
-[cgrph] = chunkgraphinit(verts,edge2verts,fchnks,prefs);
-
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
+[cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
 
 
 zk = 1.0;
