@@ -138,9 +138,6 @@ rcip_ignore = [];
 nsub = 40;
 adaptive_correction = false;
 sing = 'log';
-if ~isempty(kern.sing)
-    sing = kern.sing;
-end
 
 % get opts from struct if available
 
