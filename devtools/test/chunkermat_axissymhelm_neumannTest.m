@@ -7,12 +7,12 @@ addpaths_loc();
 zk = 1.1;
 
 type = 'chnkr-star';
-% type = 'chnkr-torus';
+type = 'chnkr-torus';
 % type = 'cgrph';
 % type = 'cgrph-sphere';
 
-irep = 'rpcomb';
-% irep = 'sk';
+% irep = 'rpcomb';
+irep = 'sk';
 
 pref = [];
 pref.k = 16;
@@ -44,6 +44,7 @@ quiver(chnkr);
 scatter(sources(1,:), sources(2,:), 'o')
 scatter(targets(1,:), targets(2,:), 'x')
 axis equal
+
 
 
 % For solving exterior the Neumann boundary value problem, we use the
@@ -264,6 +265,8 @@ if strcmpi(type, 'cgrph')
     cparams = [];
     cparams.nover = 2;
     cparams.maxchunklen = maxchunklen;
+    cparams.ta = 0;
+    cparams.tb = 1;
 
     chnkobj = chunkgraph(verts, edge2verts, fchnks, cparams, pref);
     chnkobj = balance(chnkobj);
@@ -297,13 +300,14 @@ elseif strcmpi(type,'cgrph-sphere')
     cparams.eps = 1.0e-10;
     cparams.nover = 1;
     cparams.ifclosed = false;
-    cparams.ta = -pi/2;
-    cparams.tb = pi/2;
+    cparams.ta = 0;
+    cparams.tb = 1;
     cparams.maxchunklen = maxchunklen;
     narms = 0;
     amp = 0.0;
     
     fchnks{1} = @(t) circle(t);
+
     
     chnkobj = chunkgraph(verts, edge2verts, fchnks, cparams, pref);
     chnkobj = balance(chnkobj);
@@ -384,12 +388,12 @@ end
 
 
 function [r,d,d2] = circle(t)
-xs = cos(-pi/4 + pi/2*t);
-ys = sin(-pi/4 + pi/2*t);
-xp = -pi*ys/2;
-yp = pi*xs/2;
-xpp = -pi*pi*xs/4;
-ypp = -pi*pi*ys/4;
+xs = cos(-pi/2 + pi*t);
+ys = sin(-pi/2 + pi*t);
+xp = -pi*ys;
+yp = pi*xs;
+xpp = -pi*pi*xs;
+ypp = -pi*pi*ys;
 r = [(xs(:)).'; (ys(:)).'];
 d = [(xp(:)).'; (yp(:)).'];
 d2 = [(xpp(:)).'; (ypp(:)).'];

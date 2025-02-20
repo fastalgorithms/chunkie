@@ -21,15 +21,6 @@ fchnks = {}; % this by default gives me straight lines
 prefs = struct('maxchunklen',0.5);
 [cgrph] = chunkgraph(verts, edge2verts, fchnks, prefs);
 
-% figure(1); clf; hold on; axis equal; axis off;
-% plot(cgrph);
-% quiver(cgrph);
-% hold off;
-
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
 % kerns
 
 zk0 = 1; % exterior
