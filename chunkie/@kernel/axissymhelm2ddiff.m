@@ -11,8 +11,8 @@ function obj = axissymhelm2ddiff(type, zks, coefs)
 %
 %  COEFS is optional. If not given then COEFS is set to [1 1].
 %
-%  NOTES: currently only supports coefs = [c c], and zks(1), real, and
-%   zks(2) = I*zks(1)
+%  NOTES: currently only supports coefs = [c c], and zks(1:2) both real or
+%   zks(2) = I*zks(1), with zks(1) real.
 %
 % See also CHNK.AXISSYMHELM2D.KERN.
 
