@@ -58,8 +58,8 @@ switch lower(type)
 
     case {'s', 'single'}
         obj.type = 's';
-        obj.eval = @(s,t) coefs(1)*chnk.helm2d.kern(zks(1), s, t, 's') - ...
-                          coefs(2)*chnk.helm2d.kern(zks(2), s, t, 's');
+        obj.eval = @(s,t) coefs(1)*chnk.helm2d.kern(zks(1), s, t, 's_diff') - ...
+                          coefs(2)*chnk.helm2d.kern(zks(2), s, t, 's_diff');
         obj.fmm  = @(eps,s,t,sigma) ...
             coefs(1)*chnk.helm2d.fmm(eps, zks(1), s, t, 's', sigma) - ...
             coefs(2)*chnk.helm2d.fmm(eps, zks(2), s, t, 's', sigma);
@@ -67,8 +67,8 @@ switch lower(type)
 
     case {'d', 'double'}
         obj.type = 'd';
-        obj.eval = @(s,t) coefs(1)*chnk.helm2d.kern(zks(1), s, t, 'd') - ...
-                          coefs(2)*chnk.helm2d.kern(zks(2), s, t, 'd');
+        obj.eval = @(s,t) coefs(1)*chnk.helm2d.kern(zks(1), s, t, 'd_diff') - ...
+                          coefs(2)*chnk.helm2d.kern(zks(2), s, t, 'd_diff');
         obj.fmm  = @(eps,s,t,sigma) ...
             coefs(1)*chnk.helm2d.fmm(eps, zks(1), s, t, 'd', sigma) - ...
             coefs(2)*chnk.helm2d.fmm(eps, zks(2), s, t, 'd', sigma);
@@ -76,8 +76,8 @@ switch lower(type)
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
-        obj.eval = @(s,t) coefs(1)*chnk.helm2d.kern(zks(1), s, t, 'sprime') - ...
-                          coefs(2)*chnk.helm2d.kern(zks(2), s, t, 'sprime');
+        obj.eval = @(s,t) coefs(1)*chnk.helm2d.kern(zks(1), s, t, 'sprime_diff') - ...
+                          coefs(2)*chnk.helm2d.kern(zks(2), s, t, 'sprime_diff');
         obj.fmm  = @(eps,s,t,sigma) ...
             coefs(1)*chnk.helm2d.fmm(eps, zks(1), s, t, 'sprime', sigma) - ...
             coefs(2)*chnk.helm2d.fmm(eps, zks(2), s, t, 'sprime', sigma);
@@ -85,8 +85,8 @@ switch lower(type)
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
-        obj.eval = @(s,t) coefs(1)*chnk.helm2d.kern(zks(1), s, t, 'dprime') - ...
-                          coefs(2)*chnk.helm2d.kern(zks(2), s, t, 'dprime');
+        obj.eval = @(s,t) coefs(1)*chnk.helm2d.kern(zks(1), s, t, 'dprime_diff') - ...
+                          coefs(2)*chnk.helm2d.kern(zks(2), s, t, 'dprime_diff');
         obj.fmm  = @(eps,s,t,sigma) ...
             coefs(1)*chnk.helm2d.fmm(eps, zks(1), s, t, 'dprime', sigma) - ...
             coefs(2)*chnk.helm2d.fmm(eps, zks(2), s, t, 'dprime', sigma);
@@ -99,13 +99,13 @@ switch lower(type)
     case {'all'}
         obj.type = 'all';
         obj.opdims = [2,2];
-        obj.eval = @(s,t) chnk.helm2d.kern(zks(1), s, t, 'all', coefs(:,:,1)) - ...
-                          chnk.helm2d.kern(zks(2), s, t, 'all', coefs(:,:,2));
+        obj.eval = @(s,t) chnk.helm2d.kern(zks(1), s, t, 'all_diff', coefs(:,:,1)) - ...
+                          chnk.helm2d.kern(zks(2), s, t, 'all_diff', coefs(:,:,2));
         obj.fmm  = []; 
         if ( abs(coefs(2,1,1)-coefs(2,1,2)) < eps )
             obj.sing = 'log';
         else
-            obj.sing = 'hs';
+            obj.sing = 'hs'; 
         end
 
     otherwise
