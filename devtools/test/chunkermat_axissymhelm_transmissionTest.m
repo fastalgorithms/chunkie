@@ -2,12 +2,13 @@ clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
+%addpaths_loc();
 
-zk = 10.1;
+zk = 5.1;
 
 type = 'chnkr-star';
 % type = 'chnkr-torus';
+%type = 'cgrph';
 
 pref = [];
 pref.k = 16;
@@ -15,10 +16,12 @@ ns = 10;
 nt = 10;
 ppw = 80;   % points per wavelength;
 maxchunklen = pref.k/ppw/real(zk)*2*pi;
-maxchunklen = 0.5;
+maxchunklen = 1.0;
 
 [chnkr, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen);
 wts = chnkr.wts; wts = wts(:);
+sources(1,:) = abs(sources(1,:));
+targets(1,:) = abs(targets(1,:));
 
 l2scale = false;
 fprintf('Done building geometry\n');
@@ -272,15 +275,17 @@ if strcmpi(type, 'cgrph')
     cparams = [];
     cparams.nover = 2;
     cparams.maxchunklen = maxchunklen;
+    cparams.ta = 0;
+    cparams.tb = 1;
 
     chnkobj = chunkgraph(verts, edge2verts, fchnks, cparams, pref);
     chnkobj = balance(chnkobj);
-    
-    ts = 0.0+2*pi*rand(ns,1);
-    sources = 3.0*[cos(ts)';sin(ts)'];
-    
-    ts = 0.0+2*pi*rand(nt,1);
-    targets = 0.2*[cos(ts)'; sin(ts)'];
+       
+    ts = -pi/2 + pi*rand(ns,1);
+    sources = 0.2*[cos(ts)'; sin(ts)'];
+
+    ts = -pi/2 + pi*rand(nt,1);
+    targets = 3.0*[cos(ts)';sin(ts)'];
 
 
 elseif strcmpi(type,'chnkr-star')

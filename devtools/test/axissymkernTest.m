@@ -10,6 +10,7 @@ amp = 0.25;
 cparams.maxchunklen = 0.5;
 cparams.ta = -pi/2;
 cparams.tb = pi/2;
+cparams.ifclosed = false;
 
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
@@ -75,7 +76,7 @@ start = tic; submat = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin_new,
 submat = K.shifted_eval(srcinfo, targinfo, origin_new);
 t1 = toc(start);
 
-fprintf('First call to axissymhelm2d.kern time%d\n',t1);
+fprintf('First call to axissymhelm2d.kern time: %d\n',t1);
 
 
 srcinfo.r(1,:) = srcinfo.r(1,:) + origin_new(1);

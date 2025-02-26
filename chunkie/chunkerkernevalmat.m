@@ -38,6 +38,9 @@
 %                         entries for which a special quadrature is used
 %                         (e.g. self and neighbor interactoins) and return
 %                         in a sparse array.
+%           opts.corrections = boolean (false), if true, only compute the
+%                         corrections to the smooth quadrature rule and 
+%                         return in a sparse array, see opts.nonsmoothonly
 
 %
 % output:
@@ -104,12 +107,16 @@ forcesmooth = false;
 forceadap = false;
 forcepquad = false;
 nonsmoothonly = false;
+corrections = false;
 fac = 1.0;
 eps = 1e-12;
 if isfield(opts,'forcesmooth'); forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); forceadap = opts.forceadap; end
 if isfield(opts,'forcepquad'); forcepquad = opts.forcepquad; end
 if isfield(opts,'nonsmoothonly'); nonsmoothonly = opts.nonsmoothonly; end
+if isfield(opts,'corrections'); corrections = opts.corrections; end
+if corrections; nonsmoothonly = true; forcesmooth=false; end
+
 if isfield(opts,'fac'); fac = opts.fac; end
 if isfield(opts,'eps'); eps = opts.eps; end
 
@@ -146,17 +153,29 @@ if forcesmooth
     return
 end
 
+
+if corrections
+    mat = chunkerkernevalmat_adap(chnkr,ftmp,opdims, ...
+        targinfo,[],optsadap);
+    mat = mat-chunkerkernevalmat_smooth(chnkr,ftmp,opdims,targinfo, ...
+        [],opts);
+    mat = sparse(mat);
+    return
+end
+
 if forceadap
     mat = chunkerkernevalmat_adap(chnkr,ftmp,opdims, ...
         targinfo,[],optsadap);
     return
 end
 
+
+
 if forcepquad
     optsflag = []; optsflag.fac = fac;
     flag = flagnear(chnkr,targinfo.r,optsflag);
-    spmat = chunkerkernevalmat_ho(chnkr,ftmp,opdims, ...
-        targinfo,flag,optsadap);
+    spmat = chunkerkernevalmat_pquad(chnkr,kern,opdims, ...
+        targinfo,flag,opts);
     mat = chunkerkernevalmat_smooth(chnkr,ftmp,opdims,targinfo, ...
         flag,opts);
     mat = mat + spmat;
@@ -324,7 +343,7 @@ end
 
 end
 
-function mat = chunkerkernevalmat_ho(chnkr,kern,opdims, ...
+function mat = chunkerkernevalmat_pquad(chnkr,kern,opdims, ...
     targinfo,flag,opts)
 
 k = chnkr.k;
@@ -372,6 +391,7 @@ else
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
+    wts = chnkr.wts;
 
     % interpolation matrix 
     intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -383,10 +403,36 @@ else
                         
         [ji] = find(flag(:,i));
 
+        targinfoji = [];
+        targinfoji.r = targinfo.r(:,ji);
+
+        srcinfo = [];
+        srcinfo.r = r(:,:,i);
+        srcinfo.d = d(:,:,i);
+        srcinfo.d2 = d2(:,:,i);
+        srcinfo.n = n(:,:,i);
+
         % Helsing-Ojala (interior/exterior?)
-        mat1 = chnk.pquadwts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
-                    targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts,intp_ab,intp); % depends on kern, different mat1?
-                
+        allmats = cell(size(kern.splitinfo.type));
+        [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,i,targs(:,ji), ...
+              t,w,opts,intp_ab,intp,kern.splitinfo.type);
+
+        mat1 = zeros(size(allmats{1}));
+        funs = kern.splitinfo.functions(srcinfo,targinfoji);
+        for l = 1:length(allmats)
+            switch kern.splitinfo.action{l}
+                case 'r'
+                    mat0 = real(allmats{l});
+                case 'i'
+                    mat0 = imag(allmats{l});
+                case 'c'
+                    mat0 = allmats{l};
+            end
+            mat0opdim = kron(mat0,ones(opdims));
+            mat0xsplitfun = mat0opdim.*funs{l};
+            mat1 = mat1 + mat0xsplitfun;
+        end
+
         js1 = jmat:jmatend;
         js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);
         

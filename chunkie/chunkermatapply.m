@@ -60,6 +60,7 @@ function u = chunkermatapply(chnkr,kern,dens,cormat,opts)
 %           opts.rcip = boolean (true), flag for whether to include rcip
 %                      corrections for near corners if input chnkobj is
 %                      of type chunkergraph
+%           opts.rcip_ignore = [], list of vertices to ignore in rcip
 %           opts.nsub_or_tol = (40) specify the level of refinements in rcip
 %                    or a tolerance where the number of levels is given by
 %                    ceiling(log_{2}(1/tol^2));
