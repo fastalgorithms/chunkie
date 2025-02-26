@@ -1,20 +1,4 @@
-%DEMO_BARBELL_2
-%
-% Define a polygonal "barbell" shaped domain with 
-% prescribed constant boundary data on each edge. 
-% Solves the corresponding Helmholtz Dirichlet problem
-% using corner rounding and smoothing the boundary data 
-% across the rounded corners
-%
-
-% profile clear
-% profile on
-
-clearvars; close all;
-iseed = 8675309;
-rng(iseed,'twister');
-addpaths_loc();
-
+% testing product quadrature rule
 % planewave vec
 
 kvec = 10*[1;-1.5];
@@ -25,35 +9,10 @@ zk = norm(kvec);
 
 % define geometry and boundary conditions
 % (vertices defined by another function)
-verts = chnk.demo.barbell(2.0,2.0,1.0,1.0);
-nv = size(verts,2);
-edgevals = randn(1,nv);
 
-% parameters for curve rounding/chunking routine to oversample boundary
-cparams = [];
-cparams.widths = 0.1*ones(size(verts,2),1);% width to cut about each corner
-cparams.eps = 1e-12; % tolerance at which to resolve curve
-cparams.rounded = true;
-
-% call smoothed-polygon chunking routine
-% a smoothed version of edgevals is returned in 
-% chnkr.data
-chnkr = chunkerpoly(verts,cparams,[],edgevals);
+cparams = []; cparams.eps = 1e-9;
+chnkr = chunkerfunc(@(t) starfish(t),cparams);
 chnkr = refine(chnkr,struct('nover',1));
-%
-% plot smoothed geometry and data
-
-figure(1)
-clf
-plot(chnkr,'-x')
-hold on
-quiver(chnkr)
-axis equal
-
-figure(2)
-clf
-nchplot = 1:chnkr.nch;
-plot3(chnkr,1)
 
 % solve and visualize the solution
 
@@ -111,9 +70,9 @@ Csol = chunkerkerneval(chnkr,fkern,sol,targets(:,in)); t1 = toc(start);
 fprintf('%5.2e s : time for kerneval (adaptive for near)\n',t1);
 
 % Compare with reference solution Dsol
-error = max(abs(Csol-Csolpquad))/max(abs(Csol));
-fprintf('%5.2e : Relative max error\n',error);
+rel_error = max(abs(Csol-Csolpquad))/max(abs(Csol));
+fprintf('%5.2e : Relative max error\n',rel_error);
 % 
 
-assert(error < 1e-10)
+assert(rel_error < 1e-10)
 % profile viewer
