@@ -84,7 +84,9 @@ function [kerns, varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
     ncurve = length(chnkrs);
     sources = cell(1,ncurve);
     charges = cell(1,ncurve);
-    exposed_curves = ones(1,ncurve);
+    
+    exposed_curves = (cs(1,:)==1) -(cs(2,:)==1);
+
     for i=1:ncurve
         sources{i} = zeros(2,1);
         charges{i} = 0 + 1j*0;
