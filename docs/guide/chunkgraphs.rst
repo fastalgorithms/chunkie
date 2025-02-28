@@ -28,7 +28,17 @@ In the example below, we construct a polygon defined as a chunkgraph. As
 before we can visualize the :matlab:`chunkgraph` using overloaded MATLAB
 commands :matlab:`plot` and :matlab:`quiver`.
 
-Todo: enter polyggon example here
+.. include:: ../../chunkie/guide/guide_chunkgraphs.m
+   :literal:
+   :code: matlab
+   :start-after: % START POLYGON
+   :end-before: % END POLYGON
+	  
+.. image:: ../../chunkie/guide/guide_chunkgraphs_polygon.png
+   :width: 350px
+   :alt: polygon chunkgraph 
+   :align: center
+
 
 Instead of having straight edges, the user can define curved edges
 between vertices as well. This is specified either as a single function
@@ -51,7 +61,18 @@ will snap the edge to its vertices via an appropriate affine transformation.
 Here is an example illustrating a square whose edges are defined via a sine
 wave.
 
-Enter sine example here
+.. include:: ../../chunkie/guide/guide_chunkgraphs.m
+   :literal:
+   :code: matlab
+   :start-after: % START CURVED POLYGON
+   :end-before: % END CURVED POLYGON
+	  
+.. image:: ../../chunkie/guide/guide_chunkgraphs_curved_edges.png
+   :width: 350px
+   :alt: curved polygon chunkgraph 
+   :align: center
+
+
 
 .. note::
    
@@ -68,7 +89,17 @@ treated as edges with no vertices. All of these are illustrated
 in the construction of the complicated ``hawaiian earing`` with a nested
 star-fish below.
 
-Enter complicated example here.
+.. include:: ../../chunkie/guide/guide_chunkgraphs.m
+   :literal:
+   :code: matlab
+   :start-after: % START HAWAIIAN EARING 
+   :end-before: % END HAWAIIAN EARING
+	  
+.. image:: ../../chunkie/guide/guide_chunkgraphs_hawaiian.png
+   :width: 350px
+   :alt: Hawaiian earing with inclusion chunkgraph 
+   :align: center
+
 
 Working with chunkgraph
 ------------------------
@@ -81,6 +112,17 @@ check if the user has updated the :matlab:`chunkgraph` in a consistent manner.
 In addition to these routines, we provide an additional plotting routine 
 which labels the edges and regions defined by the :matlab:`chunkgraph`. 
 This functionality is illustrated in the example below.
+
+.. include:: ../../chunkie/guide/guide_chunkgraphs.m
+   :literal:
+   :code: matlab
+   :start-after: % START REGION TEST 
+   :end-before: % END REGION TEST 
+	  
+.. image:: ../../chunkie/guide/guide_chunkgraphs_regions.png
+   :width: 350px
+   :alt: chunkgraph region plot 
+   :align: center
 
 For more details of how this information is stored in the 
 :matlab:`chunkgraph` object and to see a survey of other available 
