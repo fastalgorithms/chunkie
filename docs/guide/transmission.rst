@@ -7,8 +7,8 @@ Application to Transmission Problems with Multiple Junctions
 
 It is easy to define time-harmonic acoustic and electromagnetic 
 scattering problems
-in piece-wise constant homogeneous media using :matlab:`chunkgraphs`
-and a helper routine available in chunkie. This includes domains
+in piece-wise constant homogeneous media using a :matlab:`chunkgraph`
+object and a helper routine available in `chunkie`. This includes domains
 with multiple junctions and an arbitrary nesting of regions defining
 the dielectric media. 
 Suppose that the dielectric region consists of regions $\Omega_{j}$, 
@@ -114,27 +114,35 @@ in the following equation for $\sigma, \mu$:
    \end{bmatrix} \;\; \textrm{ on } \Gamma_{\ell}\;, 
    \end{align*}
 
-for $\ell=1,2,\ldots n_{e}$ where $\gamma_{\ell} = \frac{2}{\beta_{r_{\ell,+}} + \beta_{r_{\ell,-}}}$
-Note the single and double layer, and the integral equation 
-are appropriately to ensure that the integral equation 
-is of the form $(I + K)$ as opposed to $\alpha I + K$ for $\alpha \neq 1$. 
-Currently, due to existing behavior of the corner compression scheme, 
-RCIP, this scaling is essential or solving integral equations on domains 
-with corners. This restriction will soon be lifted in an upcoming release
-of :matlab:`chunkIE`.
+for $\ell=1,2,\ldots n_{e}$ where $\gamma_{\ell} = \frac{2}{\beta_{r_{\ell,+}} + \beta_{r_{\ell,-}}}$.
 
-:matlab:`chunkermat` is capable of handling such a complicated problem
-specification where there is a diferent matrix of kernels
-between every pair of edges. We also provide an additional 
-helper routine :matlab:`chnk.helm2d.transmission_helper` which returns
-the kernels for solving the integral equation, 
-the boundary data for scattering from planewaves, and the
-kernels for postprocessing. The routine on input requires the 
+.. note::
+   Note the single and double layer, and the integral equation 
+   are appropriately scaled to ensure that the integral equation 
+   is of the form $(I + K)$ as opposed to $\alpha I + K$ for $\alpha \neq 1$. 
+   Currently, due to existing behavior of the corner compression scheme, 
+   RCIP, this scaling is essential or solving integral equations on domains 
+   with corners. This restriction will soon be lifted in an upcoming release
+   of :matlab:`chunkIE`, but is required as of the current version.
+
+The :matlab:`chunkermat` routine is capable of handling such a problem
+specification, in which the interaction varies for different
+pairs of `chunkgraph` edges. These interactions can be specified as
+a $n_{\textrm{edge}}\times n_{\textrm{edge}}$ matrix of `kernel` objects.
+
+For transmission problems, we also provide a 
+helper routine, :matlab:`chnk.helm2d.transmission_helper`, which
+automates much of the process. This routine only requires the 
 :matlab:`chunkgraph`, the wavenumbers $k_{j}$, the coefficients $\beta_{j}$
 and the regions abutting edges $r_{\ell,\pm}$ which can be determined 
 using the :matlab:`chunkgraph` routine, :matlab:`find_edge_regions`.
-This simplifies the task of genertaing the system matrix quite a bit 
-and it can be generated using only a few lines of code:
+Given this information, the routine returns
+the kernels for solving the integral equation, 
+the boundary data for scattering from planewaves, and the
+integral kernels needed to evaluate the solution in any region (for
+postprocessing/plotting).
+This simplifies the task of genertaing the system matrix quite a bit,
+requiring only a few lines of code:
 
 .. include:: ../../chunkie/demo/demo_concentric_transmission.m
    :literal:
