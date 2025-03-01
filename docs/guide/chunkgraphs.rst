@@ -6,14 +6,19 @@
 Describing More Complicated Geometries with Chunkgraphs
 ========================================================
 
-In many practical applications, espcially those involving corners and 
-multiple junction interfaces, require a more complicated description of the 
-geometry beyond `chunkers`. Apart from the ease of specification of such complicated
-problems, integral equation methods require special care in the vicinity of corners 
+Many practical applications, especially those involving corners and 
+multiple junction interfaces, require a more detailed description of the 
+geometry, beyond an array of `chunker` objects. While it is relatively
+easy to specify these more complicated problems, integral equation methods
+require special care in the vicinity of corners 
 and mutltiple junctions in order to achieve high precision. 
-Such complicated problems which store the requisite additional information can be
-stored in a `chunkgraph` object, which is essentially a collection of `chunkers`
-connected between a set of vertices.
+The requisite additional information can be
+stored in `chunkie` in a `chunkgraph` object, which is essentially
+a collection of `chunker` objects and a graph-theoretic description
+of their connectivity. In particular, each smooth boundary component,
+stored as a `chunker`, corresponds to an edge of the graph, and
+points where multiple smooth boundary components meet (or where a
+smooth component ends), correspond to vertices of the graph.
 
 Creating Chunkgraphs
 --------------------
@@ -54,8 +59,9 @@ or :matlab:`[r,d] = fcurve(t)` or :matlab:`[r,d,d2] = fcurve(t)` where
 :matlab:`r` are the coordinates of the points on the curve, :matlab:`d` is
 the first derivative of the position with respect to the underlying 
 parametrization and :matlab:`d2` is the corresponding second derivative.
-For ease of specification, the function handles aren't required to
-terminate at the edge vertices, the :matlab:`chunkgraph` constructor
+For ease of specification, the curves described by the function handles
+aren't required to terminate exactly at the appropriate vertices;
+the :matlab:`chunkgraph` constructor
 will snap the edge to its vertices via an appropriate affine transformation.
 
 Here is an example illustrating a square whose edges are defined via a sine
@@ -101,9 +107,9 @@ star-fish below.
    :align: center
 
 
-Working with chunkgraph
+Working with chunkgraphs
 ------------------------
-Most functions overloaded for chunkers also work with chunkgraph. 
+Most functions overloaded for chunkers also work with chunkgraphs. 
 As with :matlab:`chunkers`,users are free to edit the position and derivative
 fields of the :matlab:`chunkgraph` objects, or even replace the individual
 :matlab:`chunkers` that define the :matlab:`chunkgraph`, and the software will not
