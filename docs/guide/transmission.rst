@@ -120,9 +120,9 @@ for $\ell=1,2,\ldots n_{e}$ where $\gamma_{\ell} = \frac{2}{\beta_{r_{\ell,+}} +
    Note the single and double layer, and the integral equation 
    are appropriately scaled to ensure that the integral equation 
    is of the form $(I + K)$ as opposed to $\alpha I + K$ for $\alpha \neq 1$. 
-   Currently, due to existing behavior of the corner compression scheme, 
-   RCIP, this scaling is essential or solving integral equations on domains 
-   with corners. This restriction will soon be lifted in an upcoming release
+   The current implementation of the corner compression scheme, 
+   RCIP, requires this scaling for solving integral equations on
+   `chunkgraphs`. This restriction will soon be lifted in an upcoming release
    of :matlab:`chunkIE`, but is required as of the current version.
 
 The :matlab:`chunkermat` routine is capable of handling such a problem
