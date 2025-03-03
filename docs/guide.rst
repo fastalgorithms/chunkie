@@ -24,7 +24,6 @@ typing "help [function name]" in a MATLAB command window:
    guide/chunkers
    guide/kerns
    guide/simplebvps
-   guide/largerproblems
    guide/chunkgraphs
    guide/chunkgraphbvps
    guide/transmission
