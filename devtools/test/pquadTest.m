@@ -1,20 +1,4 @@
-%DEMO_BARBELL_2
-%
-% Define a polygonal "barbell" shaped domain with 
-% prescribed constant boundary data on each edge. 
-% Solves the corresponding Helmholtz Dirichlet problem
-% using corner rounding and smoothing the boundary data 
-% across the rounded corners
-%
-
-% profile clear
-% profile on
-
-clearvars; close all;
-iseed = 8675309;
-rng(iseed,'twister');
-addpaths_loc();
-
+% testing product quadrature rule
 % planewave vec
 
 kvec = 10*[1;-1.5];
@@ -90,4 +74,3 @@ fprintf('%5.2e : Relative max error\n',err);
 % 
 
 assert(err < 1e-10)
-% profile viewer

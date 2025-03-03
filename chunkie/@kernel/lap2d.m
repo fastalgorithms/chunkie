@@ -104,6 +104,18 @@ switch lower(type)
         obj.splitinfo.action = {'r','r'};
         obj.splitinfo.functions = @(s,t) lap2d_c_split(s,t,coefs);
 
+    case {'cg', 'cgrad'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cg';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cgrad',coefs);
+        obj.fmm = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'cgrad', sigma,coefs);
+        obj.sing = 'hs';
+        obj.opdims = [2,1];
+
     otherwise
         error('Unknown Laplace kernel type ''%s''.', type);
 
