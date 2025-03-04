@@ -1,6 +1,8 @@
 
 .. role:: matlab(code)
-   :language: matlab   
+   :language: matlab
+
+.. _transmission:	      
 
 Application to Transmission Problems with Multiple Junctions
 =============================================================
@@ -39,7 +41,7 @@ functionality of the :matlab:`chunkgraph` to identify its regions and edges.
 For electromagnetic scattering, in the transverse
 electric or transverse magnetic mode, the potentials $u_{j}$
 in $\Omega_{j}$, $j=1,\ldots n_{r}$ satisfy
-the following transmission boundary value problem
+the following transmission boundary value problem 
 
 .. math::
 

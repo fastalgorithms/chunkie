@@ -5,7 +5,7 @@
 Solving Standard Boundary Value Problems
 =========================================
 
-Chunkie uses the integral equation method to solve PDEs.
+ChunkIE uses the integral equation method to solve PDEs.
 In contrast with finite element methods, where the PDE is
 typically converted to a weak form, the standard approach for
 an integral equation method is to select an integral representation
@@ -231,6 +231,7 @@ can be solved with very little coding:
    :alt: solution of Laplace equation
    :align: center
 		
+.. _helmholtzsimple:
 
 A Helmholtz Scattering Problem
 -------------------------------
