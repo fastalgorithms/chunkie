@@ -122,12 +122,6 @@ in0 = and((xx.^2+yy.^2)<a^2, ...
 in0 = in0(:);
 tic; in = chunkerinterior(chnkr,{x1,x1}); toc
 
-close all
-clf
-plot(chnkr,'g-d')
-hold on
-plot(xx(in0~= in),yy(in0 ~= in),'rx')
-
 % clf
 % plot(chnkr,'g-o')
 % hold on

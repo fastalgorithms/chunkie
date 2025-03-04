@@ -177,7 +177,6 @@ in = abs(vals1+1) < abs(vals1);
 iffy = min(abs(vals1+1),abs(vals1)) > 1e-2;
 
 ipt = find(iffy(:));
-find(ipt == 519)
 pts_iffy = pts(:,iffy);
 
 optsflag = [];  optsflag.rho = rho; optsflag.occ = 5;
