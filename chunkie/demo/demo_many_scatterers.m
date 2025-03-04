@@ -5,7 +5,6 @@
 % Demonstrate transmission problem with interleaved kernel
 % Demonstrate derived quantity
 
-
 % planewave direction
 phi = 0;
 % ambient wavenumber
@@ -64,30 +63,25 @@ fprintf('Geometry generated\n')
 figure(3); clf;
 plot(chnkr)
 axis equal
-% hold on
-% quiver(chnkr)
-% hold off
 
 %% Make system
 % define system kernel
 
-
 coefs = ones(2,2,2);
-% we multiply normal derivative by negative one
-coefs(2,:,:) = -1;
-fkern = kernel('helmdiff','all',zks,coefs);
+coefs(:,2,:) = -1;
+fkern = kernel('helmdiff', 'all', zks, coefs);
 
 % define eval kernels
 fkern_eval(2,1) = kernel();
 for i=1:2
     Dk = kernel('helm', 'd', zks(i));
     Sk = kernel('helm', 's', zks(i));
-    fkern_eval(i) = kernel([Dk, Sk]);
+    fkern_eval(i) = kernel([Dk, (-1)*Sk]);
 end
 
 % define boundary data
 rhs_val = -planewave(kvec,chnkr.r(:,:));
-rhs_grad = -1i*sum(kvec.*chnkr.n(:,:),1).*rhs_val;
+rhs_grad = 1i*sum(kvec.*chnkr.n(:,:),1).*rhs_val;
 
 % interleave data
 rhs = zeros(2*chnkr.npt,1);

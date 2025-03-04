@@ -20,7 +20,7 @@ for a density $\sigma$
 If $(0,0)$ is a vertex on $\Gamma$, then for $x\in \Gamma$ in the
 vicinity of the corner, $\sigma$ is well-approximated by functions
 of the form $|r|^{\mu} \log{r}^{\eta}$ where $r=|x|$, $\mu \in \mathbb{C}$ 
-with $\textrm{Re}(\mu) > -1$ and $\eta \in \mathbb{R} > 0$. For example, 
+with $\textrm{Re}(\mu) > -1$ and $\eta \in \mathbb{R} \geq 0$. For example, 
 for the Laplace and Helmholtz Neumann boundary value problem, 
 $\mu \in \mathbb{R} > -1/2$. The approximation of  
 such functions with Gauss-Legendre panel based discretizations to a tolearance
@@ -179,17 +179,90 @@ illustrated below:
 Mixed Boundary Conditions
 --------------------------
 
+Singularities arise solutions to PDEs and related integral equations
+when different parts of the boundary impose different boundary conditions.
+For simplicity, consider the following Laplace mixed boundary value problem
+for the potential $u$ on a domain $\Omega$ with boundary $\Gamma$,
+
+.. math::
+
+   
+   \begin{align*}
+   \Delta u &= 0 & \textrm{ in } \Omega \; , \\
+   u &= f_{D} & \textrm{ on } \Gamma_{D} \; , \\
+   \frac{\partial u}{\partial n} &= f_{N} & \textrm{ on } \Gamma_{N} \; , 
+   \end{align*}
+
+where $\Gamma_{D}$ and $\Gamma_{N}$ are a partition of the boundary, 
+i.e. $\Gamma = \Gamma_{D} \cup \Gamma_{N}$, with 
+$\Gamma_{D} \cup \Gamma_{N} = (0,0)$. Then as above, the solution
+to the PDE and the associated integral equation is singular in the vicinity
+of the origin and can be well-approximated by functions of the form
+$r^{\mu} \log(r)^{\eta}$ with $\mu \in \mathbb{R} > -1/2$, and $\eta \geq 0$.
+This singular behavior persists even when the boundary is smooth across
+the origin. Thus, to handle such mixed boundary value problems, it is
+essential to use :matlab:`chunkgraphs` instead of :matlab:`chunkers`
+to define such boundary value problems, with a vertex introduced
+at every point at which the boundary conditions change.
 
 
+Recall that the Green function for the Laplace equation is
 
+.. math::
 
+   G_0 (x,y) = -\frac{1}{2\pi} \log |x-y|
+   
+The standard choice for solving such a mixed boundary value problem 
+is to use a *single layer potential* on $\Gamma_{N}$ and a
+*double layer potential* on $\Gamma_{D}$, 
 
+.. math::
+
+   u(x) = 2[S_{\Gamma_{N}}\sigma_{N}](x) - 2[D_{\Gamma_{D}}\sigma_{D}](x) 
+
+where
+
+.. math::
+   
+   \begin{align*}
+   [S_{\Gamma_{N}}\sigma_{N}](x) = \int_{\Gamma_{N}} G_0(x,y) \sigma_{N}(y) ds(y) \; ,\\
+   [D_{\Gamma_{D}}\sigma_{D}](x) = \int_{\Gamma_{D}} n(y) \cdot \nabla_{y} G_0(x,y) \sigma_{D}(y) ds(y) \; .
+   \end{align*}
+
+On imposing the boundary conditions, we get the following system of integral equations
+for $\sigma_{D}$ and $\sigma_{N}$
+
+.. math::
+
+   \begin{align*}
+   \sigma_{D}(x) - 2[D_{\Gamma_{D}}\sigma_{D}](x) + 2[S_{\Gamma_{N}}\sigma_{N}](x) &= f_{D} \,, \,\, \textrm{ on } \Gamma_{D} \,, \\
+   \sigma_{N}(x) - 2[D'_{\Gamma_{D}}\sigma_{D}](x) + 2[S'_{\Gamma_{N}}\sigma_{N}](x) &= f_{N} \,,\,\,  \textrm{ on } \Gamma_{N} \,, 
+   \end{align*}
+
+where $S'$ and $D'$ are restrictions of the normal derivatives of 
+$S$ and $D$ respectively. 
+
+Here is an example illustrating a mixed boundary value problem on a star-shaped
+domain:
+
+.. include:: ../../chunkie/demo/demo_mixed_bc.m
+   :literal:
+   :code: matlab
+   :start-after: %% Define geometry 
+   :end-before: % END DEMO MIXED BC 
+
+.. image:: ../../chunkie/demo/mixed_bc_plot.png
+   :width: 500px
+   :alt: Total field in multiply connected domain for dielectric problem
+   :align: center
 
 
 .. [Hel2012] Helsing, Johan. "Solving integral equations on piecewise
 	     smooth boundaries using the RCIP method: a tutorial." arXiv preprint
 	     1207.6737 (2012) 
 
-.. [Bru2009] Helsing, Johan. "Solving integral equations on piecewise
-	     smooth boundaries using the RCIP method: a tutorial." arXiv preprint
-	     1207.6737 (2012) 
+.. [Bru2009] Bruno, Oscar, Tim Elling, and Catilin Turc. "Regularized
+       integral equations and fast high‐order solvers 
+       for sound‐hard acoustic scattering problems." 
+       International Journal for Numerical Methods in Engineering 91, 
+       no. 10 (2012): 1045-1072.
