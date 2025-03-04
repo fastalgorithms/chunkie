@@ -2,7 +2,6 @@
 % inside a domain or not
 % 
 
-clearvars; close all;
 seed = 8675309;
 rng(seed);
 
@@ -114,8 +113,20 @@ x1 = linspace(-L,L,100);
 targs = [xx(:).'; yy(:).']; 
 xv=[chnkr_ext.r(1,:),nan,chnkr_int.r(1,:)];
 yv=[chnkr_ext.r(2,:),nan,chnkr_int.r(2,:)];
-tic; in0 = inpolygon(xx(:),yy(:),xv,yv); toc
+%tic; in0 = inpolygon(xx(:),yy(:),xv,yv); toc
+tt = atan2(yy-ctr(2),xx-ctr(1)) + 2*pi;
+st = starfish(tt(:),3,amp,[0;0],pi/4,scale);
+ss2 = reshape(st(1,:).^2 + st(2,:).^2,size(xx));
+in0 = and((xx.^2+yy.^2)<a^2, ...
+    (xx-ctr(1)).^2 + (yy-ctr(2)).^2 > ss2);
+in0 = in0(:);
 tic; in = chunkerinterior(chnkr,{x1,x1}); toc
+
+close all
+clf
+plot(chnkr,'g-d')
+hold on
+plot(xx(in0~= in),yy(in0 ~= in),'rx')
 
 % clf
 % plot(chnkr,'g-o')
@@ -124,5 +135,4 @@ tic; in = chunkerinterior(chnkr,{x1,x1}); toc
 % scatter(xx(~in(:)),yy(~in(:)),'rx')
 
 assert(all(in0 == in));
-
 

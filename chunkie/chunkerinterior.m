@@ -124,20 +124,15 @@ else
    useflam_final = useflam;
 end
 
-% use bernstein ellipses and rectangles to flag problematic points
-%
 
 eps_local = 1e-3;
-
-rho = 1.2;
-
-% do Cauchy integral with oversampling 
-
+rho = 1.6;
 npoly = chnkr.k;
 nlegnew = chnk.ellipse_oversample(rho,npoly,eps_local);
 nlegnew = max(nlegnew,chnkr.k);
 
 [chnkr2] = upsample(chnkr,nlegnew);
+
 
 icont = false;
 if usefmm_final
@@ -176,22 +171,74 @@ if ~usefmm_final || icont
 end
 in = abs(vals1+1) < abs(vals1);
 
-% for points where integral rule is less definitive, use inpolygon
+% for points where the integral might be inaccurate:
+% find close boundary point and check normal direction
 
-ingood = or(abs(vals1+1) < 0.05,abs(vals1) < 0.05);
+iffy = min(abs(vals1+1),abs(vals1)) > 1e-2;
 
-[inds,~,info] = sortinfo(chnkr);
-rr = chnkr.r(:,:,inds(:));
-ncomp = info.ncomp;
-nchs = info.nchs;
-ladr = cumsum([1;nchs(:)]);
+ipt = find(iffy(:));
+find(ipt == 519)
+pts_iffy = pts(:,iffy);
 
-xv = []; yv = [];
-for j = 1:ncomp
-    xt = rr(1,:,ladr(j):(ladr(j+1)-1));
-    yt = rr(2,:,ladr(j):(ladr(j+1)-1));
-    xv = [xv; nan; xt(:)];
-    yv = [yv; nan; yt(:)];
+optsflag = [];  optsflag.rho = rho; optsflag.occ = 5;
+flag = flagnear_rectangle(chnkr,pts_iffy,opts);
+flag2 = flagnear_rectangle(chnkr,chnkr.r(:,:),opts);
+flag2 = ((flag2.'*kron(speye(chnkr.nch),ones(chnkr.k,1))) > 1).';
+
+flag = (flag2*flag.').';
+
+npts_iffy = numel(pts_iffy)/2;
+assert(npts_iffy == length(ipt));
+distmins = inf(npts_iffy,1);
+dss = zeros(2,npts_iffy);
+rss = zeros(2,npts_iffy);
+
+k = chnkr.k;
+[t,~,u] = lege.exps(k);
+
+for i = 1:chnkr.nch
+
+    % check side based on closest boundary node
+    rval = chnkr.r(:,:,i);
+    dval = chnkr.d(:,:,i);
+    nval = chnkr.n(:,:,i);
+    [ji] = find(flag(:,i));
+
+    ptsi = pts_iffy(:,ji);
+    nptsi = size(ptsi,2);
+    dist2all = reshape(sum( abs(reshape(ptsi,2,1,nptsi) ...
+                    - reshape(rval,2,k,1)).^2, 1),k,nptsi);
+    [dist2all,ipti] = min(dist2all,[],1);
+    for j = 1:length(ji)
+        jj = ji(j);
+        if dist2all(j) < distmins(jj)
+            distmins(jj) = dist2all(j);
+            rss(:,jj) = rval(:,ipti(j));
+            dss(:,jj) = dval(:,ipti(j));
+        end
+    end
+
+    % if angle is small do a refined search for closest point
+    ptsn = nval(:,ipti);
+    diffs = rval(:,ipti)-ptsi;
+    dots = sum(ptsn.*diffs,1);
+    
+    jsus = abs(dots) < 0.9*sqrt(dist2all);
+    jii = ji(jsus);
+    [~,rs,ds,~,dist2s] = chnk.chunk_nearparam(rval,pts_iffy(:,jii),[],t,u);
+    for j = 1:length(jii)
+        jj = jii(j);
+        if dist2s(j) < distmins(jj)
+            distmins(jj) = dist2s(j);
+            rss(:,jj) = rs(:,j);
+            dss(:,jj) = ds(:,j);
+        end
+    end
 end
 
-in(~ingood) = inpolygon(pts(1,~ingood),pts(2,~ingood),xv,yv);
+for i = 1:length(ipt)
+    if distmins(i) < inf
+        jj = ipt(i);
+        in(jj) = (rss(:,i)-pts_iffy(:,i)).'*[dss(2,i);-dss(1,i)] > 0;
+    end
+end
