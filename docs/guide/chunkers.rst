@@ -68,6 +68,21 @@ parameterized curves:
 
 |pic1|  |pic2|
 
+For a given set of points, a spline curve can be fit to them and
+discretized as a chunker using `chunkerfit`:
+
+.. include:: ../../chunkie/guide/guide_chunkers.m
+   :literal:
+   :code: matlab
+   :start-after: % START CHUNKERFIT
+   :end-before: % END CHUNKERFIT
+
+.. image:: ../../chunkie/guide/guide_chunkers_chunkerfit.png
+   :width: 500px
+   :alt: circle chunker
+   :align: center
+
+
 Given a set of vertices, a rounded polygon can be defined:
 
 .. include:: ../../chunkie/guide/guide_chunkers.m
@@ -80,6 +95,8 @@ Given a set of vertices, a rounded polygon can be defined:
    :width: 500px
    :alt: circle chunker
    :align: center
+
+	   
 
 
 Working with Chunkers
