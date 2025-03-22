@@ -56,6 +56,28 @@ if strcmpi(type,'dprime')
       + hess(:,:,3).*nysrc.*nytarg);
 end
 
+if strcmpi(type,'sprimeprime')
+  targnorm = targinfo.n;
+  [~,~,hess] = chnk.lap2d.green(src,targ);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+  submat = (hess(:,:,1).*nxtarg.*nxtarg + hess(:,:,2).*(nytarg.*nxtarg+nxtarg.*nytarg)...
+      + hess(:,:,3).*nytarg.*nytarg);
+end
+
+if strcmpi(type,'deltasppdp')
+  targnorm = targinfo.n;
+  srcnorm = srcinfo.n;
+  [~,~,hess] = chnk.lap2d.green(src,targ);
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+  dnx = nxtarg-nxsrc;
+  dny = nytarg-nysrc;
+  submat = (hess(:,:,1).*dnx.*nxtarg + hess(:,:,2).*(dny.*nxtarg+dnx.*nytarg)...
+      + hess(:,:,3).*dny.*nytarg);
+end
 
 if strcmpi(type,'s')
     submat = chnk.lap2d.green(src,targ);
