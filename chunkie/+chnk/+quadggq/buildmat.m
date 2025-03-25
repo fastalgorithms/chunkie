@@ -41,7 +41,7 @@ if (nargin < 3)
 end
 
 if (nargin <6)
-    list = [];
+    ilist = [];
 end
 
 k = chnkr.k;
