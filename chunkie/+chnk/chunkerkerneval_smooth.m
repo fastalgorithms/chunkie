@@ -161,8 +161,8 @@ else
             targinfo_flam.n = repelem(targinfo.n(:,:),1,opdims(1));
         end
 
-        if isfield(targinfo, 'data') && ~isempty(targinfo,'data')
-            warning('FLAM with chunker data: not fully supported, turning off proxy fun');
+        if isfield(targinfo, 'data') && ~isempty(targinfo.data)
+            warning('CHNK.CHUNKERKERNEVAL_SMOOTH: chunker object had point data, not using proxy');
             targinfo_flam.data = repelem(targinfo.data(:,:),1,opdims(1));
             ifproxy = false;
         end
