@@ -195,7 +195,9 @@ for i=1:nchunkers
     targinfo = [];
    	targinfo.r = chnkrs(i).r(:,2); targinfo.d = chnkrs(i).d(:,2); 
    	targinfo.d2 = chnkrs(i).d2(:,2); targinfo.n = chnkrs(i).n(:,2);
-	targinfo.data = chnkrs(i).data(:, 2);
+    if ~isempty(chnkrs(i).data)
+	    targinfo.data = chnkrs(i).data(:, 2);
+    end
     lchunks(i) = chnkrs(i).npt;
     
     for j=1:nchunkers
@@ -205,7 +207,9 @@ for i=1:nchunkers
         srcinfo = []; 
         srcinfo.r = chnkrs(j).r(:,1); srcinfo.d = chnkrs(j).d(:,1); 
         srcinfo.d2 = chnkrs(j).d2(:,1); srcinfo.n = chnkrs(j).n(:,1);
-	srcinfo.data = chnkrs(j).data(:, 1);
+        if ~isempty(chnkrs(j).data)
+	        srcinfo.data = chnkrs(j).data(:, 1);
+        end
 
         if (size(kern) == 1)
             ftemp = kern.eval(srcinfo,targinfo);
