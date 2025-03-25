@@ -38,6 +38,9 @@ for j = 1:k
     dfinenrm = sqrt(sum(dfine{j}.^2,1));
     nfine{j} = [dfine{j}(2,:); -dfine{j}(1,:)]./dfinenrm;
     dsdt{j} = (dfinenrm(:)).*whts0{j};
+    if(not (isempty(data)))
+	ddfine{j} = ((ainterps0{j}*(dd.'))).';
+    end
 end
 
 srcinfo = [];
@@ -50,7 +53,9 @@ for j = 1:k
   targinfo.d2 = d2s(:,j); targinfo.n = ns(:,j);
   if(isempty(dd))
       targinfo.data = [];
+      srcinfo.data = [];
   else
+    srcinfo.data = ddfine{j};
     targinfo.data = dd(:,j);
   end
     
