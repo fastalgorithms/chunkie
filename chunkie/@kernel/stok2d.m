@@ -55,6 +55,8 @@ function obj = stok2d(type, mu, coefs)
 
 % See also CHNK.STOK2D.KERN.
 
+% author: Dan Fortunato  
+
 if ( nargin < 1 )
     error('Missing Stokes kernel type.');
 end

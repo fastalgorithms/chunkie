@@ -93,14 +93,9 @@ ytarg = linspace(rmin(2)-0.1*yl,rmax(2)+0.1*yl,nplot);
 targets = zeros(2,length(xxtarg(:)));
 targets(1,:) = xxtarg(:); targets(2,:) = yytarg(:);
 
-start = tic; in1 = chunkerinterior(merge(cgrph.echnks(edir)),{xtarg,ytarg});
-in2 = chunkerinterior(reverse(merge(cgrph.echnks(eneu))),{xtarg,ytarg}); 
-t1 = toc(start);
-in = in1 & ~in2;
-out = ~in;
-
 ids= chunkgraphinregion(cgrph,{xtarg,ytarg});
-nnz(in-(ids==2))
+in = ids == 2;
+in2 = ids == 3;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
 

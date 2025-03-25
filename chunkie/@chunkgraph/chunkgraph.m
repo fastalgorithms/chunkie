@@ -58,6 +58,11 @@ classdef chunkgraph
 %   obj = refine(obj,varargin) - refine the curve
 %   wts = weights(obj) - scaled integration weights on curve
 %   rn = normals(obj) - recompute normal vectors
+%   flag = flagnear(obj,pts) - find points close to the chunkgraph
+%   flag = flagnear_rectangle(obj,pts) - find points close to chunkgraph
+%           using bounding rectangles
+%   flag = flagnear_rectangle_grid(obj,x,y) - find points defined via 
+%      a meshgrid of points that are close to the chunkgraph
 %   obj = obj.move(r0,r1,trotat,scale) - translate, rotate, etc
 %   rmin = min(obj) - minimum of coordinate values
 %   rmax = max(obj) - maximum of coordinate values
@@ -70,9 +75,8 @@ classdef chunkgraph
 %   kappa = signed_curvature(obj) - get signed curvature along curve
 %   obj = makedatarows(obj,nrows) - add nrows rows to the data storage.
 %   rflag = datares(obj,opts) - check if data in data rows is resolved
-%
-%   To add:
-%     flagnear
+%   edge_reg = find_regions_of_edges(obj) - determine regions on either 
+%                side of each edge
 %
 % Syntax:
 %
@@ -422,6 +426,7 @@ classdef chunkgraph
         obj = makedatarows(obj, nrows)
         scatter(obj, varargin)
         rres = datares(obj, opts)
+        edge_regs = find_edge_regions(obj)
 
         
     end
