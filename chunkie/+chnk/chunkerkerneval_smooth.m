@@ -94,6 +94,9 @@ if strcmpi(imethod,'direct')
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
             srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
+            if ~isempty(chnkr.data)
+                srcinfo.data = chnkr.data(:,:,i);
+            end
             kernmat = kerneval(srcinfo,targinfo);
 
             selfzeroch = selfzero(:, opdims(2)*k*(i-1) + (1:opdims(2)*k));
@@ -115,6 +118,9 @@ if strcmpi(imethod,'direct')
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
             srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
+            if ~isempty(chnkr.data)
+                srcinfo.data = chnkr.data(:,:,i);
+            end
             kernmat = kerneval(srcinfo,targinfo);
 
             rowkill = find(flag(:,i)); 
@@ -139,6 +145,8 @@ else
         xflam1 = repmat(xflam1,opdims(2),1);
         xflam1 = reshape(xflam1,chnkr.dim,numel(xflam1)/chnkr.dim);
 
+        ifproxy = true;
+
         targinfo_flam = [];
         targinfo_flam.r = repelem(targinfo.r(:,:),1,opdims(1));
         if isfield(targinfo, 'd')
@@ -153,7 +161,11 @@ else
             targinfo_flam.n = repelem(targinfo.n(:,:),1,opdims(1));
         end
 
-% TODO: Pull through data?
+        if isfield(targinfo, 'data') && ~isempty(targinfo,'data')
+            warning('FLAM with chunker data: not fully supported, turning off proxy fun');
+            targinfo_flam.data = repelem(targinfo.data(:,:),1,opdims(1));
+            ifproxy = false;
+        end
 
         matfun = @(i,j) chnk.flam.kernbyindexr(i, j, targinfo_flam, ...,
                            chnkr, kerneval, opdims, selfzero);
@@ -163,11 +175,15 @@ else
         tmax = max(targinfo.r(:,:),[],2); tmin = min(targinfo.r(:,:),[],2);
         wmax = max(abs(tmax-tmin));
         width = max(width,wmax/3);  
-        npxy = chnk.flam.nproxy_square(kerneval,width);
-        [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
+        if ifproxy
+            npxy = chnk.flam.nproxy_square(kerneval,width);
+            [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
-        pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr,kerneval,opdims,pr,ptau,pw,pin);
+            pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
+                ctr,chnkr,kerneval,opdims,pr,ptau,pw,pin);
+        else
+            pxyfun = [];
+        end
 
         optsifmm=[]; optsifmm.Tmax=Inf;
         F = ifmm(matfun,targinfo_flam.r,xflam1,200,1e-14,pxyfun,optsifmm);
@@ -191,7 +207,9 @@ else
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
             srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
-
+            if ~isempty(chnkr.data)
+                srcinfo.data = chnkr.data(:,:,i);
+            end
             delsmooth = find(flag(:,i)); 
             delsmoothrow = (opdims(1)*(delsmooth(:)-1)).' + (1:opdims(1)).';
             delsmoothrow = delsmoothrow(:);
@@ -211,6 +229,10 @@ else
                 targinfo_use.n = targinfo.n(:,delsmooth);
             end
 
+            if isfield(targinfo,'data') && ~isempty(targinfo.data)
+                targinfo_use.data = targinfo.data(:,delsmooth);
+            end
+            
             kernmat = kerneval(srcinfo,targinfo_use);
 
             selfzeroch = selfzero(:, opdims(2)*k*(i-1) + (1:opdims(2)*k));

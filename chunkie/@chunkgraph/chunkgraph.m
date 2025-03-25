@@ -358,6 +358,10 @@ classdef chunkgraph
             chnk = merge(obj.echnks);
             wts = chnk.wts;
         end
+        function data = get.data(obj)
+            chnk = merge(obj.echnks);
+            data = chnk.data;
+        end
         function adj = get.adj(obj)
             chnk = merge(obj.echnks);
             adj = chnk.adj;

@@ -628,6 +628,7 @@ end
 
 targs = chnkrt.r(:,:); targn = chnkrt.n(:,:); 
 targd = chnkrt.d(:,:); targd2 = chnkrt.d2(:,:);
+targdata = chnkrt.data(:,:);
 
 [~,nt] = size(targs);
 
@@ -650,6 +651,7 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
+data = chnkr.data;
 
 wtss = chnkr.wts;
 
@@ -658,14 +660,26 @@ for i = 1:nch
     jmatend = i*k*opdims(2);
                     
     [ji] = find(flag(:,i));
-    mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
-                targd(:,ji),targn(:,ji),targd2(:,ji),kernev,opdims,t,w,opts);
-            
+    if ~isempty(targdata)
+        mat1 =  chnk.adapgausswts(r,d,n,d2,data,ct,bw,i,targs(:,ji), ...
+                targd(:,ji),targn(:,ji),targd2(:,ji),targdata(:,ji),...
+                kernev,opdims,t,w,opts);
+    else
+        mat1 =  chnk.adapgausswts(r,d,n,d2,data,ct,bw,i,targs(:,ji), ...
+                targd(:,ji),targn(:,ji),targd2(:,ji),[],...
+                kernev,opdims,t,w,opts);
+    end            
     if corrections
         targinfo = []; targinfo.r = targs(:,ji); targinfo.d = targd(:,ji);
         targinfo.n = targn(:,ji); targinfo.d2 = targd2(:,ji);
+        if ~isempty(targdata)
+            targinfo.data = targdata(:,ji);
+        end
         srcinfo = []; srcinfo.r = r(:,:,i); srcinfo.d = d(:,:,i); 
         srcinfo.n = n(:,:,i); srcinfo.d2 = d2(:,:,i);
+        if ~isempty(data)
+            srcinfo.data = data(:,:,i);
+        end
         wtsi = wtss(:,i); wtsi = repmat(wtsi(:).',opdims(2),1);
         mat1 = mat1 - kernev(srcinfo,targinfo).*(wtsi(:).');
     end

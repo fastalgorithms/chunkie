@@ -1,5 +1,5 @@
-function [mat,maxrecs,numints,iers] = adapgausswts(r,d,n,d2,ct,bw,j,...
-    rt,dt,nt,d2t,kern,opdims,t,w,opts)
+function [mat,maxrecs,numints,iers] = adapgausswts(r,d,n,d2,data,ct,bw,j,...
+    rt,dt,nt,d2t,datat,kern,opdims,t,w,opts)
 %CHNK.ADAPGAUSSWTS adaptive integration for interaction of kernel on chunk 
 % at targets
 %
@@ -42,7 +42,7 @@ nnmax=100000;
 maxdepth=52; % since double-precision only has 52-bits of precision
 transinv = true;
 
-if nargin < 17
+if nargin < 18
     opts = [];
 end
 
@@ -67,6 +67,10 @@ rs_ = r(:,:,j);
 ds = d(:,:,j);
 ns = n(:,:,j);
 d2s = d2(:,:,j);
+datas = [];
+if ~isempty(data)
+    datas = data(:,:,j);
+end
 
 stack = zeros(2,maxdepth);
 vals = zeros(opdims(1)*opdims(2)*k,maxdepth);
@@ -83,6 +87,10 @@ for ii = 1:ntarg
     dt1 = dt(:,ii);
     nt1 = nt(:,ii);
     d2t1 = d2t(:,ii);
+    datat1 = [];
+    if ~isempty(datat)
+        datat1 = datat(:,ii);
+    end
 
     % shift everything so that the target is at the origin
     if transinv
@@ -96,7 +104,7 @@ for ii = 1:ntarg
 
     stack(1,1)=-1;
     stack(2,1)=1;
-    vals(:,1) = oneintp(-1,1,rs,ds,ns,d2s,ct,bw,rt1,dt1,nt1,d2t1,kern,opdims,t,w);
+    vals(:,1) = oneintp(-1,1,rs,ds,ns,d2s,datas,ct,bw,rt1,dt1,nt1,d2t1,datat1,kern,opdims,t,w);
 
     % recursively integrate the thing
 
@@ -113,8 +121,8 @@ for ii = 1:ntarg
 
         a = stack(1,jj); b = stack(2,jj);
         c=(a+b)/2;
-        v2 = oneintp(a,c,rs,ds,ns,d2s,ct,bw,rt1,dt1,nt1,d2t1,kern,opdims,t,w);
-        v3 = oneintp(c,b,rs,ds,ns,d2s,ct,bw,rt1,dt1,nt1,d2t1,kern,opdims,t,w);
+        v2 = oneintp(a,c,rs,ds,ns,d2s,datas,ct,bw,rt1,dt1,nt1,d2t1,datat1,kern,opdims,t,w);
+        v3 = oneintp(c,b,rs,ds,ns,d2s,datas,ct,bw,rt1,dt1,nt1,d2t1,datat1,kern,opdims,t,w);
     
         dd= max(abs(v2+v3-vals(:,jj)));
         if(dd <= eps) 
@@ -167,7 +175,7 @@ end
 
 end
 
-function val = oneintp(a,b,rs,ds,ns,d2s,ct,bw,rt,dt,nt,d2t,kern,opdims,t,w)
+function val = oneintp(a,b,rs,ds,ns,d2s,datas,ct,bw,rt,dt,nt,d2t,datat,kern,opdims,t,w)
 %       integrate the kernel multiplied by each Lagrange interpolant
 %   on the interval [a,b] at a single target
 
@@ -186,12 +194,16 @@ rint = rs*interpmat;
 dint = ds*interpmat;
 nint = ns*interpmat;
 d2int = d2s*interpmat;
+dataint = [];
+if ~isempty(datas)
+    dataint = datas*interpmat;
+end
 dintlen = sqrt(sum(dint.^2,1));
 %tauint = bsxfun(@rdivide,dint,dintlen);
 srcinfo = []; srcinfo.r = rint; srcinfo.d = dint; 
-srcinfo.d2 = d2int; srcinfo.n = nint;
+srcinfo.d2 = d2int; srcinfo.n = nint; srcinfo.data = dataint;
 targinfo = []; targinfo.r = rt; targinfo.d = dt; 
-targinfo.d2 = d2t; targinfo.n = nt;
+targinfo.d2 = d2t; targinfo.n = nt; targinfo.data = datat;
 mat_tt = kern(srcinfo,targinfo);
 
 dsdt = u*( (w(:).' ).*dintlen);

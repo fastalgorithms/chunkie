@@ -23,6 +23,7 @@ adj = chnkr.adj;
 d = chnkr.d;
 d2 = chnkr.d2;
 n = chnkr.n;
+data = chnkr.data;
 
 [t,wts,u] = lege.exps(k);
 bw = lege.barywts(k);
@@ -76,7 +77,11 @@ for i = 1:nch
         dt = d(:,:,ibefore);
         d2t = d2(:,:,ibefore);
         nt = n(:,:,ibefore);
-        submat = chnk.adapgausswts(r,d,n,d2,t,bw,i,rt,dt,nt,d2t, ...
+        datat = [];
+        if ~isempty(data)
+            datat = data(:,:,ibefore);
+        end
+        submat = chnk.adapgausswts(r,d,n,d2,data,t,bw,i,rt,dt,nt,d2t,datat, ...
             kern,opdims,t2,w2);
 
         imat = 1 + (ibefore-1)*k*opdims(1);
@@ -89,7 +94,11 @@ for i = 1:nch
         dt = d(:,:,iafter);
         nt = n(:,:,iafter);
         d2t = d2(:,:,iafter);
-        submat = chnk.adapgausswts(r,d,n,d2,t,bw,i,rt,dt,nt,d2t, ...
+        datat = [];
+        if ~isempty(data)
+            datat = data(:,:,iafter);
+        end 
+        submat = chnk.adapgausswts(r,d,n,d2,data,t,bw,i,rt,dt,nt,d2t,datat, ...
             kern,opdims,t2,w2);
 
         imat = 1 + (iafter-1)*k*opdims(1);
@@ -100,7 +109,7 @@ for i = 1:nch
     
     % self
     
-    submat = chnk.quadggq.diagbuildmat(r,d,n,d2,[],i,kern,opdims,...
+    submat = chnk.quadggq.diagbuildmat(r,d,n,d2,data,i,kern,opdims,...
         xs0,wts0,ainterps0kron,ainterps0);
 
     imat = 1 + (i-1)*k*opdims(1);
@@ -161,8 +170,12 @@ if robust
         dt = d(:,targfix);
         d2t = d2(:,targfix);
         nt = n(:,targfix);
+        datat = [];
+        if ~isempty(data)
+            datat = data(:,:,targfix);
+        end
 
-        submat = chnk.adapgausswts(r,d,n,d2,t,bw,i,rt,dt,nt,d2t, ...
+        submat = chnk.adapgausswts(r,d,n,d2,data,t,bw,i,rt,dt,nt,d2t,datat, ...
                 kern,opdims,t2,w2);
             
         imats = bsxfun(@plus,(1:opdims(1)).',opdims(1)*(targfix(:)-1).');
