@@ -20,6 +20,8 @@ function obj = helm2d(type, zk, coefs)
 %   COEFS(2)*KERNEL.HELM2D('sp', ZK).
 % See also CHNK.HELM2D.KERN.
 
+% author: Dan Fortunato
+  
 if ( nargin < 1 )
     error('Missing Helmholtz kernel type.');
 end
