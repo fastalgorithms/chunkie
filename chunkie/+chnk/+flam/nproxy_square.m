@@ -40,8 +40,19 @@ function npxy = nproxy_square(kern, width, opts)
   srcinfo.d2 = randn(2,nsrc);
   srcinfo.n = [-srcinfo.d(2,:);srcinfo.d(1,:)] ./ sqrt(sum(srcinfo.d.^2,1));
 
+  stmp = [];
+  stmp.r = randn(2,1); stmp.d = randn(2,1); stmp.d2 = randn(2,1);
+  stmp.n = [-stmp.d(2,:);stmp.d(1,:)] ./ sqrt(sum(stmp.d.^2,1));
+
+  ttmp = [];
+  ttmp.r = randn(2,1); ttmp.d = randn(2,1); ttmp.d2 = randn(2,1);
+  ttmp.n = [-ttmp.d(2,:);ttmp.d(1,:)] ./ sqrt(sum(ttmp.d.^2,1));
+  
+  f = kern(stmp, ttmp);
+  [opdims(1), opdims(2)] = size(f);
+
   % strengths of random sources
-  sig = randn(nsrc,1);
+  sig = randn(opdims(2)*nsrc,1);
 
   npxy = 64;
 
@@ -50,6 +61,7 @@ function npxy = nproxy_square(kern, width, opts)
   one_more    = true;
   for i = 0:14
     [pr,ptau,pw] = chnk.flam.proxy_square_pts(npxy);
+    pwuse =  repmat(pw.', [opdims(1),1]); pwuse = pwuse(:);
     targinfo.r = width*pr;
     targinfo.d = ptau;
     targinfo.d2 = zeros(2,npxy);
@@ -57,7 +69,7 @@ function npxy = nproxy_square(kern, width, opts)
 
     % compute integral along proxy surface of potential from random sources
     % to see if we've resolved the kernel
-    intgrl = pw' * kern(srcinfo,targinfo) * sig;
+    intgrl = pwuse' * kern(srcinfo,targinfo) * sig;
    
     % check self convergence
     err = abs(intgrl - last_intgrl) / abs(intgrl);
