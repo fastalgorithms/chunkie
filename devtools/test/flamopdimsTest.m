@@ -176,7 +176,6 @@ if ~ifflam
     ntot = size(A);
     A = A + eye(ntot);
 else
-
     A = chunkerflam(chnkrs, Kmat, 1, opts_loc); 
 end
 

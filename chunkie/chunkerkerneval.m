@@ -27,6 +27,12 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %                   opts.flam supercedes opts.accel, if
 %                   both are true, then flam will be used. (false)
 %       opts.accel - if = true, use specialized fmm if defined 
+%                   for the kernel or use a generic FLAM fmm to accelerate
+%                   the smooth part of the eval. if false do direct. (true)
+%       opts.proxybylevel - if = true, determine the number of
+%                   necessary proxy points adaptively at each level of the 
+%                   factorization in ifmm. Typically needed only for 
+%                   moderate / high frequency problems. (false)
 %                   for the kernel, if it doesnt exist or if too few 
 %                   sources/targets, or if false, 
 %                   do direct. (true)
@@ -112,6 +118,7 @@ opts_use.accel = true;
 opts_use.forcefmm = false;
 opts_use.fac = 1.0;
 opts_use.eps = 1e-12;
+opts_use.proxybylevel = false;
 cormat = [];
 if isfield(opts,'forcesmooth'); opts_use.forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); opts_use.forceadap = opts.forceadap; end
@@ -129,6 +136,7 @@ end
 if isfield(opts,'accel'); opts_use.accel = opts.accel; end
 if isfield(opts,'fac'); opts_use.fac = opts.fac; end
 if isfield(opts,'eps'); opts_use.eps = opts.eps; end
+if isfield(opts,'proxybylevel'); opts_use.proxybylevel = opts.proxybylevel; end
 
 % Assign appropriate object to targinfo
 targinfo = [];
