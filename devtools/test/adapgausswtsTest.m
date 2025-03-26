@@ -98,8 +98,8 @@ opts.eps = 1e-5;
 ntimes = 100;
 start = tic;
 for i = 1:ntimes
-    [mat,maxrecs,numints,iers] = chnk.adapgausswts(r,d,n,d2,t,bw,j, ...
-        rt,dt,nt,d2t,fkern,opdims,t2,w2,opts);
+    [mat,maxrecs,numints,iers] = chnk.adapgausswts(r,d,n,d2,[],t,bw,j, ...
+        rt,dt,nt,d2t,[],fkern,opdims,t2,w2,opts);
 end
 t1 = toc(start);
 

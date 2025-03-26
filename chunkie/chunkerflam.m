@@ -163,6 +163,9 @@ for i=1:nchunkers
    	targinfo.r = chnkrs(i).r(:,2); targinfo.d = chnkrs(i).d(:,2); 
    	targinfo.d2 = chnkrs(i).d2(:,2); targinfo.n = chnkrs(i).n(:,2);
     lchunks(i) = size(chnkrs(i).r(:,:),2);
+    if ~isempty(chnkrs(i).data)
+        targinfo.data = chnkrs(i).data(:,2);
+    end
     
     for j=1:nchunkers
         
@@ -171,7 +174,9 @@ for i=1:nchunkers
         srcinfo = []; 
         srcinfo.r = chnkrs(j).r(:,1); srcinfo.d = chnkrs(j).d(:,1); 
         srcinfo.d2 = chnkrs(j).d2(:,1); srcinfo.n = chnkrs(j).n(:,1);
-
+        if ~isempty(chnkrs(j).data)
+            srcinfo.data = chnkrs(j).data(:,1);
+        end
         
         if (size(kern) == 1)
             ftemp = kern.eval(srcinfo,targinfo);
@@ -256,6 +261,11 @@ width = max(mmax-mmin);
 chnkrtotal = merge(chnkrs);
 
 matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrs,kern,opdims_mat,sp,l2scale);
+
+if ~isempty(chnkrtotal.data)
+    useproxy = false;
+    warning('CHUNKERFLAM: chunker object had point data, not using proxy');
+end
 
 if ~useproxy
     if strcmpi(flamtype,'rskelf')

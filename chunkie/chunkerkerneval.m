@@ -155,6 +155,7 @@ elseif isstruct(targobj)
     if isfield(targobj,"d"); targinfo.d = targobj.d(:,:); end
     if isfield(targobj,"d2"); targinfo.d2 = targobj.d2(:,:); end
     if isfield(targobj,"n"); targinfo.n = targobj.n(:,:); end
+    if isfield(targobj,"data"); targinfo.data = targobj.data(:,:); end
 elseif isnumeric(targobj)
     targinfo.r = targobj;
 else
@@ -175,6 +176,11 @@ opdims_mat = zeros(2,mk,nk);
 ntargs = zeros(mk,1);
 npts = zeros(nk,1);
 
+datadim = 0;
+if isfield(targinfo,'data') && ~isempty(targinfo.data)
+    datadim = size(targinfo.data,1);
+end
+
 for iii=1:mk
     itarg = (ids == iii);    
     ntargs(iii) = nnz(itarg);
@@ -182,6 +188,7 @@ for iii=1:mk
     targinfotmp = [];
     targinfotmp.r = randn(dim,1); targinfotmp.d = randn(dim,1);
     targinfotmp.d2 = randn(dim,1); targinfotmp.n = randn(dim,1);
+    targinfotmp.data = randn(datadim,1);
     
     for jjj=1:nk
         
@@ -191,7 +198,10 @@ for iii=1:mk
         srcinfo = []; 
         srcinfo.r = chnkr(jjj).r(:,1); srcinfo.d = chnkr(jjj).d(:,1); 
         srcinfo.d2 = chnkr(jjj).d2(:,1); srcinfo.n = chnkr(jjj).n(:,1);
-        npts(jjj) = chnkr(jjj).npt;
+        if ~isempty(chnkr(jjj).data)
+            srcinfo.data = chnkr(jjj).data(:,1);
+        end
+        npts(jjj) = chnkr(jjj).npt; 
 
         try
             ftemp = kern(iii,jjj).eval(srcinfo,targinfotmp);
@@ -237,6 +247,7 @@ targinfo0.r = targinfo.r(:,itarg);
 if isfield(targinfo,"d"); targinfo0.d = targinfo.d(:,itarg); end
 if isfield(targinfo,"d2"); targinfo0.d2 = targinfo.d2(:,itarg); end
 if isfield(targinfo,"n"); targinfo0.n = targinfo.n(:,itarg); end
+if isfield(targinfo,"data") && ~isempty(targinfo.data); targinfo0.data = targinfo.data(:,itarg); end
 
 irow0 = kron(itargstart(itarg),ones(rowdims(iii),1)) + repmat( (0:(rowdims(iii)-1)).',nnz(itarg),1);
 
@@ -433,6 +444,10 @@ end
 if isfield(targinfo, 'n')
     targn = targinfo.n;
 end
+datat = [];
+if isfield(targinfo,'data')
+    datat = targinfo.data;
+end
 
 
 fints = zeros(opdims(1)*nt,1);
@@ -446,13 +461,18 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
+data = chnkr.data;
 
 
 if isempty(flag) % do all to all adaptive
     for i = 1:nch
         for j = 1:nt
-            fints1 = chnk.adapgausskerneval(r,d,n,d2,ct,bw,i,dens,targs(:,j), ...
-                    targd(:,j),targn(:,j),targd2(:,j),kerneval,opdims,t,w,opts);
+            datat2 = [];
+            if ~isempty(datat)
+                datat2 = datat(:,j);
+            end
+            fints1 = chnk.adapgausskerneval(r,d,n,d2,data,ct,bw,i,dens,targs(:,j), ...
+                    targd(:,j),targn(:,j),targd2(:,j),datat2,kerneval,opdims,t,w,opts);
             
             indj = (j-1)*opdims(1);
             ind = indj(:).' + (1:opdims(1)).'; ind = ind(:);
@@ -462,8 +482,12 @@ if isempty(flag) % do all to all adaptive
 else % do only those flagged
     for i = 1:nch
         [ji] = find(flag(:,i));
-        [fints1,maxrec,numint,iers] =  chnk.adapgausskerneval(r,d,n,d2,ct,bw,i,dens,targs(:,ji), ...
-                    targd(:,ji),targn(:,ji),targd2(:,ji),kerneval,opdims,t,w,opts);
+        datat2 = [];
+        if ~isempty(datat)
+            datat2 = datat(:,ji);
+        end
+        [fints1,maxrec,numint,iers] =  chnk.adapgausskerneval(r,d,n,d2,data,ct,bw,i,dens,targs(:,ji), ...
+                    targd(:,ji),targn(:,ji),targd2(:,ji),datat2,kerneval,opdims,t,w,opts);
                 
         indji = (ji-1)*opdims(1);
         ind = (indji(:)).' + (1:opdims(1)).';

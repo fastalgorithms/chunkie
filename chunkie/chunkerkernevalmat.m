@@ -127,11 +127,24 @@ if isa(targobj, "chunker")
     targinfo.d = targobj.d(:,:);
     targinfo.d2 = targobj.d2(:,:);
     targinfo.n = targobj.n(:,:);
+    targinfo.data = targobj.data(:,:);
 elseif isa(targobj, "chunkgraph")
     targinfo.r = targobj.r(:,:);
     targinfo.d = targobj.d(:,:);
     targinfo.d2 = targobj.d2(:,:);
     targinfo.n = targobj.n(:,:);
+    targinfo.data = targinfo.data(:,:);
+elseif isstruct(targobj)
+    if isfield(targobj,"r")
+        targinfo.r = targobj.r(:,:);
+    else
+        error("CHUNKERKERNEVAL: input 4 must at least have positions " + ...
+            "defined");
+    end
+    if isfield(targobj,"d"); targinfo.d = targobj.d(:,:); end
+    if isfield(targobj,"d2"); targinfo.d2 = targobj.d2(:,:); end
+    if isfield(targobj,"n"); targinfo.n = targobj.n(:,:); end
+    if isfield(targobj,"data"); targinfo.data = targobj.data(:,:); end
 else
     targinfo.r = targobj;
 end
@@ -275,6 +288,10 @@ end
 if isfield(targinfo, 'n')
     targn = targinfo.n;
 end
+datat = [];
+if isfield(targinfo, 'data')
+    datat = targinfo.data;
+end
 
 
 % using adaptive quadrature
@@ -292,13 +309,14 @@ if isempty(flag)
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
+    data = chnkr.data;
     
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
-        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs, ...
-                    targd,targn,targd2,kern,opdims,t,w,opts);
+        mat(:,jmat:jmatend) =  chnk.adapgausswts(r,d,n,d2,data,ct,bw,i,targs, ...
+                    targd,targn,targd2,datat,kern,opdims,t,w,opts);
     end
     
 else
@@ -314,13 +332,18 @@ else
     d = chnkr.d;
     n = chnkr.n;
     d2 = chnkr.d2;
+    data = chnkr.data;
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
                         
         [ji] = find(flag(:,i));
-        mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
-                    targd(:,ji),targn(:,ji),targd2(:,ji),kern,opdims,t,w,opts);
+        datat2 = [];
+        if ~isempty(datat)
+            datat2 = datat(:,ji);
+        end
+        mat1 =  chnk.adapgausswts(r,d,n,d2,data,ct,bw,i,targs(:,ji), ...
+                    targd(:,ji),targn(:,ji),targd2(:,ji),datat2,kern,opdims,t,w,opts);
                 
         js1 = jmat:jmatend;
         js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);
