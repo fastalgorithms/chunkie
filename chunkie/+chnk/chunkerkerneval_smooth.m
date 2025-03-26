@@ -175,12 +175,11 @@ else
         tmax = max(targinfo.r(:,:),[],2); tmin = min(targinfo.r(:,:),[],2);
         wmax = max(abs(tmax-tmin));
         width = max(width,wmax/3);  
+        verb = false; % TODO: make this an option to chunkerkerneval?
         if ifproxy
             npxy = chnk.flam.nproxy_square(kerneval,width);
             [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
-
-            verb = false; % TODO: make this an option to chunkerkerneval?
             optsnpxy = []; optsnpxy.rank_or_tol = opts.eps;
             pxyfun = @(lvl) proxyfunrbylevel(width,lvl,optsnpxy, ...
               chnkr,kerneval,opdims,verb && opts.proxybylevel);
