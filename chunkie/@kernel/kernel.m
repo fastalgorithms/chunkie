@@ -95,6 +95,10 @@ classdef kernel
               switch lower(kern)
                   case {'laplace', 'lap', 'l'}
                       obj = kernel.lap2d(varargin{:});
+                  case {'laplace_shape'}
+                      obj = kernel.lap2d_v(varargin{:});
+                  case {'helmholtz_shape'}
+                      obj = kernel.helm2d_v(varargin{:});
                   case {'helmholtz', 'helm', 'h'}
                       obj = kernel.helm2d(varargin{:});
                   case {'helmholtz difference', 'helmdiff', 'hdiff'}
@@ -151,6 +155,8 @@ classdef kernel
     methods ( Static )
 
         obj = lap2d(varargin);
+        obj = lap2d_v(varargin);
+        obj = helm2d_v(varargin);
         obj = helm2d(varargin);
         obj = helm2ddiff(varargin);
         obj = stok2d(varargin);

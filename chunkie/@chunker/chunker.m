@@ -89,12 +89,12 @@ classdef chunker
         nstor
         wtsstor
         datastor
+        hasdata
     end        
     properties(SetAccess=private)
         nchmax
         nch
         nchstor
-        hasdata
         vert
         wstor
         tstor

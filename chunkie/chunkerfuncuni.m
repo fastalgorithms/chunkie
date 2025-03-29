@@ -62,6 +62,11 @@ if isfield(cparams,'ifclosed')
     ifclosed = cparams.ifclosed;
 end	 
 
+ifstoreparam = false;
+if isfield(cparams,'ifstoreparam')
+    ifstoreparam = cparams.ifstoreparam;
+end
+
 % discover number of outputs
 try         
     [r,d,d2] = fcurve(t);
@@ -111,6 +116,11 @@ end
 %       derivatives and chunk lengths
 
 chnkr = chunker(pref); % empty chunker
+
+if (ifstoreparam)
+    chnkr.datastor = zeros(2,chnkr.k,chnkr.nchstor);
+    chnkr.hasdata  = true;
+end
 chnkr = chnkr.addchunk(nch);
 
 
@@ -127,6 +137,12 @@ for i = 1:nch
     chnkr.rstor(:,:,i) = reshape(out{1},dim,k);
     chnkr.dstor(:,:,i) = reshape(out{2},dim,k)*h;
     chnkr.d2stor(:,:,i) = reshape(out{3},dim,k)*h*h;
+    if (ifstoreparam)
+        d = chnkr.dstor(:,:,i);
+        dtot = sqrt(d(1,:).^2+d(2,:).^2)/h;
+        chnkr.datastor(1,:,i) = reshape(ts,1,k);
+        chnkr.datastor(2,:,i) = reshape(dtot,1,k);
+    end
 end
 
 chnkr.adjstor(:,1:nch) = adjs(:,1:nch);
