@@ -32,10 +32,23 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %       opts.proxybylevel - if = true, determine the number of
 %                   necessary proxy points adaptively at each level of the 
 %                   factorization in ifmm. Typically needed only for 
-%                   moderate / high frequency problems. (false)
+%                   moderate / high frequency problems. (true)
 %                   for the kernel, if it doesnt exist or if too few 
 %                   sources/targets, or if false, 
 %                   do direct. (true)
+%           opts.npxy_method = method for determining number of proxy
+%                     points
+%                     'wavenumber'
+%                         use kernel class zk parameter to determine
+%                         number of terms, overwritten if
+%                         opts.npxy_wavenumber is provided, and set to 0 if 
+%                         none of the parameters in kernel class
+%                         have zk as a parameter (default)
+%                     'id' use an id with increasing number of sources
+%                          to determine npxy
+%                     'integral' compute a integral of kernel with a 
+%                                random function to determine
+%       opts.npxy_wavenumber - wavenumber for determining number of proxy points                         
 %       opts.forcefmm - if = true, use specialized fmm if defined,
 %                   independent of the number of sources/targets. (false)
 %       opts.forcesmooth - if = true, only use the smooth integration rule
@@ -118,7 +131,7 @@ opts_use.accel = true;
 opts_use.forcefmm = false;
 opts_use.fac = 1.0;
 opts_use.eps = 1e-12;
-opts_use.proxybylevel = false;
+opts_use.proxybylevel = true;
 cormat = [];
 if isfield(opts,'forcesmooth'); opts_use.forcesmooth = opts.forcesmooth; end
 if isfield(opts,'forceadap'); opts_use.forceadap = opts.forceadap; end

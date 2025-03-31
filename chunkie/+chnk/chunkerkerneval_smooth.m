@@ -181,6 +181,8 @@ else
             [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
             optsnpxy = []; optsnpxy.rank_or_tol = opts.eps;
+            if isfield(opts, 'npxy_method') optsnpxy.npxy_method = opts.npxy_method; end
+            if isfield(opts, 'npxy_wavenumber') optsnpxy.npxy_wavenumber = opts.npxy_wavenumber; end
             pxyfun = @(lvl) proxyfunrbylevel(width,lvl,optsnpxy, ...
               chnkr,kerneval,opdims,verb && opts.proxybylevel);
             if ~opts.proxybylevel

@@ -37,7 +37,7 @@ else
     % generate panel Gauss-Legendre rule on [-1.5, 1.5]
     % because large single-panel rules lose digits
     k = min(16, po4);
-    npanel = po4/k;
+    npanel = ceil(po4/k);
     [pts, wts] = lege.exps(k);
     panels = linspace(-1.5, 1.5, npanel + 1);
     pts = reshape(panels(1:end-1) + 3/(2*npanel) * (pts + 1), 1, []);

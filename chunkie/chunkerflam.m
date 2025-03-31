@@ -46,7 +46,7 @@ function [F] = chunkerflam(chnkobj,kern,dval,opts)
 %                           up the FLAM compression. It may be desirable to
 %                           turn this off if there appear to be precision
 %                           issues.
-%           opts.proxybylevel = boolean (false), determine the number of
+%           opts.proxybylevel = boolean (true), determine the number of
 %                           necessary proxy points adaptively at each 
 %                           level of the factorization. Typically needed 
 %                           only for moderate / high frequency problems. 
@@ -67,6 +67,21 @@ function [F] = chunkerflam(chnkobj,kern,dval,opts)
 %           opts.rank_or_tol = integer or float "rank_or_tol" 
 %                   parameter (1e-14). Lower precision increases speed.
 %                   Sent to FLAM
+%           opts.npxy_method = method for determining number of proxy
+%                     points
+%                     'wavenumber'
+%                         use kernel class zk parameter to determine
+%                         number of terms, overwritten if
+%                         opts.npxy_wavenumber is provided, and set to 0 if 
+%                         none of the parameters in kernel class
+%                         have zk as a parameter (default)
+%                     'id' use an id with increasing number of sources
+%                          to determine npxy
+%                     'integral' compute a integral of kernel with a 
+%                                random function to determine 
+%                                the number of proxy points
+%           opts.npxy_wavenumber - wavenumber for determining number of 
+%                   proxy points                         
 %           opts.verb = boolean (false), if true print out the process of
 %                   the compression of FLAM.
 %           opts.lvlmax = integer (inf), maximum level of compression
@@ -132,7 +147,7 @@ verb = false;           if isfield(opts,'verb'),    verb = opts.verb;end
 lvlmax = inf;           if isfield(opts,'lvlmax'),  lvlmax = opts.lvlmax;end
 adaptive_correction = false; if isfield(opts,'adaptive_correction'), ...
     adaptive_correction = opts.adaptive_correction;end
-proxybylevel = false;   if isfield(opts,'proxybylevel'), proxybylevel = opts.proxybylevel;end
+proxybylevel = true;   if isfield(opts,'proxybylevel'), proxybylevel = opts.proxybylevel;end
 
 eps = rem(rank_or_tol,1);
 
@@ -283,6 +298,8 @@ end
 
 optsnpxy = []; optsnpxy.rank_or_tol = rank_or_tol;
 optsnpxy.nsrc = occ;
+if isfield(opts, 'npxy_method'), optsnpxy.npxy_method = opts.npxy_method; end
+if isfield(opts, 'npxy_wavenumber'), optsnpxy.npxy_wavenumber = opts.npxy_wavenumber; end
 
 % compute number of proxy in largest box
 npxy = chnk.flam.nproxy_square(kern, width, optsnpxy);
