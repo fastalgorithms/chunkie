@@ -42,7 +42,7 @@ else
     panels = linspace(-1.5, 1.5, npanel + 1);
     pts = reshape(panels(1:end-1) + 3/(2*npanel) * (pts + 1), 1, []);
     wts = 3/(2*npanel) * repmat(wts, npanel, 1)';
-    one = ones(1,porder/4);
+    one = ones(size(pts));
     pw = repmat(wts', 4, 1);
 end
 
