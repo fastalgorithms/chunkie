@@ -1,5 +1,5 @@
 function [varargout] = pquadwts(r,d,n,d2,wts,j,...
-    rt,t,w,opts,intp_ab,intp,types)
+    rt,t,w,opts,intp_ab,intp,types,ifup)
 %CHNK.pquadwts product integration for interaction of kernel on chunk 
 % at targets
 %
@@ -34,6 +34,8 @@ function [varargout] = pquadwts(r,d,n,d2,wts,j,...
 %   varargout - integration matrices for specified singularity types
 %
 
+if nargin < 14, ifup = false; end
+
 % Helsing-Ojala (interior/exterior?)
 xlohi = intp_ab*(r(1,:,j)'+1i*r(2,:,j)');         % panel end points
 r_i = intp*(r(1,:,j)'+1i*r(2,:,j)');              % upsampled panel
@@ -51,8 +53,12 @@ varargout = cell(size(types));
 %                     struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
 [As, Ad] = SDspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
                     struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
-As = As*intp;
-Ad  = Ad*intp;
+if ifup
+  wts_i = (w.*sp)';
+else
+  As = As*intp;
+  Ad  = Ad*intp;
+end
 
 for j = 1:length(types)
     type0 = types{j};

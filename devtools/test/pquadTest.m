@@ -18,6 +18,7 @@ chnkr = refine(chnkr,struct('nover',1));
 
 % build laplace dirichlet matrix
 
+coefs = [1.5,-2i];
 % fkern = kernel('laplace','d');
 fkern = kernel('helmholtz','c',zk,[1.5,-2i]);
 opts = [];
@@ -28,7 +29,10 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 
 %
 
-sys = -0.5*eye(chnkr.npt) + C;
+% sys = -0.5*eye(chnkr.npt)*coefs(1) + C;
+opts.forcepquad = true; 
+opts.side = 'i';
+sys = chunkerkernevalmat(chnkr,fkern,[chnkr.r(1,:);chnkr.r(2,:)],opts);
 
 % rhs = chnkr.data(1,:); rhs = rhs(:);
 rhs = besselh(0,zk*abs((1+1.25*1i)-(chnkr.r(1,:)+1i*chnkr.r(2,:)))); rhs = rhs(:);
