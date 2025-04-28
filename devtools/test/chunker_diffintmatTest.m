@@ -1,7 +1,7 @@
-clearvars; close all;
-addpaths_loc();
+chunker_diffintmatTest0();
 
-chnkr = chunkerfunc(@(t) [cos(t)'; 5*sin(t)'])
+function chunker_diffintmatTest0()
+chnkr = chunkerfunc(@(t) [cos(t)'; 5*sin(t)']);
 
 diffmat = chnkr.diffmat();
 intmat = chnkr.intmat();
@@ -25,7 +25,8 @@ assert(vecnorm(dx.^2 + dy.^2 - 1) < 1e-10);
 assert(vecnorm(x - x(1) - chnkr.r(1, 1:end)' + chnkr.r(1, 1)) < 1e-10);
 assert(vecnorm(y - y(1) - chnkr.r(2, 1:end)' + chnkr.r(2, 1)) < 1e-10);
 
-chnkr = chunkerfunc(@(t) [cos(t)'; sin(t)'])
+chnkr = chunkerfunc(@(t) [cos(t)'; sin(t)']);
 diffmat = chnkr.diffmat();
 test_quant = diffmat * chnkr.r(1, 1:end)' + chnkr.r(2, 1:end)';
 assert(vecnorm(test_quant) < 1e-10);
+end

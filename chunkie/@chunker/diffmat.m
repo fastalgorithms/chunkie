@@ -1,4 +1,7 @@
 function dmat = diffmat(chnkr, rect_flag)
+%DIFFMAT returns the matrix of arc length differentiation along the 
+% chunker object 
+
 	if (nargin < 2)
 		rect_flag = false;
 	end
@@ -12,5 +15,5 @@ function dmat = diffmat(chnkr, rect_flag)
 		dmat = pagemtimes(tmp, dmat);
 	end
 	dmat = num2cell(dmat, [1 2]);	
-	dmat = blkdiag(dmat{:})
+	dmat = blkdiag(dmat{:});
 end

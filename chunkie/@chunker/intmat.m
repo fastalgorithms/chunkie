@@ -1,4 +1,9 @@
 function imat = intmat(chnkr)
+%INTMAT returns the matrix of integration in arc length along the 
+% chunker object. The constant of integration is selected such that the
+% integral is zero at the left end of the first chunk of the chunker. 
+%
+% see also ARCLENGTHFUN
 
 	panel_int = reshape(lege.intmat(chnkr.k), [chnkr.k, chnkr.k, 1]);
 	ds = reshape(vecnorm(chnkr.d), [1, chnkr.k, chnkr.nch]);
