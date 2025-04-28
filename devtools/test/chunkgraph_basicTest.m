@@ -1,10 +1,12 @@
+chunkgraph_basicTest0();
+
+
+function chunkgraph_basicTest0()
 %chunkgraph_basicTest
 %
 % test of basic chunkgraph class constructors, methods, etc.
 %
 
-clearvars
-addpaths_loc();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -144,6 +146,11 @@ frq = 6;
 fchnks = @(t) sinearc(t,amp,frq);
 % simpler calling sequence if all edges same function
 cgrph = chunkgraph(verts,endverts,fchnks);
+
+
+
+end
+
 
 function idstrue = polygonids(cg,xx,yy)
 

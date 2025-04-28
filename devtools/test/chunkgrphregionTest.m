@@ -1,3 +1,7 @@
+chunkgrphregionTest0();
+
+
+function chunkgrphregionTest0()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   .  .  .  builds a simple pentagonal chunkergraph 
@@ -5,10 +9,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%clear all
 
-clearvars
-addpaths_loc();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -17,7 +18,6 @@ addpaths_loc();
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%clear all
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 a = -1.0;
@@ -81,6 +81,11 @@ for i = 1:7
         assert(all(rgntrue{i}{j}==cgrph.regions{i}{j}))
    end
 end
+
+
+
+end
+
 
 function [r,d,d2] = circulararc(t,cpars)
 %%circulararc

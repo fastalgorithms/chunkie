@@ -1,13 +1,15 @@
+chunkermat_quadadapTest0();
+
+
+function chunkermat_quadadapTest0()
 
 %CHUNKERMAT_QUADADAPTEST
 %
 % define geometry and test adaptive matrix builder routine
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 zk = randn() + 1i*randn();
 
@@ -82,5 +84,10 @@ fprintf('%5.2e s : time to assemble matrix (adap nbor)\n',t1);
 
 assert(norm(mat1-mat2,'fro')/norm(mat1,'fro') < 1e-9);
 
+
+
+
+
+end
 
 

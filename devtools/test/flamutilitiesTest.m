@@ -1,13 +1,15 @@
+flamutilitiesTest0();
+
+
+function flamutilitiesTest0()
 
 %FLAMUTILITIESTEST
 %
 % test the FLAM matrix builder and do a basic solve
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 nverts = 3; 
 verts = exp(1i*2*pi*(0:(nverts-1))/nverts);
@@ -211,6 +213,11 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wcgrph(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
+
+
+
+
+end
 
 
 function [r,d,d2] = sinearc(t,amp,frq)

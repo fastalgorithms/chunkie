@@ -1,3 +1,7 @@
+complexificationTest0();
+
+
+function complexificationTest0()
 % test solve_sommerfeld_dens and eval_sommerfeld_dens
 % and compare to complexification solution
 
@@ -72,6 +76,11 @@ pot = chunkerkerneval(chnkr, Keval, dens, targ, opts);
 uex = sk1.eval(s, targ);
 assert(norm(uex - pot) < 1e-10); 
 
+
+
+
+
+end
 
 
 function [f,fd,fdd] = flat_interface(t, a, b, t0, t1)

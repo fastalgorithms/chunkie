@@ -1,3 +1,7 @@
+pquadTest0();
+
+
+function pquadTest0()
 % testing product quadrature rule
 % planewave vec
 
@@ -76,3 +80,8 @@ fprintf('%5.2e : Relative max error\n',rel_error);
 
 assert(rel_error < 1e-10)
 % profile viewer
+
+
+end
+
+
