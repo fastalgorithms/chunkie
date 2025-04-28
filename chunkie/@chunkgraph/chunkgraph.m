@@ -101,6 +101,8 @@ classdef chunkgraph
 %   cparams - struct or (nedges x 1) cell array of structs specifying curve
 %     parameters in the format expected by CHUNKERFUNC. 
 %   pref - struct specifying CHUNKER preferences. 
+%   last_len - float, ensure that the arclength of all panels touching each 
+%     vertex is 2^-n * last_len for some n >= 0.
 %  
 %   Note:
 %
