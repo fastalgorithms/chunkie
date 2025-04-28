@@ -79,10 +79,13 @@ for i=1:n_newton
     % dphidh = (dx1 + dx2).*dpx + (dy1 + dy2).*dpy;
     % h = h - phi./dphidh;
 
-    figure(i)    
+    
     rt = dmesh.r;
     rt(1,:) = rt(1,:) + (h.*dpx).';
     rt(2,:) = rt(2,:) + (h.*dpy).';
-    plot(rt(1,:), rt(2,:), 'k.')
+    
  
 end
+
+figure(3)    
+plot(rt(1,:), rt(2,:), 'k.')
