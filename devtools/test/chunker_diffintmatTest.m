@@ -15,6 +15,12 @@ assert(vecnorm(dx.^2 + dy.^2 - 1) < 1e-10);
 x = intmat * dx;
 y = intmat * dy;
 
+diffmat = chnkr.diffmat(false); %test rectangular derivative operator
+dx = diffmat * chnkr.r(1, 1:end)';
+dy = diffmat * chnkr.r(2, 1:end)';
+
+assert(vecnorm(dx.^2 + dy.^2 - 1) < 1e-10);
+
 % Check that integral and derivative are inverse up to a scalar
 assert(vecnorm(x - x(1) - chnkr.r(1, 1:end)' + chnkr.r(1, 1)) < 1e-10);
 assert(vecnorm(y - y(1) - chnkr.r(2, 1:end)' + chnkr.r(2, 1)) < 1e-10);
