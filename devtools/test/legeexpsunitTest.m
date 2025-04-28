@@ -1,3 +1,7 @@
+legeexpsunitTest0();
+
+
+function legeexpsunitTest0()
 %
 
 
@@ -28,4 +32,9 @@ for j = 1:k
     icoefs = lege.exev(x(j),cfsint1);
     assert(abs(itrue-icoefs)< 1e-14);
 end
+
+
+
+end
+
 

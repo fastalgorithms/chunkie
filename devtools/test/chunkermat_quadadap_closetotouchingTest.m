@@ -1,3 +1,7 @@
+chunkermat_quadadap_closetotouchingTest0();
+
+
+function chunkermat_quadadap_closetotouchingTest0()
 %CHUNKERMAT_QUADADAP_CLOSETOTOUCHINGTEST
 %
 % - set up two discs which are nearly touching
@@ -154,3 +158,8 @@ fprintf('relative l_inf/l_1 error %5.2e (Helsing-Ojala)\n',relerr2);
 % figure(2)
 % plot3(chnkr,1)
 % 
+
+
+end
+
+

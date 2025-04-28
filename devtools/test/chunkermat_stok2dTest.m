@@ -1,3 +1,7 @@
+chunkermat_stok2dTest0();
+
+
+function chunkermat_stok2dTest0()
 
 %CHUNKERMAT_HELM2DTEST
 %
@@ -161,4 +165,9 @@ g = reshape(g, [2,2,nt]);
 relerr = norm(g(:) - gex(:))/norm(gex(:));
 
 assert(relerr < 1e-10)
+
+
+
+end
+
 

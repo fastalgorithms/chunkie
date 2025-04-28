@@ -1,3 +1,7 @@
+kernelclassTest0();
+
+
+function kernelclassTest0()
 %KERNELCLASSTEST check the use of kernel class for sending FMM
 % and singularity info to various routines
 %
@@ -95,4 +99,9 @@ assert(kerntmp.isnan);
 
 kerntmp = nan*kerns;
 assert(kerntmp.isnan);
+
+
+
+end
+
 

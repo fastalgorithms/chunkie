@@ -1,3 +1,7 @@
+flamopdimsTest0();
+
+
+function flamopdimsTest0()
 
 zk1 = 10;   % exterior wave number
 zk2 = 15;   % coating wave number
@@ -44,6 +48,11 @@ src2(2,2) = -3.1;
 err1  = test_analytic_soln([zk1, zk2], chnkr1, chnkr2, src1, src2, A, ifflam);
 assert(err1 < 1e-8);
 
+
+
+
+
+end
 
 
 function err1 = test_analytic_soln(zks, chnkr1, chnkr2, src1 ,src2, A, ifflam)

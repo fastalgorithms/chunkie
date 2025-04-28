@@ -1,3 +1,7 @@
+mixedbcTest0();
+
+
+function mixedbcTest0()
 % MIXEDBCTEST test the code with mixed boundary conditions, first test with
 % mixed Dirichlet and Neumann BCs then test with Dirichlet and transmission
 % conditions, which has variable opdims
@@ -286,3 +290,8 @@ relerr2 = max(abs(uscat2));
 relerr = max(relerr1, relerr2);
 fprintf('relative field error %5.2e\n',relerr);
 assert(relerr < 1e-4)
+
+
+end
+
+

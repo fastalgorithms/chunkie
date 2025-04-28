@@ -1,3 +1,7 @@
+rcipTest0();
+
+
+function rcipTest0()
 
 %RCIPTEST
 %
@@ -248,6 +252,11 @@ fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 %
 % Auxiliary routines for generating boundary
 %
+
+
+
+end
+
 
 function [r,d,d2] = circulararc(t,cpars)
 %%circulararc

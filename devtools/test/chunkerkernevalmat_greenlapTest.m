@@ -1,3 +1,7 @@
+chunkerkernevalmat_greenlapTest0();
+
+
+function chunkerkernevalmat_greenlapTest0()
 %CHUNKERKERNEVAL_GREENLAPTEST test the routines for integrating over 
 % chunks against the Green's ID for Laplace
 %
@@ -100,5 +104,10 @@ fprintf('relative frobenius error %5.2e\n',relerr);
 
 relerr = norm(utarg-utarg3,'fro')/norm(utarg,'fro');
 assert(relerr < 1e-11);
+
+
+
+
+end
 
 

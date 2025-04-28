@@ -1,3 +1,7 @@
+chunkerfitTest0();
+
+
+function chunkerfitTest0()
 
 %CHUNKERFITTEST
 
@@ -20,3 +24,8 @@ assert(checkadjinfo(chnkr) == 0);
 opts.ifclosed = false;
 chnkr = chunkerfit(r(:,1:10), opts);
 assert(checkadjinfo(chnkr) == 0);
+
+
+end
+
+

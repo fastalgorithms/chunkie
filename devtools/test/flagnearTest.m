@@ -1,3 +1,7 @@
+flagnearTest0();
+
+
+function flagnearTest0()
 
 %FLAGNEARTEST
 %
@@ -52,3 +56,8 @@ end
 assert(nnz(flag2 ~= flag) == 0)
 
     
+
+
+end
+
+

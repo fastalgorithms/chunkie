@@ -1,3 +1,7 @@
+chunkermat_stok_tractiontest0();
+
+
+function chunkermat_stok_tractiontest0()
 
 %CHUNKERMAT_HELM2DTEST
 %
@@ -108,3 +112,8 @@ relerr = norm(utarg(:)-Dsol2(:),'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 fprintf('relative frobenius error %5.2e\n',relerr);
 
 assert(relerr < 1e-10);
+
+
+end
+
+

@@ -1,3 +1,7 @@
+adapgausswtsTest0();
+
+
+function adapgausswtsTest0()
 
 %ADAPGAUSSWTSTEST
 %
@@ -113,3 +117,8 @@ jend = opdims(1)*j*k;
 matcomp = mat1(istart:iend,jstart:jend);
 
 assert(norm(matcomp-mat,'inf') < 1e-11);
+
+
+end
+
+

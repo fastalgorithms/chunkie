@@ -1,3 +1,7 @@
+flagselfTest0();
+
+
+function flagselfTest0()
 % FLAGSELFTEST test the routine for flagging when sources and targets
 % overlap
 
@@ -26,3 +30,7 @@ assert(size(flagslf,2) == nsrc)
 errs = sum(vecnorm(srcs(:,flagslf(1,:)) - targs(:,flagslf(2,:)))>1e-10);
 fprintf('number of incorrectly flagged points: %d\n', errs)
 assert(norm(srcs(:,flagslf(1,:)) - srcs(:,P(flagslf(2,:))),1)<1e-6)
+
+end
+
+

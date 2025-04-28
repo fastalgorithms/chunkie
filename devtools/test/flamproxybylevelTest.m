@@ -1,3 +1,7 @@
+flamproxybylevelTest0();
+
+
+function flamproxybylevelTest0()
 
 %FLAMPROXYBYLEVELTEST
 %
@@ -183,3 +187,8 @@ relerr = norm(utarg-sol_ifmm,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-sol_ifmm,'inf')/dot(abs(sig_rskelf(:)),wts(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
+
+
+end
+
+

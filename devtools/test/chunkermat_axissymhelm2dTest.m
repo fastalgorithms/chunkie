@@ -1,3 +1,7 @@
+chunkermat_axissymhelm2dTest0();
+
+
+function chunkermat_axissymhelm2dTest0()
 
 %CHUNKERMAT_AXISSYMHELM2DTEST
 %
@@ -139,3 +143,8 @@ fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
 assert(relerr < 1e-7);
+
+
+end
+
+

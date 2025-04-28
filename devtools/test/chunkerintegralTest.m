@@ -1,3 +1,7 @@
+chunkerintegralTest0();
+
+
+function chunkerintegralTest0()
 %CHUNKERINTEGRALTEST test the routines for integrating over chunks
 %
 % 
@@ -36,3 +40,7 @@ fscal_int4 = chunkerintegral(chnkr,fscal,opts);
 assert(abs(fscal_int1-fscal_int2)/abs(fscal_int2) < 1e-9);
 assert(abs(fscal_int3-fscal_int2)/abs(fscal_int2) < 1e-9);
 assert(abs(fscal_int4-fscal_int2)/abs(fscal_int2) < 1e-9);
+
+end
+
+

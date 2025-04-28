@@ -1,3 +1,7 @@
+chunkgrphrcipTest0();
+
+
+function chunkgrphrcipTest0()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   .  .  .  builds a simple pentagonal chunkergraph 
@@ -175,6 +179,11 @@ plot(cgrph,'w-','LineWidth',2);
 caxis([-16,0])
 colorbar
 
+
+
+
+
+end
 
 
 function [r,d,d2] = circulararc(t,cpars)

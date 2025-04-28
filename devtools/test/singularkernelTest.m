@@ -1,3 +1,7 @@
+singularkernelTest0();
+
+
+function singularkernelTest0()
 %SINGULARKERNELTEST check that principal value and hypersingular type
 % quadratures are working.
 % 
@@ -72,3 +76,8 @@ un = dprimemat*mu;
 
 relerr = norm(un-unbdry(:))/norm(unbdry);
 fprintf('%5.2e : error in un test (testing hs integration)\n',relerr);
+
+
+end
+
+

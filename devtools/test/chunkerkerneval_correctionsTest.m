@@ -1,3 +1,7 @@
+chunkerkerneval_correctionsTest0();
+
+
+function chunkerkerneval_correctionsTest0()
 
 seed = 8675309;
 rng(seed);
@@ -65,5 +69,10 @@ opts.forcesmooth = true;
 u_eval = chunkerkerneval(chnkr,dkern,sol,targets,opts);
 
 assert(norm(utrue-u_eval,inf)>1e-10)
+
+
+
+
+end
 
 

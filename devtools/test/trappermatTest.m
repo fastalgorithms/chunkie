@@ -1,3 +1,7 @@
+trappermatTest0();
+
+
+function trappermatTest0()
 
 %TRAPPERMATTEST
 %
@@ -113,4 +117,9 @@ relerr = norm(utarg-Dsol,'fro')/(sqrt(trap.npt)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
+
+
+
+end
+
 

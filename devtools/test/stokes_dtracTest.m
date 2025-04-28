@@ -1,3 +1,7 @@
+stokes_dtracTest0();
+
+
+function stokes_dtracTest0()
 srcinfo = [];
 srcinfo.r = rand(2,1);
 srcinfo.n = rand(2,1);
@@ -33,3 +37,8 @@ f(1:2:end) = -p.*ntx + (euxx.*ntx + euxy.*nty)*mu;
 f(2:2:end) = -p.*nty + (euxy.*ntx + euyy.*nty)*mu;
 
 norm(f - Kt)
+
+
+end
+
+

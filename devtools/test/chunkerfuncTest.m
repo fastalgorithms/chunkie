@@ -1,3 +1,7 @@
+chunkerfuncTest0();
+
+
+function chunkerfuncTest0()
 
 %CHUNKERFUNCTEST
 %
@@ -110,3 +114,8 @@ assert(isempty(warnmsg));
 % hold on
 % quiver(chnkr)
 % axis equal
+
+
+end
+
+

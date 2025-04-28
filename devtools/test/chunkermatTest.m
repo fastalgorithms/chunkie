@@ -1,3 +1,7 @@
+chunkermatTest0();
+
+
+function chunkermatTest0()
 
 %CHUNKERMATTEST
 %
@@ -107,4 +111,9 @@ fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
 assert(relerr < 1e-10,'low precision in chunkmat test at target');
+
+
+
+end
+
 

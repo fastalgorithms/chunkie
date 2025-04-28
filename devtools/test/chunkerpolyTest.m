@@ -1,3 +1,7 @@
+chunkerpolyTest0();
+
+
+function chunkerpolyTest0()
 %CHUNKERPOLYTEST
 
 
@@ -105,3 +109,8 @@ plot(chnkr_ref3,'-x')
 hold on
 quiver(chnkr_ref3)
 axis equal
+
+
+end
+
+

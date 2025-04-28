@@ -1,3 +1,7 @@
+chunkerkerneval_greenhelmTest0();
+
+
+function chunkerkerneval_greenhelmTest0()
 %CHUNKERKERNEVAL_GREENHELMTEST test the routines for integrating over 
 % chunks against the Green's ID for Helmholtz
 %
@@ -88,4 +92,9 @@ relerr = norm(utarg-utarg2,'fro')/norm(utarg,'fro');
 fprintf('relative frobenius error %5.2e\n',relerr);
 
 assert(relerr < 1e-11);
+
+
+
+end
+
 

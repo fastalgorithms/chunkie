@@ -1,3 +1,7 @@
+chunkerclassunitTest0();
+
+
+function chunkerclassunitTest0()
 %chunkerclassunitTest
 %
 % setting up some tests for methods of the chunker class
@@ -48,3 +52,8 @@ if (i2 > 0)
 assert(chnkr.adj(1,i2) == j)
 end
 end
+
+
+end
+
+

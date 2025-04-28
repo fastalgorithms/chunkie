@@ -1,3 +1,7 @@
+helm2d_greenTest0();
+
+
+function helm2d_greenTest0()
 %HELM2D_GREENTEST
 %
 % test that gradients are set up right in chnk.helm2d.green
@@ -22,6 +26,11 @@ errsfy = gradient_check(fcny,trg,start_eps,niter);
 assert(min(errsf) < 1e-10);
 assert(min(errsfx) < 1e-8);
 assert(min(errsfy) < 1e-8);
+
+
+
+end
+
 
 function [f,g] = fcn1(zk,src,trg)
 

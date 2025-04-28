@@ -1,3 +1,7 @@
+flamutilitiesTest0();
+
+
+function flamutilitiesTest0()
 
 %FLAMUTILITIESTEST
 %
@@ -209,6 +213,11 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wcgrph(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
+
+
+
+
+end
 
 
 function [r,d,d2] = sinearc(t,amp,frq)

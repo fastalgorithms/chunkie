@@ -1,3 +1,7 @@
+helm1d_greenTest0();
+
+
+function helm1d_greenTest0()
 close('all')
 ifsvdplot = false;
 
@@ -136,6 +140,11 @@ assert(max(relerr(:)) < 1e-5)
 
 
 
+
+
+
+
+end
 
 
 function [sol_gmres,vdens] = fast_solve_wrap(uu,m,E,chnkr,istart,iend,ab)

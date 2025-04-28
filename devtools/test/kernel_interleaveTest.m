@@ -1,3 +1,7 @@
+kernel_interleaveTest0();
+
+
+function kernel_interleaveTest0()
 iseed = 8675309;
 rng(iseed);
 
@@ -195,5 +199,10 @@ fprintf('%5.2e s : time for rskelf_sv \n',t1)
 err = norm(sol-sol2,'fro')/norm(sol,'fro');
 
 fprintf('difference between fast-direct and iterative %5.2e\n',err)
+
+
+
+
+end
 
 

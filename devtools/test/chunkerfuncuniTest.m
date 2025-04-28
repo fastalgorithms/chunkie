@@ -1,3 +1,7 @@
+chunkerfuncuniTest0();
+
+
+function chunkerfuncuniTest0()
 
 %CHNKFUNCUNITEST
 %
@@ -60,5 +64,10 @@ assert(info.ier == 0,'adjacency issues after chunk build circle');
 
 a = area(chnkr);
 assert(abs(a - pi*r^2) < 1e-12,'area wrong for circle domain')
+
+
+
+
+end
 
 

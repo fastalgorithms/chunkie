@@ -1,3 +1,7 @@
+chunkermat_quadadapTest0();
+
+
+function chunkermat_quadadapTest0()
 
 %CHUNKERMAT_QUADADAPTEST
 %
@@ -80,5 +84,10 @@ fprintf('%5.2e s : time to assemble matrix (adap nbor)\n',t1);
 
 assert(norm(mat1-mat2,'fro')/norm(mat1,'fro') < 1e-9);
 
+
+
+
+
+end
 
 
