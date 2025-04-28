@@ -98,10 +98,17 @@ fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 % targets = targets.*repmat(rand(1,nt),2,1)*0.99 seems to break below stokes kernel test...
 fkerns = kernel('stok', 'svel', mu);
 Ssol = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
+Ssys = chunkerkernevalmat(chnkr,fkerns,targets,opts); 
+err = abs(Ssol - Ssys*sol);
+assert(norm(err) < 1e-10);
+%
 opts.forcepquad=true;
 opts.side = 'i';
 Ssol_pquad = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
+Ssys_pquad = chunkerkernevalmat(chnkr,fkerns,targets,opts); 
 err = abs(Ssol - Ssol_pquad);
+assert(norm(err) < 1e-10);
+err = abs(Ssol - Ssys_pquad*sol);
 assert(norm(err) < 1e-10);
 % figure(1),clf,
 % plot(chnkr), hold on

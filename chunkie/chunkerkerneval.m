@@ -429,7 +429,8 @@ for j=1:size(chnkr.r,3)
             end
             mat0opdim = kron(mat0,ones(opdims'));
             mat0xsplitfun = mat0opdim.*funsf{l};
-            fints(ind(:)) = fints(ind(:)) + mat0xsplitfun*(intp*densj(:));
+            densfj = densj*intp';
+            fints(ind(:)) = fints(ind(:)) + mat0xsplitfun*densfj(:);
         end
     end
 end
