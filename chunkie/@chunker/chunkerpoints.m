@@ -1,4 +1,4 @@
-function chnkr = chunkerpoints(src)
+function chnkr = chunkerpoints(src,opts)
 
 d  = [];
 d2 = [];
