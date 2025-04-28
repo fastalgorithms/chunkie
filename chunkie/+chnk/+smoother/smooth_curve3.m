@@ -76,12 +76,19 @@ opts = [];
 opts.scales = scales;
 opts.levels  = levels;
 opts.step_fact = 0.9;
+
+%%
+
+n_newton = 100;
+etol     = 1E-10;
 for i=1:n_newton
-    [h] = chnk.smoother.newt_step(h,umesh,dmesh,qmesh,sig0,lam,opts);
+    [h,err,err_p_pt] = chnk.smoother.newt_step(h,umesh,dmesh,qmesh,sig0,lam,opts);
     figure(i)    
     rt = dmesh.r;
     rt(1,:) = rt(1,:) + (h.*dpx).';
     rt(2,:) = rt(2,:) + (h.*dpy).';
     plot(rt(1,:), rt(2,:), 'k.')
- 
+    if (err < etol)
+        break
+    end
 end

@@ -1,4 +1,4 @@
-function chnkr = chnks2chunker(r)
+function chnkr = chunkerpoints(r)
 
 pref = [];
 

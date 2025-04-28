@@ -1,4 +1,4 @@
-function [h] = newt_step(h,umesh,dmesh,qmesh,sig0,lam,opts)
+function [h,varargout] = newt_step(h,umesh,dmesh,qmesh,sig0,lam,opts)
 
 level = 0.5;
 step_fact = 1;
@@ -60,4 +60,10 @@ rny = qmesh.n(2,:).';
     dphidh = (dx1 + dx2).*dpx + (dy1 + dy2).*dpy;
     h = h - step_fact*phi./dphidh;
 
+    if (nargout > 1)
+        varargout{1} = max(abs(phi(:)));
+    end
+    if (nargout > 2)
+        varargout{2} = abs(phi(:));
+    end
 end
