@@ -8,7 +8,7 @@ function dmat = diffmat(chnkr, rect_flag)
 	if rect_flag
 		[~, ~, u, ~] = lege.exps(chnkr.k);
 		[~, ~, ~, v] = lege.exps(chnkr.k - 1);
-		tmp = v(:, 1:end-1) * u;
+		tmp = v * u(1:end-1, :);
 		dmat = pagemtimes(tmp, dmat);
 	end
 	dmat = num2cell(dmat, [1 2]);	
