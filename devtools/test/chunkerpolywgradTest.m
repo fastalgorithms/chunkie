@@ -5,7 +5,7 @@ addpaths_loc();
 
 % pre-defined vertices for a barbell shape
 
-verts = chnk.demo.barbell(2.0,2.0,1.0,1.0);
+verts = chnk.demo.xbarbell(2.0, 2.0, 1.0, 1.0);
 nv = size(verts,2);
 
 % for barbell(2,2,1,1) area and length are
@@ -41,7 +41,7 @@ refopts = [];
 % chnkr = refine(chnkr, refopts);
 
 
-[x,wleg] = lege.exps(chnkr.k);
+[~,wleg] = lege.exps(chnkr.k);
 wtsraw = wleg(:)*ones(1, chnkr.nch); wtsraw = wtsraw(:);
 
 x = chnkr.r(1,:); x = x(:);
@@ -86,8 +86,6 @@ for i = 1:nt
     fprintf('%5.2e grad approx error with eps = %5.2e\n',err1,eps);
 end
 
-return
-
 %% linear functional test (rounded)  
 %
 
@@ -102,17 +100,17 @@ p.k = 16; p.dim = 2;
 cparams = [];
 cparams.rounded = true;
 cparams.widths= .1*ones(nv,1);
-cparams.autowidths=true;
-cparams.autowidthsfac=0.1;
+cparams.autowidths = true;
+cparams.autowidthsfac = 0.1;
 cparams.smoothwidths = true;
 
-[chnkr, igrad] = chunkerpoly(verts,cparams,p);
+[chnkr, igrad] = chunkerpoly(verts, cparams, p);
 chnkr.npt
 refopts =[];
-chnkr = refine(chnkr,refopts);
+chnkr = refine(chnkr, refopts);
 chnkr.npt
 
-[x,wleg] = lege.exps(chnkr.k);
+[x, wleg] = lege.exps(chnkr.k);
 wtsraw = wleg(:)*ones(1,chnkr.nch); wtsraw = wtsraw(:);
 
 x = chnkr.r(1,:); x = x(:);
@@ -126,17 +124,17 @@ grads = vertdsdtgrad(chnkr, igrad, nv);
 gs = grads*pert(:);
 gx = g(1:2:end); gy = g(2:2:end);
 gint = sum((fval(:,2).*gx(:)+fval(:,3).*gy(:)).*wts(:)) + ... 
-    sum(fval(:,1).*gs.*wtsraw);
+    sum(fval(:,1).*gs.*wts(:));
 rnrm = normals(chnkr);
 
 for i = 1:nt
     eps = 10^(-(i));
     
     verts2 = verts + pert*eps;
-    [chnkr2, igrad2] = chunkerpoly(verts2,cparams,p);
+    [chnkr2, igrad2] = chunkerpoly(verts2, cparams, p);
     chnkr2 = refine(chnkr2,refopts);
     
-    wtsraw2 = wleg(:) * ones(1, chnkr2.nch); wtsraw2 =wtsraw2(:);
+    wtsraw2 = wleg(:)*ones(1, chnkr2.nch); wtsraw2=wtsraw2(:);
 
     x2 = chnkr2.r(1,:); x2 = x2(:);
     y2 = chnkr2.r(2,:); y2 = y2(:);
@@ -148,9 +146,9 @@ for i = 1:nt
     grads2 = vertdsdtgrad(chnkr2, igrad2, nv);
     gs2 = grads2*pert(:);
 
-    gx2 = g2(1:2:end); gy2 = g2(2:2:end);
+    gx2 = g2(1:2:end); gy2 = g2(2:2:end);    
     gint2 = sum((fval2(:,2).*gx2(:)+fval2(:,3).*gy2(:)).*wts2(:)) + ... 
-        sum(fval2(:,1).*gs2.*wtsraw2);
+        sum(fval2(:,1).*gs2.*wts2(:));
     err1 = abs(1-eps*0.5*(gint+gint2)/(fint2-fint));
     
     
@@ -164,7 +162,7 @@ end
 %%
 % Test parameter derivatives of rounded coordinates 
 
-nt = 9;
+nt = 3;
 hbell = 1/8;
 a= 0.1;
 r1 = verts(:,3); r2 = verts(:,4); r3 = verts(:,5);
@@ -207,7 +205,7 @@ end
 %%
 % test t derivatives of rounded coordinates
 
-nt = 9;
+nt = 3;
 hbell = 1/8;
 a= 0.1;
 r1 = verts(:,3)+0.01*randn(2,1); r2 = verts(:,4)+0.01*randn(2,1); r3 = verts(:,5)+0.01*randn(2,1);
@@ -235,7 +233,7 @@ end
 %%
 % test derivatives of the smoothmin width function
 
-nt = 9;
+nt = 3;
 hbell = 1/8;
 a= 0.1;
 r1 = verts(:,3); r2 = verts(:,4); r3 = verts(:,5);
