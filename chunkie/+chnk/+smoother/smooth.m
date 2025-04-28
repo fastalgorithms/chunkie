@@ -41,7 +41,7 @@ function [chnkr,varargout] = smooth(verts,opts)
 %                     by when doing newton steps. If the smoother fails 
 %                     to converge, then sometimes decreasing this can 
 %                     help. Should always be <=1                (1)
-
+%
 % Output:
 %   chnkr - the requested chunker containing the smoothed geometry
 %   err (optional) - an approximate error of the curve smoother error
