@@ -1,4 +1,24 @@
 function chnkr = chunkerpoints(src,opts)
+%CHUNKERPOINTS create a chunker object given a set of Gauss-Legendre 
+% panels discretizing a curve.
+%
+% Syntax: chnkr = chunkerpoints(src,opts)
+%
+% Input: 
+%   src - If src is of class 'double', then it should be a 
+%         dim x k x nch array. dim is the dimension in which the curve 
+%         lives (typically 2), k is the number of Gauss-Legendre nodes 
+%         per panel (typically 16), and nch is the total number of panels.
+%   opts - a structure containing optional argumensts (defaults)
+%       opts.ifclosedtrue - a boolean. True if the desired curve 
+%           is closed, and False if not. Note that no checking is done. 
+%           All this changes is the corresponding chunker adjacency info.
+%
+% Output:
+%   chnkr - a chunker object containing the discretization of the domain
+%   
+% see also CHUNKERPOLY, CHUNKERPREF, CHUNKER
+%
 
 d  = [];
 d2 = [];
