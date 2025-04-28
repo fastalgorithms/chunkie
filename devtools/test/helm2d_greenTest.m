@@ -2,9 +2,6 @@
 %
 % test that gradients are set up right in chnk.helm2d.green
 
-addpaths_loc();
-
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 

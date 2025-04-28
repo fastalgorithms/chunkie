@@ -3,10 +3,8 @@
 %
 % 
 
-clearvars; close all;
 seed = 8675309;
 rng(seed);
-addpaths_loc();
 
 doadap = false;
 

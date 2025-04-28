@@ -3,11 +3,9 @@
 %
 % define geometry and test adaptive matrix builder routine
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 zk = randn() + 1i*randn();
 

@@ -3,8 +3,6 @@
 % test of basic chunkgraph class constructors, methods, etc.
 %
 
-clearvars
-addpaths_loc();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

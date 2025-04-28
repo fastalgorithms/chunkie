@@ -3,13 +3,10 @@
 %
 % define geometry and test adaptive integration routine
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
 zk = randn() + 1i*randn();
-
-addpaths_loc();
 
 cparams = [];
 cparams.eps = 1.0e-10;

@@ -1,8 +1,6 @@
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-%addpaths_loc();
 
 zk = 5.1;
 

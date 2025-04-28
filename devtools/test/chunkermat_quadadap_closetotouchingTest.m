@@ -6,8 +6,6 @@
 % - compare accuracy using the adaptive routine to do nearby panel
 %   evaluation vs smooth rule for everything but self and neighbors
 
-clearvars; close all;
-addpaths_loc();
 iseed = 8675309;
 rng(iseed);
 

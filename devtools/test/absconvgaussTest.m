@@ -2,8 +2,6 @@
 %
 % This file tests the absconvgauss routine
 
-clearvars; close all;
-addpaths_loc();
 a = 0.75;
 
 b = -0.75;

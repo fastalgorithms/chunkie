@@ -1,8 +1,6 @@
 
-clearvars; close all;
 seed = 8675309;
 rng(seed);
-addpaths_loc();
 
 % geometry parameters and construction
 

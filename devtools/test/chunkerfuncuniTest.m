@@ -4,8 +4,6 @@
 % This file tests the routine chunkerfunc on a couple of examples
 % as well as testing the plot, quiver, sort, and reverse utilities
 
-clearvars; close all;
-addpaths_loc();
 
 nch = 10;
 

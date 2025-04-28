@@ -1,4 +1,3 @@
-clear
 srcinfo = [];
 srcinfo.r = rand(2,1);
 srcinfo.n = rand(2,1);

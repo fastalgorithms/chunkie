@@ -1,6 +1,5 @@
 %
 
-addpaths_loc();
 
 k = 19;
 

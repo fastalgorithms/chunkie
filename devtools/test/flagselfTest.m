@@ -1,7 +1,6 @@
 % FLAGSELFTEST test the routine for flagging when sources and targets
 % overlap
 
-clear all; close all;
 
 nsrc = 40000;
 xtarg = linspace(0,1,floor(sqrt(nsrc))); 

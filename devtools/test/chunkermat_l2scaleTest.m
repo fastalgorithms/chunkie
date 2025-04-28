@@ -1,4 +1,3 @@
-clearvars; close all;
 
 zk0 = 2.0; % exterior
 zk1 = 3.0; % interior

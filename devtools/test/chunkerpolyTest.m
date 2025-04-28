@@ -1,7 +1,5 @@
 %CHUNKERPOLYTEST
 
-clearvars; close all;
-addpaths_loc();
 
 % pre-defined vertices for a barbell shape
 

@@ -3,7 +3,6 @@
 %
 % test the FLAM matrix builder with level-dependent proxy points
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
@@ -11,7 +10,6 @@ zk  = 50;
 tol = 1e-14;
 proxybylevel = true;
 
-% addpaths_loc();
 
 cparams = [];
 cparams.maxchunklen = 4.0/abs(zk);

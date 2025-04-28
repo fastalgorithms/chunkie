@@ -3,11 +3,9 @@
 %
 % test the FLAM matrix builder and do a basic solve
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 nverts = 3; 
 verts = exp(1i*2*pi*(0:(nverts-1))/nverts);

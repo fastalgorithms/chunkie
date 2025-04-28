@@ -1,11 +1,8 @@
 %ELASTIC_TEST
 % test the kernel definitions for elasticity
 
-clear all
 iseed = 1234;
 rng(iseed,'twister');
-clc
-%addpaths_loc();
 
 % pde parameters 
 

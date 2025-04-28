@@ -4,11 +4,9 @@
 % test the matrix builder and do a basic solve for a true polygonal
 % domain. This is the Neumann problem...
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 % pre-defined vertices for a barbell shape
 

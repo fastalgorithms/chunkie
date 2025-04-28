@@ -1,8 +1,6 @@
 
 %CHUNKERFITTEST
 
-clearvars; close all;
-addpaths_loc();
 
 % Sample a smooth curve at random points
 rng(0)

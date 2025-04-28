@@ -2,8 +2,6 @@
 % artificial vertices are ignored
 
 
-clearvars; close all;
-addpaths_loc();
 
 % set wave number
 zk = 1.1;

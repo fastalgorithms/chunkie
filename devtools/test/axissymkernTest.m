@@ -1,6 +1,4 @@
 
-clearvars; close all;
-addpaths_loc();
 cparams = [];
 cparams.eps = 1.0e-4;
 pref = []; 

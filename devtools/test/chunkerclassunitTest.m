@@ -3,7 +3,6 @@
 % setting up some tests for methods of the chunker class
 %
 
-addpaths_loc();
 % adversarial constructor tests
 isuccess = 0;
 try

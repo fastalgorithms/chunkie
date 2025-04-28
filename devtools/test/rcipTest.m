@@ -4,8 +4,6 @@
 % This file tests the rcip routines for solving the exterior dirichlet 
 % problem on a domain defined by two arcs of circles meeting at two vertices
 
-clearvars; close all;
-addpaths_loc();
 
 ncurve = 2;
 chnkr(1,ncurve) = chunker();
