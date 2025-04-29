@@ -27,6 +27,8 @@ function [varargout] = pquadwts(r,d,n,d2,wts,j,...
 %       [0 0  0 0] - smooth quadr
 %       [1 0  0 0] - log singularity
 %       [0 0 -1 0] - cauchy singularity
+%       [0 0 -2 0] - hypersingular
+%       [0 0 -3 0] - supersingular
 %       each [a, b, c, d] 
 %       corresponds to (log(z-w))^a (log(zc-wc))^b (z-w)^c (zc-wc)^d
 %
@@ -51,13 +53,15 @@ varargout = cell(size(types));
 
 % [As, Ad, A1, A2, A3, A4] = SDspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
 %                     struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
-[As, Ad] = SDspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+[As, Ad, Az, Azz] = SDspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
                     struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
 if ifup
   wts_i = (w.*sp)';
 else
-  As = As*intp;
-  Ad  = Ad*intp;
+  As  = As *intp;
+  Ad  = Ad *intp;
+  Az  = Az *intp;
+  Azz = Azz*intp;
 end
 
 for j = 1:length(types)
@@ -66,13 +70,17 @@ for j = 1:length(types)
     if (all(type0 == [0 0 0 0]))
       varargout{j} = ones(size(rt,2),numel(wts_i)).*wts_i;
     elseif (all(type0 == [1 0 0 0]))
-        % varargout{j} = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-        %       struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
-        varargout{j} = As;
+      % varargout{j} = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+      %       struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+      varargout{j} = As;
     elseif (all(type0 == [0 0 -1 0]))
-            % varargout{j} = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-            %               struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
-            varargout{j} = Ad;
+      % varargout{j} = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+      %               struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
+      varargout{j} = Ad;
+    elseif (all(type0 == [0 0 -2 0]))
+      varargout{j} = Az;
+    elseif (all(type0 == [0 0 -3 0]))
+      varargout{j} = Azz;
     else
         error("split panel quad type " + join(string([1 2 3]),",") + " not available");
     end

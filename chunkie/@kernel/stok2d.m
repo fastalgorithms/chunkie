@@ -112,6 +112,11 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'dvel', sigma);
         obj.opdims = [2, 2];
         obj.sing = 'smooth';
+        % not correct... just gets it defined
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r','i'};
+        obj.splitinfo.functions = @(s,t) stok2d_d_split(mu, s, t);
 
     case {'dpres', 'dpressure'}
         obj.type = 'dpres';
@@ -217,4 +222,8 @@ f{3}(1:2:end,1:2:end) = -sn2mat.*distr/(2*mu);
 f{3}(1:2:end,2:2:end) =  sn1mat.*distr/(2*mu);
 f{3}(2:2:end,1:2:end) = -sn2mat.*disti/(2*mu);
 f{3}(2:2:end,2:2:end) =  sn1mat.*disti/(2*mu);
+end
+
+function f = stok2d_d_split(mu,s,t)
+f{1} = [];
 end
