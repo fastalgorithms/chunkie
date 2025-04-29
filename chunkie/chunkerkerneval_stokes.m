@@ -396,6 +396,8 @@ for j=1:size(chnkr.r,3)
         %
         fintsStrac2 = fints;
         %
+        fintsDtrac2 = fints;
+        %
         mu = 1; 
         ntarg = numel(ji);
         nsrc = k;
@@ -620,7 +622,60 @@ for j=1:size(chnkr.r,3)
           fints = fintsStrac2;
 
         end
-        
+
+        %% what should be the singularity type of Stokes DLP traction kernel
+        if strcmp(kern.type, 'dtrac')
+          % fintsDtrac2
+          kernsplitinfotype = cell(2,1);
+          kernsplitinfotype{1} = [0 0 -2 0];
+          kernsplitinfotype{2} = [0 0 -3.1 0];
+          allmats3 = cell(2,1);
+          [allmats3{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
+              t,w,opts,intp_ab,intp,kernsplitinfotype);
+          %
+          Az = allmats3{1};
+          Azz = allmats3{2};
+          %
+          px = targinfoji.r(1,:)'+1i*targinfoji.r(2,:)';
+          pnx = targinfoji.n(1,:)'+1i*targinfoji.n(2,:)';
+          rfx = srcinfo.r(1,:)+1i*srcinfo.r(2,:);
+          rfnx = srcinfo.n(1,:)+1i*srcinfo.n(2,:);
+          %
+          hx11   = -4*real(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));  % (s.ws(testn)*(-Hx)/pi)
+          dxr11  =  real(Az).*(real(pnx)*ones(1,numel(rfx)));   % (Dxr*s.ws(testn)/(2*pi).*nx(:,1))
+          dxi11  = -3*imag(Az).*(imag(pnx)*ones(1,numel(rfx)));    % (-3*Dxi*s.ws(testn)/(2*pi).*nx(:,2))
+          dxrc11 =  real(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)));    % (Dxrc*s.ws(testn)/(2*pi).*nx(:,1))
+          dxic11 = -imag(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));    % (-(Dxic*s.ws(testn)/(2*pi).*nx(:,2)))
+          %
+          T11 = hx11+dxr11+dxi11+dxrc11+dxic11;
+          %
+          hx12   =  4*imag(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
+          dxr12  = -real(Az).*(imag(pnx)*ones(1,numel(rfx)));
+          dxi12  =  imag(Az).*(real(pnx)*ones(1,numel(rfx))); 
+          dxrc12 = -real(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));
+          dxic12 = -imag(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)));
+          %
+          T12 = hx12+dxr12+dxi12+dxrc12+dxic12;
+          %
+          hx22   =  4*real(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
+          dxr22  =  3*real(Az).*(real(pnx)*ones(1,numel(rfx)));
+          dxi22  = -imag(Az).*(imag(pnx)*ones(1,numel(rfx)));
+          dxrc22 = -real(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)));
+          dxic22 =  imag(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));
+          %
+          T22 = hx22+dxr22+dxi22+dxrc22+dxic22;
+          Acorrc = [T11,T12]+1i*[T12,T22];
+          %
+          Acorrtmp = [real(Acorrc);imag(Acorrc)];
+          Acorr = zeros(size(Acorrtmp));
+          Acorr(1:2:end) = real(Acorrc);
+          Acorr(2:2:end) = imag(Acorrc);
+          %
+          fintsDtrac2(ind(:)) = fintsDtrac2(ind(:)) + Acorr*densjT(:);
+          %
+          fints = fintsDtrac2;
+
+        end
 
     end
 end

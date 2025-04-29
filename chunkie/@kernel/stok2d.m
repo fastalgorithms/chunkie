@@ -136,6 +136,11 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'dtrac', sigma);
         obj.opdims = [2, 2];
         obj.sing = 'hs';
+        % not correct... just gets it defined
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r','i'};
+        obj.splitinfo.functions = @(s,t) stok2d_dtrac_split(mu, s, t);
 
     case {'dgrad', 'dgradient'}
         obj.type = 'dgrad';
@@ -234,5 +239,9 @@ f{1} = [];
 end
 
 function f = stok2d_strac_split(mu,s,t)
+f{1} = [];
+end
+
+function f = stok2d_dtrac_split(mu,s,t)
 f{1} = [];
 end

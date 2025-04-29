@@ -101,6 +101,15 @@ for j = 1:length(types)
 
     elseif (all(type0 == [0 0 -3 0]))
       varargout{j} = Azz;
+
+    elseif (all(type0 == [0 0 -3.1 0])) 
+      [~, Az, Azz] = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+                    struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
+      Az = Az*intp;
+      Azz = Azz*intp;
+      varargout{1} = Az;
+      varargout{2} = Azz;
+
     else
         error("split panel quad type " + join(string([1 2 3]),",") + " not available");
     end
