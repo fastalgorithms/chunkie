@@ -72,7 +72,7 @@ function [chnkr,varargout] = smooth(verts,opts)
     if isfield(opts,'nchs')
         if (numel(opts.nchs) == 1)
             nchs = opts.nchs*ones(nv,1);
-        elseif(size(opts.nchs,2) == nchs)
+        elseif(numel(opts.nchs) == nv)
             nchs = opts.nchs;
         end
     end
@@ -132,7 +132,8 @@ function [chnkr,varargout] = smooth(verts,opts)
         return
     end
 
-    chnkr = chunker.chunkerpoints(rt);
+    rt = reshape(rt,2,k,[]);
+    chnkr = chunkerpoints(rt);
     if (nargout > 1)
         varargout{1} = err;
     end
