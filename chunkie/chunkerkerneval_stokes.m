@@ -394,6 +394,8 @@ for j=1:size(chnkr.r,3)
         fintsD2 = fints;
         funs = kern.splitinfo.functions(srcinfo,targinfoji);
         %
+        fintsStrac2 = fints;
+        %
         mu = 1; 
         ntarg = numel(ji);
         nsrc = k;
@@ -533,57 +535,91 @@ for j=1:size(chnkr.r,3)
 
         fints = fints4;
         %% what should be the singularity type of Stokes SLP velocity kernel
-        % fints5
-        As = allmats{1};
-        Ad = allmats{2};
-        Asz = Ad.*repmat(conj(1i*(srcinfo.n(1,:)+1i*srcinfo.n(2,:)))/1i,[numel(ji) 1]);
-        A1 = real(Asz); 
-        A2 = -imag(Asz);
-        cdist = -(targs(1,ji)'+1i*targs(2,ji)') + (r(1,:,j)+1i*r(2,:,j));
-        %
-        S11p1iS21 = (As/2+A1.*cdist/2);
-        S12p1iS22 = (1i*As/2+A2.*cdist/2);
-        Acorrc = [S11p1iS21,S12p1iS22];
-        Acorrtmp = [real(Acorrc);imag(Acorrc)];
-        Acorr = zeros(size(Acorrtmp));
-        Acorr(1:2:end) = real(Acorrc);
-        Acorr(2:2:end) = imag(Acorrc);
-        %
-        fints5(ind(:)) = fints5(ind(:)) + Acorr*densjT(:);
-
-        fints = fints5;
-        % keyboard
+        if strcmp(kern.type, 'svel')
+          % fints5
+          As = allmats{1};
+          Ad = allmats{2};
+          Asz = Ad.*repmat(conj(1i*(srcinfo.n(1,:)+1i*srcinfo.n(2,:)))/1i,[numel(ji) 1]);
+          A1 = real(Asz); 
+          A2 = -imag(Asz);
+          cdist = -(targs(1,ji)'+1i*targs(2,ji)') + (r(1,:,j)+1i*r(2,:,j));
+          %
+          S11p1iS21 = (As/2+A1.*cdist/2);
+          S12p1iS22 = (1i*As/2+A2.*cdist/2);
+          Acorrc = [S11p1iS21,S12p1iS22];
+          Acorrtmp = [real(Acorrc);imag(Acorrc)];
+          Acorr = zeros(size(Acorrtmp));
+          Acorr(1:2:end) = real(Acorrc);
+          Acorr(2:2:end) = imag(Acorrc);
+          %
+          fints5(ind(:)) = fints5(ind(:)) + Acorr*densjT(:);
+  
+          fints = fints5;
+        end
+        
         
         %% what should be the singularity type of Stokes DLP velocity kernel
-        allmats = cell(size(kern.splitinfo.type));
-        kern.splitinfo.type{3} = [0 0 -2 0];
-        [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
-              t,w,opts,intp_ab,intp,kern.splitinfo.type);
+        if strcmp(kern.type, 'dvel')
+          allmats = cell(size(kern.splitinfo.type));
+          kern.splitinfo.type{3} = [0 0 -2 0];
+          [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
+                t,w,opts,intp_ab,intp,kern.splitinfo.type);
+  
+          A = allmats{2};
+          Az = allmats{3};
+  
+          rfnx = srcinfo.n(1,:) + 1i*srcinfo.n(2,:);
+          rfx = srcinfo.r(1,:) + 1i*srcinfo.r(2,:);
+          px = targs(1,ji)'+1i*targs(2,ji)';
+          dinx = A.*(ones(ntarg,1)*(1./rfnx)); dnx = ones(ntarg,1)*rfnx;
+          D11p1iD21 = (-conj(Az).*real(bsxfun(@minus,px,rfx)) +real(dinx).*dnx);
+          D12p1iD22 = (-conj(Az).*imag(bsxfun(@minus,px,rfx)) -imag(dinx).*dnx);
+          Acorrc = [D11p1iD21,D12p1iD22];
+          Acorrtmp = [real(Acorrc);imag(Acorrc)];
+          Acorr = zeros(size(Acorrtmp));
+          Acorr(1:2:end) = real(Acorrc);
+          Acorr(2:2:end) = imag(Acorrc);
+          %
+          fintsD2(ind(:)) = fintsD2(ind(:)) + Acorr*densjT(:);
+          % 
+          % fints(ind(1,:)) = fints(ind(1,:)) + real(Acorr)*densjT(:);
+          % fints(ind(2,:)) = fints(ind(2,:)) + imag(Acorr)*densjT(:);
+          % 
+          % 
+          fints = fintsD2;
+          % keyboard
+        end
 
-        A = allmats{2};
-        Az = allmats{3};
+        %% what should be the singularity type of Stokes SLP traction kernel
+        if strcmp(kern.type, 'strac')
+          % fintsStrac2
+          allmats = cell(2,1);
+          kernsplitinfotype = cell(2,1);
+          kernsplitinfotype{1} = [0 0 -1 0];
+          kernsplitinfotype{2} = [0 0 -2.1 0];
+          [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
+                t,w,opts,intp_ab,intp,kernsplitinfotype);
+          Sz = allmats{1};
+          Dz = allmats{2};
+          px = targinfoji.r(1,:)'+1i*targinfoji.r(2,:)';
+          pnx = targinfoji.n(1,:)'+1i*targinfoji.n(2,:)';
+          rfx = srcinfo.r(1,:)+1i*srcinfo.r(2,:);
+          rfnx = srcinfo.n(1,:)+1i*srcinfo.n(2,:);
+          gsdotnx = real((pnx*ones(1,k)).*Sz); % grad slp dot nx
+          gdinyrdotny =  Dz.*(ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*(pnx*ones(1,k)));   % grad D/nx times r dot ny
+          Sp11p1iSp21 = (gsdotnx+conj(gdinyrdotny));
+          Sp12p1iSp22 = (1i*gsdotnx-1i*conj(gdinyrdotny));
+          Acorrc = [Sp11p1iSp21,Sp12p1iSp22];
+          Acorrtmp = [real(Acorrc);imag(Acorrc)];
+          Acorr = zeros(size(Acorrtmp));
+          Acorr(1:2:end) = real(Acorrc);
+          Acorr(2:2:end) = imag(Acorrc);
+          %
+          fintsStrac2(ind(:)) = fintsStrac2(ind(:)) + Acorr*densjT(:);
+          %
+          fints = fintsStrac2;
 
-        rfnx = srcinfo.n(1,:) + 1i*srcinfo.n(2,:);
-        rfx = srcinfo.r(1,:) + 1i*srcinfo.r(2,:);
-        px = targs(1,ji)'+1i*targs(2,ji)';
-        dinx = A.*(ones(ntarg,1)*(1./rfnx)); dnx = ones(ntarg,1)*rfnx;
-        D11p1iD21 = (-conj(Az).*real(bsxfun(@minus,px,rfx)) +real(dinx).*dnx);
-        D12p1iD22 = (-conj(Az).*imag(bsxfun(@minus,px,rfx)) -imag(dinx).*dnx);
-        Acorrc = [D11p1iD21,D12p1iD22];
-        Acorrtmp = [real(Acorrc);imag(Acorrc)];
-        Acorr = zeros(size(Acorrtmp));
-        Acorr(1:2:end) = real(Acorrc);
-        Acorr(2:2:end) = imag(Acorrc);
-        %
-        fintsD2(ind(:)) = fintsD2(ind(:)) + Acorr*densjT(:);
-        % 
-        % fints(ind(1,:)) = fints(ind(1,:)) + real(Acorr)*densjT(:);
-        % fints(ind(2,:)) = fints(ind(2,:)) + imag(Acorr)*densjT(:);
-        % 
-        % 
-        fints = fintsD2;
-        % keyboard
-
+        end
         
 
     end
