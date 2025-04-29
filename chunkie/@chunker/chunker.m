@@ -367,9 +367,6 @@ classdef chunker
         kappa = signed_curvature(obj)
     end
     methods(Static)
-        obj = chunkerfunc(fcurve,varargin)
-        obj = chunkerpoly(verts,varargin)
-        obj = chunkerpoints(r,varargin)
         function lvlrfac = lvlrfacdefault()
             lvlrfac = 2.1;
         end

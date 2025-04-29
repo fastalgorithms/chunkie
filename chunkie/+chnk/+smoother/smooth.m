@@ -133,7 +133,7 @@ function [chnkr,varargout] = smooth(verts,opts)
     end
 
     rt = reshape(rt,2,k,[]);
-    chnkr = chunker.chunkerpoints(rt);
+    chnkr = chunkerpoints(rt);
     if (nargout > 1)
         varargout{1} = err;
     end
