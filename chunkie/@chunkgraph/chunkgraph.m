@@ -411,7 +411,7 @@ classdef chunkgraph
 
         % defined in other files 
         spmat = build_v2emat(obj)
-        obj = refine(obj, opts)
+        obj = refine(obj, opts,last_len)
         obj = balance(obj)
         obj = move(obj, r0, r1, trotat, scale)
         rmin = min(obj)
