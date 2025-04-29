@@ -154,34 +154,53 @@ end
 
 function f = helm2dquas_s_split(zk,s,t,quas_param)
 seval = chnk.helm2dquas.kern(zk, s, t, 's',quas_param);
+
+rx = t.r(1,:).' - s.r(1,:);
+nx = fix(mean(rx/quas_param.d,"all"));
+t.r(1,:) = t.r(1,:) - nx*quas_param.d;
+
+s0eval = chnk.helm2d.kern(zk, s, t, 's');
 dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
 logeval = log(abs(dist));
 f = cell(2,1);
-f{1} = seval + 1/(2*pi)*4*logeval.*imag(seval);
-f{2} = 4*imag(seval);
+f{1} = seval + 1/(2*pi)*4*logeval.*imag(s0eval);
+f{2} = 4*imag(s0eval);
 end
 
 function f = helm2dquas_d_split(zk,s,t,quas_param)
 deval = chnk.helm2dquas.kern(zk, s, t, 'd',quas_param);
+
+rx = t.r(1,:).' - s.r(1,:);
+nx = fix(mean(rx/quas_param.d,"all"));
+t.r(1,:) = t.r(1,:) - nx*quas_param.d;
+
+d0eval = chnk.helm2d.kern(zk, s, t, 'd');
 dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
 logeval = log(abs(dist));
 cauchyeval = (s.n(1,:)+1i*s.n(2,:))./(dist);
 f = cell(3, 1);
-f{1} = deval + 1/(2*pi)*4*logeval.*imag(deval) + 1/(2*pi)*real(cauchyeval);
-f{2} = 4*imag(deval);
+f{1} = deval + 1/(2*pi)*4*logeval.*imag(d0eval) + 1/(2*pi)*real(cauchyeval);
+f{2} = 4*imag(d0eval);
 f{3} = ones(size(t.r,2),size(s.r,2));
 end
 
 function f = helm2dquas_c_split(zk,s,t,quas_param,coefs)
 seval = chnk.helm2dquas.kern(zk, s, t, 's',quas_param);
 deval = chnk.helm2dquas.kern(zk, s, t, 'd',quas_param);
+
+rx = t.r(1,:).' - s.r(1,:);
+nx = fix(mean(rx/quas_param.d,"all"));
+t.r(1,:) = t.r(1,:) - nx*quas_param.d;
+
+s0eval = chnk.helm2d.kern(zk, s, t, 's');
+d0eval = chnk.helm2d.kern(zk, s, t, 'd');
 dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
 logeval = log(abs(dist));
 cauchyeval = (s.n(1,:)+1i*s.n(2,:))./(dist);
 f = cell(3, 1);
-f{1} = coefs(1) * (deval + 2/pi*logeval.*imag(deval) + 1/(2*pi)*real(cauchyeval)) + ...
-       coefs(2) * (seval + 2/pi*logeval.*imag(seval));
-f{2} = coefs(1) * (4*imag(deval)) + coefs(2) * (4*imag(seval));
+f{1} = coefs(1) * (deval + 2/pi*logeval.*imag(d0eval) + 1/(2*pi)*real(cauchyeval)) + ...
+       coefs(2) * (seval + 2/pi*logeval.*imag(s0eval));
+f{2} = coefs(1) * (4*imag(d0eval)) + coefs(2) * (4*imag(s0eval));
 f{3} = coefs(1)*ones(size(t.r,2),size(s.r,2));
 end
 
