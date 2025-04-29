@@ -13,7 +13,7 @@ cparams = [];
 cparams.eps = 1.0e-10;
 cparams.nover = 1;
 pref = []; 
-pref.k = 32;
+pref.k = 16;
 narms = 3;
 amp = 0.25;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
@@ -37,14 +37,15 @@ sources_n = rand(2,ns);
 nt = 10000;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
-targets = targets.*repmat(rand(1,nt),2,1)*0.75;
+targets = targets.*repmat(rand(1,nt),2,1)*0.95;
 % targets = targets.*repmat(rand(1,nt),2,1)*0.99;
 
 plot(chnkr, 'r.'); hold on;
 plot(targets(1,:), targets(2,:), 'kx')
 axis equal
 %
-mu = 1.3; 
+mu = 1.3;
+mu = 1;
 kerns = kernel('stok', 'd', mu);
 
 % eval u on bdry
@@ -62,7 +63,9 @@ ubdry = kernmats*strengths;
 % eval u at targets
 
 targinfo = []; targinfo.r = targets;
-targets_n = rand(2, nt);
+targets_n = rand(2, nt); 
+targets_n = targets_n./sqrt(targets_n(1,:).^2+targets_n(2,:).^2);
+targinfo.n = targets_n;
 kernmatstarg = kerns.eval(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
@@ -94,6 +97,7 @@ start=tic; Dsol = chunkerkerneval(chnkr,fkern,sol,targets,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
+% test Stokes SLP velocity
 % just test stokes slp velocity pquad...
 % targets = targets.*repmat(rand(1,nt),2,1)*0.99 seems to break below stokes kernel test...
 fkerns = kernel('stok', 'svel', mu);
@@ -104,17 +108,89 @@ assert(norm(err) < 1e-10);
 %
 opts.forcepquad=true;
 opts.side = 'i';
-Ssol_pquad = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
-Ssys_pquad = chunkerkernevalmat(chnkr,fkerns,targets,opts); 
+Ssol_pquad = chunkerkerneval_stokes(chnkr,fkerns,sol,targets,opts); 
+% Ssol_pquad = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
 err = abs(Ssol - Ssol_pquad);
 assert(norm(err) < 1e-10);
-err = abs(Ssol - Ssys_pquad*sol);
-assert(norm(err) < 1e-10);
-% figure(1),clf,
-% plot(chnkr), hold on
-% scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
+figure(1),clf,
+plot(chnkr), hold on
+scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
+title('stokes single layer velocity error')
 opts.forcepquad=false;
 %
+
+% test Stokes DLP velocity
+fkernd = kernel('stok', 'dvel', mu);
+Dsol = chunkerkerneval(chnkr,fkernd,sol,targets,opts); 
+%
+opts.forcepquad=true;
+opts.side = 'i';
+Dsol_pquad = chunkerkerneval_stokes(chnkr,fkernd,sol,targets,opts); 
+err = abs(Dsol - Dsol_pquad);
+figure(2),clf,
+plot(chnkr), hold on
+scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
+title('stokes double layer velocity error')
+opts.forcepquad=false;
+
+% test Stokes SLP traction 
+fkernstrac = kernel('stok', 'strac', mu);
+Stracsol = chunkerkerneval(chnkr,fkernstrac,sol,targinfo,opts);
+% 
+opts.forcepquad=true;
+opts.side = 'i';
+Stracsol_pquad = chunkerkerneval_stokes(chnkr,fkernstrac,sol,targinfo,opts); 
+err = abs(Stracsol - Stracsol_pquad);
+figure(3),clf,
+plot(chnkr), hold on
+scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
+title('stokes single layer traction error')
+opts.forcepquad=false;
+
+% test Stokes DLP traction 
+fkerndtrac = kernel('stok', 'dtrac', mu);
+Dtracsol = chunkerkerneval(chnkr,fkerndtrac,sol,targinfo,opts);
+%
+opts.forcepquad=true;
+opts.side = 'i';
+Dtracsol_pquad = chunkerkerneval_stokes(chnkr,fkerndtrac,sol,targinfo,opts); 
+err = abs(Dtracsol - Dtracsol_pquad);
+figure(4),clf,
+plot(chnkr), hold on
+scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
+title('stokes double layer traction error')
+opts.forcepquad=false;
+
+% test Stokes SLP pressure
+fkernspres = kernel('stok', 'spres', mu);
+Spressol = chunkerkerneval(chnkr,fkernspres,sol,targinfo,opts);
+%
+opts.forcepquad=true;
+opts.side = 'i';
+Spressol_pquad = chunkerkerneval_stokes(chnkr,fkernspres,sol,targinfo,opts); 
+err = abs(Spressol - Spressol_pquad);
+
+figure(5),clf,
+plot(chnkr), hold on
+scatter(targets(1,:),targets(2,:),[],log10(err(1:1:end))); colorbar
+title('stokes single layer pressure error')
+opts.forcepquad=false;
+
+% test Stokes DLP pressure
+fkerndpres = kernel('stok', 'dpres', mu);
+Dpressol = chunkerkerneval(chnkr,fkerndpres,sol,targinfo,opts);
+%
+opts.forcepquad=true;
+opts.side = 'i';
+Dpressol_pquad = chunkerkerneval_stokes(chnkr,fkerndpres,sol,targinfo,opts); 
+err = abs(Dpressol - Dpressol_pquad);
+
+figure(6),clf,
+plot(chnkr), hold on
+scatter(targets(1,:),targets(2,:),[],log10(err(1:1:end))); colorbar
+title('stokes double layer pressure error')
+opts.forcepquad=false;
+
 
 wchnkr = chnkr.wts;
 
