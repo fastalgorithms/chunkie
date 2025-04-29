@@ -400,6 +400,8 @@ for j=1:size(chnkr.r,3)
         %
         fintsSpres2 = fints;
         %
+        fintsDpres2 = fints;
+        %
         mu = 1; 
         ntarg = numel(ji);
         nsrc = k;
@@ -571,6 +573,24 @@ for j=1:size(chnkr.r,3)
                    (Ar.*(ones(numel(px),1)*ny2(:)')-Ai.*(ones(numel(px),1)*ny1(:)'))];
           fintsSpres2(ind(:)) = fintsSpres2(ind(:)) + Acorr*densjT(:);
           fints = fintsSpres2;
+          % keyboard
+        end
+
+        %% what should be the singularity type of Stokes DLP pressure kernel
+        if strcmp(kern.type, 'dpres')
+          densjT = densj.'; % switch from interleaving
+          % fintsSpres2
+          kernsplitinfotype = cell(2,1);
+          kernsplitinfotype{1} = [0 0 0 0];
+          kernsplitinfotype{2} = [0 0 -2.1 0];
+          allmats3 = cell(2,1);
+          [allmats3{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
+              t,w,opts,intp_ab,intp,kernsplitinfotype);
+          %
+          Az = allmats3{2};
+          Acorr = [-2*real(Az), 2*imag(Az)];
+          fintsDpres2(ind(:)) = fintsDpres2(ind(:)) + Acorr*densjT(:);
+          fints = fintsDpres2;
           % keyboard
         end
 

@@ -133,7 +133,12 @@ switch lower(type)
         obj.eval = @(s,t) chnk.stok2d.kern(mu, s, t, 'dpres');
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'dpres', sigma);
         obj.opdims = [1, 2];
-	    obj.sing = 'hs';
+	      obj.sing = 'hs';
+        % not correct... just gets it defined
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r','i'};
+        obj.splitinfo.functions = @(s,t) stok2d_d_split(mu, s, t);
 
     case {'dtrac', 'dtraction'}
         obj.type = 'dtrac';
@@ -252,5 +257,9 @@ f{1} = [];
 end
 
 function f = stok2d_spres_split(mu,s,t)
+f{1} = [];
+end
+
+function f = stok2d_dpres_split(mu,s,t)
 f{1} = [];
 end
