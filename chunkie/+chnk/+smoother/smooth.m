@@ -72,7 +72,7 @@ function [chnkr,varargout] = smooth(verts,opts)
     if isfield(opts,'nchs')
         if (numel(opts.nchs) == 1)
             nchs = opts.nchs*ones(nv,1);
-        elseif(size(opts.nchs,2) == nv)
+        elseif(numel(opts.nchs) == nv)
             nchs = opts.nchs;
         end
     end
