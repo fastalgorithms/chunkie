@@ -398,144 +398,15 @@ for j=1:size(chnkr.r,3)
         %
         fintsDtrac2 = fints;
         %
+        fintsSpres2 = fints;
+        %
         mu = 1; 
         ntarg = numel(ji);
         nsrc = k;
-        dist = (srcinfo.r(1,:)+1i*srcinfo.r(2,:))-(targs(1,ji)'+1i*targs(2,ji)');
-        distr = real(dist);
-        disti = imag(dist);
-        sn1mat = repmat(srcinfo.n(1,:),[ntarg 1]);
-        sn2mat = repmat(srcinfo.n(2,:),[ntarg 1]);
-        %
-        l = 1;
-        mat0 = real(allmats{l});
-        mat0opdim = kron(mat0,ones(opdims'));
-        funs{l} = zeros(2*ntarg,2*nsrc);
-        funs{1}(1:2:end,1:2:end) = 1/(2*mu);
-        funs{1}(2:2:end,2:2:end) = 1/(2*mu);
-        mat0xsplitfun1 = mat0opdim.*funs{l};
-        %
-        l = 2;
-        mat0 = real(allmats{l});
-        mat0opdim = kron(mat0,ones(opdims'));
-        funs{l} = zeros(2*ntarg,2*nsrc);
-        funs{2}(1:2:end,1:2:end) = -sn1mat.*distr/(2*mu);     
-        funs{2}(1:2:end,2:2:end) = -sn2mat.*distr/(2*mu);
-        funs{2}(2:2:end,1:2:end) = -sn1mat.*disti/(2*mu); 
-        funs{2}(2:2:end,2:2:end) = -sn2mat.*disti/(2*mu);
-        mat0xsplitfun2 = mat0opdim.*funs{l};
-        %
-        l = 3;
-        mat0 = imag(allmats{l});
-        mat0opdim = kron(mat0,ones(opdims'));
-        funs{l} = zeros(2*ntarg,2*nsrc);
-        funs{3}(1:2:end,1:2:end) = -sn2mat.*distr/(2*mu);
-        funs{3}(1:2:end,2:2:end) =  sn1mat.*distr/(2*mu);
-        funs{3}(2:2:end,1:2:end) = -sn2mat.*disti/(2*mu);
-        funs{3}(2:2:end,2:2:end) =  sn1mat.*disti/(2*mu);
-        mat0xsplitfun3 = mat0opdim.*funs{l};
-        %
-        Acorr = mat0xsplitfun1+mat0xsplitfun2+mat0xsplitfun3;
-        fints(ind(:)) = fints(ind(:)) + Acorr*densj(:);
-
         
-        %%
-        l = 1;
-        funs1 = zeros(2*numel(ji),2*k);
-        funs1(1:2:end,1:2:end) = 1;
-        funs1(2:2:end,2:2:end) = 1;
-        mat0xsplitfun1_2 = 1/(2*mu)*funs1.*kron(real(allmats{l}),ones(opdims'));
-        test1_2 = mat0xsplitfun1_2*densj(:);
-        %
-        l = 2;
-        funs2 = zeros(2*numel(ji),2*k);
-        funs2(1:2:end,1:2:end) = (-(repmat(srcinfo.n(1,:),[numel(ji) 1]))).*real(dist);     
-        funs2(1:2:end,2:2:end) = -((repmat(srcinfo.n(2,:),[numel(ji) 1]))).*real(dist);
-        funs2(2:2:end,1:2:end) = (-(repmat(srcinfo.n(1,:),[numel(ji) 1]))).*imag(dist); 
-        funs2(2:2:end,2:2:end) = -((repmat(srcinfo.n(2,:),[numel(ji) 1]))).*imag(dist);
-        mat0xsplitfun2_2 = 1/(2*mu)*funs2.*kron(real(allmats{l}),ones(opdims'));
-        test2_2 = mat0xsplitfun2_2*densj(:);
-        %
-        l = 3;
-        funs3 = zeros(2*numel(ji),2*k);
-        funs3(1:2:end,1:2:end) = - (repmat(srcinfo.n(2,:),[numel(ji) 1])).*real(dist);
-        funs3(1:2:end,2:2:end) =   (repmat(srcinfo.n(1,:),[numel(ji) 1])).*real(dist);
-        funs3(2:2:end,1:2:end) = - (repmat(srcinfo.n(2,:),[numel(ji) 1])).*imag(dist);
-        funs3(2:2:end,2:2:end) =   (repmat(srcinfo.n(1,:),[numel(ji) 1])).*imag(dist);
-        mat0xsplitfun3_2 = 1/(2*mu)*funs3.*kron(imag(allmats{l}),ones(opdims'));
-        test3_2 = mat0xsplitfun3_2*densj(:);
-        %
-        Acorr_2 = mat0xsplitfun1_2+mat0xsplitfun2_2+mat0xsplitfun3_2;
-        fints2(ind(:)) = fints2(ind(:)) + Acorr_2*densj(:);
-        % fints2(ind(:)) = fints2(ind(:)) + mat0xsplitfun1_2*densj(:);
-        % fints2(ind(:)) = fints2(ind(:)) + mat0xsplitfun1_2*densj(:) + mat0xsplitfun2_2*densj(:);
-        test2 = Acorr_2*densj(:);
-  
-        %%
-        densjT = densj.'; % switch from interleaving
-        cdist = -(targs(1,ji)'+1i*targs(2,ji)') + (r(1,:,j)+1i*r(2,:,j));
-        %
-        l = 1;
-        mat0 = real(allmats{l});
-        Acorr1 = [mat0,1i*mat0];
-        fints3(ind(1,:)) = fints3(ind(1,:)) + 1/(2*mu)*real(Acorr1)*densjT(:);
-        fints3(ind(2,:)) = fints3(ind(2,:)) + 1/(2*mu)*imag(Acorr1)*densjT(:);
-        %
-        l = 2;
-        mat0 = allmats{l};
-        mat0r = real(mat0);
-        Acorr2 = [(-mat0r.*(repmat(srcinfo.n(1,:),[numel(ji) 1]))).*cdist, ...
-                  -(mat0r.*(repmat(srcinfo.n(2,:),[numel(ji) 1]))).*cdist];
-        fints3(ind(1,:)) = fints3(ind(1,:)) + 1/(2*mu)*real(Acorr2)*densjT(:);
-        fints3(ind(2,:)) = fints3(ind(2,:)) + 1/(2*mu)*imag(Acorr2)*densjT(:);
-        %
-        l = 3;
-        mat0 = allmats{l};
-        mat0i = imag(mat0);
-        Acorr3r = [- mat0i.*(repmat(srcinfo.n(2,:),[numel(ji) 1])).*real(cdist), ...
-                     mat0i.*(repmat(srcinfo.n(1,:),[numel(ji) 1])).*real(cdist)];
-        Acorr3i = [- mat0i.*(repmat(srcinfo.n(2,:),[numel(ji) 1])).*imag(cdist), ...
-                     mat0i.*(repmat(srcinfo.n(1,:),[numel(ji) 1])).*imag(cdist)];
-        fints3(ind(1,:)) = fints3(ind(1,:)) + 1/(2*mu)*Acorr3r*densjT(:);
-        fints3(ind(2,:)) = fints3(ind(2,:)) + 1/(2*mu)*Acorr3i*densjT(:);
-
-        %%
-        %
-        l = 1;
-        mat0 = real(allmats{l});
-        S11p1iS21_1 = (mat0);
-        S12p1iS22_1 = (1i*mat0);
-        Acorrc1 = [S11p1iS21_1,S12p1iS22_1];
-        Acorr1 = zeros(2*ntarg,2*nsrc);
-        Acorr1(1:2:end) = real(Acorrc1);
-        Acorr1(2:2:end) = imag(Acorrc1);
-        % test1_4 =  1/(2*mu)*Acorr1*densj(:);
-        %
-        l = 2;
-        mat0 = allmats{l};
-        Asz = mat0.*repmat(conj(1i*(srcinfo.n(1,:)+1i*srcinfo.n(2,:)))/1i,[numel(ji) 1]);
-        A1 = real(Asz); 
-        A2 = -imag(Asz);
-        S11p1iS21_2 = (A1.*cdist);
-        S12p1iS22_2 = (A2.*cdist);
-        Acorrc2 = [S11p1iS21_2,S12p1iS22_2];
-        Acorrtmp2 = [real(Acorrc2);imag(Acorrc2)];
-        Acorr2 = zeros(size(Acorrtmp2));
-        Acorr2(1:2:end) = real(Acorrc2);
-        Acorr2(2:2:end) = imag(Acorrc2);
-        % test2_4 = 1/(2*mu)*Acorr2*densj(:);
-        %
-        fints4(ind(1,:)) = fints4(ind(1,:)) + 1/(2*mu)*real(Acorrc1)*densjT(:);
-        fints4(ind(2,:)) = fints4(ind(2,:)) + 1/(2*mu)*imag(Acorrc1)*densjT(:);
-        fints4(ind(1,:)) = fints4(ind(1,:)) + 1/(2*mu)*real(Acorrc2)*densjT(:);
-        fints4(ind(2,:)) = fints4(ind(2,:)) + 1/(2*mu)*imag(Acorrc2)*densjT(:);
-
-        % fints = fints4;
-        mytestval = zeros(2*ntarg,1);
-        mytestval(1:end/2) = (real(Acorrc1)+real(Acorrc2))*densjT(:);
-        mytestval(end/2+1:end) = (imag(Acorrc1)+imag(Acorrc2))*densjT(:);
-
         fints = fints4;
+
+        densjT = densj.'; % switch from interleaving
         %% what should be the singularity type of Stokes SLP velocity kernel
         if strcmp(kern.type, 'svel')
           % fints5
@@ -675,6 +546,32 @@ for j=1:size(chnkr.r,3)
           %
           fints = fintsDtrac2;
 
+        end
+
+        %% what should be the singularity type of Stokes SLP pressure kernel
+        if strcmp(kern.type, 'spres')
+          densjT = densj.'; % switch from interleaving
+          % fintsSpres2
+          kernsplitinfotype = cell(1,1);
+          kernsplitinfotype{1} = [0 0 -1.1 0];
+          allmats3 = cell(1,1);
+          [allmats3{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
+              t,w,opts,intp_ab,intp,kernsplitinfotype);
+          %
+          A = allmats3{1};
+          %
+          px = targinfoji.r(1,:)'+1i*targinfoji.r(2,:)';
+          pnx = targinfoji.n(1,:)'+1i*targinfoji.n(2,:)';
+          rfx = srcinfo.r(1,:)+1i*srcinfo.r(2,:);
+          rfnx = srcinfo.n(1,:)+1i*srcinfo.n(2,:);
+          %
+          ny1 = real(rfnx); ny2 = imag(rfnx);
+          Ar = real(A); Ai = imag(A);
+          Acorr = [(Ar.*(ones(numel(px),1)*ny1(:)')+Ai.*(ones(numel(px),1)*ny2(:)')), ...
+                   (Ar.*(ones(numel(px),1)*ny2(:)')-Ai.*(ones(numel(px),1)*ny1(:)'))];
+          fintsSpres2(ind(:)) = fintsSpres2(ind(:)) + Acorr*densjT(:);
+          fints = fintsSpres2;
+          % keyboard
         end
 
     end

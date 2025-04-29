@@ -102,7 +102,7 @@ for j = 1:length(types)
     elseif (all(type0 == [0 0 -3 0]))
       varargout{j} = Azz;
 
-    elseif (all(type0 == [0 0 -3.1 0])) 
+    elseif (all(type0 == [0 0 -3.1 0])) % for DLP traction
       [~, Az, Azz] = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
                     struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
       Az = Az*intp;
@@ -110,6 +110,11 @@ for j = 1:length(types)
       varargout{1} = Az;
       varargout{2} = Azz;
 
+    elseif (all(type0 == [0 0 -1.1 0])) % for SLP pressure
+      A = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
+                    struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
+      A = A*intp;
+      varargout{1} = A;
     else
         error("split panel quad type " + join(string([1 2 3]),",") + " not available");
     end
