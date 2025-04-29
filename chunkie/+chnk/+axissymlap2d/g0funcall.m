@@ -39,10 +39,6 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     %! if xminus is very small, use the forward recurrence
     %!
 
-    %disp(['inside g0mall, x = ' num2str(x)])
-    %return
-
-    
     iffwd = 0;
     if (x < 1.005)
         iffwd = 1;
@@ -68,6 +64,18 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
         
     end
 
+    %disp(['inside g0mall, x = ' num2str(x)])
+    %if (iffwd == 0)
+    %    disp(['running backward recursion']);
+    %end
+    
+    %if (iffwd == 1)
+    %    disp(['running backward recursion']);
+    %end
+    
+    %return
+    
+    
 
     gvals = zeros(maxm+1,1);
     gdzs = zeros(maxm+1,1);
@@ -155,6 +163,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
         der = dernext;
     end
 
+    
     %!
     %! now start at nterms and recurse down to maxm
     %!
@@ -171,7 +180,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
 
     % run the downward recurrence
     for j = 1:(nterms-maxm+1)
-        i = nterms-i+1;
+        i = nterms-j+1;
         fprev = (2*i*x*f - (i+half)*fnext)/(i-half);
         fnext = f;
         f = fprev;
@@ -184,13 +193,13 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     gvals(maxm+1) = fnext;
 
     ders = zeros(maxm+1,1);
-    ders(maxm) = der
-    ders(maxm+1) = dernext
+    ders(maxm) = der;
+    ders(maxm+1) = dernext;
   
     for j = 1:(maxm-1)
         i = maxm-1-j+1;
         gvals(i) = (2*i*x*gvals(i+1) - (i+half)*gvals(i+2))/(i-half);
-        ders(i) = (2*i*(x*ders(i+1)+gvals(i+1)) - (i+half)*ders(i+2))/(i-half)
+        ders(i) = (2*i*(x*ders(i+1)+gvals(i+1)) - (i+half)*ders(i+2))/(i-half);
    end
 
 
@@ -210,7 +219,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     ders(1) = dq0*2*pi*sqrt(rp/r);
     ders(2) = dq1*2*pi*sqrt(rp/r);
     for i = 2:maxm
-       ders(i+1) = -(i-.5d0)*(gvals(i) - x*gvals(i+1))/(1+x)/xminus
+       ders(i+1) = -(i-.5d0)*(gvals(i) - x*gvals(i+1))/(1+x)/xminus;
     end
 
     %

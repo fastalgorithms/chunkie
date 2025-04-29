@@ -14,7 +14,7 @@ z = 0.5;
 zp = z-h;
 dz = h;
 
-maxm = 30;
+maxm = 5;
 
 exact = zeros(maxm+1,1);
 exact_gdz = zeros(maxm+1,1);
@@ -71,7 +71,7 @@ disp(['from 0 mode gfunc, gdr = ' num2str(gdr) ' error = ' num2str(abs(gdr-exact
 disp(['from 0 mode gfunc, gdrp = ' num2str(gdrp) ' error = ' num2str(abs(gdrp-exact_gdrp(1)))]);
 
 
-
+%%return
 
 % evaluate all modes now
 [gvals, gdzs, gdrs, gdrps] = chnk.axissymlap2d.g0funcall(r, rp, dr, z, zp, dz, maxm);
