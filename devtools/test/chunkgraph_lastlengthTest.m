@@ -46,34 +46,39 @@ plot(cgrph3,'x')
 
 
 
-clf
+clf; hold on
 last_len = 0.9;  last_len = sum(cgrph.echnks(1).wts(:,1));
 cgrph4 = refine(cgrph,[],last_len);
-cgrph5 = refine(cgrph4,[],last_len);
-assert(cgrph5.npt == cgrph4.npt)
+% cgrph5 = refine(cgrph4,[],last_len);
+% assert(cgrph5.npt == cgrph4.npt)
 % cgrph4 = cgrph;
-plot(cgrph4,'.')
-hold on
+% % plot(cgrph4,'.')
+% % hold on
 % %%
-% cg = cgrph4;
-% nverts = narms*2;
-% for j = 1:nverts
-%     loc_edges = cg.vstruc{j}{1};
-%     loc_dir = cg.vstruc{j}{2};
-% 
-%     nloc = length(loc_edges);
-%     arcs = zeros(1,nloc);
-% 
-%     idch_loc = [cg.echnks(loc_edges).nch];
-%     idch_loc(loc_dir == 1) = 1;
-% 
-%     for k = 1:nloc
-%         wts = cg.echnks(loc_edges(k)).wts;
-%         arcs(k) = sum(wts(:,idch_loc(k)));
-%         plot(cg.echnks(loc_edges(k)).r(1,:,idch_loc(k)), cg.echnks(loc_edges(k)).r(2,:,idch_loc(k)),'o')
-%     end
-%     [diff(arcs), log2(arcs(1) / last_len), log2(arcs(1) / last_len)-round(log2(arcs(1) / last_len))]
-% end
+cg = cgrph4;
+nverts = narms*2;
+for j = 1:nverts
+    loc_edges = cg.vstruc{j}{1};
+    loc_dir = cg.vstruc{j}{2};
+
+    nloc = length(loc_edges);
+    arcs = zeros(1,nloc);
+
+    idch_loc = [cg.echnks(loc_edges).nch];
+    idch_loc(loc_dir == 1) = 1;
+
+    for k = 1:nloc
+        wts = cg.echnks(loc_edges(k)).wts;
+        arcs(k) = sum(wts(:,idch_loc(k)));
+        plot(cg.echnks(loc_edges(k)).r(1,:,idch_loc(k)), cg.echnks(loc_edges(k)).r(2,:,idch_loc(k)),'o')
+    end
+    [diff(arcs), log2(arcs(1) / last_len), log2(arcs(1) / last_len)-round(log2(arcs(1) / last_len))]
+end
+
+
+axis equal
+
+
 
 
 

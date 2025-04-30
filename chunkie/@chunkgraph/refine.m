@@ -41,42 +41,44 @@ cg = balance(cg);
 if nargin == 3
 
 
-    [~,~,u] = lege.exps(cg.k);
+    
 
     nedges = length(cg.echnks);
     nverts = length(cg.vstruc);
 
-    % for i = 1:nedges
-    % 
-    %     len = sum(cg.echnks(i).wts(:));
-    %     len_l = sum(cg.echnks(i).wts(:,1));
-    %     len_r = sum(cg.echnks(i).wts(:,end));
-    % 
-    %     lvl_l = get_lvl(len_l, last_len);
-    %     lvl_r = get_lvl(len_r, last_len);
-    % 
-    %     len_l = 2^-lvl_l*last_len;
-    %     len_r = 2^-lvl_r*last_len;
-    % 
-    %     tsplit = [len_l, 2*len_l, len - 2*len_r, len - len_r];
-    %     tsplit = uniquetol(tsplit);
-    % 
-    %     mxlgth = max(sum(cg.echnks(i).wts(:,:)));
-    %     cparams = []; cparams.maxchunklen = mxlgth;
-    %     cparams.ta = 0; cparams.tb = len;
-    %     cparams.tsplits = tsplit;cparams.eps = 1e-6;
-    %     % fix this to work in general
-    %     cparams.ifclosed = 0;
-    % 
-    %     [pstrt,plen,rs,ds,d2s] = chunkparam_setup(cg.echnks(i));
-    %     fcurve = @(s) chunkparam(s,cg.echnks(i),u,pstrt,plen,rs,ds,d2s);
-    % 
-    %     s = linspace(0,len-1e-8,1e3);
-    %     r = fcurve(s.');
-    %     plot(r(1,:),r(2,:),'.')
-    %     i
-    %     cg.echnks(i) = chunkerfunc(fcurve,cparams);
-    % end
+    for i = 1:nedges
+
+        len = sum(cg.echnks(i).wts(:));
+        len_l = sum(cg.echnks(i).wts(:,1));
+        len_r = sum(cg.echnks(i).wts(:,end));
+
+        lvl_l = get_lvl(len_l, last_len);
+        lvl_r = get_lvl(len_r, last_len);
+
+        len_l = 2^-lvl_l*last_len;
+        len_r = 2^-lvl_r*last_len;
+
+        tsplit = [len_l, 2*len_l, len - 2*len_r, len - len_r];
+        tsplit = uniquetol(tsplit);
+
+        mxlgth = max(sum(cg.echnks(i).wts(:,:)));
+        cparams = []; cparams.maxchunklen = mxlgth;
+        cparams.ta = 0; cparams.tb = len;
+        cparams.tsplits = tsplit;%cparams.eps = 1e-6;
+        % fix this to work for closed loops too
+        [~,~,info] = sortinfo(cg.echnks(i)); 
+        cparams.ifclosed = info.ifclosed;
+        cparams.ifrefine = 0; cparams.lvlr = 'n';
+
+        param_data = chunkerarcparam_init(cg.echnks(i));
+        fcurve = @(s) chunkerarcparam(s,param_data);
+
+        s = linspace(0,len-1e-8,1e3);
+        r = fcurve(s.');
+        plot(r(1,:),r(2,:),'.')
+        % i
+        cg.echnks(i) = chunkerfunc(fcurve,cparams);
+    end
 
 
 
@@ -156,45 +158,4 @@ function lvl = get_lvl(lens, last_len)
         lvl = ceil(lvl);
     end
     lvl = max(lvl, 0);
-end
-
-
-function [pstrt, plen,rs,ds,d2s] = chunkparam_setup(chnkr)
-    plen = sum(chnkr.wts);
-    pstrt = [0,cumsum(plen)];
-
-    rs  = chnkr.r;
-    ds  = chnkr.d;
-    d2s = chnkr.d2;
-end
-
-function [r,d,d2] = chunkparam(s, chnkr, u,pstrt,plen,rs,ds,d2s)
-% get r, d, d2 at an arbitrary arclength point on chnkr
-% s is the arclength and should lie in [0, sum(chnkr.wts)]
-% u is the value to legendre coefficient map
-
-ns = length(s);
-dim = chnkr.dim;
-
-r  = zeros(dim, ns);
-d  = zeros(dim, ns);
-d2 = zeros(dim, ns);
-
-for i = 1:chnkr.nch
-    cri = u*(rs(:,:,i).');
-    cdi = u*(ds(:,:,i).');
-    cd2i = u*(d2s(:,:,i).');
-
-    iiin = (s >= pstrt(i)) & (s < pstrt(i+1));
-
-    sloc = 2*(s(iiin)-pstrt(i))/plen(i)-1;
-
-    if ~isempty(sloc)
-        legs = lege.pols(sloc,chnkr.k-1).';
-        r(:,iiin)   = (legs*cri).';
-        d(:,iiin)   = (legs*cdi).';
-        d2(:,iiin)  = (legs*cd2i).';
-    end
-end
-
 end
