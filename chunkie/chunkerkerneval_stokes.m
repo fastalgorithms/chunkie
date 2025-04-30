@@ -381,10 +381,6 @@ for j=1:size(chnkr.r,3)
         indji = (ji-1)*opdims(1);
         ind = (indji(:)).' + (1:opdims(1)).';
 
-        % Helsing-Ojala (interior/exterior?)
-        allmats = cell(size(kern.splitinfo.type));
-        [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
-              t,w,opts,intp_ab,intp,kern.splitinfo.type);
 
         fints2 = fints;
         fints3 = fints;
@@ -411,6 +407,11 @@ for j=1:size(chnkr.r,3)
         densjT = densj.'; % switch from interleaving
         %% what should be the singularity type of Stokes SLP velocity kernel
         if strcmp(kern.type, 'svel')
+          % Helsing-Ojala (interior/exterior?)
+          allmats = cell(size(kern.splitinfo.type));
+          [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
+                t,w,opts,intp_ab,intp,kern.splitinfo.type);
+          
           % fints5
           As = allmats{1};
           Ad = allmats{2};
@@ -471,11 +472,12 @@ for j=1:size(chnkr.r,3)
           allmats = cell(2,1);
           kernsplitinfotype = cell(2,1);
           kernsplitinfotype{1} = [0 0 -1 0];
-          kernsplitinfotype{2} = [0 0 -2.1 0];
+          kernsplitinfotype{2} = [0 0 -2 0];
           [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
                 t,w,opts,intp_ab,intp,kernsplitinfotype);
-          Sz = allmats{1};
+          Ad = allmats{1};
           Dz = allmats{2};
+          Sz = Ad.*repmat(conj(1i*(srcinfo.n(1,:)+1i*srcinfo.n(2,:)))/1i,[numel(ji) 1]);
           px = targinfoji.r(1,:)'+1i*targinfoji.r(2,:)';
           pnx = targinfoji.n(1,:)'+1i*targinfoji.n(2,:)';
           rfx = srcinfo.r(1,:)+1i*srcinfo.r(2,:);
@@ -501,7 +503,7 @@ for j=1:size(chnkr.r,3)
           % fintsDtrac2
           kernsplitinfotype = cell(2,1);
           kernsplitinfotype{1} = [0 0 -2 0];
-          kernsplitinfotype{2} = [0 0 -3.1 0];
+          kernsplitinfotype{2} = [0 0 -3 0];
           allmats3 = cell(2,1);
           [allmats3{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
               t,w,opts,intp_ab,intp,kernsplitinfotype);
@@ -555,7 +557,7 @@ for j=1:size(chnkr.r,3)
           densjT = densj.'; % switch from interleaving
           % fintsSpres2
           kernsplitinfotype = cell(1,1);
-          kernsplitinfotype{1} = [0 0 -1.1 0];
+          kernsplitinfotype{1} = [0 0 -1 0];
           allmats3 = cell(1,1);
           [allmats3{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
               t,w,opts,intp_ab,intp,kernsplitinfotype);
@@ -582,7 +584,7 @@ for j=1:size(chnkr.r,3)
           % fintsSpres2
           kernsplitinfotype = cell(2,1);
           kernsplitinfotype{1} = [0 0 0 0];
-          kernsplitinfotype{2} = [0 0 -2.1 0];
+          kernsplitinfotype{2} = [0 0 -2 0];
           allmats3 = cell(2,1);
           [allmats3{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
               t,w,opts,intp_ab,intp,kernsplitinfotype);

@@ -56,12 +56,6 @@ varargout = cell(size(types));
 [As, Ad, Az, Azz] = SDspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
                     struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
 
-% ntarg = size(rt,2);
-% Asz = Ad.*repmat(conj(1i*n_i.')/1i,[ntarg 1]);
-% [~, Asz_2] = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-%                     struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
-% diff = abs(Asz - Asz_2); max(diff(:));
-
 if ifup
   wts_i = (w.*sp)';
 else
@@ -77,44 +71,13 @@ for j = 1:length(types)
     if (all(type0 == [0 0 0 0]))
       varargout{j} = ones(size(rt,2),numel(wts_i)).*wts_i;
     elseif (all(type0 == [1 0 0 0]))
-      % As_2 = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-      %       struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
       varargout{j} = As;
     elseif (all(type0 == [0 0 -1 0]))
-      % Ad_2 = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-      %               struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side)*intp;
       varargout{j} = Ad;
     elseif (all(type0 == [0 0 -2 0]))
-      % [Ad_2, Az_2] = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-      %               struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
-      % Az_2 = Az_2*intp;
       varargout{j} = Az;
-    elseif (all(type0 == [0 0 -2.1 0])) % for SLP traction, for now...
-      [~, Sz] = Sspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                    struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
-      [~, Dz] = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                    struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
-      Sz = Sz*intp;
-      Dz = Dz*intp;
-      varargout{1} = Sz;
-      varargout{2} = Dz;
-
     elseif (all(type0 == [0 0 -3 0]))
       varargout{j} = Azz;
-
-    elseif (all(type0 == [0 0 -3.1 0])) % for DLP traction
-      [~, Az, Azz] = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                    struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
-      Az = Az*intp;
-      Azz = Azz*intp;
-      varargout{1} = Az;
-      varargout{2} = Azz;
-
-    elseif (all(type0 == [0 0 -1.1 0])) % for SLP pressure
-      A = Dspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'),...
-                    struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
-      A = A*intp;
-      varargout{1} = A;
     else
         error("split panel quad type " + join(string([1 2 3]),",") + " not available");
     end

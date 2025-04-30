@@ -13,7 +13,7 @@ cparams = [];
 cparams.eps = 1.0e-10;
 cparams.nover = 1;
 pref = []; 
-pref.k = 16;
+pref.k = 20;
 narms = 3;
 amp = 0.25;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
@@ -37,8 +37,8 @@ sources_n = rand(2,ns);
 nt = 10000;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
-targets = targets.*repmat(rand(1,nt),2,1)*0.95;
-% targets = targets.*repmat(rand(1,nt),2,1)*0.99;
+% targets = targets.*repmat(rand(1,nt),2,1)*0.95;
+targets = targets.*repmat(rand(1,nt),2,1)*0.99;
 
 plot(chnkr, 'r.'); hold on;
 plot(targets(1,:), targets(2,:), 'kx')
@@ -127,6 +127,7 @@ opts.forcepquad=true;
 opts.side = 'i';
 Dsol_pquad = chunkerkerneval_stokes(chnkr,fkernd,sol,targets,opts); 
 err = abs(Dsol - Dsol_pquad);
+assert(norm(err) < 1e-10);
 figure(2),clf,
 plot(chnkr), hold on
 scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
@@ -141,6 +142,7 @@ opts.forcepquad=true;
 opts.side = 'i';
 Stracsol_pquad = chunkerkerneval_stokes(chnkr,fkernstrac,sol,targinfo,opts); 
 err = abs(Stracsol - Stracsol_pquad);
+assert(norm(err) < 1e-10);
 figure(3),clf,
 plot(chnkr), hold on
 scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
@@ -155,6 +157,7 @@ opts.forcepquad=true;
 opts.side = 'i';
 Dtracsol_pquad = chunkerkerneval_stokes(chnkr,fkerndtrac,sol,targinfo,opts); 
 err = abs(Dtracsol - Dtracsol_pquad);
+assert(norm(err) < 1e-8);
 figure(4),clf,
 plot(chnkr), hold on
 scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
@@ -169,7 +172,7 @@ opts.forcepquad=true;
 opts.side = 'i';
 Spressol_pquad = chunkerkerneval_stokes(chnkr,fkernspres,sol,targinfo,opts); 
 err = abs(Spressol - Spressol_pquad);
-
+assert(norm(err) < 1e-10);
 figure(5),clf,
 plot(chnkr), hold on
 scatter(targets(1,:),targets(2,:),[],log10(err(1:1:end))); colorbar
@@ -184,7 +187,7 @@ opts.forcepquad=true;
 opts.side = 'i';
 Dpressol_pquad = chunkerkerneval_stokes(chnkr,fkerndpres,sol,targinfo,opts); 
 err = abs(Dpressol - Dpressol_pquad);
-
+assert(norm(err) < 1e-10);
 figure(6),clf,
 plot(chnkr), hold on
 scatter(targets(1,:),targets(2,:),[],log10(err(1:1:end))); colorbar
