@@ -58,9 +58,30 @@ assert(max([norm(rp(:,:)*dermat - dp(:,:),1),...
 
 
 % check reparameterized chunker has correct area and length
-[chnkr2,eps] = arc_param_chunker(chnkr);
+[chnkr2,eps] = arc_param_chunker(chnkr, struct('mv_bdries',0));
 area_err = abs(area(chnkr2) - area(chnkr));
 len_err = abs(sum(chnkr2.wts(:))-sum(chnkr.wts(:)));
+fprintf('reparameterize with eps= %e\n', eps)
+fprintf('area error = %e, length error = %e\n\n',area_err,len_err)
+assert(max(area_err,len_err) < 1e-8)
+
+% check that new chunker is consitent
+[~,~,us,vs] = lege.exps(k);
+dermat = (vs*[lege.derpol(us); zeros(1,k)]).';
+
+ich = 2;
+rp = chnkr2.r(:,:,ich);
+dp = chnkr2.d(:,:,ich);
+d2p = chnkr2.d2(:,:,ich);
+assert(max([norm(rp(:,:)*dermat - dp(:,:),1),...
+    norm(rp(:,:)*dermat*dermat - d2p(:,:),1),...
+    norm(dp(:,:)*dermat - d2p(:,:),1), norm(sum(dp.*d2p,1),1)]) < 1e-8)
+
+
+% check chunker iwth mv_brdies has correct area and length
+[chnkr3,eps] = arc_param_chunker(chnkr, struct('mv_bdries',1));
+area_err = abs(area(chnkr3) - area(chnkr));
+len_err = abs(sum(chnkr3.wts(:))-sum(chnkr.wts(:)));
 fprintf('reparameterize with eps= %e\n', eps)
 fprintf('area error = %e, length error = %e\n\n',area_err,len_err)
 

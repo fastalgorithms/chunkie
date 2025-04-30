@@ -16,7 +16,7 @@ function param_data = chunkerarcparam_init(chnkr)
 %   param_data.maxcond - worst condition number encountered when
 %       reparameterizing
 %
-% see also chunkerarcparam
+% see also CHUNKERARCPARAM
 
 % author: Tristan Goodwill
 

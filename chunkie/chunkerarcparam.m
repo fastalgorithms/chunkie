@@ -17,7 +17,7 @@ function [r,d,d2] = chunkerarcparam(s,param_data)
 %   param_data.dim - chunker dimension
 %   param_data.nch - number of chunks in chunkr
 %
-% see also chunkerarcparam_init
+% see also CHUNKERARCPARAM_INIT
 
 % author: Tristan Goodwill
     
