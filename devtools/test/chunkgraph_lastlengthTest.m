@@ -56,7 +56,10 @@ ref_opts = [];
 ref_opts.dlist = 2;
 cgrph2 = refine(cgrph,ref_opts);
 
-
+ref_opts = [];
+ref_opts.splitchunks = cell(1,length(cgrph.echnks));
+ref_opts.splitchunks{3} = 3;
+cgrph3 = refine(cgrph,ref_opts);
 
 % test refine with last_len
 last_len = 2;
