@@ -1,3 +1,7 @@
+chunker_nearestTest0();
+
+
+function chunker_nearestTest0()
 %chunker.nearest test
 %
 
@@ -22,3 +26,7 @@ for j = 1:nt
     err = min(err,abs(th1-th2-2*pi));
     assert(err < 1e-12);
 end
+
+end
+
+
