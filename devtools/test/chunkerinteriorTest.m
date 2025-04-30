@@ -1,3 +1,7 @@
+chunkerinteriorTest0();
+
+
+function chunkerinteriorTest0()
 %CHUNKERINTERIORTEST tests the routines for checking whether a point is 
 % inside a domain or not
 % 
@@ -129,4 +133,9 @@ tic; in = chunkerinterior(chnkr,{x1,x1}); toc
 % scatter(xx(~in(:)),yy(~in(:)),'rx')
 
 assert(all(in0 == in));
+
+
+
+end
+
 

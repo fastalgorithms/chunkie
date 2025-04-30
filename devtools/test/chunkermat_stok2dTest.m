@@ -1,13 +1,15 @@
+chunkermat_stok2dTest0();
+
+
+function chunkermat_stok2dTest0()
 
 %CHUNKERMAT_HELM2DTEST
 %
 % test the matrix builder and do a basic solve
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 cparams = [];
 cparams.eps = 1.0e-10;
@@ -249,4 +251,9 @@ g = reshape(g, [2,2,nt]);
 relerr = norm(g(:) - gex(:))/norm(gex(:));
 
 assert(relerr < 1e-10)
+
+
+
+end
+
 

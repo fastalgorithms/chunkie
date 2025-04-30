@@ -1,9 +1,11 @@
+chunkgrphrcip_ignoreTest0();
+
+
+function chunkgrphrcip_ignoreTest0()
 % chunkgrphrcip_ignoreTest verify that solution is accurate when
 % artificial vertices are ignored
 
 
-clearvars; close all;
-addpaths_loc();
 
 % set wave number
 zk = 1.1;
@@ -160,6 +162,11 @@ assert(norm(u-utrue)>1e-10)
 % 
 % title('$\log_{10} error$','Interpreter','latex','FontSize',12)
 
+
+
+
+
+end
 
 
 function [r,d,d2] = circulararc(t,cpars)

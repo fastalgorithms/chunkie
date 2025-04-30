@@ -1,14 +1,16 @@
+chunkermat_truepolygonTest0();
+
+
+function chunkermat_truepolygonTest0()
 
 %CHUNKERMAT_TRUEPOLYGONTEST
 %
 % test the matrix builder and do a basic solve for a true polygonal
 % domain. This is the Neumann problem...
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 % pre-defined vertices for a barbell shape
 
@@ -137,4 +139,9 @@ fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
 assert(relerr < 1e-10);
+
+
+
+end
+
 

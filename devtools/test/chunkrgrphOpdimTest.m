@@ -1,5 +1,7 @@
-clear all
-addpaths_loc();
+chunkrgrphOpdimTest0();
+
+
+function chunkrgrphOpdimTest0()
 
 verts = [-3 1; 3 1; 3 5; -3 5; 
          -3 -5; 3 -5; 3 -1; -3 -1].';
@@ -51,3 +53,7 @@ end
 
 opts = struct('nonsmoothonly',false, 'rcip',true);
 [sysmat] = chunkermat(cgrph, fkerns, opts);
+
+end
+
+

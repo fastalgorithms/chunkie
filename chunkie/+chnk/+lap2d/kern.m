@@ -3,8 +3,8 @@ function submat = kern(srcinfo,targinfo,type,varargin)
 %
 % Syntax: submat = kern(srcinfo,targinfo,type,varargin)
 
-src = srcinfo.r;
-targ = targinfo.r;
+src = srcinfo.r(:,:);
+targ = targinfo.r(:,:);
 
 [~,ns] = size(src);
 [~,nt] = size(targ);
@@ -45,8 +45,8 @@ if strcmpi(type,'dgrad')
 end
 
 if strcmpi(type,'dprime')
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   [~,~,hess] = chnk.lap2d.green(src,targ);
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);

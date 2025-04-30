@@ -1,9 +1,12 @@
+chunkerclassunitTest0();
+
+
+function chunkerclassunitTest0()
 %chunkerclassunitTest
 %
 % setting up some tests for methods of the chunker class
 %
 
-addpaths_loc();
 % adversarial constructor tests
 isuccess = 0;
 try
@@ -49,3 +52,8 @@ if (i2 > 0)
 assert(chnkr.adj(1,i2) == j)
 end
 end
+
+
+end
+
+
