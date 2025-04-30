@@ -55,8 +55,8 @@ function submat = kern(zks, srcinfo, targinfo, origin, type, varargin)
 %
 %
 
-src = srcinfo.r; 
-targ = targinfo.r;
+src = srcinfo.r(:,:); 
+targ = targinfo.r(:,:);
 
 [~, ns] = size(src);
 [~, nt] = size(targ);
@@ -69,7 +69,7 @@ else
 end
 
 if strcmpi(type, 'd')
-    srcnorm = srcinfo.n;
+    srcnorm = srcinfo.n(:,:);
     [~, grad] = chnk.axissymhelm2d.green(zk, src, targ, origin);
     nx = repmat(srcnorm(1,:), nt, 1);
     ny = repmat(srcnorm(2,:), nt, 1);
@@ -94,7 +94,7 @@ if strcmpi(type, 'd')
 end
 
 if strcmpi(type, 'sprime')
-    targnorm = targinfo.n;
+    targnorm = targinfo.n(:,:);
     [~, grad] = chnk.axissymhelm2d.green(zk, src, targ, origin);
 
     nx = repmat((targnorm(1,:)).',1,ns);
@@ -149,7 +149,7 @@ if strcmpi(type, 'sdiff')
 end
 
 if strcmpi(type, 'c')
-    srcnorm = srcinfo.n; 
+    srcnorm = srcinfo.n(:,:); 
     coef = ones(2,1);
     if (nargin == 6); coef = varargin{1}; end
     nx = repmat(srcnorm(1,:), nt, 1);
@@ -179,8 +179,8 @@ end
 
 
 if strcmpi(type, 'dprime')
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   [~,~,hess] = chnk.axissymhelm2d.green(zk, src, targ, origin);
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
@@ -192,8 +192,8 @@ end
 
 if strcmpi(type, 'dprime_re_diff')
 
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   ifdiff = 2;
   [~,~,hess] = chnk.axissymhelm2d.green(zk1, src, targ, origin,ifdiff);
   nxsrc = repmat(srcnorm(1,:),nt,1);
@@ -218,8 +218,8 @@ end
 
 
 if strcmpi(type, 'dprimediff')
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   ifdiff = 1;
   [~,~,hess] = chnk.axissymhelm2d.green(zk, src, targ, origin, ifdiff);
   nxsrc = repmat(srcnorm(1,:),nt,1);
@@ -249,8 +249,8 @@ if strcmpi(type, 'dprimediff')
 end
 
 if strcmpi(type, 'neu_rpcomb')
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   [~,gk,~,sikmat,gik,~,~,~,hessdiff] = ...
       chnk.axissymhelm2d.green_neu_all(zk, src, targ, origin);
   alpha = 1;
