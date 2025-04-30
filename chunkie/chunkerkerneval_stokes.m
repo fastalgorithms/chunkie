@@ -979,26 +979,109 @@ for j=1:size(chnkr.r,3)
           Acorr_1_iA(1:2:end) = [dxi11_1_iA+dxic11_1_iA,dxi12_1_iA+dxic12_1_iA];
           Acorr_1_iA(2:2:end) = [dxi12_1_iA+dxic12_1_iA,dxi22_1_iA+dxic22_1_iA];
 
+          mu = 1;
+          s = srcinfo;
+          ttmp = []; ttmp.r = targs(:,ji); ttmp.n = targinfoji.n;
+          dist = (s.r(1,:)+1i*s.r(2,:))-(ttmp.r(1,:)'+1i*ttmp.r(2,:)');
+          distr = real(dist);
+          disti = imag(dist);
+          ntarg = numel(ttmp.r(1,:));
+          nsrc = numel(s.r(1,:));
+          sn1mat = repmat(s.n(1,:),[ntarg 1]);
+          sn2mat = repmat(s.n(2,:),[ntarg 1]);
+          snci = 1./(s.n(1,:)+1i*s.n(2,:));
+          sn11mat = repmat(real(snci).*s.n(1,:),[ntarg 1]);
+          sn12mat = repmat(real(snci).*s.n(2,:),[ntarg 1]);
+          sn21mat = repmat(imag(snci).*s.n(1,:),[ntarg 1]);
+          sn22mat = repmat(imag(snci).*s.n(2,:),[ntarg 1]);
+          tndotsn = ((ttmp.n(1,:)'+1i*ttmp.n(2,:)').*((-1i*s.n(1,:)-s.n(2,:))/1i));
+          %
+          tn1mat = repmat(ttmp.n(1,:)',[1 nsrc]);
+          tn2mat = repmat(ttmp.n(2,:)',[1 nsrc]);
+          conjsncmat = repmat((s.n(1,:)-1i*s.n(2,:))./(s.n(1,:)+1i*s.n(2,:)),[ntarg 1]);
+          
+          %
+          l = 1;
+          funs1 = zeros(2*ntarg,2*nsrc);
+          funs1(1:2:end,1:2:end) = tn1mat ...
+                                  +real(conjsncmat).*tn1mat ...
+                                  -imag(conjsncmat).*tn2mat;     
+          funs1(1:2:end,2:2:end) = -tn2mat ...
+                                  -real(conjsncmat).*tn2mat ...
+                                  -imag(conjsncmat).*tn1mat;
+          funs1(2:2:end,1:2:end) = -tn2mat ...
+                                  -real(conjsncmat).*tn2mat ...
+                                  -imag(conjsncmat).*tn1mat;
+          funs1(2:2:end,2:2:end) = 3*tn1mat ...
+                                  -real(conjsncmat).*tn1mat ...
+                                  +imag(conjsncmat).*tn2mat;
+          mat0 = real(Az);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs1;
+          % testval = mat0xsplitfun*densj(:);
+          % testval2 = Acorr_1_rA*densjT(:);
+          fintsDtrac3(ind(:)) = fintsDtrac3(ind(:)) + mat0xsplitfun*densj(:);
+
+          %
+          l = 2;
+          funs2 = zeros(2*ntarg,2*nsrc);
+          funs2(1:2:end,1:2:end) = -3*tn2mat ...
+                                  -real(conjsncmat).*tn2mat ...
+                                  -imag(conjsncmat).*tn1mat;   
+          funs2(1:2:end,2:2:end) = tn1mat ...
+                                  -real(conjsncmat).*tn1mat ...
+                                  +imag(conjsncmat).*tn2mat;
+          funs2(2:2:end,1:2:end) = tn1mat ...
+                                  -real(conjsncmat).*tn1mat ...
+                                  +imag(conjsncmat).*tn2mat;
+          funs2(2:2:end,2:2:end) = -tn2mat ...
+                                  +real(conjsncmat).*tn2mat ...
+                                  +imag(conjsncmat).*tn1mat;
+          mat0 = imag(Az);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs2;
+          % testval = mat0xsplitfun*densj(:);
+          % testval2 = Acorr_1_iA*densjT(:);
+          fintsDtrac3(ind(:)) = fintsDtrac3(ind(:)) + mat0xsplitfun*densj(:);
+
           %
           T11_2_rA   = -4*real(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));  % (s.ws(testn)*(-Hx)/pi)
-          T12_2_rA   =  0*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
           T22_2_rA   =  4*real(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
-          Acorrc_2_rA = [T11_2_rA,T12_2_rA]+1i*[T12_2_rA,T22_2_rA];
           %
-          T11_2_iA   =  0*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));  % (s.ws(testn)*(-Hx)/pi)
           T12_2_iA   =  4*imag(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
-          T22_2_iA   =  0*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
-          Acorrc_2_iA = [T11_2_iA,T12_2_iA]+1i*[T12_2_iA,T22_2_iA];
           %
           Acorr_2_rA = zeros(size(Acorrtmp));
-          Acorr_2_rA(1:2:end) = real(Acorrc_2_rA);
-          Acorr_2_rA(2:2:end) = imag(Acorrc_2_rA);
+          Acorr_2_rA(1:2:end) = [T11_2_rA,zeros(ntarg,nsrc)];
+          Acorr_2_rA(2:2:end) = [zeros(ntarg,nsrc),T22_2_rA];
           Acorr_2_iA = zeros(size(Acorrtmp));
-          Acorr_2_iA(1:2:end) = real(Acorrc_2_iA);
-          Acorr_2_iA(2:2:end) = imag(Acorrc_2_iA);
+          Acorr_2_iA(1:2:end) = [zeros(ntarg,nsrc),T12_2_iA];
+          Acorr_2_iA(2:2:end) = [T12_2_iA,zeros(ntarg,nsrc)];
+          %
+          l = 3;
+          funs3 = zeros(2*ntarg,2*nsrc);
+          funs3(1:2:end,1:2:end) = -4*real(-dist.*(tn1mat - 1i*tn2mat));   
+          funs3(2:2:end,2:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));
+          mat0 = real(Azz);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs3;
+          % testval = mat0xsplitfun*densj(:);
+          % testval2 = Acorr_2_rA*densjT(:);
+          fintsDtrac3(ind(:)) = fintsDtrac3(ind(:)) + mat0xsplitfun*densj(:);
 
-          fintsDtrac3(ind(:)) = fintsDtrac3(ind(:)) + Acorr_1_rA*densjT(:) + Acorr_1_iA*densjT(:) ...
-                                                    + Acorr_2_rA*densjT(:) + Acorr_2_iA*densjT(:);
+          %
+          l = 4;
+          funs4 = zeros(2*ntarg,2*nsrc);
+          funs4(1:2:end,2:2:end) = 4*real(-dist.*(tn1mat - 1i*tn2mat));   
+          funs4(2:2:end,1:2:end) = 4*real(-dist.*(tn1mat - 1i*tn2mat));
+          mat0 = imag(Azz);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs4;
+          % testval = mat0xsplitfun*densj(:);
+          % testval2 = Acorr_2_iA*densjT(:);
+          fintsDtrac3(ind(:)) = fintsDtrac3(ind(:)) + mat0xsplitfun*densj(:);
+
+          % fintsDtrac3(ind(:)) = fintsDtrac3(ind(:)) ...
+          %                                           + Acorr_2_iA*densjT(:);
 
           %
           fints = fintsDtrac3;

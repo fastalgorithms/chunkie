@@ -143,10 +143,9 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'dtrac', sigma);
         obj.opdims = [2, 2];
         obj.sing = 'hs';
-        % not correct... just gets it defined
         obj.splitinfo = [];
-        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0],[0 0 -1 0]};
-        obj.splitinfo.action = {'r','r','i'};
+        obj.splitinfo.type = {[0 0 -2 0],[0 0 -2 0],[0 0 -3 0],[0 0 -3 0]};
+        obj.splitinfo.action = {'r','i','r','i'};
         obj.splitinfo.functions = @(s,t) stok2d_dtrac_split(mu, s, t);
 
     case {'dgrad', 'dgradient'}
@@ -302,7 +301,29 @@ f{4}(2:2:end,2:2:end) = imag(sndotdistdottn);
 end
 
 function f = stok2d_dtrac_split(mu,s,t)
-f{1} = [];
+dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
+ntarg = numel(t.r(1,:));
+nsrc = numel(s.r(1,:));
+tn1mat = repmat(t.n(1,:)',[1 nsrc]);
+tn2mat = repmat(t.n(2,:)',[1 nsrc]);
+conjsncmat = repmat((s.n(1,:)-1i*s.n(2,:))./(s.n(1,:)+1i*s.n(2,:)),[ntarg 1]);
+f = cell(4, 1);
+f{1} = zeros(2*ntarg,2*nsrc);
+f{2} = zeros(2*ntarg,2*nsrc);
+f{3} = zeros(2*ntarg,2*nsrc);
+f{4} = zeros(2*ntarg,2*nsrc);
+f{1}(1:2:end,1:2:end) =    tn1mat +real(conjsncmat).*tn1mat -imag(conjsncmat).*tn2mat;     
+f{1}(1:2:end,2:2:end) =   -tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;
+f{1}(2:2:end,1:2:end) =   -tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;
+f{1}(2:2:end,2:2:end) =  3*tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
+f{2}(1:2:end,1:2:end) = -3*tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;   
+f{2}(1:2:end,2:2:end) =    tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
+f{2}(2:2:end,1:2:end) =    tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
+f{2}(2:2:end,2:2:end) =   -tn2mat +real(conjsncmat).*tn2mat +imag(conjsncmat).*tn1mat;
+f{3}(1:2:end,1:2:end) = -4*real(-dist.*(tn1mat - 1i*tn2mat));   
+f{3}(2:2:end,2:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));
+f{4}(1:2:end,2:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));   
+f{4}(2:2:end,1:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));
 end
 
 function f = stok2d_spres_split(mu,s,t)
