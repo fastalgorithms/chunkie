@@ -393,6 +393,7 @@ for j=1:size(chnkr.r,3)
         funs = kern.splitinfo.functions(srcinfo,targinfoji);
         %
         fintsStrac2 = fints;
+        fintsStrac3 = fints;
         %
         fintsDtrac2 = fints;
         %
@@ -650,14 +651,14 @@ for j=1:size(chnkr.r,3)
           [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
                 t,w,opts,intp_ab,intp,kernsplitinfotype);
           Ad = allmats{1};
-          Dz = allmats{2};
+          Az = allmats{2};
           Sz = Ad.*repmat(conj(1i*(srcinfo.n(1,:)+1i*srcinfo.n(2,:)))/1i,[numel(ji) 1]);
           px = targinfoji.r(1,:)'+1i*targinfoji.r(2,:)';
           pnx = targinfoji.n(1,:)'+1i*targinfoji.n(2,:)';
           rfx = srcinfo.r(1,:)+1i*srcinfo.r(2,:);
           rfnx = srcinfo.n(1,:)+1i*srcinfo.n(2,:);
           gsdotnx = real((pnx*ones(1,k)).*Sz); % grad slp dot nx
-          gdinyrdotny =  Dz.*(ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*(pnx*ones(1,k)));   % grad D/nx times r dot ny
+          gdinyrdotny =  Az.*(ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*(pnx*ones(1,k)));   % grad D/nx times r dot ny
           Sp11p1iSp21 = (gsdotnx+conj(gdinyrdotny));
           Sp12p1iSp22 = (1i*gsdotnx-1i*conj(gdinyrdotny));
           Acorrc = [Sp11p1iSp21,Sp12p1iSp22];
@@ -669,6 +670,152 @@ for j=1:size(chnkr.r,3)
           fintsStrac2(ind(:)) = fintsStrac2(ind(:)) + Acorr*densjT(:);
           %
           fints = fintsStrac2;
+
+          %
+          Ad = allmats{1};
+          Az = allmats{2};
+          px = targinfoji.r(1,:)'+1i*targinfoji.r(2,:)';
+          pnx = targinfoji.n(1,:)'+1i*targinfoji.n(2,:)';
+          rfx = srcinfo.r(1,:)+1i*srcinfo.r(2,:);
+          rfnx = srcinfo.n(1,:)+1i*srcinfo.n(2,:);
+          Sp11p1iSp21 = (real((pnx.*(conj(1i*rfnx)/1i)).*Ad)+conj(Az.*(ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          Sp12p1iSp22 = (1i*real((pnx.*(conj(1i*rfnx)/1i)).*Ad)-1i*conj(Az.*(ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          Acorrc = [Sp11p1iSp21,Sp12p1iSp22];
+          Acorrtmp = [real(Acorrc);imag(Acorrc)];
+          % Acorr = zeros(size(Acorrtmp));
+          % Acorr(1:2:end) = real(Acorrc);
+          % Acorr(2:2:end) = imag(Acorrc);
+          % fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + Acorr*densjT(:);
+          %
+          Sp11p1iSp21_1 = real((pnx.*(conj(1i*rfnx)/1i))).*real(Ad) - imag((pnx.*(conj(1i*rfnx)/1i))).*imag(Ad);
+          Sp12p1iSp22_1 = 1i*real((pnx.*(conj(1i*rfnx)/1i))).*real(Ad) - 1i*imag((pnx.*(conj(1i*rfnx)/1i))).*imag(Ad);
+          Acorrc_1 = [Sp11p1iSp21_1,Sp12p1iSp22_1];
+          Acorrtmp_1 = [real(Acorrc_1);...
+                        imag(Acorrc_1)];
+          % Acorr_1 = zeros(size(Acorrtmp_1));
+          % Acorr_1(1:2:end) = real(Acorrc_1);
+          % Acorr_1(2:2:end) = imag(Acorrc_1);
+          % fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + Acorr_1*densjT(:);
+          %
+          Sp11p1iSp21_1r = real((pnx.*(conj(1i*rfnx)/1i))).*real(Ad) - imag((pnx.*(conj(1i*rfnx)/1i))).*imag(Ad);
+          Sp11p1iSp21_1i = zeros(ntarg,k);
+          Sp12p1iSp22_1r = zeros(ntarg,k);
+          Sp12p1iSp22_1i = real((pnx.*(conj(1i*rfnx)/1i))).*real(Ad) - imag((pnx.*(conj(1i*rfnx)/1i))).*imag(Ad);
+          Acorrtmp_1_2 = [[Sp11p1iSp21_1r zeros(ntarg,k)];...
+                          [zeros(ntarg,k) Sp12p1iSp22_1i]];
+          
+          Acorr_1 = zeros(size(Acorrtmp_1));
+          Acorr_1(1:2:end,:) = [Sp11p1iSp21_1r Sp12p1iSp22_1r];
+          Acorr_1(2:2:end,:) = [Sp11p1iSp21_1i Sp12p1iSp22_1i];
+          % fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + Acorr_1*densjT(:);
+
+          % 
+          Sp11p1iSp21_1r_rA = real((pnx.*(conj(1i*rfnx)/1i))).*real(Ad);
+          Sp11p1iSp21_1i_rA = zeros(ntarg,k);
+          Sp12p1iSp22_1r_rA = zeros(ntarg,k);
+          Sp12p1iSp22_1i_rA = real((pnx.*(conj(1i*rfnx)/1i))).*real(Ad);
+          %
+          Sp11p1iSp21_1r_iA = - imag((pnx.*(conj(1i*rfnx)/1i))).*imag(Ad);
+          Sp11p1iSp21_1i_iA = zeros(ntarg,k);
+          Sp12p1iSp22_1r_iA = zeros(ntarg,k);
+          Sp12p1iSp22_1i_iA = - imag((pnx.*(conj(1i*rfnx)/1i))).*imag(Ad);
+          %
+          Acorr_1_rA = zeros(size(Acorrtmp_1));
+          Acorr_1_rA(1:2:end,:) = [Sp11p1iSp21_1r_rA Sp12p1iSp22_1r_rA];
+          Acorr_1_rA(2:2:end,:) = [Sp11p1iSp21_1i_rA Sp12p1iSp22_1i_rA];
+          Acorr_1_iA = zeros(size(Acorrtmp_1));
+          Acorr_1_iA(1:2:end,:) = [Sp11p1iSp21_1r_iA Sp12p1iSp22_1r_iA];
+          Acorr_1_iA(2:2:end,:) = [Sp11p1iSp21_1i_iA Sp12p1iSp22_1i_iA];
+          %
+          % fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + Acorr_1_rA*densjT(:) + Acorr_1_iA*densjT(:);
+          %
+          l = 1;
+          funs1 = zeros(2*ntarg,2*nsrc);
+          funs1(1:2:end,1:2:end) = real((pnx.*(conj(1i*rfnx)/1i)));     
+          funs1(2:2:end,2:2:end) = real((pnx.*(conj(1i*rfnx)/1i)));
+          mat0 = real(Ad);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs1;
+          % testval1 = Acorr_1_rA*densjT(:);
+          fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + mat0xsplitfun*densj(:);
+          %
+          l = 2;
+          funs2 = zeros(2*ntarg,2*nsrc);
+          funs2(1:2:end,1:2:end) = - imag((pnx.*(conj(1i*rfnx)/1i)));     
+          funs2(2:2:end,2:2:end) = - imag((pnx.*(conj(1i*rfnx)/1i)));
+          mat0 = imag(Ad);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs2;
+          % testval2 = Acorr_1_iA*densjT(:);
+          fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + mat0xsplitfun*densj(:);
+
+          %
+          Sp11p1iSp21_2 =  conj(Az.*((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          Sp12p1iSp22_2 = -1i*conj(Az.*((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          Acorrc_2 = [Sp11p1iSp21_2,Sp12p1iSp22_2];
+          Acorrtmp_2 = [real(Acorrc_2);imag(Acorrc_2)];
+          Acorr_2 = zeros(size(Acorrtmp_2));
+          Acorr_2(1:2:end) = real(Acorrc_2);
+          Acorr_2(2:2:end) = imag(Acorrc_2);
+          % fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + Acorr_2*densjT(:);
+
+          %
+          Sp11p1iSp21_2r =  real(Az).*real(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx))) ...
+                           -imag(Az).*imag(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          Sp11p1iSp21_2i = -real(Az).*imag((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)) ...
+                           -imag(Az).*real((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          Sp12p1iSp22_2r = -real(Az).*imag((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)) ...
+                           -imag(Az).*real((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          Sp12p1iSp22_2i = -real(Az).*real(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx))) ...
+                           +imag(Az).*imag(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          
+          %
+          Sp11p1iSp21_2r_rA =  real(Az).*real(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          Sp11p1iSp21_2i_rA = -real(Az).*imag((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          Sp12p1iSp22_2r_rA = -real(Az).*imag((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          Sp12p1iSp22_2i_rA = -real(Az).*real(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          %
+          Sp11p1iSp21_2r_iA = -imag(Az).*imag(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          Sp11p1iSp21_2i_iA = -imag(Az).*real((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          Sp12p1iSp22_2r_iA = -imag(Az).*real((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          Sp12p1iSp22_2i_iA = +imag(Az).*imag(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          %
+          Acorr_2_rA = zeros(size(Acorrtmp_1));
+          Acorr_2_rA(1:2:end,:) = [Sp11p1iSp21_2r_rA Sp12p1iSp22_2r_rA];
+          Acorr_2_rA(2:2:end,:) = [Sp11p1iSp21_2i_rA Sp12p1iSp22_2i_rA];
+          Acorr_2_iA = zeros(size(Acorrtmp_1));
+          Acorr_2_iA(1:2:end,:) = [Sp11p1iSp21_2r_iA Sp12p1iSp22_2r_iA];
+          Acorr_2_iA(2:2:end,:) = [Sp11p1iSp21_2i_iA Sp12p1iSp22_2i_iA];
+          % testval = Acorr_2_rA*densjT(:) + Acorr_2_iA*densjT(:);
+          % fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + Acorr_2_rA*densjT(:) + Acorr_2_iA*densjT(:);
+          %
+          l = 3;
+          funs3 = zeros(2*ntarg,2*nsrc);
+          funs3(1:2:end,1:2:end) =  real(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));     
+          funs3(1:2:end,2:2:end) = -imag((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          funs3(2:2:end,1:2:end) = -imag((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)); 
+          funs3(2:2:end,2:2:end) = -real(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          mat0 = real(Az);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs3;
+          % testval = mat0xsplitfun*densj(:);
+          fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + mat0xsplitfun*densj(:);
+          %
+          l = 4;
+          funs4 = zeros(2*ntarg,2*nsrc);
+          funs4(1:2:end,1:2:end) = -imag(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));   
+          funs4(1:2:end,2:2:end) = -real((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          funs4(2:2:end,1:2:end) = -real((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
+          funs4(2:2:end,2:2:end) = imag(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          mat0 = imag(Az);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs4;
+          % testval2 = mat0xsplitfun*densj(:);
+          fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + mat0xsplitfun*densj(:);
+          %
+          fints = fintsStrac3;
+
+          % keyboard
 
         end
 
