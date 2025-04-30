@@ -100,8 +100,6 @@ t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
 % test Stokes SLP velocity
-% just test stokes slp velocity pquad...
-% targets = targets.*repmat(rand(1,nt),2,1)*0.99 seems to break below stokes kernel test...
 fkerns = kernel('stok', 'svel', mu);
 Ssol = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
 Ssys = chunkerkernevalmat(chnkr,fkerns,targets,opts); 
@@ -113,10 +111,6 @@ opts.side = 'i';
 Ssol_pquad = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
 err = abs(Ssol - Ssol_pquad);
 assert(norm(err) < 1e-10);
-% figure(1),clf,
-% plot(chnkr), hold on
-% scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
-% title('stokes single layer velocity error')
 opts.forcepquad=false;
 %
 
@@ -129,10 +123,6 @@ opts.side = 'i';
 Dsol_pquad = chunkerkerneval(chnkr,fkernd,sol,targets,opts); 
 err = abs(Dsol - Dsol_pquad);
 assert(norm(err) < 1e-10);
-% figure(2),clf,
-% plot(chnkr), hold on
-% scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
-% title('stokes double layer velocity error')
 opts.forcepquad=false;
 
 % test Stokes SLP traction 
@@ -144,10 +134,6 @@ opts.side = 'i';
 Stracsol_pquad = chunkerkerneval(chnkr,fkernstrac,sol,targinfo,opts); 
 err = abs(Stracsol - Stracsol_pquad);
 assert(norm(err) < 1e-10);
-% figure(3),clf,
-% plot(chnkr), hold on
-% scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
-% title('stokes single layer traction error')
 opts.forcepquad=false;
 
 % test Stokes DLP traction 
@@ -159,10 +145,6 @@ opts.side = 'i';
 Dtracsol_pquad = chunkerkerneval(chnkr,fkerndtrac,sol,targinfo,opts); 
 err = abs(Dtracsol - Dtracsol_pquad);
 assert(norm(err) < 1e-8);
-% figure(4),clf,
-% plot(chnkr), hold on
-% scatter(targets(1,:),targets(2,:),[],log10(err(1:2:end))); colorbar
-% title('stokes double layer traction error')
 opts.forcepquad=false;
 
 % test Stokes SLP pressure
@@ -174,10 +156,6 @@ opts.side = 'i';
 Spressol_pquad = chunkerkerneval(chnkr,fkernspres,sol,targinfo,opts); 
 err = abs(Spressol - Spressol_pquad);
 assert(norm(err) < 1e-10);
-% figure(5),clf,
-% plot(chnkr), hold on
-% scatter(targets(1,:),targets(2,:),[],log10(err(1:1:end))); colorbar
-% title('stokes single layer pressure error')
 opts.forcepquad=false;
 
 % test Stokes DLP pressure
@@ -189,10 +167,6 @@ opts.side = 'i';
 Dpressol_pquad = chunkerkerneval(chnkr,fkerndpres,sol,targinfo,opts); 
 err = abs(Dpressol - Dpressol_pquad);
 assert(norm(err) < 1e-10);
-% figure(6),clf,
-% plot(chnkr), hold on
-% scatter(targets(1,:),targets(2,:),[],log10(err(1:1:end))); colorbar
-% title('stokes double layer pressure error')
 opts.forcepquad=false;
 
 

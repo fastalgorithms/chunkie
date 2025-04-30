@@ -435,28 +435,7 @@ else
         srcinfo.d2 = d2(:,:,i);
         srcinfo.n = n(:,:,i);
 
-        % % Helsing-Ojala (interior/exterior?)
-        % allmats = cell(size(kern.splitinfo.type));
-        % [allmats{:}] = chnk.pquadwts(r,d,n,d2,wts,i,targs(:,ji), ...
-        %       t,w,opts,intp_ab,intp,kern.splitinfo.type);
-        % 
-        % mat1 = zeros(opdims(1)*size(targinfoji.r,2),opdims(2)*k);
-        % funs = kern.splitinfo.functions(srcinfo,targinfoji);
-        % for l = 1:length(allmats)
-        %     switch kern.splitinfo.action{l}
-        %         case 'r'
-        %             mat0 = real(allmats{l});
-        %         case 'i'
-        %             mat0 = imag(allmats{l});
-        %         case 'c'
-        %             mat0 = allmats{l};
-        %     end
-        %     mat0opdim = kron(mat0,ones(opdims));
-        %     mat0xsplitfun = mat0opdim.*funs{l};
-        %     mat1 = mat1 + mat0xsplitfun;
-        % end
-
-        %%%% redo, split fun also done on a higher order grid to avoid self nan
+        % Helsing-Ojala (interior/exterior?)
         allmatsf = cell(size(kern.splitinfo.type));
         [allmatsf{:}] = chnk.pquadwts(r,d,n,d2,wts,i,targs(:,ji), ...
               t,w,opts,intp_ab,intp,kern.splitinfo.type,true);

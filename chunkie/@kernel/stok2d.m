@@ -131,7 +131,6 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'dpres', sigma);
         obj.opdims = [1, 2];
 	      obj.sing = 'hs';
-        % not correct... just gets it defined
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 -2 0],[0 0 -2 0]};
         obj.splitinfo.action = {'r','i'};
