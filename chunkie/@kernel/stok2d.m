@@ -50,9 +50,7 @@ function obj = stok2d(type, mu, coefs)
 %   KERNEL.STOK2D('cgrad', MU) or KERNEL.ELAST2D('cgradient', MU)
 %   constructs the combined-layer Stokes kernel for velocity gradient with 
 %   viscosity MU.
-%  
 %
-
 % See also CHNK.STOK2D.KERN.
 
 % author: Dan Fortunato  
@@ -212,7 +210,6 @@ if icheck ~=3
     obj.fmm = [];
 end
 
-
 end
 
 function f = stok2d_s_split(mu,s,t)
@@ -229,9 +226,9 @@ f{2} = zeros(2*ntarg,2*nsrc);
 f{3} = zeros(2*ntarg,2*nsrc);
 f{1}(1:2:end,1:2:end) = 1/(2*mu);
 f{1}(2:2:end,2:2:end) = 1/(2*mu);
-f{2}(1:2:end,1:2:end) = -sn1mat.*distr/(2*mu);     
+f{2}(1:2:end,1:2:end) = -sn1mat.*distr/(2*mu);
 f{2}(1:2:end,2:2:end) = -sn2mat.*distr/(2*mu);
-f{2}(2:2:end,1:2:end) = -sn1mat.*disti/(2*mu); 
+f{2}(2:2:end,1:2:end) = -sn1mat.*disti/(2*mu);
 f{2}(2:2:end,2:2:end) = -sn2mat.*disti/(2*mu);
 f{3}(1:2:end,1:2:end) = -sn2mat.*distr/(2*mu);
 f{3}(1:2:end,2:2:end) =  sn1mat.*distr/(2*mu);
@@ -246,8 +243,6 @@ disti = imag(dist);
 f = cell(4, 1);
 ntarg = numel(t.r(1,:));
 nsrc = numel(s.r(1,:));
-sn1mat = repmat(s.n(1,:),[ntarg 1]);
-sn2mat = repmat(s.n(2,:),[ntarg 1]);
 snci = 1./(s.n(1,:)+1i*s.n(2,:));
 sn11mat = repmat(real(snci).*s.n(1,:),[ntarg 1]);
 sn12mat = repmat(real(snci).*s.n(2,:),[ntarg 1]);
@@ -257,16 +252,16 @@ f{1} = zeros(2*ntarg,2*nsrc);
 f{2} = zeros(2*ntarg,2*nsrc);
 f{3} = zeros(2*ntarg,2*nsrc);
 f{4} = zeros(2*ntarg,2*nsrc);
-f{1}(1:2:end,1:2:end) =  sn11mat;     
+f{1}(1:2:end,1:2:end) =  sn11mat;
 f{1}(1:2:end,2:2:end) = -sn21mat;
-f{1}(2:2:end,1:2:end) =  sn12mat; 
+f{1}(2:2:end,1:2:end) =  sn12mat;
 f{1}(2:2:end,2:2:end) = -sn22mat;
-f{2}(1:2:end,1:2:end) = - sn21mat;     
-f{2}(1:2:end,2:2:end) = - sn11mat;
-f{2}(2:2:end,1:2:end) = - sn22mat; 
-f{2}(2:2:end,2:2:end) = - sn12mat;
-f{3}(1:2:end,1:2:end) = distr;     
-f{3}(1:2:end,2:2:end) = disti;
+f{2}(1:2:end,1:2:end) = -sn21mat;
+f{2}(1:2:end,2:2:end) = -sn11mat;
+f{2}(2:2:end,1:2:end) = -sn22mat;
+f{2}(2:2:end,2:2:end) = -sn12mat;
+f{3}(1:2:end,1:2:end) =  distr;
+f{3}(1:2:end,2:2:end) =  disti;
 f{4}(2:2:end,1:2:end) = -distr;
 f{4}(2:2:end,2:2:end) = -disti;
 end
@@ -279,24 +274,24 @@ f = cell(4, 1);
 ntarg = numel(t.r(1,:));
 nsrc = numel(s.r(1,:));
 snci = 1./(s.n(1,:)+1i*s.n(2,:));
-tndotsn = ((t.n(1,:)'+1i*t.n(2,:)').*((-1i*s.n(1,:)-s.n(2,:))/1i));          
+tndotsn = ((t.n(1,:)'+1i*t.n(2,:)').*((-1i*s.n(1,:)-s.n(2,:))/1i));
 sndotdistdottn = ((ones(ntarg,1)*snci).*real((-distr+1i*disti).*(t.n(1,:)'+1i*t.n(2,:)')));
 f{1} = zeros(2*ntarg,2*nsrc);
 f{2} = zeros(2*ntarg,2*nsrc);
 f{3} = zeros(2*ntarg,2*nsrc);
 f{4} = zeros(2*ntarg,2*nsrc);
-f{1}(1:2:end,1:2:end) = real(tndotsn);     
-f{1}(2:2:end,2:2:end) = real(tndotsn);
-f{2}(1:2:end,1:2:end) = - imag(tndotsn);     
-f{2}(2:2:end,2:2:end) = - imag(tndotsn);
-f{3}(1:2:end,1:2:end) =  real(sndotdistdottn);     
+f{1}(1:2:end,1:2:end) =  real(tndotsn);
+f{1}(2:2:end,2:2:end) =  real(tndotsn);
+f{2}(1:2:end,1:2:end) = -imag(tndotsn);
+f{2}(2:2:end,2:2:end) = -imag(tndotsn);
+f{3}(1:2:end,1:2:end) =  real(sndotdistdottn);
 f{3}(1:2:end,2:2:end) = -imag(sndotdistdottn);
-f{3}(2:2:end,1:2:end) = -imag(sndotdistdottn); 
+f{3}(2:2:end,1:2:end) = -imag(sndotdistdottn);
 f{3}(2:2:end,2:2:end) = -real(sndotdistdottn);
-f{4}(1:2:end,1:2:end) = -imag(sndotdistdottn);   
+f{4}(1:2:end,1:2:end) = -imag(sndotdistdottn);
 f{4}(1:2:end,2:2:end) = -real(sndotdistdottn);
 f{4}(2:2:end,1:2:end) = -real(sndotdistdottn);
-f{4}(2:2:end,2:2:end) = imag(sndotdistdottn);
+f{4}(2:2:end,2:2:end) =  imag(sndotdistdottn);
 end
 
 function f = stok2d_dtrac_split(mu,s,t)
@@ -311,20 +306,20 @@ f{1} = zeros(2*ntarg,2*nsrc);
 f{2} = zeros(2*ntarg,2*nsrc);
 f{3} = zeros(2*ntarg,2*nsrc);
 f{4} = zeros(2*ntarg,2*nsrc);
-f{1}(1:2:end,1:2:end) =    tn1mat +real(conjsncmat).*tn1mat -imag(conjsncmat).*tn2mat;     
-f{1}(1:2:end,2:2:end) =   -tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;
-f{1}(2:2:end,1:2:end) =   -tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;
-f{1}(2:2:end,2:2:end) =  3*tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
+f{1}(1:2:end,1:2:end) =    tn1mat + real(conjsncmat).*tn1mat - imag(conjsncmat).*tn2mat;
+f{1}(1:2:end,2:2:end) =   -tn2mat - real(conjsncmat).*tn2mat - imag(conjsncmat).*tn1mat;
+f{1}(2:2:end,1:2:end) =   -tn2mat - real(conjsncmat).*tn2mat - imag(conjsncmat).*tn1mat;
+f{1}(2:2:end,2:2:end) =  3*tn1mat - real(conjsncmat).*tn1mat + imag(conjsncmat).*tn2mat;
 f{1} = mu*f{1};
-f{2}(1:2:end,1:2:end) = -3*tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;   
-f{2}(1:2:end,2:2:end) =    tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
-f{2}(2:2:end,1:2:end) =    tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
-f{2}(2:2:end,2:2:end) =   -tn2mat +real(conjsncmat).*tn2mat +imag(conjsncmat).*tn1mat;
+f{2}(1:2:end,1:2:end) = -3*tn2mat - real(conjsncmat).*tn2mat - imag(conjsncmat).*tn1mat;
+f{2}(1:2:end,2:2:end) =    tn1mat - real(conjsncmat).*tn1mat + imag(conjsncmat).*tn2mat;
+f{2}(2:2:end,1:2:end) =    tn1mat - real(conjsncmat).*tn1mat + imag(conjsncmat).*tn2mat;
+f{2}(2:2:end,2:2:end) =   -tn2mat + real(conjsncmat).*tn2mat + imag(conjsncmat).*tn1mat;
 f{2} = mu*f{2};
-f{3}(1:2:end,1:2:end) = -4*real(-dist.*(tn1mat - 1i*tn2mat));   
+f{3}(1:2:end,1:2:end) = -4*real(-dist.*(tn1mat - 1i*tn2mat));
 f{3}(2:2:end,2:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));
 f{3} = mu*f{3};
-f{4}(1:2:end,2:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));   
+f{4}(1:2:end,2:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));
 f{4}(2:2:end,1:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));
 f{4} = mu*f{4};
 end
@@ -337,9 +332,9 @@ sn1mat = repmat(s.n(1,:),[ntarg 1]);
 sn2mat = repmat(s.n(2,:),[ntarg 1]);
 f{1} = zeros(ntarg,2*nsrc);
 f{2} = zeros(ntarg,2*nsrc);
-f{1}(:,1:2:end) =  sn1mat;     
+f{1}(:,1:2:end) =  sn1mat;
 f{1}(:,2:2:end) =  sn2mat;
-f{2}(:,1:2:end) =  sn2mat;     
+f{2}(:,1:2:end) =  sn2mat;
 f{2}(:,2:2:end) = -sn1mat;
 end
 
@@ -349,6 +344,6 @@ ntarg = numel(t.r(1,:));
 nsrc = numel(s.r(1,:));
 f{1} = zeros(ntarg,2*nsrc);
 f{2} = zeros(ntarg,2*nsrc);
-f{1}(:,1:2:end) = -2*mu;     
+f{1}(:,1:2:end) = -2*mu;
 f{2}(:,2:2:end) =  2*mu;
 end

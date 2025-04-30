@@ -383,8 +383,8 @@ for j=1:size(chnkr.r,3)
 
         % Helsing-Ojala (interior/exterior?)
         allmatsf = cell(size(kern.splitinfo.type));
-        [allmatsf{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji), ...
-              t,w,opts,intp_ab,intp,kern.splitinfo.type,true);
+        [allmatsf{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji),t,w, ...
+            opts,intp_ab,intp,kern.splitinfo.type,true);
 
         r_i = intp*(r(1,:,j)'+1i*r(2,:,j)'); 
         d_i = (intp*(d(1,:,j)'+1i*d(2,:,j)'));
@@ -392,10 +392,10 @@ for j=1:size(chnkr.r,3)
         sp = abs(d_i); tang = d_i./sp; 
         n_i = -1i*tang; 
         srcinfof = [];
-        srcinfof.r = [real(r_i) imag(r_i)]';
-        srcinfof.d = [real(d_i) imag(d_i)]';
+        srcinfof.r  = [real(r_i)  imag(r_i)]';
+        srcinfof.d  = [real(d_i)  imag(d_i)]';
         srcinfof.d2 = [real(d2_i) imag(d2_i)]';
-        srcinfof.n = [real(n_i) imag(n_i)]';
+        srcinfof.n  = [real(n_i)  imag(n_i)]';
 
         funsf = kern.splitinfo.functions(srcinfof,targinfoji);
         for l = 1:length(allmatsf)
