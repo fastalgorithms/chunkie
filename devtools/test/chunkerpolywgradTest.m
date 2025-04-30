@@ -5,7 +5,7 @@ addpaths_loc();
 
 % pre-defined vertices for a barbell shape
 
-verts = chnk.demo.xbarbell(2.0, 2.0, 1.0, 1.0);
+verts = chnk.demo.barbell(2.0, 2.0, 1.0, 1.0);
 nv = size(verts,2);
 
 % for barbell(2,2,1,1) area and length are
