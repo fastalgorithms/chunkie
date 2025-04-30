@@ -401,6 +401,7 @@ for j=1:size(chnkr.r,3)
         fintsSpres3 = fints;
         %
         fintsDpres2 = fints;
+        fintsDpres3 = fints;
         %
         mu = 1; 
         ntarg = numel(ji);
@@ -943,8 +944,31 @@ for j=1:size(chnkr.r,3)
           %
           Az = allmats3{2};
           Acorr = [-2*real(Az), 2*imag(Az)];
-          fintsDpres2(ind(:)) = fintsDpres2(ind(:)) + Acorr*densjT(:);
-          fints = fintsDpres2;
+          % fintsDpres2(ind(:)) = fintsDpres2(ind(:)) + Acorr*densjT(:);
+          % fints = fintsDpres2;
+
+          Acorr_r = zeros(size(Acorr));
+          Acorr_r(:,1:k) = -2*real(Az);
+          Acorr_i = zeros(size(Acorr));
+          Acorr_i(:,k+1:2*k) = 2*imag(Az);
+
+          %
+          l = 1;
+          funs1 = zeros(ntarg,2*nsrc);
+          funs1(:,1:2:end) = -2;     
+          mat0 = real(Az);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs1;
+          fintsDpres3(ind(:)) = fintsDpres3(ind(:)) + mat0xsplitfun*densj(:);
+          %
+          l = 2;
+          funs2 = zeros(ntarg,2*nsrc);
+          funs2(:,2:2:end) = 2;     
+          mat0 = imag(Az);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs2;
+          fintsDpres3(ind(:)) = fintsDpres3(ind(:)) + mat0xsplitfun*densj(:);
+          fints = fintsDpres3;
           % keyboard
         end
 
