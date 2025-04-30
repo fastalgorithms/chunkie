@@ -26,7 +26,7 @@ function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts)
 %      COEFS(2)*KERNEL.HELM2DQUAS('sp', ZK, KAPPA, D).
 %   
 %   all versions accept quad_opts to change the parameters in the lattice
-%   sum computations. (see chnk.helm2dquas.Sn)
+%   sum computations. (see chnk.helm2dquas.latticecoefs)
 %       quad_opts.l - (2) radius of periodic copies to exclude from 
 %           lattice sum (excludes copies within l*d)
 %       quad_opts.N - (40) number of lattice sums
@@ -70,13 +70,13 @@ if nargin == 6
 end
 
 ns = (0:N).';
-Sn = chnk.helm2dquas.Sn(ns,zk,d,kappa,(exp(1i*kappa*d)),a,M,l+1);
+sn = chnk.helm2dquas.latticecoefs(ns,zk,d,kappa,(exp(1i*kappa*d)),a,M,l+1);
 
 quas_param = [];
 quas_param.kappa = kappa;
 quas_param.d = d;
 quas_param.l = l;
-quas_param.Sn = Sn;
+quas_param.sn = sn;
 
 % obj.params.kappa = kappa;
 % obj.params.d = d;

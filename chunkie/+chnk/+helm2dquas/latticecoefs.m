@@ -1,5 +1,5 @@
-function S = Sn(n,zk,d,kappa,alpha,a,M,l)
-%CHNK.HELMQUAS.SN precompute lattice sum integrals 
+function S = latticecoefs(n,zk,d,kappa,alpha,a,M,l)
+%CHNK.HELMQUAS.LATTICECOEFS precompute lattice sum integrals 
 % i.e. local coefficients for the representation
 %   G_far(x,y) := sum_|n|>l i/4 H_0^{(1)}(zk |x- n d e_1-y|) 
 %                   exp(i kapppa d n)

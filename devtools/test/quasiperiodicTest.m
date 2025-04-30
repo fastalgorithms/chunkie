@@ -138,52 +138,51 @@ uscatp = chunkerkerneval(chnkr,dkern,soln,targp,opts);
 uinp = skern.eval(src,struct("r",targp));
 assert(abs(uinp-uscatp) < 1e-10)
 
-% % ploting
-% Lplot = d/1.5;
-% nplot = 80;
-% xts = linspace(-Lplot,Lplot,nplot); yts=xts+Lplot/2;
-% [X,Y] = meshgrid(xts,yts);
-% targ = [X(:).';Y(:).'];
-% 
-% % targ = [2+0*yts;yts];
-% ntarg = size(targ,2);
-% tic;
-% yc = sin_func(X(:),d,A); yc = yc(2,:);
-% iup = Y(:).'>yc;
-% toc
-% targup = targ(:,iup.');
-% 
-% tic;
-% uin = NaN*zeros(ntarg,1)+NaN*1i;
-% src.n = [0;1];
-% uin(iup) = skern.eval(src,struct("r",targup));
-% uscat = NaN*zeros(ntarg,1)+NaN*1i;
-% opts = []; opts.forcesmooth = false; opts.eps = 1e-6;
-% opts.forcepquad = true; opts.side = 'e';
-% uscat(iup) = chunkerkerneval(chnkr,dkern,soln,targup,opts);
-% toc
-% %
-% utot = uin-uscat;
-% maxu = max(abs(uin));
-% % maxu = .6;
-% figure(1);clf
-% subplot(1,3,1)
-% h = pcolor(X,Y,reshape(imag(uin),nplot,[])); set(h,'edgecolor','none')
-% title('$u_{\rm{in}}$','Interpreter','latex'); set(gca,'fontsize',14)
-% colorbar; clim([-maxu,maxu])
-% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
-% 
-% subplot(1,3,2)
-% h= pcolor(X,Y,reshape(imag(uscat),nplot,[])); set(h,'edgecolor','none')
-% title('$u_{\rm{scat}}$','Interpreter','latex'); set(gca,'fontsize',14)
-% colorbar; clim([-maxu,maxu])
-% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
-% 
-% subplot(1,3,3)
-% h = pcolor(X,Y,reshape(log10(abs(utot)),nplot,[])); set(h,'edgecolor','none')
-% title('$\log_{10} $ error','Interpreter','latex'); set(gca,'fontsize',14)
-% colorbar; % clim([-maxu,maxu])
-% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+% ploting
+Lplot = d/1.5;
+nplot = 50;
+xts = linspace(-Lplot,Lplot,nplot); yts=xts+Lplot/2;
+[X,Y] = meshgrid(xts,yts);
+targ = [X(:).';Y(:).'];
+
+% targ = [2+0*yts;yts];
+ntarg = size(targ,2);
+tic;
+yc = sin_func(X(:),d,A); yc = yc(2,:);
+iup = Y(:).'>yc;
+toc
+targup = targ(:,iup.');
+
+tic;
+uin = NaN*zeros(ntarg,1)+NaN*1i;
+src.n = [0;1];
+uin(iup) = skern.eval(src,struct("r",targup));
+uscat = NaN*zeros(ntarg,1)+NaN*1i;
+opts = []; opts.forcesmooth = false; opts.eps = 1e-6;
+opts.forcepquad = true; opts.side = 'e';
+uscat(iup) = chunkerkerneval(chnkr,dkern,soln,targup,opts);
+toc
+%
+utot = uin-uscat;
+maxu = max(abs(uin));
+figure(1);clf
+subplot(1,3,1)
+h = pcolor(X,Y,reshape(imag(uin),nplot,[])); set(h,'edgecolor','none')
+title('$u_{\rm{true}}$','Interpreter','latex'); set(gca,'fontsize',14)
+colorbar; clim([-maxu,maxu])
+hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+
+subplot(1,3,2)
+h= pcolor(X,Y,reshape(imag(uscat),nplot,[])); set(h,'edgecolor','none')
+title('$u$','Interpreter','latex'); set(gca,'fontsize',14)
+colorbar; clim([-maxu,maxu])
+hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+
+subplot(1,3,3)
+h = pcolor(X,Y,reshape(log10(abs(utot)),nplot,[])); set(h,'edgecolor','none')
+title('$\log_{10} $ error','Interpreter','latex'); set(gca,'fontsize',14)
+colorbar; 
+hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
 
 
 end

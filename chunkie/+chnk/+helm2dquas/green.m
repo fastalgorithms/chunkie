@@ -1,4 +1,4 @@
-function [val,grad,hess] = green(src,targ,zk,kappa,d,Sn,l)
+function [val,grad,hess] = green(src,targ,zk,kappa,d,sn,l)
 %CHNK.HELM2DQUAS.GREEN evaluate the quasiperiodic helmholtz green's function
 % for the given sources and targets
 %
@@ -6,7 +6,8 @@ function [val,grad,hess] = green(src,targ,zk,kappa,d,Sn,l)
 %   zk - wavenumber
 %   kappa - quasiperiodic parameter
 %   d - period
-%   Sn - precomputed lattice sum integrals (see chnk.helm2dquas.Sn)
+%   sn - precomputed lattice sum integrals 
+%       (see chnk.helm2dquas.latticecoefs)
 %
 % see also CHNK.HELM2DQUAS.KERN
 [~,nsrc] = size(src);
@@ -116,8 +117,8 @@ if ~isempty(rxclose)
         end
     end
     
-    Sn = Sn.';
-    N = length(Sn)-1;
+    sn = sn.';
+    N = length(sn)-1;
     ns = (0:N);
     Js = zeros(length(rclose),N+3);
     for i = 1:length(rclose)
@@ -127,7 +128,7 @@ if ~isempty(rxclose)
     cs = (eip.^ns+eip.^(-ns))/2;
     
     
-    val_far = 0.25*1i*Js(:,1)*Sn(1) + 0.5*1i*sum(Sn(2:end).*Js(:,2:end-2).*cs(:,2:end),2);
+    val_far = 0.25*1i*Js(:,1)*sn(1) + 0.5*1i*sum(sn(2:end).*Js(:,2:end-2).*cs(:,2:end),2);
     val(iclose) = val_near+val_far;
     
     
@@ -137,8 +138,8 @@ if ~isempty(rxclose)
         DJs = [-Js(:,2),.5*(Js(:,1:end-3)-Js(:,3:end-1))]*zk;
         ss = (eip.^ns-eip.^(-ns))/2i;
             
-        grad_far_p = 0.25*1i*DJs(:,1)*Sn(1) + 0.5*1i*sum(Sn(2:end).*DJs(:,2:end).*cs(:,2:end),2);
-        grad_far_t = (0.5*1i*sum(-(1:N).*Sn(2:end).*Js(:,2:end-2).*ss(:,2:end),2))./rclose;
+        grad_far_p = 0.25*1i*DJs(:,1)*sn(1) + 0.5*1i*sum(sn(2:end).*DJs(:,2:end).*cs(:,2:end),2);
+        grad_far_t = (0.5*1i*sum(-(1:N).*sn(2:end).*Js(:,2:end-2).*ss(:,2:end),2))./rclose;
         
         grad_far = [cs(:,2).*grad_far_p - ss(:,2).*grad_far_t, ss(:,2).*grad_far_p + cs(:,2).*grad_far_t];
     
@@ -151,19 +152,19 @@ if ~isempty(rxclose)
         tmp_n = rclose.^(-4).*(-ns.*ryclose.*Js(:,1:end-2).*(ns.*ryclose.*cs+2*rxclose.*ss)+ ...
             rclose.*ryclose.*(ryclose.*cs + 2*ns.*rxclose.*ss).*DJs+ ...
             rclose.^2.*rxclose.^2.*cs.*DDJs);
-        hess_far_xx = 0.25*1i*tmp_n(:,1)*Sn(1)+.5*1i*sum(Sn(2:end).*tmp_n(:,2:end),2);
+        hess_far_xx = 0.25*1i*tmp_n(:,1)*sn(1)+.5*1i*sum(sn(2:end).*tmp_n(:,2:end),2);
 
         tmp_n = ns.*Js(:,1:end-2).*(ns.*rxclose.*ryclose.*cs+(rxclose.^2-ryclose.^2).*ss).*rclose.^(-4) ...
             +rclose.^(-3).*(-(rxclose.*ryclose.*cs+ns.*(rxclose.^2-ryclose.^2).*ss).*DJs+...
             rclose.*rxclose.*ryclose.*cs.*DDJs);
 
 
-        hess_far_xy = 0.25*1i*tmp_n(:,1)*Sn(1)+.5*1i*sum(Sn(2:end).*tmp_n(:,2:end),2);
+        hess_far_xy = 0.25*1i*tmp_n(:,1)*sn(1)+.5*1i*sum(sn(2:end).*tmp_n(:,2:end),2);
 
         tmp_n = rclose.^(-4).*(-ns.*rxclose.*Js(:,1:end-2).*(ns.*rxclose.*cs-2*ryclose.*ss)+ ...
             rclose.*rxclose.*(rxclose.*cs - 2*ns.*ryclose.*ss).*DJs+ ...
             rclose.^2.*ryclose.^2.*cs.*DDJs);
-        hess_far_yy = 0.25*1i*tmp_n(:,1)*Sn(1)+.5*1i*sum(Sn(2:end).*tmp_n(:,2:end),2);
+        hess_far_yy = 0.25*1i*tmp_n(:,1)*sn(1)+.5*1i*sum(sn(2:end).*tmp_n(:,2:end),2);
 
 
 
