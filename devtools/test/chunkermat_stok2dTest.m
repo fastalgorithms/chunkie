@@ -108,8 +108,7 @@ assert(norm(err) < 1e-10);
 %
 opts.forcepquad=true;
 opts.side = 'i';
-Ssol_pquad = chunkerkerneval_stokes(chnkr,fkerns,sol,targets,opts); 
-% Ssol_pquad = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
+Ssol_pquad = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
 err = abs(Ssol - Ssol_pquad);
 assert(norm(err) < 1e-10);
 figure(1),clf,
@@ -125,7 +124,7 @@ Dsol = chunkerkerneval(chnkr,fkernd,sol,targets,opts);
 %
 opts.forcepquad=true;
 opts.side = 'i';
-Dsol_pquad = chunkerkerneval_stokes(chnkr,fkernd,sol,targets,opts); 
+Dsol_pquad = chunkerkerneval(chnkr,fkernd,sol,targets,opts); 
 err = abs(Dsol - Dsol_pquad);
 assert(norm(err) < 1e-10);
 figure(2),clf,
@@ -140,7 +139,7 @@ Stracsol = chunkerkerneval(chnkr,fkernstrac,sol,targinfo,opts);
 % 
 opts.forcepquad=true;
 opts.side = 'i';
-Stracsol_pquad = chunkerkerneval_stokes(chnkr,fkernstrac,sol,targinfo,opts); 
+Stracsol_pquad = chunkerkerneval(chnkr,fkernstrac,sol,targinfo,opts); 
 err = abs(Stracsol - Stracsol_pquad);
 assert(norm(err) < 1e-10);
 figure(3),clf,
@@ -170,7 +169,7 @@ Spressol = chunkerkerneval(chnkr,fkernspres,sol,targinfo,opts);
 %
 opts.forcepquad=true;
 opts.side = 'i';
-Spressol_pquad = chunkerkerneval_stokes(chnkr,fkernspres,sol,targinfo,opts); 
+Spressol_pquad = chunkerkerneval(chnkr,fkernspres,sol,targinfo,opts); 
 err = abs(Spressol - Spressol_pquad);
 assert(norm(err) < 1e-10);
 figure(5),clf,
@@ -185,7 +184,7 @@ Dpressol = chunkerkerneval(chnkr,fkerndpres,sol,targinfo,opts);
 %
 opts.forcepquad=true;
 opts.side = 'i';
-Dpressol_pquad = chunkerkerneval_stokes(chnkr,fkerndpres,sol,targinfo,opts); 
+Dpressol_pquad = chunkerkerneval(chnkr,fkerndpres,sol,targinfo,opts); 
 err = abs(Dpressol - Dpressol_pquad);
 assert(norm(err) < 1e-10);
 figure(6),clf,
