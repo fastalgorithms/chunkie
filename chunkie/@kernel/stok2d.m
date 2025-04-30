@@ -133,9 +133,9 @@ switch lower(type)
 	      obj.sing = 'hs';
         % not correct... just gets it defined
         obj.splitinfo = [];
-        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0],[0 0 -1 0]};
-        obj.splitinfo.action = {'r','r','i'};
-        obj.splitinfo.functions = @(s,t) stok2d_d_split(mu, s, t);
+        obj.splitinfo.type = {[0 0 -2 0],[0 0 -2 0]};
+        obj.splitinfo.action = {'r','i'};
+        obj.splitinfo.functions = @(s,t) stok2d_dpres_split(mu, s, t);
 
     case {'dtrac', 'dtraction'}
         obj.type = 'dtrac';
@@ -320,5 +320,11 @@ f{2}(:,2:2:end) = -sn1mat;
 end
 
 function f = stok2d_dpres_split(mu,s,t)
-f{1} = [];
+f = cell(2, 1);
+ntarg = numel(t.r(1,:));
+nsrc = numel(s.r(1,:));
+f{1} = zeros(ntarg,2*nsrc);
+f{2} = zeros(ntarg,2*nsrc);
+f{1}(:,1:2:end) = -2;     
+f{2}(:,2:2:end) =  2;
 end
