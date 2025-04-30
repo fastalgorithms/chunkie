@@ -23,8 +23,8 @@ function [chnkr,ab] = chunkerfunc(fcurve,cparams,pref)
 %                 parameter space (should be in [ta,tb])
 %       cparams.ifclosed = flag determining if the curve
 %           is to be interpreted as a closed curve (true)
-%       cparams.chsmall = max size of end intervals if
-%           ifclosed == 0 (Inf)
+%       cparams.chsmall = max size of each end interval if
+%           ifclosed == 0 ([Inf, Inf])
 %       cparams.nover = oversample resolved curve nover
 %           times (0)
 %       cparams.eps = tolerance to resolve coordinates and arclength 
@@ -89,6 +89,9 @@ end
 if isfield(cparams,'chsmall')
     chsmall = cparams.chsmall;
 end	 
+if isscalar(chsmall)
+    chsmall = chsmall*ones(1,2);
+end
 if isfield(cparams,'nover')
     nover = cparams.nover;
 end	 
@@ -258,10 +261,12 @@ for ijk = 1:maxiter_res
 
      %       . . . mark as processed and resolved if less than eps
 
+                
+
             if (resol_speed_test || resol_curve_test  || ... 
                    total_curve_test || rlself > maxchunklen || ...
-                    and(or(adjs(1,ich) <= 0, adjs(2,ich) <= 0), ...
-                rlself > chsmall))
+                    or(and(adjs(1,ich) <= 0, rlself > chsmall(1)), ...
+                    and(adjs(2,ich) <= 0,rlself > chsmall(2))))
               %       . . . if here, not resolved
               %       divide - first update the adjacency list
                 if (nch +1 > nchmax)
