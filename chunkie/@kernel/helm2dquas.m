@@ -154,11 +154,6 @@ end
 
 function f = helm2dquas_s_split(zk,s,t,quas_param)
 seval = chnk.helm2dquas.kern(zk, s, t, 's',quas_param);
-
-rx = t.r(1,:).' - s.r(1,:);
-nx = fix(mean(rx/quas_param.d,"all"));
-t.r(1,:) = t.r(1,:) - nx*quas_param.d;
-
 s0eval = chnk.helm2d.kern(zk, s, t, 's');
 dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
 logeval = log(abs(dist));
@@ -169,11 +164,6 @@ end
 
 function f = helm2dquas_d_split(zk,s,t,quas_param)
 deval = chnk.helm2dquas.kern(zk, s, t, 'd',quas_param);
-
-rx = t.r(1,:).' - s.r(1,:);
-nx = fix(mean(rx/quas_param.d,"all"));
-t.r(1,:) = t.r(1,:) - nx*quas_param.d;
-
 d0eval = chnk.helm2d.kern(zk, s, t, 'd');
 dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
 logeval = log(abs(dist));
@@ -187,10 +177,6 @@ end
 function f = helm2dquas_c_split(zk,s,t,quas_param,coefs)
 seval = chnk.helm2dquas.kern(zk, s, t, 's',quas_param);
 deval = chnk.helm2dquas.kern(zk, s, t, 'd',quas_param);
-
-rx = t.r(1,:).' - s.r(1,:);
-nx = fix(mean(rx/quas_param.d,"all"));
-t.r(1,:) = t.r(1,:) - nx*quas_param.d;
 
 s0eval = chnk.helm2d.kern(zk, s, t, 's');
 d0eval = chnk.helm2d.kern(zk, s, t, 'd');
