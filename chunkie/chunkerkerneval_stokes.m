@@ -398,6 +398,7 @@ for j=1:size(chnkr.r,3)
         fintsDtrac2 = fints;
         %
         fintsSpres2 = fints;
+        fintsSpres3 = fints;
         %
         fintsDpres2 = fints;
         %
@@ -894,8 +895,38 @@ for j=1:size(chnkr.r,3)
           Ar = real(A); Ai = imag(A);
           Acorr = [(Ar.*(ones(numel(px),1)*ny1(:)')+Ai.*(ones(numel(px),1)*ny2(:)')), ...
                    (Ar.*(ones(numel(px),1)*ny2(:)')-Ai.*(ones(numel(px),1)*ny1(:)'))];
-          fintsSpres2(ind(:)) = fintsSpres2(ind(:)) + Acorr*densjT(:);
+          % fintsSpres2(ind(:)) = fintsSpres2(ind(:)) + Acorr*densjT(:);
+          % fints = fintsSpres2;
+
+          %
+          Acorr_rA = [Ar.*(ones(numel(px),1)*ny1(:)'), ...
+                      Ar.*(ones(numel(px),1)*ny2(:)')];
+          Acorr_iA = [Ai.*(ones(numel(px),1)*ny2(:)'), ...
+                     -Ai.*(ones(numel(px),1)*ny1(:)')];
+          testval = Acorr_rA*densjT(:) + Acorr_iA*densjT(:);
+
+          %
+          l = 1;
+          funs1 = zeros(ntarg,2*nsrc);
+          funs1(:,1:2:end) = (ones(numel(px),1)*ny1(:)');     
+          funs1(:,2:2:end) = (ones(numel(px),1)*ny2(:)');
+          mat0 = real(A);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs1;
+          % testval2 = mat0xsplitfun*densj(:);
+          fintsSpres2(ind(:)) = fintsSpres2(ind(:)) + mat0xsplitfun*densj(:);
+          %
+          l = 2;
+          funs2 = zeros(ntarg,2*nsrc);
+          funs2(:,1:2:end) =  (ones(numel(px),1)*ny2(:)');     
+          funs2(:,2:2:end) = -(ones(numel(px),1)*ny1(:)');
+          mat0 = imag(A);
+          mat0opdim = kron(mat0,ones(opdims'));
+          mat0xsplitfun = mat0opdim.*funs2;
+          % testval3 = mat0xsplitfun*densj(:);
+          fintsSpres2(ind(:)) = fintsSpres2(ind(:)) + mat0xsplitfun*densj(:);
           fints = fintsSpres2;
+
           % keyboard
         end
 
