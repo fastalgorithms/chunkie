@@ -1,4 +1,4 @@
-function cg = refine(cg,opts,last_len)
+function cg = refine(cg,opts)
 %REFINE refine each edge of a chunkgraph object. 
 %
 % Syntax 
@@ -6,10 +6,29 @@ function cg = refine(cg,opts,last_len)
 %
 % Input:
 %   cg - chunkgraph
-%   opts - cell array of structs, options to pass to chunker refine routine
-%       in each face
-%   last_len - optional float, ensure that the arclength of all panels 
-%     touching each vertex is 2^-n * last_len for some n >= 0.
+%   opts - options structure (default values)
+%       opts.dlist = list of edges to refine (1:nedges)
+%       opts.ilist = list of edges not to refine ([]), this overrules
+%               opts.dlist
+%       opts.last_len = if provided, ensure that the arclength of all 
+%               panels touching each vertex is 2^-n * last_len for some 
+%               n >= 0.
+%       opts.splitchunks = cell array of integer arrays ([]), each element 
+%               is a list of chunks to split, helpful for refining chunks 
+%               where a function is not resolved
+%       opts.nchmax = maximum number of chunks on refined chunker
+%                   (10*chnkr.nch)
+%       opts.lvlr = level restriction flag ('a'), if 'a', enforce that no
+%                   two adjacent chunks should differ in length by more 
+%                   than a factor of approx 2.1 (see lvlrfac). if 'n'
+%                   don't enforce (not recommended)
+%       opts.lvlrfac = (2.1, see chunker.lvlrfacdefault) factor for
+%                      enforcing level restriction
+%       opts.maxchunklen = maximum chunk length (Inf). enforce that no
+%                   chunk is larger than this maximum length
+%       opts.nover = oversample boundary nover times (0)
+%       opts.maxiter_lvlr = number of iterations allowed when attempting
+%                           level restriction (1000)
 %
 % Output:
 %   cg - refined chunker, edges are sorted and balanced again
@@ -20,17 +39,24 @@ if nargin == 1
     opts = [];
 end
 
-if length(opts) <= 1
-    opts0 = opts;
-    opts = cell(length(cg.echnks),1);
-    for j = 1:length(cg.echnks)
-        opts{j} = opts0;
-    end
+if ~isfield(opts,'ilist')
+    opts.ilist = [];
 end
 
-for j = 1:length(cg.echnks)
+if isfield(opts,'dlist')
+    ids = 1:length(cg.echnks);
+    opts.ilist = unique([opts.ilist,setdiff(ids, opts.dlist)]);
+end
+
+if ~isfield(opts,'splitchunks')
+    opts.splitchunks = cell(1,length(cg.echnks));
+end
+
+for j = setdiff(1:length(cg.echnks), opts.ilist)
+    optsj = opts;
+    optsj.splitchunks = opts.splitchunks{j};
     chnkr = cg.echnks(j);
-    chnkr = chnkr.refine(opts{j});
+    chnkr = chnkr.refine(optsj);
     chnkr = chnkr.sort();
     cg.echnks(j) = chnkr;
 end
@@ -38,8 +64,11 @@ end
 cg = balance(cg);
 
 
-if nargin == 3
+if isfield(opts,'last_len')
     % if a last length is provided
+    if isempty(opts.last_len), return, end
+
+    last_len = opts.last_len;
     nedges = length(cg.echnks);
     nverts = length(cg.vstruc);
 
