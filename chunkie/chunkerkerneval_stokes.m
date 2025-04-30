@@ -753,11 +753,31 @@ for j=1:size(chnkr.r,3)
           Acorr_1_iA(2:2:end,:) = [Sp11p1iSp21_1i_iA Sp12p1iSp22_1i_iA];
           %
           % fintsStrac3(ind(:)) = fintsStrac3(ind(:)) + Acorr_1_rA*densjT(:) + Acorr_1_iA*densjT(:);
+
+          mu = 1;
+          s = srcinfo;
+          ttmp = []; ttmp.r = targs(:,ji); ttmp.n = targinfoji.n;
+          dist = (s.r(1,:)+1i*s.r(2,:))-(ttmp.r(1,:)'+1i*ttmp.r(2,:)');
+          distr = real(dist);
+          disti = imag(dist);
+          ntarg = numel(ttmp.r(1,:));
+          nsrc = numel(s.r(1,:));
+          sn1mat = repmat(s.n(1,:),[ntarg 1]);
+          sn2mat = repmat(s.n(2,:),[ntarg 1]);
+          snci = 1./(s.n(1,:)+1i*s.n(2,:));
+          sn11mat = repmat(real(snci).*s.n(1,:),[ntarg 1]);
+          sn12mat = repmat(real(snci).*s.n(2,:),[ntarg 1]);
+          sn21mat = repmat(imag(snci).*s.n(1,:),[ntarg 1]);
+          sn22mat = repmat(imag(snci).*s.n(2,:),[ntarg 1]);
+          tndotsn = ((ttmp.n(1,:)'+1i*ttmp.n(2,:)').*((-1i*s.n(1,:)-s.n(2,:))/1i));
+          
+          sndotdistdottn = ((ones(ntarg,1)*snci).*real((-distr+1i*disti).*(ttmp.n(1,:)'+1i*ttmp.n(2,:)')));
+
           %
           l = 1;
           funs1 = zeros(2*ntarg,2*nsrc);
-          funs1(1:2:end,1:2:end) = real((pnx.*(conj(1i*rfnx)/1i)));     
-          funs1(2:2:end,2:2:end) = real((pnx.*(conj(1i*rfnx)/1i)));
+          funs1(1:2:end,1:2:end) = real(tndotsn);     
+          funs1(2:2:end,2:2:end) = real(tndotsn);
           mat0 = real(Ad);
           mat0opdim = kron(mat0,ones(opdims'));
           mat0xsplitfun = mat0opdim.*funs1;
@@ -766,8 +786,8 @@ for j=1:size(chnkr.r,3)
           %
           l = 2;
           funs2 = zeros(2*ntarg,2*nsrc);
-          funs2(1:2:end,1:2:end) = - imag((pnx.*(conj(1i*rfnx)/1i)));     
-          funs2(2:2:end,2:2:end) = - imag((pnx.*(conj(1i*rfnx)/1i)));
+          funs2(1:2:end,1:2:end) = - imag(tndotsn);     
+          funs2(2:2:end,2:2:end) = - imag(tndotsn);
           mat0 = imag(Ad);
           mat0opdim = kron(mat0,ones(opdims'));
           mat0xsplitfun = mat0opdim.*funs2;
@@ -816,10 +836,10 @@ for j=1:size(chnkr.r,3)
           %
           l = 3;
           funs3 = zeros(2*ntarg,2*nsrc);
-          funs3(1:2:end,1:2:end) =  real(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));     
-          funs3(1:2:end,2:2:end) = -imag((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
-          funs3(2:2:end,1:2:end) = -imag((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)); 
-          funs3(2:2:end,2:2:end) = -real(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          funs3(1:2:end,1:2:end) =  real(sndotdistdottn);     
+          funs3(1:2:end,2:2:end) = -imag(sndotdistdottn);
+          funs3(2:2:end,1:2:end) = -imag(sndotdistdottn); 
+          funs3(2:2:end,2:2:end) = -real(sndotdistdottn);
           mat0 = real(Az);
           mat0opdim = kron(mat0,ones(opdims'));
           mat0xsplitfun = mat0opdim.*funs3;
@@ -828,10 +848,10 @@ for j=1:size(chnkr.r,3)
           %
           l = 4;
           funs4 = zeros(2*ntarg,2*nsrc);
-          funs4(1:2:end,1:2:end) = -imag(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));   
-          funs4(1:2:end,2:2:end) = -real((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
-          funs4(2:2:end,1:2:end) = -real((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx));
-          funs4(2:2:end,2:2:end) = imag(((ones(ntarg,1)*(1./rfnx)).*real(conj(bsxfun(@minus,px,rfx)).*pnx)));
+          funs4(1:2:end,1:2:end) = -imag(sndotdistdottn);   
+          funs4(1:2:end,2:2:end) = -real(sndotdistdottn);
+          funs4(2:2:end,1:2:end) = -real(sndotdistdottn);
+          funs4(2:2:end,2:2:end) = imag(sndotdistdottn);
           mat0 = imag(Az);
           mat0opdim = kron(mat0,ones(opdims'));
           mat0xsplitfun = mat0opdim.*funs4;

@@ -103,10 +103,9 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'strac', sigma);
         obj.opdims = [2, 2];
         obj.sing = 'smooth';
-        % not correct... just gets it defined
         obj.splitinfo = [];
-        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0],[0 0 -1 0]};
-        obj.splitinfo.action = {'r','r','i'};
+        obj.splitinfo.type = {[0 0 -1 0],[0 0 -1 0],[0 0 -2 0],[0 0 -2 0]};
+        obj.splitinfo.action = {'r','i','r','i'};
         obj.splitinfo.functions = @(s,t) stok2d_strac_split(mu, s, t);
 
     case {'sgrad', 'sgradient'}
@@ -276,7 +275,31 @@ f{4}(2:2:end,2:2:end) = -disti;
 end
 
 function f = stok2d_strac_split(mu,s,t)
-f{1} = [];
+dist = (s.r(1,:)+1i*s.r(2,:))-(t.r(1,:)'+1i*t.r(2,:)');
+distr = real(dist);
+disti = imag(dist);
+f = cell(4, 1);
+ntarg = numel(t.r(1,:));
+nsrc = numel(s.r(1,:));
+snci = 1./(s.n(1,:)+1i*s.n(2,:));
+tndotsn = ((t.n(1,:)'+1i*t.n(2,:)').*((-1i*s.n(1,:)-s.n(2,:))/1i));          
+sndotdistdottn = ((ones(ntarg,1)*snci).*real((-distr+1i*disti).*(t.n(1,:)'+1i*t.n(2,:)')));
+f{1} = zeros(2*ntarg,2*nsrc);
+f{2} = zeros(2*ntarg,2*nsrc);
+f{3} = zeros(2*ntarg,2*nsrc);
+f{4} = zeros(2*ntarg,2*nsrc);
+f{1}(1:2:end,1:2:end) = real(tndotsn);     
+f{1}(2:2:end,2:2:end) = real(tndotsn);
+f{2}(1:2:end,1:2:end) = - imag(tndotsn);     
+f{2}(2:2:end,2:2:end) = - imag(tndotsn);
+f{3}(1:2:end,1:2:end) =  real(sndotdistdottn);     
+f{3}(1:2:end,2:2:end) = -imag(sndotdistdottn);
+f{3}(2:2:end,1:2:end) = -imag(sndotdistdottn); 
+f{3}(2:2:end,2:2:end) = -real(sndotdistdottn);
+f{4}(1:2:end,1:2:end) = -imag(sndotdistdottn);   
+f{4}(1:2:end,2:2:end) = -real(sndotdistdottn);
+f{4}(2:2:end,1:2:end) = -real(sndotdistdottn);
+f{4}(2:2:end,2:2:end) = imag(sndotdistdottn);
 end
 
 function f = stok2d_dtrac_split(mu,s,t)
