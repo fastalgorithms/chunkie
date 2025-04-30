@@ -396,6 +396,7 @@ for j=1:size(chnkr.r,3)
         fintsStrac3 = fints;
         %
         fintsDtrac2 = fints;
+        fintsDtrac3 = fints;
         %
         fintsSpres2 = fints;
         fintsSpres3 = fints;
@@ -915,7 +916,94 @@ for j=1:size(chnkr.r,3)
           fintsDtrac2(ind(:)) = fintsDtrac2(ind(:)) + Acorr*densjT(:);
           %
           fints = fintsDtrac2;
+          
+          % %
+          % dxr11_1  =  real(Az).*(real(pnx)*ones(1,numel(rfx)));   % (Dxr*s.ws(testn)/(2*pi).*nx(:,1))
+          % dxi11_1  = -3*imag(Az).*(imag(pnx)*ones(1,numel(rfx)));    % (-3*Dxi*s.ws(testn)/(2*pi).*nx(:,2))
+          % dxrc11_1 =  real(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)));    % (Dxrc*s.ws(testn)/(2*pi).*nx(:,1))
+          % dxic11_1 = -imag(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));    % (-(Dxic*s.ws(testn)/(2*pi).*nx(:,2)))
+          % T11_1 = dxr11_1+dxi11_1+dxrc11_1+dxic11_1;
+          % %
+          % dxr12_1  = -real(Az).*(imag(pnx)*ones(1,numel(rfx)));
+          % dxi12_1  =  imag(Az).*(real(pnx)*ones(1,numel(rfx))); 
+          % dxrc12_1 = -real(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));
+          % dxic12_1 = -imag(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)));
+          % T12_1 = dxr12_1+dxi12_1+dxrc12_1+dxic12_1;
+          % %
+          % dxr22_1  =  3*real(Az).*(real(pnx)*ones(1,numel(rfx)));
+          % dxi22_1  = -imag(Az).*(imag(pnx)*ones(1,numel(rfx)));
+          % dxrc22_1 = -real(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)));
+          % dxic22_1 =  imag(Az.*(ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));
+          % T22_1 = dxr22_1+dxi22_1+dxrc22_1+dxic22_1;
+          % Acorrc_1 = [T11_1,T12_1]+1i*[T12_1,T22_1];
+          % Acorr_1 = zeros(size(Acorrtmp));
+          % Acorr_1(1:2:end) = real(Acorrc_1);
+          % Acorr_1(2:2:end) = imag(Acorrc_1);
+          %
+          %
+          % T11_2   = -4*real(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));  % (s.ws(testn)*(-Hx)/pi)
+          % T12_2   =  4*imag(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
+          % T22_2   =  4*real(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
+          % Acorrc_2 = [T11_2,T12_2]+1i*[T12_2,T22_2];
+          % Acorr_2 = zeros(size(Acorrtmp));
+          % Acorr_2(1:2:end) = real(Acorrc_2);
+          % Acorr_2(2:2:end) = imag(Acorrc_2);
+          %
+          % fintsDtrac3(ind(:)) = fintsDtrac3(ind(:)) + Acorr_1*densjT(:) + Acorr_2*densjT(:);
 
+          %
+          dxr11_1_rA  =  real(Az).*(real(pnx)*ones(1,numel(rfx)));   % (Dxr*s.ws(testn)/(2*pi).*nx(:,1))
+          dxrc11_1_rA =  real(Az).*real((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx))) ...
+                        -real(Az).*imag((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));
+          dxr12_1_rA  = -real(Az).*(imag(pnx)*ones(1,numel(rfx)));
+          dxrc12_1_rA = -real(Az).*real((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)))...
+                        -real(Az).*imag((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)));
+          dxr22_1_rA  =  3*real(Az).*(real(pnx)*ones(1,numel(rfx)));
+          dxrc22_1_rA = -real(Az).*real((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)))...
+                        +real(Az).*imag((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));
+          %
+          dxi11_1_iA  = -3*imag(Az).*(imag(pnx)*ones(1,numel(rfx)));    % (-3*Dxi*s.ws(testn)/(2*pi).*nx(:,2))
+          dxic11_1_iA = -imag(Az).*real((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx))) ...
+                        -imag(Az).*imag((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx))); 
+          dxi12_1_iA  =  imag(Az).*(real(pnx)*ones(1,numel(rfx))); 
+          dxic12_1_iA = -imag(Az).*real((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx))) ...
+                        +imag(Az).*imag((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx)));
+          dxi22_1_iA  = -imag(Az).*(imag(pnx)*ones(1,numel(rfx)));
+          dxic22_1_iA =  imag(Az).*real((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(imag(pnx)*ones(1,numel(rfx))) ...
+                        +imag(Az).*imag((ones(numel(px),1)*(conj(rfnx)./rfnx))).*(real(pnx)*ones(1,numel(rfx)));
+          %
+          Acorr_1_rA = zeros(size(Acorrtmp));
+          Acorr_1_rA(1:2:end) = [dxr11_1_rA+dxrc11_1_rA,dxr12_1_rA+dxrc12_1_rA];
+          Acorr_1_rA(2:2:end) = [dxr12_1_rA+dxrc12_1_rA,dxr22_1_rA+dxrc22_1_rA];
+          Acorr_1_iA = zeros(size(Acorrtmp));
+          Acorr_1_iA(1:2:end) = [dxi11_1_iA+dxic11_1_iA,dxi12_1_iA+dxic12_1_iA];
+          Acorr_1_iA(2:2:end) = [dxi12_1_iA+dxic12_1_iA,dxi22_1_iA+dxic22_1_iA];
+
+          %
+          T11_2_rA   = -4*real(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));  % (s.ws(testn)*(-Hx)/pi)
+          T12_2_rA   =  0*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
+          T22_2_rA   =  4*real(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
+          Acorrc_2_rA = [T11_2_rA,T12_2_rA]+1i*[T12_2_rA,T22_2_rA];
+          %
+          T11_2_iA   =  0*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));  % (s.ws(testn)*(-Hx)/pi)
+          T12_2_iA   =  4*imag(Azz).*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
+          T22_2_iA   =  0*real((px-rfx).*(conj(pnx)*ones(1,numel(rfx))));
+          Acorrc_2_iA = [T11_2_iA,T12_2_iA]+1i*[T12_2_iA,T22_2_iA];
+          %
+          Acorr_2_rA = zeros(size(Acorrtmp));
+          Acorr_2_rA(1:2:end) = real(Acorrc_2_rA);
+          Acorr_2_rA(2:2:end) = imag(Acorrc_2_rA);
+          Acorr_2_iA = zeros(size(Acorrtmp));
+          Acorr_2_iA(1:2:end) = real(Acorrc_2_iA);
+          Acorr_2_iA(2:2:end) = imag(Acorrc_2_iA);
+
+          fintsDtrac3(ind(:)) = fintsDtrac3(ind(:)) + Acorr_1_rA*densjT(:) + Acorr_1_iA*densjT(:) ...
+                                                    + Acorr_2_rA*densjT(:) + Acorr_2_iA*densjT(:);
+
+          %
+          fints = fintsDtrac3;
+
+          % keyboard
         end
 
         %% what should be the singularity type of Stokes SLP pressure kernel
