@@ -68,15 +68,14 @@ if nargin == 3
         % fix this to work for closed loops too
         [~,~,info] = sortinfo(cg.echnks(i)); 
         cparams.ifclosed = info.ifclosed;
-        cparams.ifrefine = 0; cparams.lvlr = 'n';
+        % cparams.ifrefine = 0; cparams.lvlr = 'n';
+
+        % cploc.nchmin = 4;
 
         param_data = chunkerarcparam_init(cg.echnks(i));
         fcurve = @(s) chunkerarcparam(s,param_data);
 
-        s = linspace(0,len-1e-8,1e3);
-        r = fcurve(s.');
-        plot(r(1,:),r(2,:),'.')
-        % i
+        cparams.eps = 10 * param_data.eps;
         cg.echnks(i) = chunkerfunc(fcurve,cparams);
     end
 
@@ -93,7 +92,7 @@ if nargin == 3
         arcs = zeros(1,nloc);
 
         idch_loc = [cg.echnks(loc_edges).nch];
-        idch_loc(loc_dir == 1) = 1;
+        idch_loc(loc_dir == -1) = 1;
 
         for k = 1:nloc
             wts = cg.echnks(loc_edges(k)).wts;
@@ -102,21 +101,21 @@ if nargin == 3
 
 
         lvl = get_lvl(arcs, last_len);
-        
+
         len = last_len * 2^-lvl;
 
         % [lvl, len, arcs]
         % len./arcs
         fracs = len./arcs;
-        fracs(loc_dir==-1) = 1 - fracs(loc_dir==-1);
+        fracs(loc_dir==1) = 1 - fracs(loc_dir==1);
         if any(fracs<1e-8 | fracs>1-1e-8)
             if all(fracs<1e-8 | fracs>1-1e-8)
-                break;
+                continue;
             else
                 lvl = lvl + 1;
                 len = last_len * 2^-lvl;
                 fracs = len./arcs;
-                fracs(loc_dir==-1) = 1 - fracs(loc_dir==-1);
+                fracs(loc_dir==1) = 1 - fracs(loc_dir==1);
             end
         end
 
@@ -133,7 +132,7 @@ if nargin == 3
             % split_opt.frac
             cg.echnks(loc_edges(k)) = split(cg.echnks(loc_edges(k)),idch_loc(k),split_opt);
             cg.echnks(loc_edges(k)) = sort(cg.echnks(loc_edges(k)));
-            if loc_dir(k) == -1
+            if loc_dir(k) == 1
                 cg.echnks(loc_edges(k)) = split(cg.echnks(loc_edges(k)),cg.echnks(loc_edges(k)).nch);
             else
                 cg.echnks(loc_edges(k)) = split(cg.echnks(loc_edges(k)),1);
