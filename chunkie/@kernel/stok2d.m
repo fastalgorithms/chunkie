@@ -316,14 +316,18 @@ f{1}(1:2:end,1:2:end) =    tn1mat +real(conjsncmat).*tn1mat -imag(conjsncmat).*t
 f{1}(1:2:end,2:2:end) =   -tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;
 f{1}(2:2:end,1:2:end) =   -tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;
 f{1}(2:2:end,2:2:end) =  3*tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
+f{1} = mu*f{1};
 f{2}(1:2:end,1:2:end) = -3*tn2mat -real(conjsncmat).*tn2mat -imag(conjsncmat).*tn1mat;   
 f{2}(1:2:end,2:2:end) =    tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
 f{2}(2:2:end,1:2:end) =    tn1mat -real(conjsncmat).*tn1mat +imag(conjsncmat).*tn2mat;
 f{2}(2:2:end,2:2:end) =   -tn2mat +real(conjsncmat).*tn2mat +imag(conjsncmat).*tn1mat;
+f{2} = mu*f{2};
 f{3}(1:2:end,1:2:end) = -4*real(-dist.*(tn1mat - 1i*tn2mat));   
 f{3}(2:2:end,2:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));
+f{3} = mu*f{3};
 f{4}(1:2:end,2:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));   
 f{4}(2:2:end,1:2:end) =  4*real(-dist.*(tn1mat - 1i*tn2mat));
+f{4} = mu*f{4};
 end
 
 function f = stok2d_spres_split(mu,s,t)
@@ -346,6 +350,6 @@ ntarg = numel(t.r(1,:));
 nsrc = numel(s.r(1,:));
 f{1} = zeros(ntarg,2*nsrc);
 f{2} = zeros(ntarg,2*nsrc);
-f{1}(:,1:2:end) = -2;     
-f{2}(:,2:2:end) =  2;
+f{1}(:,1:2:end) = -2*mu;     
+f{2}(:,2:2:end) =  2*mu;
 end

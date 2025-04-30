@@ -45,7 +45,7 @@ plot(targets(1,:), targets(2,:), 'kx')
 axis equal
 %
 mu = 1.3;
-mu = 1;
+% mu = 1;
 kerns = kernel('stok', 'd', mu);
 
 % eval u on bdry
