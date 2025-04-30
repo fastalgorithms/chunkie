@@ -91,10 +91,9 @@ switch lower(type)
         obj.fmm = @(eps, s, t, sigma) chnk.stok2d.fmm(eps, mu, s, t, 'spres', sigma);
         obj.opdims = [1, 2];
 	      obj.sing = 'pv';
-        % not correct... just gets it defined
         obj.splitinfo = [];
-        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0],[0 0 -1 0]};
-        obj.splitinfo.action = {'r','r','i'};
+        obj.splitinfo.type = {[0 0 -1 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','i'};
         obj.splitinfo.functions = @(s,t) stok2d_spres_split(mu, s, t);
 
     case {'strac', 'straction'}
@@ -307,7 +306,17 @@ f{1} = [];
 end
 
 function f = stok2d_spres_split(mu,s,t)
-f{1} = [];
+f = cell(2, 1);
+ntarg = numel(t.r(1,:));
+nsrc = numel(s.r(1,:));
+sn1mat = repmat(s.n(1,:),[ntarg 1]);
+sn2mat = repmat(s.n(2,:),[ntarg 1]);
+f{1} = zeros(ntarg,2*nsrc);
+f{2} = zeros(ntarg,2*nsrc);
+f{1}(:,1:2:end) =  sn1mat;     
+f{1}(:,2:2:end) =  sn2mat;
+f{2}(:,1:2:end) =  sn2mat;     
+f{2}(:,2:2:end) = -sn1mat;
 end
 
 function f = stok2d_dpres_split(mu,s,t)

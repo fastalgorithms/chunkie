@@ -949,11 +949,22 @@ for j=1:size(chnkr.r,3)
                      -Ai.*(ones(numel(px),1)*ny1(:)')];
           testval = Acorr_rA*densjT(:) + Acorr_iA*densjT(:);
 
+          mu = 1;
+          s = srcinfo;
+          ttmp = []; ttmp.r = targs(:,ji);
+          dist = (s.r(1,:)+1i*s.r(2,:))-(ttmp.r(1,:)'+1i*ttmp.r(2,:)');
+          distr = real(dist);
+          disti = imag(dist);
+          ntarg = numel(ttmp.r(1,:));
+          nsrc = numel(s.r(1,:));
+          sn1mat = repmat(s.n(1,:),[ntarg 1]);
+          sn2mat = repmat(s.n(2,:),[ntarg 1]);
+
           %
           l = 1;
           funs1 = zeros(ntarg,2*nsrc);
-          funs1(:,1:2:end) = (ones(numel(px),1)*ny1(:)');     
-          funs1(:,2:2:end) = (ones(numel(px),1)*ny2(:)');
+          funs1(:,1:2:end) = sn1mat;     
+          funs1(:,2:2:end) = sn2mat;
           mat0 = real(A);
           mat0opdim = kron(mat0,ones(opdims'));
           mat0xsplitfun = mat0opdim.*funs1;
@@ -962,8 +973,8 @@ for j=1:size(chnkr.r,3)
           %
           l = 2;
           funs2 = zeros(ntarg,2*nsrc);
-          funs2(:,1:2:end) =  (ones(numel(px),1)*ny2(:)');     
-          funs2(:,2:2:end) = -(ones(numel(px),1)*ny1(:)');
+          funs2(:,1:2:end) =  sn2mat;     
+          funs2(:,2:2:end) = -sn1mat;
           mat0 = imag(A);
           mat0opdim = kron(mat0,ones(opdims'));
           mat0xsplitfun = mat0opdim.*funs2;
