@@ -49,7 +49,14 @@ if isfield(opts,'dlist')
 end
 
 if ~isfield(opts,'splitchunks')
+    opts.splitchunks = [];
+end
+if ~iscell(opts.splitchunks)
+    splitchunks = opts.splitchunks;
     opts.splitchunks = cell(1,length(cg.echnks));
+    for i = 1:length(cg.echnks)
+        opts.splitchunks{i} = splitchunks;
+    end
 end
 
 for j = setdiff(1:length(cg.echnks), opts.ilist)
