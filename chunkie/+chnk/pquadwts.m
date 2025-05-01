@@ -46,16 +46,37 @@ n_i = -1i*tang;                                   % normal
 cur = -real(conj(d2_i).*n_i)./sp.^2;              % curvature
 wxp_i = w.*d_i;                                   % complex speed weights (Helsing's wzp)
 
-[As, Ad, Az, Azz] = SDspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'), ...
-    struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
+% determine number of matrices needed
+nout = 0;
+for j = 1:length(types)
+    type0 = types{j};
+    if (all(type0 == [0 0 0 0]))
+        nout = max(nout,0);
+    elseif (all(type0 == [1 0 0 0]))
+        nout = max(nout,1);
+    elseif (all(type0 == [0 0 -1 0]))
+        nout = max(nout,2);
+    elseif (all(type0 == [0 0 -2 0]))
+        nout = max(nout,3);
+    elseif (all(type0 == [0 0 -3 0]))
+        nout = max(nout,4);
+    else
+        error("Split panel quad type %3d not available", type0);
+    end
+end
+
+Ac = cell(4,1);
+if nout > 0
+    [Ac{1:nout}] = SDspecialquad(struct('x',rt(1,:)' + 1i*rt(2,:)'), ...
+        struct('x',r_i,'nx',n_i,'wxp',wxp_i),xlohi(1),xlohi(2),opts.side);
+end
 
 if ifup
     wts_i = (w.*sp)';
 else
-    As  = As *intp;
-    Ad  = Ad *intp;
-    Az  = Az *intp;
-    Azz = Azz*intp;
+    for j = 1:nout
+        Ac{j} = Ac{j}*intp;
+    end
 end
 
 varargout = cell(size(types));
@@ -64,13 +85,13 @@ for j = 1:length(types)
     if (all(type0 == [0 0 0 0]))
         varargout{j} = ones(size(rt,2),numel(wts_i)).*wts_i;
     elseif (all(type0 == [1 0 0 0]))
-        varargout{j} = As;
+        varargout{j} = Ac{1};
     elseif (all(type0 == [0 0 -1 0]))
-        varargout{j} = Ad;
+        varargout{j} = Ac{2};
     elseif (all(type0 == [0 0 -2 0]))
-        varargout{j} = Az;
+        varargout{j} = Ac{3};
     elseif (all(type0 == [0 0 -3 0]))
-        varargout{j} = Azz;
+        varargout{j} = Ac{4};
     else
         error("Split panel quad type %3d not available", type0);
     end
@@ -128,9 +149,11 @@ Q = Q.*repmat(1./(1:p)',[1 N]); % k even
 As = real((V.'\Q).'.*repmat((1i*s.nx)',[N 1])*zsc)/(2*pi*abs(zsc));
 As = As*abs(zsc) - log(abs(zsc))/(2*pi)*repmat(abs(s.wxp)',[N 1]); % unscale, yuk
 warning('off','MATLAB:nearlySingularMatrix');
-% A = real((V.'\P).'*(1i/(2*pi)));         % solve for special quadr weights
-A = ((V.'\P(1:p,:)).'*(1i/(2*pi)));         % do not take real for the eval of Stokes DLP non-laplace term. Bowei 10/19/14
-%A = (P.'*inv(V))*(1i/(2*pi));   % equiv in exact arith, but not bkw stable.
+if nargout > 1
+    % A = real((V.'\P).'*(1i/(2*pi)));         % solve for special quadr weights
+    A = ((V.'\P(1:p,:)).'*(1i/(2*pi)));         % do not take real for the eval of Stokes DLP non-laplace term. Bowei 10/19/14
+    %A = (P.'*inv(V))*(1i/(2*pi));   % equiv in exact arith, but not bkw stable.
+end
 if nargout > 2
     R =  -(kron(ones(p,1),1./(1-x.')) + kron((-1).^(0:p-1).',1./(1+x.'))) +...
         repmat((0:p-1)',[1 N]).*[zeros(1,N); P(1:p-1,:)];  % hypersingular kernel weights of Helsing 2009 eqn (14)
