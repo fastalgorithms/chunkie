@@ -32,14 +32,14 @@ sources_n = rand(2,ns);
 
 % targets
 
-nt = 10000;
+nt = 100;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
 targets = targets.*repmat(rand(1,nt),2,1)*0.8;
 
-plot(chnkr, 'r.'); hold on;
-plot(targets(1,:), targets(2,:), 'kx')
-axis equal
+%plot(chnkr, 'r.'); hold on;
+%plot(targets(1,:), targets(2,:), 'kx')
+%axis equal
 
 mu = 1.3;
 kerns = kernel('stok', 'd', mu);
