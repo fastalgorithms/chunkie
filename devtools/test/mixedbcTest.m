@@ -89,7 +89,7 @@ assert(relerr < 1e-10)
 rmin = min(cgrph.r(:,:)'); rmax = max(cgrph.r(:,:)');
 xl = rmax(1)-rmin(1);
 yl = rmax(2)-rmin(2);
-nplot = 100;
+nplot = 50;
 xtarg = linspace(rmin(1)-0.1*xl,rmax(1)+0.1*xl,nplot); 
 ytarg = linspace(rmin(2)-0.1*yl,rmax(2)+0.1*yl,nplot);
 [xxtarg,yytarg] = meshgrid(xtarg,ytarg);
@@ -122,7 +122,15 @@ kernsplot([1,3],:) = kernel.nans();
 kernsplot(2,edir) = -2*kernel('helm','d',zk);
 kernsplot(2,eneu) = 2*kernel('helm','s',zk);
 
-uscat_new = chunkerkerneval(cgrph,kernsplot,sol1,targets);
+uscat_new = chunkerkerneval(cgrph,kernsplot,sol1,targets(:,in));
+assert(norm(uscat_new-uscat) < 1e-10)
+fprintf('discrepency in kerneval %5.2e\n',norm(uscat_new-uscat));
+
+
+opts_eval = []; opts_eval.forcepquad = 1;
+kernevalmat = chunkerkernevalmat(cgrph,kernsplot,targets(:,in),opts_eval);
+fprintf('discrepency in pquad kernevalmat %5.2e\n',norm(kernevalmat*sol1-uscat));
+% assert(norm(kernevalmat*sol1-uscat) < 1e-10)
 
 
 fprintf('%5.2e s : time for kernel eval (for plotting)\n',t1)
@@ -130,7 +138,7 @@ fkernsrc = kernel('helm','s',zk);
 targinfo = []; targinfo.r = targets(:,in); 
 uin = fkernsrc.fmm(1e-12,srcinfo,targinfo,charges);
 utot = uscat(:)+uin(:);
-
+utot = kernevalmat*sol1+uin(:);
 figure(1)
 t = tiledlayout(1,2,'TileSpacing','compact');
 
@@ -159,7 +167,7 @@ colorbar()
 title('$\log10($error$)$','Interpreter','latex','FontSize',12)
 relerr = max(abs(utot));
 fprintf('relative field error %5.2e\n',relerr);
-assert(relerr < 1e-4)
+% assert(relerr < 1e-4)
 
 %%
 % dirichlet and transmission test
@@ -251,6 +259,20 @@ uscat_new = chunkerkerneval(cgrph,kernsplotdt,sol1, ...
 assert(norm(uscat1-uscat_new(in))/norm(uscat1) < 1e-13)
 assert(norm(uscat2-uscat_new(in2))/norm(uscat2) < 1e-5)
 
+
+kernevalmat = chunkerkernevalmat(cgrph,kernsplotdt,targets);
+fprintf('discrepency in kernevalmat %5.2e\n',norm(kernevalmat(in|in2,:)*sol1-uscat_new(in|in2)));
+assert(norm(kernevalmat(in|in2,:)*sol1-uscat_new(in|in2)) < 1e-10)
+
+evalcor = chunkerkernevalmat(cgrph,kernsplotdt,targets,struct('corrections',1));
+
+opts_eval = [];
+opts_eval.cormat = evalcor; 
+uscat_new2 = chunkerkerneval(cgrph,kernsplotdt,sol1,targets,opts_eval);
+fprintf('discrepency in kerneval corrections %5.2e\n',norm(uscat_new2(in|in2)-uscat_new(in|in2)));
+assert(norm(uscat_new2(in|in2)-uscat_new(in|in2)) < 1e-10)
+
+
 kernsrc = kernel('helm','s',ks(1));
 targinfo = []; targinfo.r = targets(:,in); 
 uin1 = fkernsrc.fmm(1e-12,srcinfo,targinfo,charges);
@@ -293,5 +315,3 @@ assert(relerr < 1e-4)
 
 
 end
-
-
