@@ -61,7 +61,8 @@ for j = 1:length(types)
     elseif (all(type0 == [0 0 -3 0]))
         nout = max(nout,4);
     else
-        error("Split panel quad type %3d not available", type0);
+        error("Split panel quad type [%s] not available",...
+            join(string(type0)," "));
     end
 end
 
