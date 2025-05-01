@@ -1,13 +1,12 @@
 rcipTest0();
 
-
 function rcipTest0()
-
 %RCIPTEST
 %
 % This file tests the rcip routines for solving the exterior dirichlet 
 % problem on a domain defined by two arcs of circles meeting at two vertices
 
+rng(8675309);
 
 ncurve = 2;
 chnkr(1,ncurve) = chunker();
@@ -49,25 +48,14 @@ end
 
 inds = [0, cumsum(nch)];
 
-[glxs,glwts,glu,glv] = lege.exps(ngl);
-
 fcurve = cell(1,ncurve);
-figure(1)
-clf; hold on;
+%figure(1)
+%clf; hold on;
 for icurve = 1:ncurve
     fcurve{icurve} = @(t) circulararc(t,cpars{icurve});
     chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
-    plot(chnkr(icurve)); quiver(chnkr(icurve));
+%    plot(chnkr(icurve)); quiver(chnkr(icurve));
 end
-
-iedgechunks = [1 2; 1 chnkr(2).nch];
-isstart = [1 0];
-nedge = 2;
-ndim=1;
-[Pbc,PWbc,starL,circL,starS,circS,ilist] = chnk.rcip.setup(ngl,ndim, ...
-      nedge,isstart);
-
-fkern = @(s,t) -2*chnk.helm2d.kern(zk,s,t,'D');
 
 %
 
@@ -77,7 +65,9 @@ ns = 10;
 ts = 0.0+2*pi*rand(1,ns);
 sources = [cos(ts); sin(ts)];
 sources = 3.0*sources;
-strengths = randn(ns,1);
+ndens = 4;
+strengths = randn(ns,ndens);
+
 
 % targets
 
@@ -85,7 +75,7 @@ nt = 20;
 ts = 0.0+2*pi*rand(1,nt);
 targets = [cos(ts);sin(ts)];
 targets = 0.2*targets;
-targets(:,1) = [0.95;0];
+targets(:,1) = [1-1e-4;0];
 targets(:,2) = [0,0.36];
 targets(:,3) = [-0.95;0];
 targets(:,2) = [0,0.36];
@@ -95,29 +85,22 @@ scatter(targets(1,:),targets(2,:),'x');
 axis equal 
 
 
-
-
 chnkrtotal = merge(chnkr);
 fkern = @(s,t) -2*chnk.helm2d.kern(zk,s,t,'D');
 np = chnkrtotal.k*chnkrtotal.nch;
 start = tic; D = chunkermat(chnkrtotal,fkern);
 t1 = toc(start);
 
-
-
 kerns = @(s,t) chnk.helm2d.kern(zk,s,t,'s');
 
 % eval u on bdry
 
 targs = chnkrtotal.r; targs = reshape(targs,2,chnkrtotal.k*chnkrtotal.nch);
-targstau = tangents(chnkrtotal); 
-targstau = reshape(targstau,2,chnkrtotal.k*chnkrtotal.nch);
 
 srcinfo = []; srcinfo.r = sources; 
 targinfo = []; targinfo.r = targs;
 kernmats = kerns(srcinfo,targinfo);
 ubdry = kernmats*strengths;
-
 
 % eval u at targets
 
@@ -125,20 +108,15 @@ targinfo = []; targinfo.r = targets;
 kernmatstarg = kerns(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
-
-
 fprintf('%5.2e s : time to assemble matrix\n',t1)
-
 
 sysmat = D;
 
-RG = speye(np);
 ncorner = 2;
 corners= cell(1,ncorner);
 R = cell(1,ncorner);
 rcipsav = cell(1,ncorner);
 starinds = cell(1,ncorner);
-
 
 corners{1}.clist = [1,2];
 corners{1}.isstart = [1,0];
@@ -153,9 +131,7 @@ corners{2}.iedgechunks = [1 2; chnkr(1).nch 1];
 ndim = 1;
 
 nsub = 40;
-
-opts = [];
-
+ndepth = 22;
 
 for icorner=1:ncorner
     clist = corners{icorner}.clist;
@@ -180,11 +156,10 @@ for icorner=1:ncorner
     
     [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = chnk.rcip.setup(ngl,ndim, ...
       nedge,isstart);
-    opts_use = [];
     
     iedgechunks = corners{icorner}.iedgechunks;
     optsrcip = [];
-    optsrcip.savedeep = true;
+    optsrcip.rcip_savedepth = ndepth;
     tic; [R{icorner},rcipsav{icorner}] = chnk.rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
         Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,...,
         [],[],[],[],[],optsrcip);
@@ -194,39 +169,50 @@ for icorner=1:ncorner
 end
 sysmat = sysmat + eye(np);
 
-[sol,flag,relres,iter] = gmres(sysmat,ubdry,np,eps*20,np);
-
-%
+tol = eps*20;
+sol = zeros(size(sysmat,1),ndens);
+for j = 1:ndens
+    [sol0,flag,relres] = gmres(sysmat,ubdry(:,j),np,tol,np);
+    assert(flag == 0);
+    assert(relres < tol);
+    sol(:,j) = sol0;
+end
 
 % interpolate to fine grid
 
-ndepth = 10;
 cor = cell(1,ncorner);
 
 for icorner = 1:ncorner
-    solhat = sol(starinds{icorner});
+    nedge = corners{icorner}.nedge;
+    solhat = sol(starinds{icorner},:);
     [solhatinterp,srcinfo,wts] = chnk.rcip.rhohatInterp(solhat,rcipsav{icorner},ndepth);
 
     targtemp = targets(:,:) - rcipsav{icorner}.ctr(:,1);
     targinfo = [];
     targinfo.r = targtemp;
     
-    cmat = fkern(srcinfo,targinfo);
-    mu = solhatinterp(:).*wts(:);
-    cor{icorner} = cmat*mu;
+    cor{icorner} = 0;
+    for j = 1:nedge
+        cmat = fkern(srcinfo{j},targinfo);
+        mu = solhatinterp{j}(:,:).*wts{j}(:);
+        cor{icorner} = cor{icorner}+cmat*mu;
+    end
 end
 
 %
 
 soltemp = sol;
 for icorner = 1:ncorner
-    soltemp(starinds{icorner}) = 0;
+    soltemp(starinds{icorner},:) = 0;
 end
     
 
 opts = [];
 opts.verb=false;
-start=tic; Dsol = chunkerkerneval(chnkrtotal,fkern,soltemp,targets,opts); 
+Dsol = zeros(nt,ndens);
+for j = 1:ndens
+    start=tic; Dsol(:,j) = chunkerkerneval(chnkrtotal,fkern,soltemp(:,j),targets,opts); 
+end
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
@@ -238,9 +224,11 @@ end
 wchnkr = chnkrtotal.wts;
 
 relerr = norm(utarg-Dsol,'fro')/(sqrt(chnkrtotal.nch)*norm(utarg,'fro'));
-relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
+relerr2 = norm(utarg-Dsol,'inf')/sum(wchnkr(:).'*abs(sol));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
+
+assert(relerr < 1e-10);
 
 
 %%

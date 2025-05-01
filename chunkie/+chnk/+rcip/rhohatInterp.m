@@ -3,9 +3,9 @@ function [rhohatinterp,srcinfo,wts] = rhohatInterp(rhohat,rcipsav,ndepth)
 % density rhohat to the requested depth using the backward recursion
 %
 % When using an RCIP preconditioner (in the style of eq 34 of the RCIP 
-% tutorial), the resulting coarse level density is 
-% accurate for interactions separated from the vertex 
-% *at the coarse scale*. 
+% tutorial), the resulting coarse level density is accurate for
+% interactions separated from the vertex *at the coarse scale*. 
+%
 % By running the recursion for the RCIP preconditioner backwards, an 
 % equivalent density can be reconstructed on the fine mesh which is 
 % appropriate for closer interactions (at a distance well-separated from
@@ -53,25 +53,39 @@ function [rhohatinterp,srcinfo,wts] = rhohatInterp(rhohat,rcipsav,ndepth)
 % wts - a set of weights for integrating functions sampled at these
 %           points
 
-				% author: Travis Askham
+% author: Travis Askham
   
-rhohatinterp = [];
-srcinfo = [];
-wts = [];
-
-k = rcipsav.k;
-ndim = rcipsav.ndim;
 nedge = rcipsav.nedge;
 Pbc = rcipsav.Pbc;
-PWbc = rcipsav.PWbc;
-starL = rcipsav.starL;
-starL1 = rcipsav.starL1;
-starS = rcipsav.starS;
-circL = rcipsav.circL;
-circL1 = rcipsav.circL1;
-circS = rcipsav.circS;
-ilist = rcipsav.ilist;
+
+starL1 = sort(rcipsav.starL1);
+starS = sort(rcipsav.starS);
+
+circL1 = sort(rcipsav.circL1);
+circS = sort(rcipsav.circS);
+
+nrho = numel([circS,starS]);
+ndens = numel(rhohat)/nrho;
+rhohat = reshape(rhohat,[nrho, ndens]);
+
 nsub = rcipsav.nsub;
+
+rhohatinterp = cell(nedge,1);
+srcinfo = cell(nedge,1);
+wts = cell(nedge,1);
+
+% figure out which edge the indices belong to 
+% THIS ASSUMES WE HAVE THE SAME ORDER ON EDGES
+circSedge = cell(nedge,1); ncS = numel(circS)/nedge;
+circL1edge = cell(nedge,1); ncL1 = numel(circL1)/nedge;
+starSedge = cell(nedge,1); nsS = numel(starS)/nedge;
+starL1edge = cell(nedge,1); nsL1 = numel(starL1)/nedge;
+for j = 1:nedge
+    circSedge{j} = circS((j-1)*ncS+1:j*ncS);
+    circL1edge{j} = circL1((j-1)*ncL1+1:j*ncL1);
+    starSedge{j} = starS((j-1)*nsS+1:j*nsS);
+    starL1edge{j} = starL1((j-1)*nsL1+1:j*nsL1);
+end
 
 if nargin < 3
     ndepth = nsub;
@@ -84,58 +98,54 @@ if ndepth > nsub
     ndepth = nsub;
 end
 
-savedeep = rcipsav.savedeep;
+savedepth = rcipsav.savedepth;
 
-if savedeep
+if ndepth <= savedepth
     
     % all relevant quantities are stored, just run backward recursion
     
     rhohat0 = rhohat;
-    rhohatinterp = [rhohatinterp; rhohat0(circS)];
-    r = [];
-    d = [];
-    d2 = [];
-    n = [];
-    h = [];
     cl = rcipsav.chnkrlocals{nsub};
     wt = weights(cl);
-    r = [r, cl.rstor(:,circL1)];
-    d = [d, cl.dstor(:,circL1)];
-    d2 = [d2, cl.d2stor(:,circL1)];
-    n = [n, cl.nstor(:,circL1)];
-    wts = [wts; wt(circL1(:))];
+
+    for j = 1:nedge
+        rhohatinterp{j} = rhohat0(circSedge{j},:);
+        srcinfo{j}.r = cl.rstor(:,circL1edge{j});
+        srcinfo{j}.d = cl.dstor(:,circL1edge{j});
+        srcinfo{j}.d2 = cl.d2stor(:,circL1edge{j});
+        srcinfo{j}.n = cl.nstor(:,circL1edge{j});
+        wts{j} = wt(circL1edge{j});
+    end
     
     R0 = rcipsav.R{nsub+1};
     for i = 1:ndepth
         R1 = rcipsav.R{nsub-i+1};
         MAT = rcipsav.MAT{nsub-i+1};
         rhotemp = R0\rhohat0;
-        rhohat0 = R1*(Pbc*rhotemp(starS) - MAT*rhohat0(circS));
+        rhohat0 = R1*(Pbc*rhotemp(starS,:) - MAT*rhohat0(circS,:));
         if i == ndepth
-            rhohatinterp = [rhohatinterp; rhohat0];
-            r = [r, cl.rstor(:,starL1)];
-            d = [d, cl.dstor(:,starL1)];
-            d2 = [d2, cl.d2stor(:,starL1)];
-            n = [n, cl.nstor(:,starL1)];
             wt = weights(cl);
-
-            wts = [wts; wt(starL1(:))];
+            for j = 1:nedge
+                rhohatinterp{j} = [rhohatinterp{j}; rhohat0([starSedge{j} circSedge{j}],:)];
+                srcinfo{j}.r = [srcinfo{j}.r, cl.rstor(:,starL1edge{j})];
+                srcinfo{j}.d = [srcinfo{j}.d, cl.dstor(:,starL1edge{j})];
+                srcinfo{j}.d2 = [srcinfo{j}.d2, cl.d2stor(:,starL1edge{j})];
+                srcinfo{j}.n = [srcinfo{j}.n, cl.nstor(:,starL1edge{j})];                
+                wts{j} = [wts{j}, wt(starL1edge{j})];
+            end
         else
             cl = rcipsav.chnkrlocals{nsub-i};
-            rhohatinterp = [rhohatinterp; rhohat0(circS)];
-            r = [r, cl.rstor(:,circL1)];
-            d = [d, cl.dstor(:,circL1)];
-            d2 = [d2, cl.d2stor(:,circL1)];
-            n = [n, cl.nstor(:,circL1)];
             wt = weights(cl);
-            wts = [wts; wt(circL1(:))];
+            for j = 1:nedge
+                rhohatinterp{j} = [rhohatinterp{j}; rhohat0(circSedge{j},:)];
+                srcinfo{j}.r = [srcinfo{j}.r, cl.rstor(:,circL1edge{j})];
+                srcinfo{j}.d = [srcinfo{j}.d, cl.dstor(:,circL1edge{j})];
+                srcinfo{j}.d2 = [srcinfo{j}.d2, cl.d2stor(:,circL1edge{j})];
+                srcinfo{j}.n = [srcinfo{j}.n, cl.nstor(:,circL1edge{j})];
+                wts{j} = [wts{j}, wt(circL1edge{j})];
+            end
         end
         R0 = R1;
     end
     
-    srcinfo.r = r;
-    srcinfo.d = d;
-    srcinfo.d2 = d2;
-    srcinfo.n = n;
-
 end
