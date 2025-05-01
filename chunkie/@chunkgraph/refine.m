@@ -43,10 +43,10 @@ if ~isfield(opts,'ilist')
     opts.ilist = [];
 end
 
-if isfield(opts,'dlist')
-    ids = 1:length(cg.echnks);
-    opts.ilist = unique([opts.ilist,setdiff(ids, opts.dlist)]);
+if ~isfield(opts,'dlist')
+    opts.dlist = 1:length(cg.echnks);
 end
+opts.dlist = setdiff(opts.dlist,opts.ilist);
 
 if ~isfield(opts,'splitchunks')
     opts.splitchunks = [];
@@ -59,7 +59,7 @@ if ~iscell(opts.splitchunks)
     end
 end
 
-for j = setdiff(1:length(cg.echnks), opts.ilist)
+for j = opts.dlist
     optsj = opts;
     optsj.splitchunks = opts.splitchunks{j};
     chnkr = cg.echnks(j);

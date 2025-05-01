@@ -53,6 +53,7 @@ cgrph = chunkgraph(verts,edge2verts,fchnks,cparams);
 
 % check that we can refine a single edge
 ref_opts = [];
+ref_opts.nover = 1;
 ref_opts.dlist = 2;
 cgrph2 = refine(cgrph,ref_opts);
 
