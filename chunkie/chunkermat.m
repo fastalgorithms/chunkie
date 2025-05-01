@@ -415,10 +415,6 @@ for i=1:nchunkers
         if nonsmoothonly
             sysmat_tmp = sparse(chnkr.npt,chnkr.npt);
         else
-            if (quadorder ~= chnkr.k)
-                warning(['native rule: quadorder', ... 
-                    ' must equal chunker order (%d)'],chnkr.k)
-            end
             sysmat_tmp = chnk.quadnative.buildmat(chnkr,ftmp,opdims);
         end
     else

@@ -1,13 +1,10 @@
 pquadTest0();
 
-
 function pquadTest0()
 % testing product quadrature rule
 % planewave vec
 
 kvec = 10*[1;-1.5];
-
-%
 
 zk = norm(kvec);
 
@@ -22,7 +19,6 @@ chnkr = refine(chnkr,struct('nover',1));
 
 % build laplace dirichlet matrix
 
-% fkern = kernel('laplace','d');
 fkern = kernel('helmholtz','c',zk,[1.5,-2i]);
 opts = [];
 start = tic; C = chunkermat(chnkr,fkern,opts);
@@ -30,11 +26,10 @@ t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 
-%
+opts.forcepquad = true; 
+opts.side = 'i';
+sys = chunkerkernevalmat(chnkr,fkern,[chnkr.r(1,:);chnkr.r(2,:)],opts);
 
-sys = -0.5*eye(chnkr.npt) + C;
-
-% rhs = chnkr.data(1,:); rhs = rhs(:);
 rhs = besselh(0,zk*abs((1+1.25*1i)-(chnkr.r(1,:)+1i*chnkr.r(2,:)))); rhs = rhs(:);
 start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
 
@@ -76,12 +71,7 @@ fprintf('%5.2e s : time for kerneval (adaptive for near)\n',t1);
 % Compare with reference solution Dsol
 rel_error = max(abs(Csol-Csolpquad))/max(abs(Csol));
 fprintf('%5.2e : Relative max error\n',rel_error);
-% 
 
 assert(rel_error < 1e-10)
-% profile viewer
-
 
 end
-
-
