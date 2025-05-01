@@ -56,6 +56,17 @@ function mat = chunkerkernevalmat(chnkobj,kern,targobj,opts)
 % opts.sing provides a default value for singularities if not 
 % defined for kernels
 
+if isa(kern,'function_handle')
+    kern2 = kernel(kern);
+    kern = kern2;
+
+elseif ~isa(kern,'kernel')
+    msg = "Second input is not a kernel object, function handle, " ...
+                + "or cell array";
+    error(msg);
+end
+
+
 icgrph = false;
 nregion = 1;
 nedge = 1;
@@ -507,7 +518,7 @@ if isfield(targinfo, 'n')
     targn = targinfo.n;
 end
 
-
+dclosest = Inf;
 
 % using Helsing-Ojala quadrature
 if isempty(flag) % figure out what is this flag for in adaptive routine
@@ -531,6 +542,7 @@ else
     intp = lege.matrin(k,t);          % interpolation from k to 2*k
     intp_ab = lege.matrin(k,[-1;1]);  % interpolation from k to end points
     
+    optsuse = opts;
     for i = 1:nch
         jmat = 1 + (i-1)*k*opdims(2);
         jmatend = i*k*opdims(2);
@@ -546,11 +558,28 @@ else
         srcinfo.d2 = d2(:,:,i);
         srcinfo.n = n(:,:,i);
 
-        mean_r = srcinfo.r(:,:)*wts(:,i)/sum(wts(:,i));
-        mean_n = srcinfo.n(:,:)*wts(:,i);
-        iside = sign(sum((targinfoji.r-mean_r).*mean_n,1));
-        iiin = iside < 0;
-        iout = iside >= 0;
+        if isfield(opts,'side')
+            if strcmp(opts.side,'i')
+                iiin = true(1,size(targinfoji.r,2));
+                iout = false(1,size(targinfoji.r,2));
+            else
+                iiin = false(1,size(targinfoji.r,2));
+                iout = true(1,size(targinfoji.r,2));
+            end
+        else
+            jjclose = zeros(1,size(targinfoji.r,2));
+
+            for jj = 1:size(targinfoji.r,2)
+                dists = vecnorm(targinfoji.r(:,jj)-srcinfo.r(:,:));
+                [dists,idst] = sort(dists);
+                jjclose(jj) = idst(2);
+                dclosest = min(dclosest,dists(1));
+            end
+            
+            iside = sign(sum((targinfoji.r-srcinfo.r(:,jjclose)).*srcinfo.n(:,jjclose),1));
+            iiin = iside < 0;
+            iout = iside >= 0;
+        end
 
         if any(iiin)
             targinfouse= [];
@@ -565,12 +594,12 @@ else
                 targinfouse.n = targinfoji.n(:,iiin);
             end  
         
-            opts.side = 'i';
+            optsuse.side = 'i';
 
         % Helsing-Ojala (interior/exterior?)
         allmatsf = cell(size(kern.splitinfo.type));
         [allmatsf{:}] = chnk.pquadwts(r,d,n,d2,wts,i,targinfouse.r,t,w, ...
-            opts,intp_ab,intp,kern.splitinfo.type,true);
+            optsuse,intp_ab,intp,kern.splitinfo.type,true);
 
         r_i = intp*(r(1,:,i)'+1i*r(2,:,i)'); 
         d_i = (intp*(d(1,:,i)'+1i*d(2,:,i)'));
@@ -616,11 +645,11 @@ else
                 targinfouse.n = targinfoji.n(:,iout);
             end  
         
-            opts.side = 'e';
+            optsuse.side = 'e';
             % Helsing-Ojala (interior/exterior?)
             allmatsf = cell(size(kern.splitinfo.type));
             [allmatsf{:}] = chnk.pquadwts(r,d,n,d2,wts,i,targinfouse.r,t,w, ...
-                opts,intp_ab,intp,kern.splitinfo.type,true);
+                optsuse,intp_ab,intp,kern.splitinfo.type,true);
     
             r_i = intp*(r(1,:,i)'+1i*r(2,:,i)'); 
             d_i = (intp*(d(1,:,i)'+1i*d(2,:,i)'));
@@ -676,6 +705,10 @@ else
     end
     mat = sparse(is,js,vs,opdims(1)*nt,opdims(2)*chnkr.npt);
     
+end
+
+if dclosest < 1e-10
+    warning('Unable to estimate pquad side. Provide opts.side to ensure accuracy.')
 end
 
 end
