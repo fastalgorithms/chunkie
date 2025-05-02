@@ -1,4 +1,4 @@
-function chnkr = split(chnkr,ich,opts,x,w,u,stype,frac)
+function chnkr = split(chnkr,ich,opts,x,w,u,stype)
 %SPLIT this routine takes the list of all chunks and splits one in
 %      half with respect to either arclength or parameter space
 %       (this routine is not necessarily designed to be user-callable,
@@ -15,7 +15,7 @@ function chnkr = split(chnkr,ich,opts,x,w,u,stype,frac)
 %       opts.thresh = threshold for newton (1e-10)
 %       opts.nitermax = maximum iters for newton (1000)
 %       opts.frac - fraction of length in first panel (1/2) 
-%           default is evenly sized panels
+%           default evenly splits panels
 %   x - precomputed Legendre nodes of order chnkr.k
 %   w - precomputed Legendre weights
 %   u - precomputed vals at legendre nodes -> coeffs matrix
