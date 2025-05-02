@@ -23,8 +23,8 @@ yt = repmat(targ(2,:).',1,nsrc);
 rx = xt-xs;
 ry = yt-ys;
 
-nx = fix(rx/l/d);
-rx = rx - nx*l*d;
+nx = fix(rx/d);
+rx = rx - nx*d;
 
 
 rx2 = rx.*rx;
@@ -175,7 +175,7 @@ if ~isempty(rxclose)
     end
 end
 
-quasi_phase = exp(1i*kappa*nx(:)*l*d);
+quasi_phase = exp(1i*kappa*nx(:)*d);
 
 val = reshape(quasi_phase.*val,ntarg,nsrc);
 if nargout>1
