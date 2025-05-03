@@ -120,9 +120,17 @@ if ~isempty(rxclose)
     sn = sn.';
     N = length(sn)-1;
     ns = (0:N);
+    ns_use = (0:N+2);
     Js = zeros(length(rclose),N+3);
-    for i = 1:length(rclose)
-    Js(i,:) = besselj((0:N+2),zk*rclose(i));
+
+    if length(rclose) < N+3
+        for i = 1:length(rclose)
+        Js(i,:) = besselj(ns_use,zk*rclose(i));
+        end
+    else
+        for i = 1:length(ns_use)
+        Js(:,i) = besselj(ns_use(i),zk*rclose);
+        end
     end
     eip = (rxclose+1i*ryclose)./rclose;
     cs = (eip.^ns+eip.^(-ns))/2;
