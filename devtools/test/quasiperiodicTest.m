@@ -7,7 +7,7 @@ function quasiperiodicTest0()
 % problem parameters
 d= 1;
 zk = 1;
-kappa = pi-0.1-1i;
+kappa = [pi-0.1-1i,0.2];
 coefs = [1;0.5];
 coefa = [1,0.3;-1i,0.2];
 
@@ -60,15 +60,19 @@ c2trval = c2trkern.eval(src,targ);
 % test quasiperiodicitiy
 targ_s = targ; targ_s.r = targ.r + [d;0];
 svalshift = skern.eval(src,targ_s);
-assert(abs(svalshift - exp(1i*kappa*d)*sval) <  1e-12)
+assert(norm(svalshift - exp(1i*kappa(:)*d).*sval) <  1e-12)
 
 % test combined
-assert(abs((coefs(1)*dval + coefs(2)*sval)-cval) <  1e-12)
-assert(abs((coefs(1)*dpval + coefs(2)*spval)-cpval) <  1e-12)
+assert(norm((coefs(1)*dval + coefs(2)*sval)-cval) <  1e-12)
+assert(norm((coefs(1)*dpval + coefs(2)*spval)-cpval) <  1e-12)
 
 % test all
-assert(norm([coefa(1,1)*dval, coefa(1,2)*sval; coefa(2,1)*dpval, ...
-    coefa(2,2)*spval] - allval) <  1e-12)
+all_assemb = zeros(size(allval));
+all_assemb(1:2:end, 1:2:end) = coefa(1,1)*dval;
+all_assemb(1:2:end, 2:2:end) = coefa(1,2)*sval;
+all_assemb(2:2:end, 1:2:end) = coefa(2,1)*dpval;
+all_assemb(2:2:end, 2:2:end) = coefa(2,2)*spval;
+assert(norm(all_assemb - allval) <  1e-12)
 
 % test transmission representiatoon
 assert(norm([coefs(1)*dval , coefs(2)*sval]-trval) <  1e-12)
@@ -79,7 +83,10 @@ assert(norm((coefs(1)*dgval + coefs(2)*sgval)-cgval) <  1e-12)
 assert(norm([coefs(1)*dgval , coefs(2)*sgval]-trgval) <  1e-12)
 
 % test c2trans
-assert(norm([coefs(1)*dval + coefs(2)*sval; coefs(1)*dpval + coefs(2)*spval]-c2trval) <  1e-12)
+c2trval_assemb = zeros(size(c2trval));
+c2trval_assemb(1:2:end, :) = coefs(1)*dval + coefs(2)*sval;
+c2trval_assemb(2:2:end, :) = coefs(1)*dpval + coefs(2)*spval;
+assert(norm(c2trval_assemb-c2trval) <  1e-12)
 end
 
 

@@ -92,20 +92,24 @@ switch lower(type)
         obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 's',quas_param);
         obj.fmm = [];
         obj.sing = 'log';
+        if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0]};
         obj.splitinfo.action = {'r','r'};
         obj.splitinfo.functions = @(s,t) helm2dquas_s_split(zk,s,t,quas_param);
+        end
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'd',quas_param);
         obj.fmm = [];
         obj.sing = 'log';
+        if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r','r'};
         obj.splitinfo.functions = @(s,t) helm2dquas_d_split(zk,s,t,quas_param);
+        end
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
@@ -129,10 +133,12 @@ switch lower(type)
         obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c',quas_param, coefs);
         obj.fmm = [];
         obj.sing = 'log';
+        if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r','r'};
         obj.splitinfo.functions = @(s,t) helm2dquas_c_split(zk,s,t,quas_param,coefs);
+        end
 
     case {'cp', 'cprime'}
         if ( nargin < 3 )
