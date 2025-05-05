@@ -369,6 +369,8 @@ classdef chunker
         [re,taue] = chunkends(obj,ich)
         flag = flagnear(obj,pts,opts)
         kappa = signed_curvature(obj)
+        obj = plus(v,obj)
+        obj = mtimes(A,obj)
     end
     methods(Static)
         obj = chunkerfunc(fcurve,varargin)
