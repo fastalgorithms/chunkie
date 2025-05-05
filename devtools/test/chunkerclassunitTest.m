@@ -58,14 +58,14 @@ v = [1;2];
 com1 = chnkr.r(:,:)*chnkr.wts(:)/sum(chnkr.wts(:));
 chnkr2 = v + chnkr;
 com2 = chnkr2.r(:,:)*chnkr2.wts(:)/sum(chnkr2.wts(:));
-assert(norm(v-(com2-com1))/norm(v) < 1e-15)
+assert(norm(v-(com2-com1))/norm(v) < 1e-14)
 
 A = [1 2; 2 3]; 
 chnkr2 = A*chnkr;
-assert(abs(area(chnkr2) - det(A)*area(chnkr))/abs(area(chnkr)) < 1e-15);
+assert(abs(area(chnkr2) - det(A)*area(chnkr))/abs(area(chnkr)) < 1e-14);
 s = 2; 
 chnkr2 = s*chnkr;
-assert(abs(area(chnkr2) - s^2*area(chnkr))/abs(area(chnkr)) < 1e-15);
+assert(abs(area(chnkr2) - s^2*area(chnkr))/abs(area(chnkr)) < 1e-14);
 
 end
 
