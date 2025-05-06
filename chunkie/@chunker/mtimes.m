@@ -20,5 +20,12 @@ if isa(A,"numeric") && isa(chnkr,"chunker")
         error("CHUNKER:mtimes:invalid",...
             "matrix must have compatible size for transforming coordinates");
     end
-   
+elseif isnumeric(chnkr) && isscalar(chnkr)
+    chnkr = mtimes(chnkr,A);
+elseif isnumeric(chnkr)
+    error("CHUNKER:mtimes:invalid",...
+            "product of chunker and matrix only defined for matrix on left");
+else
+    error("CHUNKER:mtimes:invalid",...
+        "type not supported for product with chunker");
 end

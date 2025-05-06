@@ -427,8 +427,8 @@ classdef chunkgraph
         scatter(obj, varargin)
         rres = datares(obj, opts)
         edge_regs = find_edge_regions(obj)
-
-        
+        obj = plus(v,obj)
+        obj = mtimes(A,obj)        
     end
 
     methods(Static)
