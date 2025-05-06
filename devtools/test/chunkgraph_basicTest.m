@@ -120,6 +120,18 @@ ids = chunkgraphinregion(cg,targs);
 
 assert(nnz(ids(:)-idstrue(:)) == 0)
 
+cg = cg.rotate(pi/4);
+targs = [cos(pi/4) -sin(pi/4); sin(pi/4) cos(pi/4)]*targs;
+
+ids = chunkgraphinregion(cg,targs);
+assert(nnz(ids(:)-idstrue(:)) == 0)
+
+cg = cg.reflect(pi/2);
+targs(1,:) = -targs(1,:);
+
+ids = chunkgraphinregion(cg,targs);
+assert(nnz(ids(:)-idstrue(:)) == 0)
+
 % nested triangles
 
 verts = [1 0 -1 2 0 -2; 0 1 0 -1 2 -1];

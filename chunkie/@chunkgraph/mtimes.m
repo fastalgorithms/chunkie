@@ -23,6 +23,12 @@ if isa(A,"numeric") && isa(cg,"chunkgraph")
         error("CHUNKER:mtimes:invalid",...
             "matrix must have compatible size for transforming coordinates");
     end
+    
+    cg.wts = weights(cg);
+    % region stuff needs recomp
+    cg.vstruc = procverts(cg);
+    cg.regions = findregions(cg);
+    
 elseif isnumeric(cg) && isscalar(cg)
     cg = mtimes(cg,A);
 elseif isnumeric(cg)

@@ -29,9 +29,12 @@ classdef chunker
 % chunker methods: 
 %   chunker(p,t,w) - construct an empty chunker with given preferences and
 %       precomputed Legendre nodes/weights (optional)
+%   obj = plus(v,obj) - provides translation via v + obj
+%   obj = mtimes(A,obj) - provides affine transformation via A*obj
+%   obj = rotate(obj,theta,r0,r1) - rotate by angle 
+%   obj = reflect(obj,theta,r0,r1) - reflect across line
 %   obj = addchunk(obj,nchadd) - add nchadd chunks to the structure 
 %       (initialized with zeros)
-%   obj = obj.move(r0,r1,trotat,scale) - translate, rotate, etc
 %   obj = makedatarows(obj,nrows) - add nrows rows to the data storage.
 %   [obj,info] = sort(obj) - sort the chunks so that adjacent chunks are
 %        stored sequentially
@@ -65,6 +68,7 @@ classdef chunker
 %              number of connected components, etc
 %   [re,taue] = chunkends(obj,ich) - get the endpoints of chunks
 %   flag = flagnear(obj,pts,opts) - flag points near the boundary
+%   obj = obj.move(r0,r1,trotat,scale) - translate, rotate, etc
 
 
 % author: Travis Askham (askhamwhat@gmail.com)
@@ -371,6 +375,8 @@ classdef chunker
         kappa = signed_curvature(obj)
         obj = plus(v,obj)
         obj = mtimes(A,obj)
+        obj = rotate(obj,theta,r0,r1)
+        obj = reflect(obj,theta,r0,r1)
     end
     methods(Static)
         obj = chunkerfunc(fcurve,varargin)
