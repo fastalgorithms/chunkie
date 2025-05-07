@@ -52,21 +52,7 @@ function mat = chunkerkernevalmat(chnkobj,kern,targobj,opts)
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
-% convert kernel to kernel object, put in singularity info 
-% opts.sing provides a default value for singularities if not 
-% defined for kernels
-
-if isa(kern,'function_handle')
-    kern2 = kernel(kern);
-    kern = kern2;
-
-elseif ~isa(kern,'kernel')
-    msg = "Second input is not a kernel object, function handle, " ...
-                + "or cell array";
-    error(msg);
-end
-
-
+% Assign appropriate object to chnkr
 icgrph = false;
 nregion = 1;
 nedge = 1;
@@ -81,6 +67,14 @@ elseif class(chnkobj) == "chunkgraph"
 else
     msg = "CHUNKERKERNEVAL: first input is an unsupported object";
     error(msg)
+end
+
+if ~isa(kern,'kernel')
+    try 
+        kern = kernel(kern);
+    catch
+        error('CHUNKERKERNEVALMAT: second input kern not of supported type');
+    end
 end
 
 [mk,nk] = size(kern);
