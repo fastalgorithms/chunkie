@@ -1,5 +1,5 @@
-function [chnkr,eps] = arc_param_chunker(chnkr,opts)
-% ARC_PARAM_CHUNKER reparameterize chnkr by arclength
+function [chnkr,eps] = arcresample(chnkr,opts)
+% ARCRESAMPLE reparameterize chnkr by arclength
 %
 % NOTE: requires an accurate chunker discretization
 % Input:
@@ -10,7 +10,7 @@ function [chnkr,eps] = arc_param_chunker(chnkr,opts)
 %
 % Output: reparameterized chnkr and tolerance (eps) used to construct it
 %
-% see also CHUNKERARCPARAM
+% see also CHNK.ARCPARAM.EVAL
 
 % author: Tristan Goodwill
 
@@ -22,43 +22,40 @@ if ~isfield(opts,'mv_bdries')
     opts.mv_bdries = 0;
 end
 
-param_data = chunkerarcparam_init(chnkr);
-
 if ~opts.mv_bdries
+    param_data = chnk.arcparam.init(chnkr);
+
     % only shuffle points in each panel
     chnkr = arc_pts(chnkr,param_data);
     eps =  param_data.eps;
 else
-    % globally reparameterize
-    fcurve0 = @(s) chunkerarcparam(s,param_data);
-    
-    cparams = [];
-    cparams.maxchunklen = max(param_data.plen);
-    cparams.eps = 10 * param_data.eps;
-    
     % get components
     [~,~,info] = sortinfo(chnkr);
     ncomp = info.ncomp;
     nchs = info.nchs;
     
-    lens = zeros(1,ncomp);
-    for i = 1:ncomp
-        lens(i) = sum(chnkr.wts(:,(1:nchs(i)) +sum(nchs(1:i-1))),'all');
-    end
-    
-    comp_len = [0, cumsum(lens)];
+    eps = 0;
     
     % build each component individually, then merge
     chnkrs = [];
     for i = 1:ncomp
-        fcurve = @(s) fcurve0(s + comp_len(i));
-        cparams.tb = lens(i);
+        ichs = (1:nchs(i)) +sum(nchs(1:i-1));
+        param_data = chnk.arcparam.init(chnkr,ichs);
+        fcurve = @(s) chnk.arcparam.eval(s,param_data);
+
+        cparams = [];
+        cparams.maxchunklen = max(param_data.plen);
+        cparams.eps = 10 * param_data.eps;
+        cparams.tb = param_data.pstrt(end);
+        
+        eps = max(eps,cparams.eps);
+
         chnkri = chunkerfunc(fcurve,cparams);
         chnkrs = [chnkrs, chnkri];
     end
     
     chnkr = merge(chnkrs);
-    eps = cparams.eps;
+    
 end
 end
 

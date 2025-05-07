@@ -102,8 +102,8 @@ if isfield(opts,'last_len')
         cparams.ifclosed = info.ifclosed;
         cparams.ifrefine = 1; cparams.lvlr = 't';
 
-        param_data = chunkerarcparam_init(cg.echnks(i));
-        fcurve = @(s) chunkerarcparam(s,param_data);
+        param_data = chnk.arcparam.init(cg.echnks(i));
+        fcurve = @(s) chnk.arcparam.eval(s,param_data);
 
         cparams.eps = max(20 * param_data.eps, 1e-12);
         cg.echnks(i) = chunkerfunc(fcurve,cparams);

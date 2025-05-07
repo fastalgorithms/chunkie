@@ -1,5 +1,5 @@
-function [r,d,d2] = chunkerarcparam(s,param_data)
-% CHUNKERARCPARAM evaluate arclength parameterization of a chunker
+function [r,d,d2] = eval(s,param_data)
+% CHNK.ARCPARAM.EVAL evaluate arclength parameterization of a chunker
 %
 % get r, d, d2 at an arbitrary arclength point in a chunker
 %
@@ -17,7 +17,7 @@ function [r,d,d2] = chunkerarcparam(s,param_data)
 %   param_data.dim - chunker dimension
 %   param_data.nch - number of chunks in chunkr
 %
-% see also CHUNKERARCPARAM_INIT
+% see also CHNK.ARCPARAM.INIT
 
 % author: Tristan Goodwill
     
