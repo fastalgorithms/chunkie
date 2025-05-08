@@ -4,7 +4,6 @@
 % It shows the most common methods for building and working with chunkers.
 %
 
-addpaths_loc();
 rng(1234);
 
 %%%%%%%%%%%%% circle
@@ -84,14 +83,21 @@ saveas(figure(4),"guide_chunkers_barbell.png");
 % make a copy of the random mode domain
 chnkr5 = chnkr2;
 
-% rotate it using move 
+% rotate it using rotate method
 theta = pi/4; 
-chnkr5 = chnkr5.move([],[],theta);
+chnkr5 = chnkr5.rotate(theta);
 
-% make a copy of the circle domain and shift it 
+% reflect it across y axis using reflect
+chnkr5 = chnkr5.reflect(pi/2);
+% reverse orientation to get inward normals again (reflect changes
+% orientation)
+chnkr5 = chnkr5.reverse();
+
+% make a copy of the circle domain, transform and shift it 
 chnkr6 = chnkr1;
-r1 = [-0.3;0.4];
-chnkr6 = chnkr6.move([],r1);
+A = 0.5*[2 -1; 1 1]; % positive determinant, so doesn't change orientation
+r1 = [-1;0.5];
+chnkr6 = r1 + A*chnkr6;
 % reverse the orientation
 chnkr6 = chnkr6.reverse();
 
