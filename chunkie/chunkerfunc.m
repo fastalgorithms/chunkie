@@ -186,6 +186,12 @@ end
 nchnew=nch;
 
 maxiter_res=nchmax-nch;
+if isfield(cparams,'ifrefine')
+    ifrefine = cparams.ifrefine;
+    if ~ifrefine
+        maxiter_res = 0;
+    end
+end
 
 xmin =  Inf;
 xmax = -Inf;

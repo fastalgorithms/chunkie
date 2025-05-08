@@ -101,6 +101,8 @@ classdef chunkgraph
 %   cparams - struct or (nedges x 1) cell array of structs specifying curve
 %     parameters in the format expected by CHUNKERFUNC. 
 %   pref - struct specifying CHUNKER preferences. 
+%   last_len - float, ensure that the arclength of all panels touching each 
+%     vertex is 2^-n * last_len for some n >= 0.
 %  
 %   Note:
 %
@@ -409,7 +411,7 @@ classdef chunkgraph
 
         % defined in other files 
         spmat = build_v2emat(obj)
-        obj = refine(obj, opts)
+        obj = refine(obj, opts,last_len)
         obj = balance(obj)
         obj = move(obj, r0, r1, trotat, scale)
         rmin = min(obj)
