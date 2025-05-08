@@ -24,6 +24,11 @@ function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts)
 %   constructs the derivative of the combined-layer Helmholtz kernel with 
 %   parameter ETA, i.e., COEFS(1)*KERNEL.HELM2DQUAS('dp', ZK, KAPPA, D) + 
 %      COEFS(2)*KERNEL.HELM2DQUAS('sp', ZK, KAPPA, D).
+%
+%   if kappa is an array of values of length nkappa then the kernel 
+%   becomes an (nkappa x 1) vector-valued kernel containing the scalar values
+%   for each kappa. this is much more efficient than separate kernel 
+%   evaluations for each kappa.
 %   
 %   all versions accept quad_opts to change the parameters in the lattice
 %   sum computations. (see chnk.helm2dquas.latticecoefs)
@@ -48,7 +53,7 @@ end
 obj = kernel();
 obj.name = 'quasiperiodic helmholtz';
 obj.params.zk = zk;
-obj.opdims = [1 1];
+obj.opdims = [numel(kappa) 1];
 
 
 % lattice sum parameters
