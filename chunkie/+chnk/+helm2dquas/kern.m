@@ -284,8 +284,8 @@ if strcmpi(type,'trans_rep')
   [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l);
 
   submats = reshape(submats,[],ns);
-  nx = repmat(srcnorm(1,:),nt,1);
-  ny = repmat(srcnorm(2,:),nt,1);
+  nx = repmat(srcnorm(1,:),nkappa*nt,1);
+  ny = repmat(srcnorm(2,:),nkappa*nt,1);
   submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
 
   submat = zeros(nkappa*nt,2*ns);
@@ -305,8 +305,8 @@ if strcmpi(type,'trans_rep_prime')
   % Get gradient and hessian info
   [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l);
 
-  nxsrc = repmat(srcnorm(1,:),nt,1);
-  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
+  nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
   nxtarg = repmat((targnorm(1,:)).',1,ns);
   nytarg = repmat((targnorm(2,:)).',1,ns);
 
