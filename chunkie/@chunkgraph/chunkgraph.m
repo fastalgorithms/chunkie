@@ -50,6 +50,10 @@ classdef chunkgraph
 %         meets with other chunk ends in a vertex. 
 %
 % chunkgraph methods:
+%   obj = plus(v,obj) - provides translation via v + obj
+%   obj = mtimes(A,obj) - provides affine transformation via A*obj
+%   obj = rotate(obj,theta,r0,r1) - rotate by angle 
+%   obj = reflect(obj,theta,r0,r1) - reflect across line
 %   plot(obj, varargin) - plot the chunkgraph
 %   quiver(obj, varargin) - quiver plot of chunkgraph points and normals
 %   plot_regions(obj, iflabel) - plot the chunkgraph with region and 
@@ -429,8 +433,10 @@ classdef chunkgraph
         scatter(obj, varargin)
         rres = datares(obj, opts)
         edge_regs = find_edge_regions(obj)
-
-        
+        obj = plus(v,obj)
+        obj = mtimes(A,obj)        
+        obj = rotate(obj,theta,r0,r1)
+        obj = reflect(obj,theta,r0,r1)   
     end
 
     methods(Static)
