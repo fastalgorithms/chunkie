@@ -1,7 +1,9 @@
+chunkerpolyTest0();
+
+
+function chunkerpolyTest0()
 %CHUNKERPOLYTEST
 
-clearvars; close all;
-addpaths_loc();
 
 % pre-defined vertices for a barbell shape
 
@@ -107,3 +109,8 @@ plot(chnkr_ref3,'-x')
 hold on
 quiver(chnkr_ref3)
 axis equal
+
+
+end
+
+

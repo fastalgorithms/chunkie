@@ -1,15 +1,16 @@
+adapgausswtsTest0();
+
+
+function adapgausswtsTest0()
 
 %ADAPGAUSSWTSTEST
 %
 % define geometry and test adaptive integration routine
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
 zk = randn() + 1i*randn();
-
-addpaths_loc();
 
 cparams = [];
 cparams.eps = 1.0e-10;
@@ -116,3 +117,8 @@ jend = opdims(1)*j*k;
 matcomp = mat1(istart:iend,jstart:jend);
 
 assert(norm(matcomp-mat,'inf') < 1e-11);
+
+
+end
+
+

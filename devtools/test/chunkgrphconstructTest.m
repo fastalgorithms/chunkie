@@ -1,3 +1,7 @@
+chunkgrphconstructTest0();
+
+
+function chunkgrphconstructTest0()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   .  .  .  builds a simple pentagonal chunkergraph 
@@ -5,9 +9,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%clear all
 
-addpaths_loc();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -16,7 +18,6 @@ addpaths_loc();
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%clear all
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 a = -1.0;
@@ -73,6 +74,11 @@ cgrph2 = balance(cgrph2);
 
 assert(all(cgrph1.verts(:) == cgrph2.verts(:)))
 assert(all(all(cgrph1.v2emat == cgrph2.v2emat)))
+
+
+
+end
+
 
 function [r,d,d2] = circulararc(t,cpars)
 %%circulararc

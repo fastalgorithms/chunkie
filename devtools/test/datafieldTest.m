@@ -1,3 +1,7 @@
+datafieldTest0();
+
+
+function datafieldTest0()
 % A simple test to show data fields being used with a kernel.
 
 %% 
@@ -70,6 +74,11 @@ assert(norm(deru3-deru)/norm(deru) < 1e-10);
 
 
 %%
+
+
+
+end
+
 
 function kern = directional_der_S_kern()
 

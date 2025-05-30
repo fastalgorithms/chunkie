@@ -23,6 +23,8 @@ classdef kernel
 %         ('axissymh', 'axissymhelm')
 %      'axis sym helmholtz difference'              's' 'd' 'sp' 'dp'
 %         ('axissymhdiff', 'axissymhelmdiff') 
+%      'quasiperiodic helmholtz'                    's', 'd', 'sp', 'dp', 'c'
+%         ('helmquas', 'hq')                        'cp'
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.
@@ -115,7 +117,9 @@ classdef kernel
                       obj = kernel.axissymhelm2d(varargin{:});
                   case {'axis sym helmholtz difference', 'axissymhdiff' ...
                            'axissymhelmdiff'}
-                      obj = kernel.axissymhelm2ddiff(varargin{:});    
+                      obj = kernel.axissymhelm2ddiff(varargin{:});   
+                  case {'quasiperiodic helmholtz', 'helmquas', 'hq'}
+                      obj = kernel.helm2dquas(varargin{:});   
                   otherwise
                       error('Kernel ''%s'' not found.', kern);
               end
@@ -163,6 +167,7 @@ classdef kernel
         obj = elast2d(varargin);
         obj = axissymhelm2d(varargin);
         obj = axissymhelm2ddiff(varargin);
+        obj = helm2dquas(varargin);
         obj = zeros(varargin);
         obj = nans(varargin);
 

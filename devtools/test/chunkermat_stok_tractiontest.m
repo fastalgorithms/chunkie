@@ -1,13 +1,15 @@
+chunkermat_stok_tractiontest0();
+
+
+function chunkermat_stok_tractiontest0()
 
 %CHUNKERMAT_HELM2DTEST
 %
 % test the matrix builder and do a basic solve
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 cparams = [];
 cparams.eps = 1.0e-10;
@@ -110,3 +112,8 @@ relerr = norm(utarg(:)-Dsol2(:),'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 fprintf('relative frobenius error %5.2e\n',relerr);
 
 assert(relerr < 1e-10);
+
+
+end
+
+

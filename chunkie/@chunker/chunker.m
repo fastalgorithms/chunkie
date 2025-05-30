@@ -81,7 +81,7 @@ classdef chunker
         wts
         data
     end
-    properties(Access=public)
+    properties(Hidden, Access=public)
         rstor
         dstor
         d2stor
@@ -90,10 +90,12 @@ classdef chunker
         wtsstor
         datastor
         hasdata
-    end        
+    end
     properties(SetAccess=private)
-        nchmax
         nch
+    end
+    properties(Hidden, SetAccess=private)
+        nchmax
         nchstor
         vert
         wstor
@@ -104,6 +106,8 @@ classdef chunker
         dim
         npt
         datadim
+    end
+    properties(Hidden,Dependent,SetAccess=private)
         nvert
         vertdeg
     end

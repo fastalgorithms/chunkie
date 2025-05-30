@@ -1,6 +1,8 @@
+axissymkernTest0();
 
-clearvars; close all;
-addpaths_loc();
+
+function axissymkernTest0()
+
 cparams = [];
 cparams.eps = 1.0e-4;
 pref = []; 
@@ -96,6 +98,11 @@ fprintf('ratios shifted kernel= %d\n', max(abs(v(1:end)./submat(1:end)-1)));
 
 
 
+
+
+
+
+end
 
 
 function [v] = get_exact_kernels(zk, srcinfo, targinfo, type)

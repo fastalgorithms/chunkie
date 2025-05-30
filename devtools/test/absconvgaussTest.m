@@ -1,9 +1,11 @@
+absconvgaussTest0();
+
+
+function absconvgaussTest0()
 %ABSCONVGAUSSTEST
 %
 % This file tests the absconvgauss routine
 
-clearvars; close all;
-addpaths_loc();
 a = 0.75;
 
 b = -0.75;
@@ -45,6 +47,11 @@ for i = 1:ntest
     assert(min(errsf) < 1e-8);
     assert(min(errsg) < 1e-6);
 end
+
+
+
+end
+
 
 function [d,d2] = acgder(x,a,b,h)
 [~,d,d2] = chnk.spcl.absconvgauss(x,a,b,h);

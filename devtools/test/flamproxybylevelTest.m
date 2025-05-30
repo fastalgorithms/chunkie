@@ -1,9 +1,12 @@
+flamproxybylevelTest0();
+
+
+function flamproxybylevelTest0()
 
 %FLAMPROXYBYLEVELTEST
 %
 % test the FLAM matrix builder with level-dependent proxy points
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
@@ -11,7 +14,6 @@ zk  = 50;
 tol = 1e-14;
 proxybylevel = true;
 
-% addpaths_loc();
 
 cparams = [];
 cparams.maxchunklen = 4.0/abs(zk);
@@ -185,3 +187,8 @@ relerr = norm(utarg-sol_ifmm,'fro')/(sqrt(chnkr.nch)*norm(utarg,'fro'));
 relerr2 = norm(utarg-sol_ifmm,'inf')/dot(abs(sig_rskelf(:)),wts(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
+
+
+end
+
+

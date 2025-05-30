@@ -1,3 +1,7 @@
+chunkgrphrcipTransmissionTest0();
+
+
+function chunkgrphrcipTransmissionTest0()
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -5,7 +9,6 @@
 %            and tests the Helmholtz transmission problem
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-clearvars
 
 a = -1.0;
 b = 1.0;
@@ -134,6 +137,11 @@ set(h,'EdgeColor','None'); hold on;
 plot(cgrph,'w-','LineWidth',2);
 colorbar
 
+
+
+
+
+end
 
 
 function [r,d,d2] = circulararc(t,cpars)
