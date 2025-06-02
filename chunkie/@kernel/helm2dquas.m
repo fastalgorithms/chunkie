@@ -24,6 +24,11 @@ function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts)
 %   constructs the derivative of the combined-layer Helmholtz kernel with 
 %   parameter ETA, i.e., COEFS(1)*KERNEL.HELM2DQUAS('dp', ZK, KAPPA, D) + 
 %      COEFS(2)*KERNEL.HELM2DQUAS('sp', ZK, KAPPA, D).
+%
+%   if kappa is an array of values of length nkappa then the kernel 
+%   becomes an (nkappa x 1) vector-valued kernel containing the scalar values
+%   for each kappa. this is much more efficient than separate kernel 
+%   evaluations for each kappa.
 %   
 %   all versions accept quad_opts to change the parameters in the lattice
 %   sum computations. (see chnk.helm2dquas.latticecoefs)
@@ -48,7 +53,7 @@ end
 obj = kernel();
 obj.name = 'quasiperiodic helmholtz';
 obj.params.zk = zk;
-obj.opdims = [1 1];
+obj.opdims = [numel(kappa) 1];
 
 
 % lattice sum parameters
@@ -92,20 +97,24 @@ switch lower(type)
         obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 's',quas_param);
         obj.fmm = [];
         obj.sing = 'log';
+        if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0]};
         obj.splitinfo.action = {'r','r'};
         obj.splitinfo.functions = @(s,t) helm2dquas_s_split(zk,s,t,quas_param);
+        end
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'd',quas_param);
         obj.fmm = [];
         obj.sing = 'log';
+        if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r','r'};
         obj.splitinfo.functions = @(s,t) helm2dquas_d_split(zk,s,t,quas_param);
+        end
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
@@ -129,10 +138,12 @@ switch lower(type)
         obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c',quas_param, coefs);
         obj.fmm = [];
         obj.sing = 'log';
+        if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r','r'};
         obj.splitinfo.functions = @(s,t) helm2dquas_c_split(zk,s,t,quas_param,coefs);
+        end
 
     case {'cp', 'cprime'}
         if ( nargin < 3 )

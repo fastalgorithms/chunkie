@@ -1,4 +1,5 @@
 chunkgraph_basicTest0();
+dyadic_chunkgraphTest0()
 
 
 function chunkgraph_basicTest0()
@@ -104,6 +105,34 @@ idstrue = polygonids(cg,xx,yy);
 assert(nnz(ids(:)-idstrue(:)) == 0)
 assert(nnz(ids(:)-ids2(:)) == 0)
 
+A = [3 2; 1 1]; 
+v = [-1; 2];
+cg = A*cg + v;
+targs = A*targs + v;
+
+ids = chunkgraphinregion(cg,targs);
+
+assert(nnz(ids(:)-idstrue(:)) == 0)
+
+cg = cg*2;
+targs = 2*targs;
+
+ids = chunkgraphinregion(cg,targs);
+
+assert(nnz(ids(:)-idstrue(:)) == 0)
+
+cg = cg.rotate(pi/4);
+targs = [cos(pi/4) -sin(pi/4); sin(pi/4) cos(pi/4)]*targs;
+
+ids = chunkgraphinregion(cg,targs);
+assert(nnz(ids(:)-idstrue(:)) == 0)
+
+cg = cg.reflect(pi/2);
+targs(1,:) = -targs(1,:);
+
+ids = chunkgraphinregion(cg,targs);
+assert(nnz(ids(:)-idstrue(:)) == 0)
+
 % nested triangles
 
 verts = [1 0 -1 2 0 -2; 0 1 0 -1 2 -1];
@@ -148,6 +177,45 @@ fchnks = @(t) sinearc(t,amp,frq);
 cgrph = chunkgraph(verts,endverts,fchnks);
 
 
+
+end
+
+function dyadic_chunkgraphTest0()
+% test option to dyadically refine chunkgraph into specific corners
+
+n = 5;
+thetas = (1:n)/n*2*pi;
+verts = [cos(thetas); sin(thetas)];
+edge2vert = [1:n; circshift(1:n,-1)];
+
+% vertices to refine
+vert_ref = [1,4];
+
+% init cparams
+cparams = cell(1,n);
+for i = 1:n
+    cparams{i}.chsmall = [Inf,Inf];
+end
+
+edgeids = 1:n;
+% find edges that start at a vertex that will be refined
+edge_ref1 = edgeids(ismember(edge2vert(1,:),vert_ref));
+for i = edge_ref1
+    cparams{i}.chsmall(1) = 1e-8;
+end
+
+% find edges that end at a vertex that will be refined
+edge_ref2 = edgeids(ismember(edge2vert(2,:),vert_ref));
+for i = edge_ref2
+    cparams{i}.chsmall(2) = 1e-8;
+end
+
+cgrph = chunkgraph(verts,edge2vert,[],cparams);
+
+lens = chunklen(cgrph.echnks(edge_ref1(1)));
+assert(lens(1) < cparams{edge_ref1(1)}.chsmall(1))
+lens = chunklen(cgrph.echnks(edge_ref2(2)));
+assert(lens(end) < cparams{edge_ref2(2)}.chsmall(2))
 
 end
 
