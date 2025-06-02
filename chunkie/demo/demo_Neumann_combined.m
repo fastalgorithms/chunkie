@@ -18,7 +18,7 @@ radi = 1;
 rado = 5;
 for i = 1:narms
     verts(:,2*i-1) = radi*[real(rots(i));imag(rots(i))];
-    verts(:,2*i  ) = rado*[real(rots(i));imag(rots(i))];
+    verts(:,2*i) = rado*[real(rots(i));imag(rots(i))];
 end
 nverts = size(verts,2);
 edge2verts = [1:nverts;circshift(1:nverts,-1)];
@@ -28,26 +28,17 @@ amp = -0.5;
 frq = 5;
 
 % define curve for each edge
-fchnks = {};
+fchnks = cell(2*narms,1);
 for i = 1:narms
     % odd edges are straight
     fchnks{2*i-1} = [];
     % even edges are curved
-    fchnks{2*i  } = @(t) sinearc(t,amp,frq);
+    fchnks{2*i} = @(t) sinearc(t,amp,frq);
 end
 
 cparams = [];
 cparams.maxchunklen = min(4.0/zk,.5);
 [cgrph] = chunkgraph(verts,edge2verts,fchnks,cparams);
-
-
-% plot
-figure(1);clf
-plot(cgrph)
-% hold on
-% quiver(cgrph)
-% hold off
-axis equal
 
 %% Define system
 
@@ -74,6 +65,8 @@ K = [ c1*Skp  c2*Dkdiff c2*Sikp ;
    c3*Sik  Z        Z        ;
    c3*Sikp Z        Z        ];
 K = kernel(K);
+
+
 Keval = c1*kernel([Sk 1i*alpha*Dk Z]);
 
 npts = cgrph.npt;
@@ -132,6 +125,8 @@ hold on
 plot(cgrph,'k')
 axis equal
 title('$u^{\textrm{tot}}$','Interpreter','latex','FontSize',12)
+% END DEMO NEUMANN COMBINED
+saveas(figure(2),"demo_neumann_combined_plot.png")
 
 
 function [r,d,d2] = sinearc(t,amp,frq)

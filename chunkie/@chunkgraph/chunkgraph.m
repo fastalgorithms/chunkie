@@ -58,6 +58,11 @@ classdef chunkgraph
 %   obj = refine(obj,varargin) - refine the curve
 %   wts = weights(obj) - scaled integration weights on curve
 %   rn = normals(obj) - recompute normal vectors
+%   flag = flagnear(obj,pts) - find points close to the chunkgraph
+%   flag = flagnear_rectangle(obj,pts) - find points close to chunkgraph
+%           using bounding rectangles
+%   flag = flagnear_rectangle_grid(obj,x,y) - find points defined via 
+%      a meshgrid of points that are close to the chunkgraph
 %   obj = obj.move(r0,r1,trotat,scale) - translate, rotate, etc
 %   rmin = min(obj) - minimum of coordinate values
 %   rmax = max(obj) - maximum of coordinate values
@@ -70,9 +75,8 @@ classdef chunkgraph
 %   kappa = signed_curvature(obj) - get signed curvature along curve
 %   obj = makedatarows(obj,nrows) - add nrows rows to the data storage.
 %   rflag = datares(obj,opts) - check if data in data rows is resolved
-%
-%   To add:
-%     flagnear
+%   edge_reg = find_regions_of_edges(obj) - determine regions on either 
+%                side of each edge
 %
 % Syntax:
 %
@@ -97,6 +101,8 @@ classdef chunkgraph
 %   cparams - struct or (nedges x 1) cell array of structs specifying curve
 %     parameters in the format expected by CHUNKERFUNC. 
 %   pref - struct specifying CHUNKER preferences. 
+%   last_len - float, ensure that the arclength of all panels touching each 
+%     vertex is 2^-n * last_len for some n >= 0.
 %  
 %   Note:
 %
@@ -358,6 +364,10 @@ classdef chunkgraph
             chnk = merge(obj.echnks);
             wts = chnk.wts;
         end
+        function data = get.data(obj)
+            chnk = merge(obj.echnks);
+            data = chnk.data;
+        end
         function adj = get.adj(obj)
             chnk = merge(obj.echnks);
             adj = chnk.adj;
@@ -401,7 +411,7 @@ classdef chunkgraph
 
         % defined in other files 
         spmat = build_v2emat(obj)
-        obj = refine(obj, opts)
+        obj = refine(obj, opts,last_len)
         obj = balance(obj)
         obj = move(obj, r0, r1, trotat, scale)
         rmin = min(obj)
@@ -418,6 +428,7 @@ classdef chunkgraph
         obj = makedatarows(obj, nrows)
         scatter(obj, varargin)
         rres = datares(obj, opts)
+        edge_regs = find_edge_regions(obj)
 
         
     end

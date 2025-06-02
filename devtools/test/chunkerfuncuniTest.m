@@ -1,11 +1,13 @@
+chunkerfuncuniTest0();
+
+
+function chunkerfuncuniTest0()
 
 %CHNKFUNCUNITEST
 %
 % This file tests the routine chunkerfunc on a couple of examples
 % as well as testing the plot, quiver, sort, and reverse utilities
 
-clearvars; close all;
-addpaths_loc();
 
 nch = 10;
 
@@ -62,5 +64,10 @@ assert(info.ier == 0,'adjacency issues after chunk build circle');
 
 a = area(chnkr);
 assert(abs(a - pi*r^2) < 1e-12,'area wrong for circle domain')
+
+
+
+
+end
 
 

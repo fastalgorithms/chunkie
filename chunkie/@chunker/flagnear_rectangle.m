@@ -4,7 +4,7 @@ function flag = flagnear_rectangle(chnkr,pts,opts)
 % logical array. If the (i,j) entry is non zero then pts(:,i) is close
 % to chunk j in chnkr.
 %
-% Syntax: flag = flagnear(chnkr,pts,opts)
+% Syntax: flag = flagnear_rectangle(chnkr,pts,opts)
 %
 % Input:
 %   chnkr - chunker object describing curve

@@ -1,12 +1,14 @@
+chunkerkerneval_gaussidTest0();
+
+
+function chunkerkerneval_gaussidTest0()
 %CHUNKERKERNEVAL_GAUSSIDTEST test the routines for integrating over 
 % chunks against Gauss' identity for the double layer potential
 %
 % 
 
-clearvars; close all;
 seed = 8675309;
 rng(seed);
-addpaths_loc();
 
 doadap = true;
 
@@ -87,4 +89,9 @@ if doadap
     
     colorbar
 end
+
+
+
+end
+
 

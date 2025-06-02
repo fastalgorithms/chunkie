@@ -1,5 +1,5 @@
-function [fints,maxrecs,numints,iers] = adapgausskerneval(r,d,n,d2,ct,bw,j,...
-    dens,rt,nt,dt,d2t,kern,opdims,t,w,opts)
+function [fints,maxrecs,numints,iers] = adapgausskerneval(r,d,n,d2,data,ct,bw,j,...
+    dens,rt,nt,dt,d2t,datat,kern,opdims,t,w,opts)
 %CHNK.ADAPGAUSSKERNEVAL adaptive integration for interaction of kernel on chunk 
 % at targets
 %
@@ -65,6 +65,10 @@ rs = r(:,:,j);
 ds = d(:,:,j);
 ns = n(:,:,j);
 d2s = d2(:,:,j);
+datas = [];
+if ~isempty(data)
+    datas = data(:,:,j);
+end
 jstart = opdims(2)*k*(j-1)+1;
 jend = opdims(2)*k*j;
 densj = reshape(dens(jstart:jend),opdims(2),k);
@@ -84,12 +88,15 @@ for ii = 1:ntarg
     dt1 = dt(:,ii);
     nt1 = nt(:,ii);
     d2t1 = d2t(:,ii);
-    
+    datat1 = [];
+    if ~isempty(datat)
+        datat1 = datat(:,ii);
+    end
     % start the recursion
 
     stack(1,1)=-1;
     stack(2,1)=1;
-    vals(:,1) = oneintp(-1,1,rs,ds,ns,d2s,densj,ct,bw,rt1,dt1,nt1,d2t1,kern,...
+    vals(:,1) = oneintp(-1,1,rs,ds,ns,d2s,datas,densj,ct,bw,rt1,dt1,nt1,d2t1,datat1,kern,...
         opdims,t,w);
 
     % recursively integrate the thing
@@ -107,8 +114,8 @@ for ii = 1:ntarg
 
         a = stack(1,jj); b = stack(2,jj);
         c=(a+b)/2;
-        v2 = oneintp(a,c,rs,ds,ns,d2s,densj,ct,bw,rt1,dt1,nt1,d2t1,kern,opdims,t,w);
-        v3 = oneintp(c,b,rs,ds,ns,d2s,densj,ct,bw,rt1,dt1,nt1,d2t1,kern,opdims,t,w);
+        v2 = oneintp(a,c,rs,ds,ns,d2s,datas,densj,ct,bw,rt1,dt1,nt1,d2t1,datat1,kern,opdims,t,w);
+        v3 = oneintp(c,b,rs,ds,ns,d2s,datas,densj,ct,bw,rt1,dt1,nt1,d2t1,datat1,kern,opdims,t,w);
     
         dd= max(abs(v2+v3-vals(:,jj)));
         if(dd <= eps) 
@@ -161,8 +168,8 @@ end
 
 end
 
-function val = oneintp(a,b,rs,ds,ns,d2s,densj,ct,bw, ...
-		       rt,nt,dt,d2t,kern,opdims,t,w)
+function val = oneintp(a,b,rs,ds,ns,d2s,datas,densj,ct,bw, ...
+		       rt,nt,dt,d2t,datat,kern,opdims,t,w)
 %       integrate the kernel multiplied by each Lagrange interpolant
 %   on the interval [a,b] at a single target
 
@@ -180,14 +187,18 @@ interpmat = bsxfun(@rdivide,interpmat,interpmatsum);
 rint = rs*interpmat;
 dint = ds*interpmat;
 d2int = d2s*interpmat;
+dataint = [];
+if ~isempty(datas)
+    dataint = datas*interpmat;
+end
 nint = chnk.perp(dint); nint = nint./(sqrt(sum(nint.^2,1)));
 densint = densj*interpmat;
 dintlen = sqrt(sum(dint.^2,1));
 %tauint = bsxfun(@rdivide,dint,dintlen);
 srcinfo = []; srcinfo.r = rint; srcinfo.d = dint; 
-srcinfo.d2 = d2int; srcinfo.n = nint;
+srcinfo.d2 = d2int; srcinfo.n = nint; srcinfo.data = dataint;
 targinfo = []; targinfo.r = rt; targinfo.d = dt; 
-targinfo.d2 = d2t; targinfo.n = nt;
+targinfo.d2 = d2t; targinfo.n = nt; targinfo.data = datat;
 mat_tt = kern(srcinfo,targinfo);
 
 dsdt = u*( (w(:).' ).*dintlen);

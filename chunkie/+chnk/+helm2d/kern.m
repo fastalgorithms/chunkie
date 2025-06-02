@@ -51,6 +51,8 @@ function submat= kern(zk,srcinfo,targinfo,type,varargin)
 %                         to the transmission representation
 %                        [coef(1)*d_x D coef(2)*d_x S;
 %                         coef(1)*d_y D coef(2)*d_y S]
+% 
+%                append '_diff' to type to compute difference stably
 %
 %   varargin{1} - coef: length 2 array in the combined layer 
 %                 formula, 2x2 matrix for all kernels
@@ -64,16 +66,25 @@ function submat= kern(zk,srcinfo,targinfo,type,varargin)
 %
 % see also CHNK.HELM2D.GREEN
   
-src = srcinfo.r;
-targ = targinfo.r;
+src = srcinfo.r(:,:);
+targ = targinfo.r(:,:);
 
 [~,ns] = size(src);
 [~,nt] = size(targ);
 
 % double layer
 if strcmpi(type,'d')
-  srcnorm = srcinfo.n;
+  srcnorm = srcinfo.n(:,:);
   [~,grad] = chnk.helm2d.green(zk,src,targ);
+  nx = repmat(srcnorm(1,:),nt,1);
+  ny = repmat(srcnorm(2,:),nt,1);
+  submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+end
+
+% double layer (difference)
+if strcmpi(type,'d_diff')
+  srcnorm = srcinfo.n(:,:);
+  [~,grad] = chnk.helm2d.helmdiffgreen(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
   ny = repmat(srcnorm(2,:),nt,1);
   submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
@@ -81,8 +92,18 @@ end
 
 % normal derivative of single layer
 if strcmpi(type,'sprime')
-  targnorm = targinfo.n;
+  targnorm = targinfo.n(:,:);
   [~,grad] = chnk.helm2d.green(zk,src,targ);
+  nx = repmat((targnorm(1,:)).',1,ns);
+  ny = repmat((targnorm(2,:)).',1,ns);
+
+  submat = (grad(:,:,1).*nx + grad(:,:,2).*ny);
+end
+
+% normal derivative of single layer (difference)
+if strcmpi(type,'sprime_diff')
+  targnorm = targinfo.n(:,:);
+  [~,grad] = chnk.helm2d.helmdiffgreen(zk,src,targ);
   nx = repmat((targnorm(1,:)).',1,ns);
   ny = repmat((targnorm(2,:)).',1,ns);
 
@@ -92,8 +113,18 @@ end
 
 % Tangential derivative of single layer
 if strcmpi(type,'stau')
-  targtan = targinfo.d;
+  targtan = targinfo.d(:,:);
   [~,grad] = chnk.helm2d.green(zk,src,targ);
+  dx = repmat((targtan(1,:)).',1,ns);
+  dy = repmat((targtan(2,:)).',1,ns);
+  ds = sqrt(dx.*dx+dy.*dy);
+  submat = (grad(:,:,1).*dx + grad(:,:,2).*dy)./ds;
+end
+
+% Tangential derivative of single layer (difference)
+if strcmpi(type,'stau_diff')
+  targtan = targinfo.d(:,:);
+  [~,grad] = chnk.helm2d.helmdiffgreen(zk,src,targ);
   dx = repmat((targtan(1,:)).',1,ns);
   dy = repmat((targtan(2,:)).',1,ns);
   ds = sqrt(dx.*dx+dy.*dy);
@@ -105,11 +136,29 @@ if strcmpi(type,'s')
   submat = chnk.helm2d.green(zk,src,targ);
 end
 
+% single layer (difference)
+if strcmpi(type,'s_diff')
+  submat = chnk.helm2d.helmdiffgreen(zk,src,targ);
+end
+
 % normal derivative of double layer
 if strcmpi(type,'dprime')
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   [~,~,hess] = chnk.helm2d.green(zk,src,targ);
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+  submat = -(hess(:,:,1).*nxsrc.*nxtarg + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+      + hess(:,:,3).*nysrc.*nytarg);
+end
+
+% normal derivative of double layer (difference)
+if strcmpi(type,'dprime_diff')
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
+  [~,~,hess] = chnk.helm2d.helmdiffgreen(zk,src,targ);
   nxsrc = repmat(srcnorm(1,:),nt,1);
   nysrc = repmat(srcnorm(2,:),nt,1);
   nxtarg = repmat((targnorm(1,:)).',1,ns);
@@ -120,10 +169,22 @@ end
 
 % Combined field 
 if strcmpi(type,'c')
-  srcnorm = srcinfo.n;
+  srcnorm = srcinfo.n(:,:);
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end
   [submats,grad] = chnk.helm2d.green(zk,src,targ);
+  nx = repmat(srcnorm(1,:),nt,1);
+  ny = repmat(srcnorm(2,:),nt,1);
+  submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+  submat = coef(1)*submatd + coef(2)*submats;
+end
+
+% Combined field (difference)
+if strcmpi(type,'c_diff')
+  srcnorm = srcinfo.n(:,:);
+  coef = ones(2,1);
+  if(nargin == 5); coef = varargin{1}; end
+  [submats,grad] = chnk.helm2d.helmdiffgreen(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
   ny = repmat(srcnorm(2,:),nt,1);
   submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
@@ -134,8 +195,8 @@ end
 if strcmpi(type,'cprime')
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   
 
 
@@ -157,13 +218,40 @@ if strcmpi(type,'cprime')
   submat = coef(1)*submatdp + coef(2)*submatsp;
 end
 
+% normal derivative of combined field (difference)
+if strcmpi(type,'cprime_diff')
+  coef = ones(2,1);
+  if(nargin == 5); coef = varargin{1}; end
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
+  
+
+
+  % Get gradient and hessian info
+  [~,grad,hess] = chnk.helm2d.helmdiffgreen(zk,src,targ);
+
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+
+  % D'
+  submatdp = -(hess(:,:,1).*nxsrc.*nxtarg ...
+      + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+      + hess(:,:,3).*nysrc.*nytarg);
+  % S'
+  submatsp = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
+
+  submat = coef(1)*submatdp + coef(2)*submatsp;
+end
+
 
 % Dirichlet and neumann data corresponding to combined field
 if strcmpi(type,'c2trans') 
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
 
   % Get gradient and hessian info
   [submats,grad,hess] = chnk.helm2d.green(zk,src,targ);
@@ -190,11 +278,42 @@ if strcmpi(type,'c2trans')
 end
 
 
+% Dirichlet and neumann data corresponding to combined field (difference)
+if strcmpi(type,'c2trans_diff') 
+  coef = ones(2,1);
+  if(nargin == 5); coef = varargin{1}; end
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
+
+  % Get gradient and hessian info
+  [submats,grad,hess] = chnk.helm2d.helmdiffgreen(zk,src,targ);
+
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+
+  % D'
+  submatdp = -(hess(:,:,1).*nxsrc.*nxtarg ...
+      + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+      + hess(:,:,3).*nysrc.*nytarg);
+  % S'
+  submatsp = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
+  % D
+  submatd = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+
+  submat = zeros(2*nt,ns);
+
+  submat(1:2:2*nt,:) = coef(1)*submatd + coef(2)*submats;
+  submat(2:2:2*nt,:) = coef(1)*submatdp + coef(2)*submatsp;
+
+end
+
 % all kernels, [c11 D, c12 S; c21 D', c22 S'] 
 if strcmpi(type,'all')
  
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   cc = varargin{1};
   
   submat = zeros(2*nt,2*ns);
@@ -222,13 +341,61 @@ if strcmpi(type,'all')
   submat(2:2:2*nt,2:2:2*ns) = submatsp*cc(2,2);
 end
 
+% all kernels, [c11 D, c12 S; c21 D', c22 S'] (difference)
+if strcmpi(type,'all_diff')
+ 
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
+  cc = varargin{1};
+  
+  submat = zeros(2*nt,2*ns);
+
+  % Get gradient and hessian info
+  [submats,grad,hess] = chnk.helm2d.helmdiffgreen(zk,src,targ);
+
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+
+  submatdp = -(hess(:,:,1).*nxsrc.*nxtarg ...
+      + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+      + hess(:,:,3).*nysrc.*nytarg);
+  % S'
+  submatsp = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
+  % D
+  submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+  
+  
+  submat(1:2:2*nt,1:2:2*ns) = submatd*cc(1,1);
+  submat(1:2:2*nt,2:2:2*ns) = submats*cc(1,2);
+  submat(2:2:2*nt,1:2:2*ns) = submatdp*cc(2,1);
+  submat(2:2:2*nt,2:2:2*ns) = submatsp*cc(2,2);
+end
+
 % Dirichlet data/potential correpsonding to transmission rep
 if strcmpi(type,'trans_rep') 
 
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
-  srcnorm = srcinfo.n;
+  srcnorm = srcinfo.n(:,:);
   [submats,grad] = chnk.helm2d.green(zk,src,targ);
+  nx = repmat(srcnorm(1,:),nt,1);
+  ny = repmat(srcnorm(2,:),nt,1);
+  submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+
+  submat = zeros(1*nt,2*ns);
+  submat(1:1:1*nt,1:2:2*ns) = coef(1)*submatd;
+  submat(1:1:1*nt,2:2:2*ns) = coef(2)*submats;
+end
+
+% Dirichlet data/potential correpsonding to transmission rep (difference)
+if strcmpi(type,'trans_rep_diff') 
+
+  coef = ones(2,1);
+  if(nargin == 5); coef = varargin{1}; end;
+  srcnorm = srcinfo.n(:,:);
+  [submats,grad] = chnk.helm2d.helmdiffgreen(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
   ny = repmat(srcnorm(2,:),nt,1);
   submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
@@ -242,8 +409,8 @@ end
 if strcmpi(type,'trans_rep_prime')
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
-  targnorm = targinfo.n;
-  srcnorm = srcinfo.n;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
   
   submat = zeros(nt,ns);
 
@@ -261,7 +428,35 @@ if strcmpi(type,'trans_rep_prime')
       + hess(:,:,3).*nysrc.*nytarg);
   % S'
   submatsp = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
-  submat = zeros(nt,2*ns)
+  submat = zeros(nt,2*ns);
+  submat(1:1:1*nt,1:2:2*ns) = coef(1)*submatdp;
+  submat(1:1:1*nt,2:2:2*ns) = coef(2)*submatsp;
+end
+
+% Neumann data corresponding to transmission rep (difference)
+if strcmpi(type,'trans_rep_prime_diff')
+  coef = ones(2,1);
+  if(nargin == 5); coef = varargin{1}; end;
+  targnorm = targinfo.n(:,:);
+  srcnorm = srcinfo.n(:,:);
+  
+  submat = zeros(nt,ns);
+
+  % Get gradient and hessian info
+  [submats,grad,hess] = chnk.helm2d.helmdiffgreen(zk,src,targ);
+
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+
+  % D'
+  submatdp = -(hess(:,:,1).*nxsrc.*nxtarg ...
+      + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+      + hess(:,:,3).*nysrc.*nytarg);
+  % S'
+  submatsp = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
+  submat = zeros(nt,2*ns);
   submat(1:1:1*nt,1:2:2*ns) = coef(1)*submatdp;
   submat(1:1:1*nt,2:2:2*ns) = coef(2)*submatsp;
 end
@@ -272,7 +467,7 @@ if strcmpi(type,'trans_rep_grad')
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
   
-  srcnorm = srcinfo.n;
+  srcnorm = srcinfo.n(:,:);
   
   submat = zeros(nt,ns,6);
   % S
@@ -293,3 +488,28 @@ if strcmpi(type,'trans_rep_grad')
 end
 
 
+
+% Gradient correpsonding to transmission rep (difference)
+if strcmpi(type,'trans_rep_grad_diff')
+  coef = ones(2,1);
+  if(nargin == 5); coef = varargin{1}; end;
+  
+  srcnorm = srcinfo.n(:,:);
+  
+  submat = zeros(nt,ns,6);
+  % S
+  [submats,grad,hess] = chnk.helm2d.helmdiffgreen(zk,src,targ);
+
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  % D
+  submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+
+  submat = zeros(2*nt,2*ns);
+  
+  submat(1:2:2*nt,1:2:2*ns) = -coef(1)*(hess(:,:,1).*nxsrc + hess(:,:,2).*nysrc);
+  submat(1:2:2*nt,2:2:2*ns) = coef(2)*grad(:,:,1);
+    
+  submat(2:2:2*nt,1:2:2*ns) = -coef(1)*(hess(:,:,2).*nxsrc + hess(:,:,3).*nysrc);
+  submat(2:2:2*nt,2:2:2*ns) = coef(2)*grad(:,:,2);
+end

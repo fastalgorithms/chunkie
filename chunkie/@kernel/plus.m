@@ -1,8 +1,7 @@
 function f = plus(f,g)
 % + Pointwise addition for kernel class
 %
-% Currently only supported for adding two kernel class objects
-% or adding a scalar to a kernel class object.
+% Currently only supported for adding two kernel class objects.
 
 if (isa(g,'kernel') && isa(f,'kernel'))
   assert(f.opdims(1) == g.opdims(1) && f.opdims(2) == g.opdims(2), ...
@@ -40,7 +39,7 @@ if (isa(g,'kernel') && isa(f,'kernel'))
   end
 else
     error('KERNEL:plus:invalid', ...
-       'F and G must be either floats or kernel class objects');
+       'F and G must be kernel class objects');
 end
 end
 
