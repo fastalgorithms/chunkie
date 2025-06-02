@@ -103,16 +103,21 @@ Working with Chunkers
 ----------------------
 
 Instances of :matlab:`chunker` objects can be manipulated in
-several ways. 
-Users are free to update the position and derivative
-fields of :matlab:`chunker` objects, though the software will
-not check whether the user has done this in a consistent
-manner. 
+several ways. Multiplying the object by a matrix and adding a
+vector to the object will update the coordinates (and derivatives
+and normals) accordingly. There are also some built in functions
+for standard operations like rotations and reflections. An important
+operation is the :matlab:`reverse` function, which changes the orientation
+of the curve (normal vectors point to the right from the perspective
+of an observer moving in the positive direction along the curve).
 
 The example below takes the circle and random mode domains
 created above and creates a new domain from them with
 multiple components. The random mode domain is rotated and
-the circle is shifted and its orientation is reversed, so
+reflected, then its orientation is reversed to undo the change
+of orientation induced by the reflection (maintaining outward
+pointing normals). An affine transformation is applied to the
+circle and its orientation is also reversed, so
 that the normal for the combined domain consistently points out
 of the interior. 
 
