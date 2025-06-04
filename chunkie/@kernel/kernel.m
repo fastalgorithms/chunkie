@@ -99,6 +99,8 @@ classdef kernel
                       obj = kernel.lap2d(varargin{:});
                   case {'laplace_shape'}
                       obj = kernel.lap2d_v(varargin{:});
+                  case {'laplace_shape_der'}
+                      obj = kernel.lap2d_shape_der(varargin{:});
                   case {'helmholtz_shape'}
                       obj = kernel.helm2d_v(varargin{:});
                   case {'helmholtz', 'helm', 'h'}
@@ -160,6 +162,7 @@ classdef kernel
 
         obj = lap2d(varargin);
         obj = lap2d_v(varargin);
+        obj = lap2d_shape_der(varargin);
         obj = helm2d_v(varargin);
         obj = helm2d(varargin);
         obj = helm2ddiff(varargin);
