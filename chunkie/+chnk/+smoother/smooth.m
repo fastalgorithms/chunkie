@@ -14,7 +14,8 @@ function [chnkr,varargout] = smooth(verts,opts)
 %
 % Input:
 %   verts - a 2 by n matrix containing the x and y locations of the 
-%           vertices of the original polygon
+%           vertices of the original polygon. They are assumed to be 
+%           positively orientated.
 %   opts  - options structure. available options (default settings)
 %           opts.k  - number of Legendre nodes per panel on the 
 %                     output chunker object                     (16)
