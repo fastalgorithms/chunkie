@@ -3,6 +3,10 @@
 % Define an exterior scattering problem on a starfish-shaped domain and 
 % solve
 %
+% this demonstration requires advanced usage in which additional geometric
+% info is passed to the kernels using chunker data. this demo also avoids
+% precision loss in the kernel evaluators by using the "native" quadrature
+% on certain components of the matrix
 
 % planewave vec
 
@@ -42,6 +46,9 @@ axis equal
 kappa = signed_curvature(chnkr);
 kp = arclengthder(chnkr,kappa);
 kpp = arclengthder(chnkr,kp);
+
+% supported plate kernels expect (d/ds) kappa in the first data row
+% and (d^2/ds^2) kappa in the second data row
 
 chnkr.data(1,:,:) = kp;
 chnkr.data(2,:,:) = kpp;
