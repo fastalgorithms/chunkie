@@ -74,6 +74,8 @@ rhohatinterp = cell(nedge,1);
 srcinfo = cell(nedge,1);
 wts = cell(nedge,1);
 
+ileftright = rcipsav.ileftright
+
 % figure out which edge the indices belong to 
 % THIS ASSUMES WE HAVE THE SAME ORDER ON EDGES
 circSedge = cell(nedge,1); ncS = numel(circS)/nedge;
@@ -126,7 +128,11 @@ if ndepth <= savedepth
         if i == ndepth
             wt = weights(cl);
             for j = 1:nedge
-                rhohatinterp{j} = [rhohatinterp{j}; rhohat0([starSedge{j} circSedge{j}],:)];
+                if ileftright(j) == 1
+                    rhohatinterp{j} = [rhohatinterp{j}; rhohat0([circSedge{j} starSedge{j}],:)];
+                else
+                    rhohatinterp{j} = [rhohatinterp{j}; rhohat0([starSedge{j} circSedge{j}],:)];
+                end
                 srcinfo{j}.r = [srcinfo{j}.r, cl.rstor(:,starL1edge{j})];
                 srcinfo{j}.d = [srcinfo{j}.d, cl.dstor(:,starL1edge{j})];
                 srcinfo{j}.d2 = [srcinfo{j}.d2, cl.d2stor(:,starL1edge{j})];
