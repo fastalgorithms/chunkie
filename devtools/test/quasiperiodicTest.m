@@ -68,10 +68,10 @@ assert(norm((coefs(1)*dpval + coefs(2)*spval)-cpval) <  1e-12)
 
 % test all
 all_assemb = zeros(size(allval));
-all_assemb(1:2:end, 1:2:end) = coefa(1,1)*dval;
-all_assemb(1:2:end, 2:2:end) = coefa(1,2)*sval;
-all_assemb(2:2:end, 1:2:end) = coefa(2,1)*dpval;
-all_assemb(2:2:end, 2:2:end) = coefa(2,2)*spval;
+all_assemb(1:2, 1:2:end) = coefa(1,1)*dval;
+all_assemb(1:2, 2:2:end) = coefa(1,2)*sval;
+all_assemb(3:end, 1:2:end) = coefa(2,1)*dpval;
+all_assemb(3:end, 2:2:end) = coefa(2,2)*spval;
 assert(norm(all_assemb - allval) <  1e-12)
 
 % test transmission representiatoon
@@ -84,8 +84,8 @@ assert(norm([coefs(1)*dgval , coefs(2)*sgval]-trgval) <  1e-12)
 
 % test c2trans
 c2trval_assemb = zeros(size(c2trval));
-c2trval_assemb(1:2:end, :) = coefs(1)*dval + coefs(2)*sval;
-c2trval_assemb(2:2:end, :) = coefs(1)*dpval + coefs(2)*spval;
+c2trval_assemb(1:2, :) = coefs(1)*dval + coefs(2)*sval;
+c2trval_assemb(3:end, :) = coefs(1)*dpval + coefs(2)*spval;
 assert(norm(c2trval_assemb-c2trval) <  1e-12)
 end
 
@@ -97,7 +97,7 @@ function quasiperiodicTest1()
 % problem parameters
 d= 8;
 zk = 1;
-kappa = .05+0.1i;
+kappa = .05+.1i;
 
 % setup geometry
 nch = 2^3;
