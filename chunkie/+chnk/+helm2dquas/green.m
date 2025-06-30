@@ -95,7 +95,6 @@ val_near=0;
 grad_near = zeros(1,1,2);
 hess_near = zeros(1,1,3);
 if ~isempty(rxclose)
-    ls = [-l:-1, 1:l];
     ls = -l:l;
     for i = ls
         rxi = rxclose - i*d;
