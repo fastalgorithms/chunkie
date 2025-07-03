@@ -1,6 +1,6 @@
 function submat = kern(srcinfo,targinfo,type,zk, vfun)
 %CHNK.HELM2D_SHAPE_DER.KERN shape derivatives of 
-% Laplace layer potential kernels in 2D
+% Helmholtz layer potential kernels in 2D
 %
 % Syntax: submat = kern(srcinfo, targinfo, type)
 
