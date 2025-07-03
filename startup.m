@@ -12,6 +12,10 @@ function startup(opts)
 %   opts.fmmrecompile - boolean (false), force recompile of fmm2d library
 %
 
+addpath(genpath('/Users/gillmana/Documents/Research/Flatiron/chunkie/'))
+addpath(genpath('/Users/gillmana/Documents/Research/Flatiron/chunkie/+chnk/+flam'))
+
+
 if nargin < 1
     opts = [];
 end

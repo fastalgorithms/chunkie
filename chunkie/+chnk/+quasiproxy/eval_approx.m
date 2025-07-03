@@ -1,4 +1,4 @@
-function uapp = eval_approx(full_sys,chnkr,interface_dens,proxy_dens,d,theta,xxtrg)
+function uapp = eval_approx(full_sys,chnkr,interface_dens,proxy_dens,bragg_coef,KK,ht,hb,d,theta,xxtrg)
 
 % will require lots of clean up for multilayer code.
 
@@ -7,10 +7,41 @@ numlayer = find_layer(full_sys.cgrph_lab,full_sys.hb,full_sys.ht,xxtrg.r);
 
 kh = full_sys.khs(numlayer);
 
-ntot = chnkr.npt;
 nproxy = size(full_sys.Cproxy{numlayer}.r,2);
 
+if xxtrg.r(2,1)>hb
+    % use bragg expansion
+    topcoef = bragg_coef(1:KK);
+    kh1 = full_sys.khs(1);
 
+
+    uapp = 0;
+    n = (KK-1)/2;
+    ima = sqrt(-1);
+    for j= 1:KK
+        kappa = kh1*cos(theta)+2*pi*(j-n);
+        knu = sqrt(kh1^2-kappa^2);    
+        uapp = uapp+topcoef(j)*exp(ima*kappa*xxtrg.r(1))*exp(ima*knu*(xxtrg.r(2)-ht));
+    end
+
+elseif xxtrg.r(2,1)<hb
+    % use bragg expansion
+
+    bottcoef = bragg_coef(KK+1:end);
+    kh1 = full_sys.khs(1);
+    khn = full_sys.khs(end);
+
+    uapp = 0;
+    n = (KK-1)/2;
+    ima = sqrt(-1);
+    for j= 1:KK
+        kappa = kh1*cos(theta)+2*pi*(j-n);
+        knd = sqrt(khn^2-kappa^2);            
+        uapp = uapp+bottcoef(j)*exp(ima*kappa*xxtrg.r(1))*exp(ima*knd*(-xxtrg.r(2)+hb));
+    end
+    
+else    
+% use integral operator form of solution    
 % extract the different parts of the solution to the linear system.
  c1=proxy_dens(1:nproxy);
 
@@ -44,7 +75,7 @@ udens = alpha^(-1)*(TrL*interface_dens) + (TrM*interface_dens) ...
     + alpha*(TrR*interface_dens);
 
 uapp = udens+uproxy;
-
+end
 
 
 return

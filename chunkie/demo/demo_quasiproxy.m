@@ -11,7 +11,8 @@ theta = -pi/5;
 
 % test target location for convergence.
 xxtrg = [];
-xxtrg.r = [0.2; 0.5];
+% xxtrg.r = [0.2; 0.5];
+xxtrg.r = [0.2; 1.5];
 xxtrg.n = [0; 0];
 
 % Number of panels
@@ -71,7 +72,7 @@ rhs = chnk.quasiproxy.make_rhs(chnkr,kh1,theta);
     fprintf('Flux error est.    = %g\n\n',      flux_error);
     fprintf('\n  theta value , flux error est.    = %g\n',   flux_error );
 
-uapp = chnk.quasiproxy.eval_approx(full_sys,chnkr,interface_dens,proxy_dens,d,theta,xxtrg);    
+uapp = chnk.quasiproxy.eval_approx(full_sys,chnkr,interface_dens,proxy_dens,bragg_coef,KK,d,ht,hb,theta,xxtrg);    
 
 uapp
 
