@@ -1,5 +1,5 @@
-function submat = kern(srcinfo,targinfo,type,vfun)
-%CHNK.LAP2D_SHAPE_DER.KERN shape derivatives of 
+function submat = kern(srcinfo,targinfo,type,zk, vfun)
+%CHNK.HELM2D_SHAPE_DER.KERN shape derivatives of 
 % Laplace layer potential kernels in 2D
 %
 % Syntax: submat = kern(srcinfo, targinfo, type)
@@ -25,7 +25,7 @@ if strcmpi(type,'s')
     dy = repmat(srcinfo.d(2,:),nt,1);
     vx_d = vtx-vsx;
     vy_d = vty-vsy;
-    [val,grad] = chnk.lap2d.green(src,targ);
+    [val,grad] = chnk.helm2d.green(zk,src,targ);
     submat = vx_d.*grad(:,:,1)+vy_d.*grad(:,:,2);
     submat = submat + val.*(dvsx.*dx+dvsy.*dy)./(dx.*dx+dy.*dy);
 end
@@ -47,7 +47,7 @@ if strcmpi(type,'sp')
     dyt = repmat(targinfo.d(2,:).',1,ns);
     vx_d = vtx-vsx;
     vy_d = vty-vsy;
-    [~,grad,hess] = chnk.lap2d.green(src,targ);
+    [~,grad,hess] = chnk.helm2d.green(zk,src,targ);
     kp = grad(:,:,1).*ntx+grad(:,:,2).*nty;
 
     a11 = ntx.*vx_d;
