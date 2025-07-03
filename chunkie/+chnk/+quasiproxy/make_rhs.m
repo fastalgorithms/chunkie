@@ -1,7 +1,7 @@
 function rhs = make_rhs(chnkr,kh1,theta)
 
     [u_inc,un_inc] = make_incident(theta,kh1,chnkr);
-    rhs=[-u_inc;-un_inc];
+    rhs=[-u_inc.';-un_inc.']; rhs = rhs(:);
 
 return
 

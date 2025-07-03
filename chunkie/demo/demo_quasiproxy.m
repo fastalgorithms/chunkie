@@ -71,9 +71,7 @@ rhs = chnk.quasiproxy.make_rhs(chnkr,kh1,theta);
     fprintf('Flux error est.    = %g\n\n',      flux_error);
     fprintf('\n  theta value , flux error est.    = %g\n',   flux_error );
 
-numlayer = 1;
-
-uapp = chnk.quasiproxy.eval_approx(full_sys,chnkr,interface_dens,proxy_dens,numlayer,d,kh1,theta,xxtrg);    
+uapp = chnk.quasiproxy.eval_approx(full_sys,chnkr,interface_dens,proxy_dens,d,theta,xxtrg);    
 
 uapp
 

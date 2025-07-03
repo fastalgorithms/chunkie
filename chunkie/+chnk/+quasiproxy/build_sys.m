@@ -79,6 +79,16 @@ fullsys.Cproxy = Cproxy;
 fullsys.lwall = lwall;
 fullsys.udwall = udwall;
 
+% store domain information
+fullsys.d = d;
+fullsys.ht = ht;
+fullsys.hb = hb;
+
+fullsys.khs = [kh1,kh2];
+
+% build region labeler
+fullsys.cgrph_lab = build_reg_labeler(chnkr,hb,ht);
+
 return
 
 
@@ -89,57 +99,17 @@ function [A0,AL,AR] = build_A_mat(chnkr,chnkr_l,chnkr_r, kh1, kh2)
 % AR = interaction with left neighbor
 
 % define the necessary kernels
-Dk1 = kernel('helm', 'd', kh1);
-Dk2 = kernel('helm', 'd', kh2);
-Sk1 = kernel('helm', 's', kh1);
-Sk2 = kernel('helm', 's', kh2);
-Dpk1 = kernel('helm', 'dp', kh1);
-Dpk2 = kernel('helm', 'dp', kh2);
-Spk1 = kernel('helm', 'sp', kh1);
-Spk2 = kernel('helm', 'sp', kh2);
-
+Ak1k2 = kernel('helmdiff','all',[kh1,kh2]);
 
 % build A0
-% self contributions
-% continuity at interface
-D = chunkermat(chnkr, Dk1)- chunkermat(chnkr, Dk2);
-ntot = size(D,2);
-
-S = chunkermat(chnkr, Sk1)- chunkermat(chnkr, Sk2);
-
-% continuity of flux at interface
-T = chunkermat(chnkr, Dpk1)- chunkermat(chnkr, Dpk2);
-
-Sp = chunkermat(chnkr, Spk1)- chunkermat(chnkr, Spk2);
-
-A0 = [-eye(ntot)+D S; T eye(ntot)+Sp];
-
-
-% build interactions with left neighbor AL
-% continuity through interface
-Dl = chunkerkernevalmat(chnkr_l, Dk1, chnkr) - chunkerkernevalmat(chnkr_l, Dk2, chnkr);
-Sl = chunkerkernevalmat(chnkr_l, Sk1, chnkr) - chunkerkernevalmat(chnkr_l, Sk2, chnkr);
-% continuity of the flux through the interface
-Tl = chunkerkernevalmat(chnkr_l, Dpk1, chnkr) - chunkerkernevalmat(chnkr_l, Dpk2, chnkr);
-Spl = chunkerkernevalmat(chnkr_l, Spk1, chnkr) - chunkerkernevalmat(chnkr_l, Spk2, chnkr);
-% full interaction
-AL = [Dl Sl; Tl Spl];
-
-% build interactions with left neighbor AR
-% continuity through interface
-Dr = chunkerkernevalmat(chnkr_r, Dk1, chnkr) - chunkerkernevalmat(chnkr_r, Dk2, chnkr);
-Sr = chunkerkernevalmat(chnkr_r, Sk1, chnkr) - chunkerkernevalmat(chnkr_r, Sk2, chnkr);
-% continuity of the flux through the interface
-Tr = chunkerkernevalmat(chnkr_r, Dpk1, chnkr) - chunkerkernevalmat(chnkr_r, Dpk2, chnkr);
-Spr = chunkerkernevalmat(chnkr_r, Spk1, chnkr) - chunkerkernevalmat(chnkr_r, Spk2, chnkr);
-% full interaction
-AR = [Dr Sr; Tr Spr];
-
-
-clear D S T Sp Dl Sl Tl Spl Dr Sr Tr Spr
+% self contributions - continuity of u and it's flux
+A0 = chunkermat(chnkr,Ak1k2);
+A0 = diag((-1).^(1:size(A0,2))) + A0;
+% build interactions with left neighbor A:
+AL = chunkerkernevalmat(chnkr_l, Ak1k2, chnkr);
+% build interactions with right neighbor AR
+AR = chunkerkernevalmat(chnkr_r, Ak1k2, chnkr);
 return
-
-
 
 function [Bmat,Proxy1,Proxy2,pw] = make_B_matrix(chnkr,d,nproxy,kh1,kh2,ht,hb,relrad)
 
@@ -160,29 +130,21 @@ Proxy2 = [];
 Proxy2.r = relrad*d*pr/1.5+xc2;
 Proxy2.n = pnorm;
 
-B11 =[chnk.quasiproxy.construct_proxy(kh1,Proxy1,pw,chnkr);...
-    construct_proxy_flux(kh1,Proxy1,pw,chnkr)];
-B22 = [chnk.quasiproxy.construct_proxy(kh2,Proxy2,pw,chnkr);...
-    construct_proxy_flux(kh2,Proxy2,pw,chnkr)];
 
+B11 = construct_proxy_all(kh1, Proxy1,pw,chnkr);
+B22 = construct_proxy_all(kh2, Proxy2,pw,chnkr);
 
 Bmat =[B11 -B22];
 
-
 return
 
 
-function A = construct_proxy_flux(kh,Proxy,pw,chnkr)
+function A = construct_proxy_all(kh, Proxy,pw,chnkr)
 
-Dp = kernel('helm', 'dp', kh);
-Sp = kernel('helm', 'sp', kh);
-
-ima=sqrt(-1);
-
-A = (Dp.eval(Proxy, chnkr)+ima*kh*Sp.eval(Proxy,chnkr)).*pw.';
+repcoef = [1,1i*kh];
+A = chnk.helm2d.kern(kh,Proxy,chnkr,'c2trans',repcoef).*pw.';
 
 return
-
 function [Cmat,lwall1,lwall2] = make_C_matrix(chnkr,kh1,kh2,alpha,ht,hb,d,n,xval)
 
 
@@ -217,40 +179,25 @@ lwall2.n = [ones(1,n);zeros(1,n)];
 
  Cmat = alpha^(-2)*Rht -alpha*Lft;
 
-
 return
 
 function [matR,matL] = make_Cblock(lwall,rwall,chnkr,kh,d)
 
 
 % define the necessary kernels
-D = kernel('helm', 'd', kh);
-S = kernel('helm', 's', kh);
-Dp = kernel('helm', 'dp', kh);
-Sp = kernel('helm', 'sp', kh);
 
 lwalltmp = lwall;
 lwalltmp.r(1,:,:) = lwalltmp.r(1,:,:)-d;
 rwalltmp = rwall;
 rwalltmp.r(1,:,:) = rwalltmp.r(1,:,:)+d;
 
-ww = chnkr.wts;
-ww = reshape(ww,1,numel(ww));
+ww = chnkr.wts; ww = ww(:).';
+% duplicate weights for second density
+ww = repmat(ww,2,1); ww = ww(:).';
 
-DL1 = D.eval(chnkr,lwalltmp).*ww;
-DR1 = D.eval(chnkr,rwalltmp).*ww;
-
-SL1 = S.eval(chnkr,lwalltmp).*ww;
-SR1 = S.eval(chnkr,rwalltmp).*ww;
-
-TL1 = Dp.eval(chnkr,lwalltmp).*ww;
-TR1 = Dp.eval(chnkr,rwalltmp).*ww;
-
-DsL1 = Sp.eval(chnkr,lwalltmp).*ww;
-DsR1 = Sp.eval(chnkr,rwalltmp).*ww;
-
-matR=[DR1, SR1; TR1, DsR1];
-matL=[DL1, SL1; TL1, DsL1];
+repcoef = ones(2,2);
+matR = chnk.helm2d.kern(kh,chnkr,rwalltmp,'all',repcoef).*ww;
+matL = chnk.helm2d.kern(kh,chnkr,lwalltmp,'all',repcoef).*ww;
 
 return
 
@@ -277,33 +224,14 @@ D2 =  alpha^(-1)*DR-DL;
 
 Dmat = [D1 zeros(nwall,nproxy);...
               zeros(nwall,nproxy),D2];
-
-
-
 return
-
+% 
 function [DL,DR]=make_Dblock(lwall,rwall,Proxy,pw,kh)
 % - Evaluate operator D in Cho and Barnett (2015)
 
-% define the necessary kernels
-D = kernel('helm', 'd', kh);
-S = kernel('helm', 's', kh);
-Dp = kernel('helm', 'dp', kh);
-Sp = kernel('helm', 'sp', kh);
-
-ima=sqrt(-1);
-
-% (ones(nwall/2,1)*ww_proxy)
-S_L = (D.eval(Proxy, lwall)+ima*kh*S.eval(Proxy,lwall)).*pw.';
-S_R = (D.eval(Proxy, rwall)+ima*kh*S.eval(Proxy,rwall)).*pw.';
-
-
-
-D_L = (Dp.eval(Proxy, lwall)+ima*kh*Sp.eval(Proxy,lwall)).*pw.';
-D_R = (Dp.eval(Proxy, rwall)+ima*kh*Sp.eval(Proxy,rwall)).*pw.';
-
-DR=[S_R; D_R];
-DL=[S_L;D_L];
+repcoef = [1,1i*kh];
+DR = chnk.helm2d.kern(kh,Proxy,rwall,'c2trans',repcoef).*pw.';
+DL = chnk.helm2d.kern(kh,Proxy,lwall,'c2trans',repcoef).*pw.';
 
 return
 
@@ -335,43 +263,20 @@ Z2 = A0+alpha^(-1)*AL + alpha*AR;
 
 Zmat = [Z1;Z2];
 return
-
-
+% 
+% 
 function [A0,AL,AR]=make_Zblock(xpts,C,CL,CR,kh)
 % -Evaluate operator Z in Cho and Barnett (2015)
 
-% define the necessary kernels
-D = kernel('helm', 'd', kh);
-S = kernel('helm', 's', kh);
-Dp = kernel('helm', 'dp', kh);
-Sp = kernel('helm', 'sp', kh);
+ww = C.wts; ww = ww(:).';
+% duplicate weights for second density
+ww = repmat(ww,2,1); ww = ww(:).';
 
-ww = C.wts;
-ww = reshape(ww,1,numel(ww));
-wwL = CL.wts;
-wwL = reshape(wwL,1,numel(wwL));
-wwR = CR.wts;
-wwR = reshape(wwR,1,numel(wwR));
+repcoef = ones(2,2);
+AL = chnk.helm2d.kern(kh,CL,xpts,'all',repcoef).*ww;
+A0 = chnk.helm2d.kern(kh,C,xpts,'all',repcoef).*ww;
+AR = chnk.helm2d.kern(kh,CR,xpts,'all',repcoef).*ww;
 
-DL = D.eval(CL,xpts).*wwL;
-DD = D.eval(C,xpts).*ww;
-DR = D.eval(CR,xpts).*wwR;
-
-SL = S.eval(CL,xpts).*wwL;
-SS  = S.eval(C,xpts).*ww;
-SR = S.eval(CR,xpts).*wwR;
-
-TL = Dp.eval(CL,xpts).*wwL;
-T  = Dp.eval(C,xpts).*ww;
-TR = Dp.eval(CR,xpts).*wwR;
-
-DsL = Sp.eval(CL,xpts).*wwL;
-Ds  = Sp.eval(C,xpts).*ww;
-DsR = Sp.eval(CR,xpts).*wwR;
-
-A0=[DD, SS;T, Ds];
-AL=[DL,SL;TL, DsL];
-AR=[DR,SR;TR,DsR];
 return
 
 function Vmat = make_V_matrix(Proxy1,Proxy2,pw,kh1,kh2,uwall,dwall)
@@ -379,13 +284,10 @@ function Vmat = make_V_matrix(Proxy1,Proxy2,pw,kh1,kh2,uwall,dwall)
 nwall_TD = size(uwall.r,2);
 nproxy = length(pw);
 
-V1 = [chnk.quasiproxy.construct_proxy(kh1,Proxy1,pw,uwall);...
-    construct_proxy_flux(kh1,Proxy1,pw,uwall)];
-V2 = [chnk.quasiproxy.construct_proxy(kh2,Proxy2,pw,dwall);...
-    construct_proxy_flux(kh2,Proxy2,pw,dwall)];
+V1 = construct_proxy_all(kh1,Proxy1,pw,uwall);
+V2 = construct_proxy_all(kh2,Proxy2,pw,dwall);
 
-
- Vmat = [V1 zeros(2*nwall_TD,nproxy); zeros(2*nwall_TD,nproxy) V2];
+Vmat = [V1 zeros(2*nwall_TD,nproxy); zeros(2*nwall_TD,nproxy) V2];
 return
 
 function Wmat = make_W_matrix(kh1,kh2,uwall,dwall,d,theta,K)
@@ -399,15 +301,16 @@ ktmp = ones(nwall_TD,1)*kappa;
 ku = ones(nwall_TD,1)*sqrt(kh1^2-kappa.^2);
 UU = uwall.r(1,:)'*ones(1,2*K+1);
 
-W1 = [-exp(ima*UU.*ktmp); ...
-    -ima*ku.*exp(ima*UU.*ktmp)];
+W1 = zeros(2*size(UU,1),size(UU,2));
+W1(1:2:end,:) = -exp(ima*UU.*ktmp);
+W1(2:2:end,:) = -ima*ku.*exp(ima*UU.*ktmp);
 
 kd = ones(nwall_TD,1)*sqrt(kh2^2-kappa.^2);
 DD = dwall.r(1,:)'*ones(1,2*K+1);
 
-W2 = [-exp(ima*DD.*ktmp); ...
-    ima*kd.*exp(ima*DD.*ktmp)];
-
+W2 = zeros(2*size(DD,1),size(DD,2));
+W2(1:2:end,:) = -exp(ima*DD.*ktmp);
+W2(2:2:end,:) = ima*kd.*exp(ima*DD.*ktmp);
 
 KK=2*K+1;
 loc_IND1=1:2*nwall_TD;
@@ -417,4 +320,23 @@ Wmat=zeros(2*nwall_TD*2, 2*KK);
 Wmat(loc_IND1,1:KK)=W1;
 Wmat(loc_INDn,(KK+1):2*KK)=W2;
 
+return
+
+
+function cgrph_lab = build_reg_labeler(chnkr,hb,ht)
+% detect left and right ends
+vend = chunkends(chnkr); 
+[~,il] = min(vend(1,:));
+[~,ir] = max(vend(1,:));
+
+lend = vend(:,il);
+rend = vend(:,ir);
+
+% build chunkgraph out of chunker, and all of the walls
+verts = [lend,rend, [lend(1);ht],[rend(1);ht],[lend(1);hb],[rend(1);hb] ];
+edge2vert = [[1;2],[3;4],[5;6],[1;3],[1;5],[2;4],[2;6]];
+
+cgrph_lab = chunkgraph(verts,edge2vert);
+cgrph_lab.echnks(1) = chnkr;
+cgrph_lab.regions = findregions(cgrph_lab);
 return
