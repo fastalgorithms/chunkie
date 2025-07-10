@@ -46,6 +46,8 @@ function [F] = chunkerflam(chnkobj,kern,dval,opts)
 %                           up the FLAM compression. It may be desirable to
 %                           turn this off if there appear to be precision
 %                           issues.
+%           opts.forceproxy = boolean (false), forces to use proxy
+%                           even when chunkers have data
 %           opts.proxybylevel = boolean (false), determine the number of
 %                           necessary proxy points adaptively at each 
 %                           level of the factorization. Typically needed 
@@ -126,6 +128,7 @@ quad = 'ggqlog';        if isfield(opts,'quad'),    quad = opts.quad;end
 l2scale = false;        if isfield(opts,'l2scale'), l2scale = opts.l2scale;end
 flamtype = 'rskelf';    if isfield(opts,'flamtype'),flamtype = opts.flamtype;end
 useproxy = true;        if isfield(opts,'useproxy'),useproxy = opts.useproxy;end
+forceproxy = false;        if isfield(opts,'forceproxy'),forceproxy = opts.forceproxy;end
 occ = 200;              if isfield(opts,'occ'),     occ = opts.occ;end
 rank_or_tol = 1e-14;    if isfield(opts,'rank_or_tol'),rank_or_tol = opts.rank_or_tol;end
 verb = false;           if isfield(opts,'verb'),    verb = opts.verb;end
@@ -266,9 +269,9 @@ chnkrtotal = merge(chnkrs);
 
 matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrs,kern,opdims_mat,sp,l2scale);
 
-if ~isempty(chnkrtotal.data)
-    useproxy = false;
-    warning('CHUNKERFLAM: chunker object had point data, not using proxy');
+if ~isempty(chnkrtotal.data) && ~forceproxy
+     useproxy = false;
+     warning('CHUNKERFLAM: chunker object had point data, not using proxy');
 end
 
 if ~useproxy

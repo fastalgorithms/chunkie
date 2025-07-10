@@ -92,7 +92,7 @@ submat = smatbig*diag(dsdtndim2)*ainterp1kron;
 
 if corrections
     srcinfo = []; srcinfo.r = rs; srcinfo.d = ds; 
-    srcinfo.d2 = d2s; srcinfo.n = ns; 
+    srcinfo.d2 = d2s; srcinfo.n = ns; srcinfo.data = dds;
 
     wtsj = wtss(:,j);
     submat = submat - fkern(srcinfo,targinfo).*(wtsj(:).');
