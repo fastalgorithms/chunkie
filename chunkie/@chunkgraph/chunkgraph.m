@@ -50,10 +50,6 @@ classdef chunkgraph
 %         meets with other chunk ends in a vertex. 
 %
 % chunkgraph methods:
-%   obj = plus(v,obj) - provides translation via v + obj
-%   obj = mtimes(A,obj) - provides affine transformation via A*obj
-%   obj = rotate(obj,theta,r0,r1) - rotate by angle 
-%   obj = reflect(obj,theta,r0,r1) - reflect across line
 %   plot(obj, varargin) - plot the chunkgraph
 %   quiver(obj, varargin) - quiver plot of chunkgraph points and normals
 %   plot_regions(obj, iflabel) - plot the chunkgraph with region and 
@@ -94,14 +90,14 @@ classdef chunkgraph
 %   edgesendverts - (2 x nedges) array specifying starting and ending
 %     vertices of an edge. 
 % Optional input:
-%   fchnks - (nedges x 1) cell array of function handles, specifying a
-%     smooth curve to connect the given vertices. fchnk{j} should be a
-%     function in the format expected by CHUNKERFUNC but with the default
-%     that fchnk{j} is a function from [0,1] to the curve. If the specified
-%     curve does not actually connect the given vertices, the curve will be
-%     translated, rotated, and scaled to connect them. If the specified
-%     curve should be a loop, it is only translated to start at the correct
-%     vertex. 
+%   fchnks - (1 x nedges) cell array of function handles or chunkers,
+%     specifying a smooth curve to connect the given vertices. If fchnk{j}
+%     is a function handle, it should be a function in the format expected
+%     by CHUNKERFUNC but with the default that fchnk{j} is a function from
+%     [0,1] to the curve. If the specified curve does not actually connect
+%     the given vertices, the curve will be translated, rotated, and scaled
+%     to connect them. If the specified curve should be a loop, it is only
+%     translated to start at the correct vertex.
 %   cparams - struct or (nedges x 1) cell array of structs specifying curve
 %     parameters in the format expected by CHUNKERFUNC. 
 %   pref - struct specifying CHUNKER preferences. 
@@ -179,7 +175,7 @@ classdef chunkgraph
                 fchnks = [];
             end
             
-            if isa(fchnks,"function_handle")
+            if isa(fchnks,"function_handle") || isa(fchnks,"chunker")
                 fchnks0 = fchnks;
                 fchnks = cell(nedge,1);
                 for j = 1:nedge
@@ -242,7 +238,7 @@ classdef chunkgraph
                     chnkr = sort(chnkr);
                     %chnkr.vert = [v1,v2];
                     echnks(i) = chnkr;
-                elseif (~isempty(fchnks{i}) && isa(fchnks{i},'function_handle'))
+                else
                     if iscell(cparams)
                         cploc = cparams{i};
                     else
@@ -250,46 +246,71 @@ classdef chunkgraph
                     end
                     % set cploc.ifclosed in a way that makes sense
                     cploc.ifclosed = false;
+
                     i1 = edgesendverts(1,i);
                     i2 = edgesendverts(2,i);
-
                     if isnan(i1) || isnan(i2)
                         cploc.ifclosed = true;
                     end
 
-                    % chunkgraph edges need at least 4 chunks
-                    if isfield(cploc,'nchmin')
-                        cploc.nchmin = max(4,cploc.nchmin);
-                    else
-                        cploc.nchmin = 4;
-                    end
-                    
-                    ta = 0; tb = 1;
-                    if isfield(cploc,'ta')
-                        ta = cploc.ta; 
-                    else
-                        cploc.ta = ta;
-                    end
-                    if isfield(cploc,'tb')
-                        tb = cploc.tb; 
-                    else
-                        cploc.tb = tb;
-                    end
 
-                    vs =fchnks{i}([ta,tb]);
-                    if isfield(cploc,'maxchunklen')
-                        if ~isnan(i1) && ~isnan(i2)
-                            if i1 ~= i2 
-                                vfin0 = verts(:,i1);
-                                vfin1 = verts(:,i2);
-                                scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
-                                cploc.maxchunklen = cploc.maxchunklen/scale;
+                    if isa(fchnks{i},'function_handle')
+
+    
+                        % chunkgraph edges need at least 4 chunks
+                        if isfield(cploc,'nchmin')
+                            cploc.nchmin = max(4,cploc.nchmin);
+                        else
+                            cploc.nchmin = 4;
+                        end
+                        
+                        ta = 0; tb = 1;
+                        if isfield(cploc,'ta')
+                            ta = cploc.ta; 
+                        else
+                            cploc.ta = ta;
+                        end
+                        if isfield(cploc,'tb')
+                            tb = cploc.tb; 
+                        else
+                            cploc.tb = tb;
+                        end
+    
+                        vs =fchnks{i}([ta,tb]);
+                        if isfield(cploc,'maxchunklen')
+                            if ~isnan(i1) && ~isnan(i2)
+                                if i1 ~= i2 
+                                    vfin0 = verts(:,i1);
+                                    vfin1 = verts(:,i2);
+                                    scale = norm(vfin1-vfin0,'fro')/norm(vs(:,2)-vs(:,1),'fro');
+                                    cploc.maxchunklen = cploc.maxchunklen/scale;
+                                end
                             end
                         end
+                        
+                        chnkr = chunkerfunc(fchnks{i}, cploc, pref);
+
+                    elseif isa(fchnks{i},'chunker')
+                        chnkr = fchnks{i};
+                        [~,~,info] = sortinfo(chnkr);
+                        if info.ncomp > 1
+                            msg = "CHUNKGRAPH:CONSTRUCTOR: invalid edge descriptor." + ...
+                                  " fchnks{" + num2str(i) + "} must be a " + ...
+                                  "single connected component.";
+                            warning(msg);
+                        end
+
+                        vs = chunkends(chnkr,[1,chnkr.nch]);
+                        vs = vs(:, [1,4]);
+
+                    else
+                        msg = "CHUNKGRAPH:CONSTRUCTOR: invalid edge descriptor." + ...
+                              " fchnks{" + num2str(i) + "} must be empty, a" + ...
+                              " function handle, or a chunker.";
+                        warning(msg);
                     end
-                    
-                    chnkr = chunkerfunc(fchnks{i}, cploc, pref);
                     chnkr = sort(chnkr);
+
                     if ~isnan(i1) && ~isnan(i2)
                         if i1 ~= i2 
                             vfin0 = verts(:,i1);
@@ -317,7 +338,6 @@ classdef chunkgraph
                             chnkr = move(chnkr,zeros(size(vs(:,1))),vfin-vs(:,1),0,1);
                         end
                     end
-
                     echnks(i) = chnkr;
                 end
             end
@@ -433,10 +453,8 @@ classdef chunkgraph
         scatter(obj, varargin)
         rres = datares(obj, opts)
         edge_regs = find_edge_regions(obj)
-        obj = plus(v,obj)
-        obj = mtimes(A,obj)        
-        obj = rotate(obj,theta,r0,r1)
-        obj = reflect(obj,theta,r0,r1)   
+
+        
     end
 
     methods(Static)
