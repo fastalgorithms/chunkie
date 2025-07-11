@@ -40,7 +40,7 @@ function submat= kern(zk,srcinfo,targinfo,type,varargin)
 %                       [coef(1,1)*D coef(1,2)*S; coef(2,1)*D' coef(2,2)*S']
 %                type == 'c2trans' returns the combined field, and the 
 %                          normal derivative of the combined field
-%                        [coef(1)*D + coef(2)*S; coef(1)*D' + coef(2)*S']
+%                        [coef(1,1)*D + coef(1,2)*S; coef(2,1)*D' + coef(2,2)*S']
 %                type == 'trans_rep' returns the potential corresponding
 %                           to the transmission representation
 %                        [coef(1)*D coef(2)*S]
@@ -250,6 +250,7 @@ end
 if strcmpi(type,'c2trans') 
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end
+  if numel(coef) == 2, coef = repmat(coef(:).',2,1); end
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
 
@@ -272,8 +273,8 @@ if strcmpi(type,'c2trans')
 
   submat = zeros(2*nt,ns);
 
-  submat(1:2:2*nt,:) = coef(1)*submatd + coef(2)*submats;
-  submat(2:2:2*nt,:) = coef(1)*submatdp + coef(2)*submatsp;
+  submat(1:2:2*nt,:) = coef(1,1)*submatd + coef(1,2)*submats;
+  submat(2:2:2*nt,:) = coef(2,1)*submatdp + coef(2,2)*submatsp;
 
 end
 

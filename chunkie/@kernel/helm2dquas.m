@@ -60,7 +60,7 @@ obj.opdims = [numel(kappa) 1];
 l=2; N = 40; a = 15; M = 1e4;
 
 if nargin == 6
-    if isefield(quad_opts,'l')
+    if isfield(quad_opts,'l')
         l = quad_opts.l;
     end
     if isfield(quad_opts,'N')
@@ -82,11 +82,6 @@ quas_param.kappa = kappa;
 quas_param.d = d;
 quas_param.l = l;
 quas_param.sn = sn;
-
-% obj.params.kappa = kappa;
-% obj.params.d = d;
-% obj.params.l = l;
-% obj.params.Sn = Sn;
 
 obj.params.quas_param = quas_param;
 
@@ -160,7 +155,6 @@ switch lower(type)
         error('Unknown Helmholtz kernel type ''%s''.', type);
 
 end
-
 end
 
 function f = helm2dquas_s_split(zk,s,t,quas_param)
