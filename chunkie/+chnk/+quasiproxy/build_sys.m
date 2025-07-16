@@ -145,6 +145,7 @@ repcoef = [1,1i*kh];
 A = chnk.helm2d.kern(kh,Proxy,chnkr,'c2trans',repcoef).*pw.';
 
 return
+
 function [Cmat,lwall1,lwall2] = make_C_matrix(chnkr,kh1,kh2,alpha,ht,hb,d,n,xval)
 
 

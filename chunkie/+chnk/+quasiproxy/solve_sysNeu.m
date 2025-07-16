@@ -9,10 +9,10 @@ invA = inv(full_sys.Amat);
 AinvB = invA*full_sys.Bmat;
 
 Schur_top=full_sys.Dmat-full_sys.Cmat*AinvB;
+
 Schur_bot=full_sys.Vmat-full_sys.Zmat*AinvB;
 
-num_layer = 2;
-Schur3=[Schur_top, zeros(num_layer*nwall*2,2*KK);...
+Schur3=[Schur_top, zeros(nwall*2,KK);...
     Schur_bot, full_sys.Wmat];
 
 [SU,SS,SV] = svd(Schur3);
@@ -34,8 +34,9 @@ rhs_schur3=-[full_sys.Cmat*Ainvf;...
 % proxy circle charges
 coeff=SV*(SS*(SU'*(rhs_schur3)));
 
+num_layer = 1;
 % Rayleigh Bragg coefficients (top and bottom)
-bragg_coef=coeff(num_layer*nproxy+1:num_layer*nproxy+2*KK);
+bragg_coef=coeff(num_layer*nproxy+1:num_layer*nproxy+KK);
 % proxy circle charges
 proxy_dens=coeff(1:num_layer*nproxy);
 % Interface densities
