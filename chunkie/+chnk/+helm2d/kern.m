@@ -475,7 +475,7 @@ case {'trans_rep_prime_diff','trp_diff', 'trans_rep_p_diff'}
   submat(1:1:1*nt,2:2:2*ns) = coef(2)*submatsp;
 
 % Gradient correpsonding to transmission rep
-case {'trans_rep_grad','trg'}
+case {'trans_rep_grad','trg','trans_rep_g'}
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
   
@@ -500,7 +500,7 @@ case {'trans_rep_grad','trg'}
 
 
 % Gradient correpsonding to transmission rep (difference)
-case {'trans_rep_grad_diff','trg_diff'}
+case {'trans_rep_grad_diff','trg_diff','trans_rep_g_diff'}
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
   

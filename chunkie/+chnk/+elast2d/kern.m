@@ -87,7 +87,7 @@ case {'strac'}
         kron(rdotv./r2,[1 0; 0 1]));
     mat = term1+term2;
 
-case {'sgrad'}
+case {'sgrad', 'sg'}
     mat = zeros(4*m,2*n);
     tmp = beta*x./r2;
     mat(1:4:end,1:2:end) = tmp;
@@ -139,7 +139,7 @@ case {'dalt'}
     term1 = eta*(kron(rdotv./r2,[2 0; 0 2]));
     mat = -(term1+term2);
 
-case {'daltgrad'}
+case {'daltgrad', 'daltg'}
     dirx = s.n(1,:); dirx = dirx(:).';
     diry = s.n(2,:); diry = diry(:).';
     rdotv = x.*dirx + y.*diry;

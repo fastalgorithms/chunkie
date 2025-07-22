@@ -139,7 +139,7 @@ case {'s', 'single'}
         end
     end
     
-case {'sdiff'}
+case {'sdiff', 's_diff'}
     ifdiff = 1;
     submat = chnk.axissymhelm2d.green(zk, src, targ, origin, ifdiff);
 
@@ -204,7 +204,7 @@ case {'dp_re_diff', 'dprime_re_diff'}
 
   submat = submat1-submat2;
 
-case {'dpdiff', 'dprimediff'}
+case {'dpdiff', 'dp_diff', 'dprimediff', 'dprime_diff'}
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
   ifdiff = 1;
