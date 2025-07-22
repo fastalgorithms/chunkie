@@ -68,7 +68,9 @@ else
     zk2 = zks(2);
 end
 
-if strcmpi(type, 'd')
+switch lower(type)
+
+case {'d', 'double'}
     srcnorm = srcinfo.n(:,:);
     [~, grad] = chnk.axissymhelm2d.green(zk, src, targ, origin);
     nx = repmat(srcnorm(1,:), nt, 1);
@@ -91,9 +93,8 @@ if strcmpi(type, 'd')
             end
         end
     end 
-end
 
-if strcmpi(type, 'sprime')
+case {'sp', 'sprime'}
     targnorm = targinfo.n(:,:);
     [~, grad] = chnk.axissymhelm2d.green(zk, src, targ, origin);
 
@@ -118,9 +119,7 @@ if strcmpi(type, 'sprime')
         end
     end
 
-end
-
-if strcmpi(type, 's')
+case {'s', 'single'}
     submat = chnk.axissymhelm2d.green(zk, src, targ, origin);
     fker = @(x, s, t) fslp(x, zk, s, t, origin);
     for j=1:ns
@@ -140,15 +139,11 @@ if strcmpi(type, 's')
         end
     end
     
-end
-
-
-if strcmpi(type, 'sdiff')
+case {'sdiff'}
     ifdiff = 1;
     submat = chnk.axissymhelm2d.green(zk, src, targ, origin, ifdiff);
-end
 
-if strcmpi(type, 'c')
+case {'c', 'combined'}
     srcnorm = srcinfo.n(:,:); 
     coef = ones(2,1);
     if (nargin == 6); coef = varargin{1}; end
@@ -175,10 +170,8 @@ if strcmpi(type, 'c')
             end
         end
     end
-end
 
-
-if strcmpi(type, 'dprime')
+case {'dp', 'dprime'}
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
   [~,~,hess] = chnk.axissymhelm2d.green(zk, src, targ, origin);
@@ -188,10 +181,8 @@ if strcmpi(type, 'dprime')
   nytarg = repmat((targnorm(2,:)).',1,ns);
   submat = hess(:,:,4).*nxsrc.*nxtarg - hess(:,:,5).*nysrc.*nxtarg ... 
               - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
-end
 
-if strcmpi(type, 'dprime_re_diff')
-
+case {'dp_re_diff', 'dprime_re_diff'}
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
   ifdiff = 2;
@@ -213,11 +204,7 @@ if strcmpi(type, 'dprime_re_diff')
 
   submat = submat1-submat2;
 
-end
-
-
-
-if strcmpi(type, 'dprimediff')
+case {'dpdiff', 'dprimediff'}
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
   ifdiff = 1;
@@ -246,9 +233,7 @@ if strcmpi(type, 'dprimediff')
         end
     end
 
-end
-
-if strcmpi(type, 'neu_rpcomb')
+case {'neu_rpcomb'}
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
   [~,gk,~,sikmat,gik,~,~,~,hessdiff] = ...
@@ -314,14 +299,8 @@ if strcmpi(type, 'neu_rpcomb')
   submat(1:3:end, 3:3:end) = c2*spikmat;
   submat(2:3:end, 1:3:end) = -sikmat;
   submat(3:3:end, 1:3:end) = -spikmat;
-  
-  
-  
-
-
-
-
-    
+otherwise
+    error('Unknown axissymmetric Helmholtz kernel type ''%s''.', type); 
 end
 
 end
