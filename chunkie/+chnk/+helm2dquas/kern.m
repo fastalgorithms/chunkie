@@ -226,7 +226,7 @@ case {'cgrad','cg'}
   
 
 % all kernels, [c11 D, c12 S; c21 D', c22 S'] 
-case {'all','trans_sys','ts'}
+case {'all','trans_sys','tsys'}
  
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
@@ -259,8 +259,7 @@ case {'all','trans_sys','ts'}
   submat(2:2:end,2:2:2*ns) = submatsp*cc(2,2);
 
 % Dirichlet data/potential correpsonding to transmission rep
-case {'trans_rep','tr'} 
-
+case {'trans_rep','trep'} 
   coef = ones(2,1);
   if(nargin == 6); coef = varargin{1}; end;
   srcnorm = srcinfo.n(:,:);
@@ -276,7 +275,7 @@ case {'trans_rep','tr'}
   submat(1:1:end,2:2:2*ns) = coef(2)*submats;
 
 % Neumann data corresponding to transmission rep
-case {'trans_rep_prime','trp', 'trans_rep_p'}
+case {'trans_rep_prime','trep_p', 'trans_rep_p'}
   coef = ones(2,1);
   if(nargin == 6); coef = varargin{1}; end;
   targnorm = targinfo.n(:,:);
@@ -303,7 +302,7 @@ case {'trans_rep_prime','trp', 'trans_rep_p'}
   submat(1:1:end,2:2:2*ns) = coef(2)*submatsp;
 
 % Gradient correpsonding to transmission rep
-case {'trans_rep_grad','trg', 'trans_rep_g'}
+case {'trans_rep_grad','trep_g', 'trans_rep_g'}
   coef = ones(2,1);
   if(nargin == 6); coef = varargin{1}; end;
   

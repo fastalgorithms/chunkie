@@ -10,7 +10,8 @@ classdef kernel
 %      'laplace'    ('lap', 'l')                    's', 'd', 'sp', 'c'
 %      'helmholtz'  ('helm', 'h')                   's', 'd', 'sp', 'dp', 'c'
 %                                                   'cp'
-%      'helmholtz difference' ('helmdiff', 'hdiff') 's', 'd', 'sp', 'dp'
+%      'helmholtz difference'                       's', 'd', 'sp', 'dp'
+%         ('helmdiff', 'hdiff', 'helm_diff')
 %      'elasticity' ('elast', 'e')                  's', 'strac', 'd', 'dalt'
 %      'stokes'     ('stok', 's')                   'svel', 'spres', 
 %                                                   'strac', 'sgrad'
@@ -22,7 +23,7 @@ classdef kernel
 %      'axis sym helmholtz'                         's' 'd' 'sp' 'c'
 %         ('axissymh', 'axissymhelm')
 %      'axis sym helmholtz difference'              's' 'd' 'sp' 'dp'
-%         ('axissymhdiff', 'axissymhelmdiff') 
+%         ('axissymhdiff', 'axissymhelmdiff', 'axissymhelm_diff') 
 %      'quasiperiodic helmholtz'                    's', 'd', 'sp', 'dp', 'c'
 %         ('helmquas', 'hq')                        'cp'
 %   The types may also be written in longer form, e.g. 'single', 'double',
@@ -99,7 +100,7 @@ classdef kernel
                       obj = kernel.lap2d(varargin{:});
                   case {'helmholtz', 'helm', 'h'}
                       obj = kernel.helm2d(varargin{:});
-                  case {'helmholtz difference', 'helmdiff', 'hdiff'}
+                  case {'helmholtz difference', 'helmdiff', 'hdiff', 'helm_diff'}
                       obj = kernel.helm2ddiff(varargin{:});
                   case {'stokes', 'stok', 's'}
                       obj = kernel.stok2d(varargin{:});
@@ -112,7 +113,7 @@ classdef kernel
                   case {'axis sym helmholtz', 'axissymh', 'axissymhelm'}
                       obj = kernel.axissymhelm2d(varargin{:});
                   case {'axis sym helmholtz difference', 'axissymhdiff' ...
-                           'axissymhelmdiff'}
+                           'axissymhelmdiff', 'axissymhelm_diff'}
                       obj = kernel.axissymhelm2ddiff(varargin{:});   
                   case {'quasiperiodic helmholtz', 'helmquas', 'hq'}
                       obj = kernel.helm2dquas(varargin{:});   

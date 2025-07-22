@@ -109,6 +109,34 @@ case {'c', 'combined'}
     ny = repmat(srcnorm(2,:),nt,1);
     submat = -coef(1)*(grad(:,:,1).*nx + grad(:,:,2).*ny) + coef(2)*s;
 
+% normal derivative of combined field
+case {'cprime','cp'}
+    if ~isfield(targinfo,'n')
+        targnorm = chnk.normal2d(targinfo);
+    else
+        targnorm = targinfo.n;
+    end
+    if ~isfield(srcinfo,'n')
+        srcnorm = chnk.normal2d(srcinfo);
+    else
+        srcnorm = srcinfo.n;
+    end
+    coef = ones(2,1);
+    if(nargin == 4); coef = varargin{1}; end
+    [~,grad,hess] = chnk.lap2d.green(src,targ);
+    nxsrc = repmat(srcnorm(1,:),nt,1);
+    nysrc = repmat(srcnorm(2,:),nt,1);
+    nxtarg = repmat((targnorm(1,:)).',1,ns);
+    nytarg = repmat((targnorm(2,:)).',1,ns);
+    submatdp = -(hess(:,:,1).*nxsrc.*nxtarg + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
+      + hess(:,:,3).*nysrc.*nytarg);
+
+    % S'
+    submatsp = (grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
+    
+    submat = coef(1)*submatdp + coef(2)*submatsp;
+
+
 % gradient of combined field
 case {'cgrad', 'cg'}
     if ~isfield(srcinfo,'n')

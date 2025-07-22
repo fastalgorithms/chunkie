@@ -25,6 +25,33 @@ function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts)
 %   parameter ETA, i.e., COEFS(1)*KERNEL.HELM2DQUAS('dp', ZK, KAPPA, D) + 
 %      COEFS(2)*KERNEL.HELM2DQUAS('sp', ZK, KAPPA, D).
 %
+%   KERNEL.HELM2DQUAS('all', ZK, KAPPA, D, COEFS) or 
+%   KERNEL.HELM2DQUAS('tsys', ZK, KAPPA, D, COEFS)
+%   constructs the (2x2) matrix of kernels [D, S; D' S'] scaled by coefs
+%   where coefs is (2x2) matrix, i.e. D part is scaled as
+%   COEFS(1,1)*KERNEL.HELM2DQUAS('d', zk), and so on.
+%
+%   KERNEL.HELM2DQUAS('trans_rep', ZK, KAPPA, D, COEFS) or 
+%   KERNEL.HELM2DQUAS('trep', ZK, KAPPA, D, COEFS) 
+%   constructs the transmission repretsentation, i.e. the (1x2) matrix of
+%   kernels [D, S] scaled by coefs where coefs is (1x2) matrix, i.e. D part
+%   is scaled as COEFS(1)*KERNEL.HELM2D('d', zk), and so on.
+%
+%   KERNEL.HELM2DQUAS('trans_rep_p', ZK, KAPPA, D, COEFS) or 
+%   KERNEL.HELM2DQUAS('trep_p', ZK, KAPPA, D, COEFS) 
+%   constructs the derivative of the transmission repretsentation, i.e. the
+%   (1x2) matrix of kernels [D', S'] scaled by coefs where coefs is (1x2)
+%   matrix, i.e. D part is scaled as 
+%   COEFS(1)*KERNEL.HELM2DQUAS('dp', zk, KAPPA, D), and so on.
+%
+%   KERNEL.HELM2DQUAS('c2trans', ZK, KAPPA, D, COEFS) or 
+%   KERNEL.HELM2DQUAS('c2t', ZK, KAPPA, D, COEFS) 
+%   evaluates the combined-layer Helmholtz kernel and its derivative, i.e.
+%   the (2x1) matrix of kernels [C; C'] scaled by coefs where coefs is
+%   (2x2) matrix, i.e. kernel returns 
+%   [COEFS(1,1)*KERNEL.HELM2DQUAS('d',zk, KAPPA, D)+COEFS(1,2)*KERNEL.HELM2DQUAS('s', zk, KAPPA, D); 
+%   COEFS(2,1)*KERNEL.HELM2DQUAS('dp',zk, KAPPA, D)+COEFS(2,2)*KERNEL.HELM2DQUAS('sp', zk, KAPPA, D)]
+%
 %   if kappa is an array of values of length nkappa then the kernel 
 %   becomes an (nkappa x 1) vector-valued kernel containing the scalar values
 %   for each kappa. this is much more efficient than separate kernel 
@@ -155,6 +182,50 @@ switch lower(type)
         obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'cprime',quas_param, coefs);
         obj.fmm = [];
         obj.sing = 'hs';
+
+    case {'all', 'trans_sys', 'tsys'}
+        if ( nargin < 3 )
+            warning('Missing transmission coefficients. Defaulting to [1,1;1,1].');
+            coefs = ones(2,2);
+        end
+        obj.type = 'all';
+        obj.opdims = [2,2];
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'all',quas_param, coefs);
+        obj.fmm  = []; 
+        obj.sing = 'hs'; 
+    
+    case {'trans_rep','trep'} 
+        if ( nargin < 3 )
+            warning('Missing transmission coefficients. Defaulting to [1;1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'trep';
+        obj.opdims = [1,2];
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'trep',quas_param, coefs);
+        obj.fmm  = []; 
+        obj.sing = 'pv'; 
+    
+    case {'trans_rep_prime','trep_p', 'trans_rep_p'}
+        if ( nargin < 3 )
+            warning('Missing transmission coefficients. Defaulting to [1;1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'trep_p';
+        obj.opdims = [1,2];
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'trep_p',quas_param, coefs);
+        obj.fmm  = []; 
+        obj.sing = 'hs'; 
+
+    case {'c2trans', 'c2t', 'c2tr'}
+        if ( nargin < 3 )
+            warning('Missing combined layer coefficients. Defaulting to [1,1i;1,1i].');
+            coefs =  [1,1i;1,1i];
+        end
+        obj.type = 'c2tr';
+        obj.opdims = [2,1];
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c2t',quas_param, coefs);
+        obj.fmm  = []; 
+        obj.sing = 'hs'; 
 
     otherwise
         error('Unknown Helmholtz kernel type ''%s''.', type);

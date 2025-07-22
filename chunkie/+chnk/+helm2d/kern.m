@@ -330,7 +330,7 @@ case {'c2trans_diff', 'c2t_diff', 'c2tr_diff'}
   submat(2:2:2*nt,:) = coef(1)*submatdp + coef(2)*submatsp;
 
 % all kernels, [c11 D, c12 S; c21 D', c22 S'] 
-case {'all','trans_sys','ts'}
+case {'all','trans_sys','tsys'}
  
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
@@ -391,7 +391,7 @@ case {'all_diff','trans_sys_diff','ts_diff'}
   submat(2:2:2*nt,2:2:2*ns) = submatsp*cc(2,2);
 
 % Dirichlet data/potential correpsonding to transmission rep
-case {'trans_rep','tr'} 
+case {'trans_rep','trep'} 
 
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
@@ -406,7 +406,7 @@ case {'trans_rep','tr'}
   submat(1:1:1*nt,2:2:2*ns) = coef(2)*submats;
 
 % Dirichlet data/potential correpsonding to transmission rep (difference)
-case {'trans_rep_diff','tr_diff'} 
+case {'trans_rep_diff','trep_diff'} 
 
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
@@ -421,7 +421,7 @@ case {'trans_rep_diff','tr_diff'}
   submat(1:1:1*nt,2:2:2*ns) = coef(2)*submats;
 
 % Neumann data corresponding to transmission rep
-case {'trans_rep_prime','trp', 'trans_rep_p'}
+case {'trans_rep_prime','trep_p', 'trans_rep_p'}
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
   targnorm = targinfo.n(:,:);
@@ -448,7 +448,7 @@ case {'trans_rep_prime','trp', 'trans_rep_p'}
   submat(1:1:1*nt,2:2:2*ns) = coef(2)*submatsp;
 
 % Neumann data corresponding to transmission rep (difference)
-case {'trans_rep_prime_diff','trp_diff', 'trans_rep_p_diff'}
+case {'trans_rep_prime_diff','trep_p_diff', 'trans_rep_p_diff'}
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
   targnorm = targinfo.n(:,:);
@@ -475,7 +475,7 @@ case {'trans_rep_prime_diff','trp_diff', 'trans_rep_p_diff'}
   submat(1:1:1*nt,2:2:2*ns) = coef(2)*submatsp;
 
 % Gradient correpsonding to transmission rep
-case {'trans_rep_grad','trg','trans_rep_g'}
+case {'trans_rep_grad','trep_g','trans_rep_g'}
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
   
@@ -500,7 +500,7 @@ case {'trans_rep_grad','trg','trans_rep_g'}
 
 
 % Gradient correpsonding to transmission rep (difference)
-case {'trans_rep_grad_diff','trg_diff','trans_rep_g_diff'}
+case {'trans_rep_grad_diff','trep_g_diff','trans_rep_g_diff'}
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end;
   
