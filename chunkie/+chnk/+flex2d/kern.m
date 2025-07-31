@@ -425,6 +425,41 @@ if strcmpi(type, 'free_plate_eval')
 
 end
 
+% free plate rep to 1st bcs (normal derivative)
+if strcmpi(type, 'free_plate_bc1')           
+   srcnorm = srcinfo.n;
+   srctang = srcinfo.d;
+   nu = varargin{1};
+
+   targnorm = targinfo.n;
+
+   [~,grad,hess] = chnk.flex2d.hkdiffgreen(zk,src,targ); 
+   nx = repmat(srcnorm(1,:),nt,1);
+   ny = repmat(srcnorm(2,:),nt,1);
+
+   nxtarg = repmat((targnorm(1,:)).',1,ns);
+   nytarg = repmat((targnorm(2,:)).',1,ns);
+
+
+   dx = repmat(srctang(1,:),nt,1);
+   dy = repmat(srctang(2,:),nt,1);
+
+   ds = sqrt(dx.*dx+dy.*dy);
+
+   taux = dx./ds; 
+   tauy = dy./ds;
+  
+   K1 = (-1/(2*zk^2).*(hess(:, :, 1).*(nx.*nxtarg) + hess(:, :, 2).*(nx.*nytarg+ny.*nxtarg)+ hess(:, :, 3).*ny.*nytarg)); 
+   K1H = ((1 + nu)/2).*(-1/(2*zk^2).*(hess(:, :, 1).*(nxtarg.*taux)+hess(:, :, 2).*(nxtarg.*tauy+nytarg.*taux) + hess(:, :, 2).*tauy.*nytarg));                    % G_{tauy}
+   K2 = 1/(2*zk^2).*(grad(:, :, 1).*(nxtarg) + grad(:, :, 2).*nytarg);
+
+   submat = zeros(nt,3*ns);
+   submat(:,1:3:end) = K1;
+   submat(:,2:3:end) = K1H;
+   submat(:,3:3:end) = K2;
+
+end
+
 %%% SUPPORTED PLATE KERNELS
 
 % boundary conditions applied to a point source
