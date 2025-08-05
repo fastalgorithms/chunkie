@@ -103,6 +103,8 @@ classdef kernel
                       obj = kernel.helm2ddiff(varargin{:});
                   case {'stokes', 'stok', 's'}
                       obj = kernel.stok2d(varargin{:});
+                  case {'ostokes', 'ostok', 'os'}
+                      obj = kernel.ostok2d(varargin{:});    
                   case {'elasticity', 'elast', 'e'}
                       obj = kernel.elast2d(varargin{:});
                   case {'zeros', 'zero', 'z'}
@@ -158,6 +160,7 @@ classdef kernel
         obj = helm2d(varargin);
         obj = helm2ddiff(varargin);
         obj = stok2d(varargin);
+        obj = ostok2d(varargin);
         obj = elast2d(varargin);
         obj = axissymhelm2d(varargin);
         obj = axissymhelm2ddiff(varargin);
