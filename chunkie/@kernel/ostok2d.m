@@ -31,6 +31,26 @@ switch lower(type)
         obj.fmm = [];
         obj.opdims = [2, 2];
         obj.sing = 'log';
+    case {'dvel', 'dvelocity', 'd', 'double'}
+        obj.type = 'dvel';
+        obj.eval = @(s,t) chnk.ostok2d.kern(zk, s, t, 'd');
+        obj.fmm = [];
+        obj.opdims = [2, 2];
+        obj.sing = 'log';
+
+    case {'sp', 'sprime'}
+        obj.type = 'sp';
+        obj.eval = @(s,t) chnk.ostok2d.kern(zk, s, t, 'sp');
+        obj.fmm = [];
+        obj.opdims = [2, 2];
+        obj.sing = 'log';
+
+    case {'sinkv', 'sink-vel'}
+        obj.type = 'sinkv';
+        obj.eval = @(s,t) chnk.ostok2d.kern(zk, s, t, 'sinkv');
+        obj.fmm = [];
+        obj.opdims = [2, 1];
+        obj.sing = 'log';
     otherwise
         error('Unknown Oscillatory Stokes kernel type ''%s''.', type);
 
