@@ -1,4 +1,4 @@
-function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts)
+function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts, ising)
 %KERNEL.HELM2DQUAS   Construct the quasi periodic Helmholtz kernel.
 %   KERNEL.HELM2DQUAS('s', ZK, KAPPA, D) or 
 %   KERNEL.HELM2DQUAS('single', ZK, KAPPA, D) constructs the
@@ -59,7 +59,7 @@ obj.opdims = [numel(kappa) 1];
 % lattice sum parameters
 l=2; N = 40; a = 15; M = 1e4;
 
-if nargin == 6
+if nargin >= 6
     if isfield(quad_opts,'l')
         l = quad_opts.l;
     end
@@ -72,6 +72,10 @@ if nargin == 6
     if isfield(quad_opts,'a')
         a = quad_opts.a;
     end
+end
+
+if nargin < 7
+    ising = 1;
 end
 
 ns = (0:N).';
@@ -89,37 +93,37 @@ switch lower(type)
 
     case {'s', 'single'}
         obj.type = 's';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 's',quas_param);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 's',quas_param,ising);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0]};
         obj.splitinfo.action = {'r','r'};
-        obj.splitinfo.functions = @(s,t) helm2dquas_s_split(zk,s,t,quas_param);
+        obj.splitinfo.functions = @(s,t) helm2dquas_s_split(zk,s,t,quas_param,ising);
         end
 
     case {'d', 'double'}
         obj.type = 'd';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'd',quas_param);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'd',quas_param,ising);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r','r'};
-        obj.splitinfo.functions = @(s,t) helm2dquas_d_split(zk,s,t,quas_param);
+        obj.splitinfo.functions = @(s,t) helm2dquas_d_split(zk,s,t,quas_param,ising);
         end
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'sprime',quas_param);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'sprime',quas_param,ising);
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'dprime',quas_param);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'dprime',quas_param,ising);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -130,14 +134,14 @@ switch lower(type)
         end
         obj.type = 'c';
         obj.params.coefs = coefs;
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c',quas_param, coefs);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c',quas_param,coefs,ising);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r','r'};
-        obj.splitinfo.functions = @(s,t) helm2dquas_c_split(zk,s,t,quas_param,coefs);
+        obj.splitinfo.functions = @(s,t) helm2dquas_c_split(zk,s,t,quas_param,coefs,ising);
         end
 
     case {'cp', 'cprime'}
@@ -147,7 +151,7 @@ switch lower(type)
         end
         obj.type = 'cprime';
         obj.params.coefs = coefs;
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'cprime',quas_param, coefs);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'cprime',quas_param,coefs,ising);
         obj.fmm = [];
         obj.sing = 'hs';
 
