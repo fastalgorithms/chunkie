@@ -100,8 +100,8 @@ alpha = (exp(1i*kappa(:)*d));
 val_near= zeros(nkappa,nptclose);
 grad_near = zeros(nkappa,nptclose,2);
 hess_near = zeros(nkappa,nptclose,3);
+ls = -l:l;
 if ~isempty(rxclose)
-    ls = -l:l;
     for i = ls
         if ising == 1
             iuse = true(nptclose,1);
@@ -204,9 +204,11 @@ if nargout == 1
     if ising == 0
         isub = (abs(nx) > max(ls)) | ifar;
 
+        if any(isub)
         vali = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         val(:,isub,:) = val(:,isub,:) - vali;
+        end
     end
 
     val = reshape(val,nkappa*ntarg,nsrc);
@@ -217,11 +219,13 @@ elseif nargout == 2
     if ising == 0
         isub = (abs(nx) > max(ls)) | ifar;
     
+        if any(isub)
         [vali, gradi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         gradi = reshape(gradi,1,[],2);
         val(:,isub,:) = val(:,isub,:) - vali;
         grad(:,isub,:) = grad(:,isub,:) - gradi;
+        end
     end
 
     val = reshape(val,nkappa*ntarg,nsrc);
@@ -234,6 +238,7 @@ elseif nargout == 3
     if ising == 0
         isub = (abs(nx) > max(ls)) | ifar;
 
+        if any(isub)
         [vali, gradi, hessi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         gradi = reshape(gradi,1,[],2);
@@ -242,6 +247,7 @@ elseif nargout == 3
         val(:,isub,:) = val(:,isub,:) - vali;
         grad(:,isub,:) = grad(:,isub,:) - gradi;
         hess(:,isub,:) = hess(:,isub,:) - hessi;
+        end
     end
 
     val = reshape(val,nkappa*ntarg,nsrc);

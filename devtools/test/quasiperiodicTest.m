@@ -87,6 +87,25 @@ c2trval_assemb = zeros(size(c2trval));
 c2trval_assemb(1:2, :) = coefs(1)*dval + coefs(2)*sval;
 c2trval_assemb(3:end, :) = coefs(1)*dpval + coefs(2)*spval;
 assert(norm(c2trval_assemb-c2trval) <  1e-12)
+
+
+skern1a = kernel('hq','s',zk,kappa,d,[],[],0);
+skern1b = kernel('h','s',zk);
+sval1 = skern1a.eval(src,targ) + skern1b.eval(src,targ);
+assert(norm(sval-sval1) <  1e-12)
+
+dkern1a = kernel('hq','d',zk,kappa,d,[],[],0);
+dkern1b = kernel('h','d',zk);
+dval1 = dkern1a.eval(src,targ) + dkern1b.eval(src,targ);
+assert(norm(dval-dval1) <  1e-12)
+
+allkern1a = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'all',quas_param,coefa,0));
+allkern1b = kernel(@(s,t) chnk.helm2d.kern(zk,s,t,'all',coefa));
+allval1a = allkern1a.eval(src,targ);
+allval1b = allkern1b.eval(src,targ); 
+allval1b = reshape(allval1b,1,2,2); allval1b = repmat(allval1b,length(kappa),1,1);
+allval1b = reshape(allval1b,length(kappa)*2,2);
+assert(norm(allval1a+allval1b -allval) <  1e-12)
 end
 
 
