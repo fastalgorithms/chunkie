@@ -99,6 +99,8 @@ classdef kernel
                       obj = kernel.lap2d(varargin{:});
                   case {'helmholtz', 'helm', 'h'}
                       obj = kernel.helm2d(varargin{:});
+                  case {'helmholtz_sheet', 'helm_sheet', 'h_sheet'}
+                      obj = kernel.helm2d_sheet(varargin{:});    
                   case {'helmholtz difference', 'helmdiff', 'hdiff'}
                       obj = kernel.helm2ddiff(varargin{:});
                   case {'stokes', 'stok', 's'}
@@ -156,6 +158,7 @@ classdef kernel
 
         obj = lap2d(varargin);
         obj = helm2d(varargin);
+        obj = helm2d_sheet(varargin);
         obj = helm2ddiff(varargin);
         obj = stok2d(varargin);
         obj = elast2d(varargin);
