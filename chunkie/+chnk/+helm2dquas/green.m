@@ -202,7 +202,7 @@ if nargout == 1
     val = quasi_phase.*val;
 
     if ising == 0
-        isub = (abs(nx) > max(ls)) | ifar;
+        isub = (abs(nx(:)) > max(ls)) | ifar;
 
         if any(isub)
         vali = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
@@ -217,7 +217,7 @@ elseif nargout == 2
     grad = quasi_phase.*grad;
     
     if ising == 0
-        isub = (abs(nx) > max(ls)) | ifar;
+        isub = (abs(nx(:)) > max(ls)) | ifar;
     
         if any(isub)
         [vali, gradi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
@@ -236,7 +236,7 @@ elseif nargout == 3
     hess = quasi_phase.*hess;
     
     if ising == 0
-        isub = (abs(nx) > max(ls)) | ifar;
+        isub = (abs(nx(:)) > max(ls)) | ifar;
 
         if any(isub)
         [vali, gradi, hessi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
