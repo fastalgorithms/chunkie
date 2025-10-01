@@ -8,7 +8,7 @@ r2 = rx.^2 + ry.^2;
 
 switch lower(type)
 
-    case {'svel', 's'}
+    case {'svel', 's', 'single'}
 
         r = sqrt(r2);
         log1r = log(1./r);
@@ -65,7 +65,7 @@ switch lower(type)
             varargout = {Kxx, Kxy, Kyy};
         end
     
-    case 'sgrad'
+    case {'sgrad', 'sg'}
         r4 = r2.^2;
         r4inv = 1./r4./(4*pi*mu);
         Ku1x1 = rx.*(ry.^2 - rx.^2).*r4inv;
@@ -100,7 +100,7 @@ switch lower(type)
 
 
 
-    case {'dvel', 'd'}
+    case {'dvel', 'd', 'double'}
 
         r4 = r2.^2;
         nx = srcinfo.n(1,:);
@@ -182,7 +182,8 @@ switch lower(type)
         else
             varargout = {Kxx, Kxy, Kyy};
         end
-    case 'dgrad'
+
+    case {'dgrad', 'dg'}
         r4 = r2.^2;
         r6 = r2.^3;
         nx = srcinfo.n(1,:);
@@ -224,7 +225,7 @@ switch lower(type)
         end
 
 
-    case 'c'
+    case {'c', 'combined'}
 
         coefs = varargin{1};
         [Sxx, Sxy, Syy] = chnk.stok2d.kern(mu, srcinfo, targinfo, 's');
@@ -244,6 +245,7 @@ switch lower(type)
         else
             varargout = {Kxx, Kxy, Kyy};
         end
+
     case 'cpres'
 
         coefs = varargin{1};
@@ -282,7 +284,8 @@ switch lower(type)
         else
             varargout = {Kxx, Kxy, Kyy};
         end
-    case 'cgrad'
+
+    case {'cgrad', 'cg'}
         coefs = varargin{1};
         [Su1x1, Su1x2, Su1y1, Su1y2, Su2x1, Su2x2, Su2y1, Su2y2] = ...
            chnk.stok2d.kern(mu, srcinfo, targinfo, 'sgrad');
