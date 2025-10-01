@@ -379,6 +379,7 @@ classdef chunker
         obj = mtimes(A,obj)
         obj = rotate(obj,theta,r0,r1)
         obj = reflect(obj,theta,r0,r1)
+        du = arclengthder(obj,u)
     end
     methods(Static)
         obj = chunkerfunc(fcurve,varargin)
