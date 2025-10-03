@@ -145,6 +145,7 @@ if ~isempty(rxclose)
         Js(:,i) = besselj(ns_use(i),zk*rclose);
         end
     end
+    % t1 = tic;
     eip = (rxclose+1i*ryclose)./rclose;
     eipn = reshape(eip.^ns,1,[], N+1);
     cs = (eipn+1./eipn)/2;
@@ -152,15 +153,18 @@ if ~isempty(rxclose)
     Js = reshape(Js,1,[],N+3);
     sn = reshape(sn,nkappa, 1, N+1);
     
-    val_far = 0.25*1i*Js(:,:,1).*sn(:,:,1) + 0.5*1i*sum(sn(:,:,2:end).*Js(:,:,2:end-2).*cs(:,:,2:end),3);
+    tmp = reshape(Js(:,:,2:end-2).*cs(:,:,2:end),[],N);
+    val_far = 0.25*1i*Js(:,:,1).*sn(:,:,1) + 0.5*1i*sn(:,2:end)*tmp.';
     val(:,iclose) = val_near+val_far;
     
     if nargout >1
         DJs = cat(3,-Js(:,:,2),.5*(Js(:,:,1:end-3)-Js(:,:,3:end-1)))*zk;
         ss = (eipn-1./eipn)/2i;
             
-        grad_far_p = 0.25*1i*DJs(:,:,1).*sn(:,:,1) + 0.5*1i*sum(sn(:,:,2:end).*DJs(:,:,2:end).*cs(:,:,2:end),3);
-        grad_far_t = (0.5*1i*sum(-reshape((1:N),1,1,[]).*sn(:,:,2:end).*Js(:,:,2:end-2).*ss(:,:,2:end),3))./rclose.';
+        tmp = reshape(DJs(:,:,2:end).*cs(:,:,2:end),[],N);
+        grad_far_p = 0.25*1i*DJs(:,:,1).*sn(:,:,1) + 0.5*1i*sn(:,2:end)*tmp.';
+        tmp = reshape(Js(:,:,2:end-2).*ss(:,:,2:end),[],N)./rclose;
+        grad_far_t = (0.5*1i*((-reshape((1:N),1,[]).*sn(:,2:end))*tmp.'));
         
         grad_far = cat(3,cs(:,:,2).*grad_far_p - ss(:,:,2).*grad_far_t, ss(:,:,2).*grad_far_p + cs(:,:,2).*grad_far_t);
         grad(:,iclose,:) = grad_near + grad_far; 
@@ -175,24 +179,70 @@ if ~isempty(rxclose)
         tmp_n = rclose.^(-4).*(-ns.*ryclose.*Js(:,:,1:end-2).*(ns.*ryclose.*cs+2*rxclose.*ss)+ ...
             rclose.*ryclose.*(ryclose.*cs + 2*ns.*rxclose.*ss).*DJs+ ...
             rclose.^2.*rxclose.^2.*cs.*DDJs);
-        hess_far_xx = 0.25*1i*tmp_n(:,:,1).*sn(:,:,1)+.5*1i*sum(sn(:,:,2:end).*tmp_n(:,:,2:end),3);
+        tmp_n = reshape(tmp_n,[],N+1);
+        hess_far_xx = 0.25*1i*tmp_n(:,1).'.*sn(:,1)+.5*1i*sn(:,2:end)*tmp_n(:,2:end).';
 
         tmp_n = ns.*Js(:,:,1:end-2).*(ns.*rxclose.*ryclose.*cs+(rxclose.^2-ryclose.^2).*ss).*rclose.^(-4) ...
             +rclose.^(-3).*(-(rxclose.*ryclose.*cs+ns.*(rxclose.^2-ryclose.^2).*ss).*DJs+...
             rclose.*rxclose.*ryclose.*cs.*DDJs);
 
-
-        hess_far_xy = 0.25*1i*tmp_n(:,:,1).*sn(:,:,1)+.5*1i*sum(sn(:,:,2:end).*tmp_n(:,:,2:end),3);
+        tmp_n = reshape(tmp_n,[],N+1);
+        hess_far_xy = 0.25*1i*tmp_n(:,1).'.*sn(:,1)+.5*1i*sn(:,2:end)*tmp_n(:,2:end).';
 
         tmp_n = rclose.^(-4).*(-ns.*rxclose.*Js(:,:,1:end-2).*(ns.*rxclose.*cs-2*ryclose.*ss)+ ...
             rclose.*rxclose.*(rxclose.*cs - 2*ns.*ryclose.*ss).*DJs+ ...
             rclose.^2.*ryclose.^2.*cs.*DDJs);
-        hess_far_yy = 0.25*1i*tmp_n(:,:,1).*sn(:,:,1)+.5*1i*sum(sn(:,:,2:end).*tmp_n(:,:,2:end),3);
+        tmp_n = reshape(tmp_n,[],N+1);
+        hess_far_yy = 0.25*1i*tmp_n(:,1).'.*sn(:,1)+.5*1i*sn(:,2:end)*tmp_n(:,2:end).';
 
         hess_far = cat(3,hess_far_xx, hess_far_xy, hess_far_yy);
 
         hess(:,iclose,:) = hess_near + hess_far;
     end
+
+
+    % val_far = 0.25*1i*Js(:,:,1).*sn(:,:,1) + 0.5*1i*sum(sn(:,:,2:end).*Js(:,:,2:end-2).*cs(:,:,2:end),3);
+    % val(:,iclose) = val_near+val_far;
+    % 
+    % if nargout >1
+    %     DJs = cat(3,-Js(:,:,2),.5*(Js(:,:,1:end-3)-Js(:,:,3:end-1)))*zk;
+    %     ss = (eipn-1./eipn)/2i;
+    % 
+    %     grad_far_p = 0.25*1i*DJs(:,:,1).*sn(:,:,1) + 0.5*1i*sum(sn(:,:,2:end).*DJs(:,:,2:end).*cs(:,:,2:end),3);
+    %     grad_far_t = (0.5*1i*sum(-reshape((1:N),1,1,[]).*sn(:,:,2:end).*Js(:,:,2:end-2).*ss(:,:,2:end),3))./rclose.';
+    % 
+    %     grad_far = cat(3,cs(:,:,2).*grad_far_p - ss(:,:,2).*grad_far_t, ss(:,:,2).*grad_far_p + cs(:,:,2).*grad_far_t);
+    %     grad(:,iclose,:) = grad_near + grad_far; 
+    % end
+    % if nargout > 2
+    %     DDJs = cat(3,.5*(Js(:,:,3)-Js(:,:,1)),.25*(Js(:,:,4)-3*Js(:,:,2)),.25*(Js(:,:,1:end-4)-2*Js(:,:,3:end-2)+Js(:,:,5:end)))*zk^2;
+    %     rclose = rclose.';
+    %     rxclose = rxclose.';
+    %     ryclose = ryclose.';
+    %     ns = reshape(ns,1,1,[]);
+    % 
+    %     tmp_n = rclose.^(-4).*(-ns.*ryclose.*Js(:,:,1:end-2).*(ns.*ryclose.*cs+2*rxclose.*ss)+ ...
+    %         rclose.*ryclose.*(ryclose.*cs + 2*ns.*rxclose.*ss).*DJs+ ...
+    %         rclose.^2.*rxclose.^2.*cs.*DDJs);
+    %     hess_far_xx = 0.25*1i*tmp_n(:,:,1).*sn(:,:,1)+.5*1i*sum(sn(:,:,2:end).*tmp_n(:,:,2:end),3);
+    % 
+    %     tmp_n = ns.*Js(:,:,1:end-2).*(ns.*rxclose.*ryclose.*cs+(rxclose.^2-ryclose.^2).*ss).*rclose.^(-4) ...
+    %         +rclose.^(-3).*(-(rxclose.*ryclose.*cs+ns.*(rxclose.^2-ryclose.^2).*ss).*DJs+...
+    %         rclose.*rxclose.*ryclose.*cs.*DDJs);
+    % 
+    % 
+    %     hess_far_xy = 0.25*1i*tmp_n(:,:,1).*sn(:,:,1)+.5*1i*sum(sn(:,:,2:end).*tmp_n(:,:,2:end),3);
+    % 
+    %     tmp_n = rclose.^(-4).*(-ns.*rxclose.*Js(:,:,1:end-2).*(ns.*rxclose.*cs-2*ryclose.*ss)+ ...
+    %         rclose.*rxclose.*(rxclose.*cs - 2*ns.*ryclose.*ss).*DJs+ ...
+    %         rclose.^2.*ryclose.^2.*cs.*DDJs);
+    %     hess_far_yy = 0.25*1i*tmp_n(:,:,1).*sn(:,:,1)+.5*1i*sum(sn(:,:,2:end).*tmp_n(:,:,2:end),3);
+    % 
+    %     hess_far = cat(3,hess_far_xx, hess_far_xy, hess_far_yy);
+    % 
+    %     hess(:,iclose,:) = hess_near + hess_far;
+    % end
+    % toc(t1);
 end
 
 quasi_phase = exp(1i*kappa(:)*nx(:).'*d);
