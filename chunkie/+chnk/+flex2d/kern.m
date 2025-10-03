@@ -98,14 +98,13 @@ targ = targinfo.r;
 
 %%% STANDARD LAYER POTENTIALS
 
-if strcmpi(type, 's') % flexural wave single layer
+switch lower(type)
+case {'s', 'single'} % flexural wave single layer
 
    val = chnk.flex2d.hkdiffgreen(zk,src,targ);  
    submat = 1/(2*zk^2).*val;
 
-end
-
-if strcmpi(type, 'sprime') % normal derivative of flexural wave single layer
+case {'sp', 'sprime'} % normal derivative of flexural wave single layer
 
    targnorm = targinfo.n;
    nxtarg = repmat((targnorm(1,:)).',1,ns);
@@ -114,12 +113,10 @@ if strcmpi(type, 'sprime') % normal derivative of flexural wave single layer
    [~,grad] = chnk.flex2d.hkdiffgreen(zk,src,targ);  
    submat = 1/(2*zk^2).*(grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
 
-end
-
 %%% CLAMPED PLATE KERNELS
 
 % boundary conditions applied to a point source
-if strcmpi(type, 'clamped_plate_bcs')
+case {'clamped_plate_bcs'}
     nxtarg = targinfo.n(1,:).'; 
     nytarg = targinfo.n(2,:).';  
     submat = zeros(2*nt,ns);
@@ -131,10 +128,9 @@ if strcmpi(type, 'clamped_plate_bcs')
    
     submat(1:2:end,:) = firstbc;
     submat(2:2:end,:) = secondbc;
-end
 
 % kernels for the clamped plate integral equation
-if strcmpi(type, 'clamped_plate')
+case {'clamped_plate'}
    srcnorm = srcinfo.n;
    srctang = srcinfo.d;
    targnorm = targinfo.n;
@@ -195,10 +191,9 @@ if strcmpi(type, 'clamped_plate')
     
   submat(2:2:end,1:2:end) = K21;
   submat(2:2:end,2:2:end) = K22;
-end
 
 % clamped plate kernels for plotting
-if strcmpi(type, 'clamped_plate_eval')
+case {'clamped_plate_eval'}
 
     submat = zeros(nt,2*ns);
 
@@ -226,13 +221,11 @@ if strcmpi(type, 'clamped_plate_eval')
     submat(:,1:2:end) = K1;
     submat(:,2:2:end) = K2;
 
-end
-
 
 %%% FREE PLATE KERNELS
 
 % boundary conditions applied to a point source
-if strcmpi(type, 'free_plate_bcs')
+case {'free_plate_bcs'}
     targnorm = targinfo.n;
     targtang = targinfo.d;
     targd2 = targinfo.d2;
@@ -274,10 +267,8 @@ if strcmpi(type, 'free_plate_bcs')
     submat(1:2:end,:) = firstbc;
     submat(2:2:end,:) = secondbc;
 
-end
-
 % kernels for the free plate integral equation 
-if strcmpi(type, 'free_plate')
+case {'free_plate'}
    srcnorm = srcinfo.n;
    srctang = srcinfo.d;
    targnorm = targinfo.n;
@@ -394,10 +385,8 @@ if strcmpi(type, 'free_plate')
     submat(3:4:end,1:2:end) = K11H;
     submat(4:4:end,1:2:end) = K21H;
 
-end
-
 % free plate kernels used for plotting 
-if strcmpi(type, 'free_plate_eval')           
+case {'free_plate_eval'}
    srcnorm = srcinfo.n;
    srctang = srcinfo.d;
    nu = varargin{1};
@@ -423,12 +412,10 @@ if strcmpi(type, 'free_plate_eval')
    submat(:,2:3:end) = K1H;
    submat(:,3:3:end) = K2;
 
-end
-
 %%% SUPPORTED PLATE KERNELS
 
 % boundary conditions applied to a point source
-if strcmpi(type, 'supported_plate_bcs')
+case {'supported_plate_bcs'}
     nxtarg = targinfo.n(1,:).'; 
     nytarg = targinfo.n(2,:).';  
     dx = targinfo.d(1,:).';
@@ -450,11 +437,10 @@ if strcmpi(type, 'supported_plate_bcs')
 
     submat(1:2:end,:) = firstbc;
     submat(2:2:end,:) = secondbc;
-end
 
 % kernels for the supported plate integral equation that have to be 
 % discretized using log quadrature
-if strcmpi(type, 'supported_plate_log')
+case {'supported_plate_log'}
     srcnorm = srcinfo.n;
     srctang = srcinfo.d;
     srcd2 = srcinfo.d2;
@@ -568,11 +554,9 @@ if strcmpi(type, 'supported_plate_log')
     submat(2:2:end,1:2:end) = K21; 
     submat(2:2:end,2:2:end) = K22; 
 
-end
-
 % the kernel for the supported plate integral equation that has to be 
 % discretized using smooth quadrature to avoid close evaluations
-if strcmpi(type, 'supported_plate_smooth')
+case {'supported_plate_smooth'}
     srcnorm = srcinfo.n;
     srctang = srcinfo.d;
     srcd2 = srcinfo.d2;
@@ -673,10 +657,8 @@ if strcmpi(type, 'supported_plate_smooth')
 
     submat(r2 == 0) = (nu - 1)*(12*kappa(r2 == 0).^3*(nu^2 - nu + 4) + kpp(r2 == 0)*(-5*nu^2 + 4*nu + 33))/(48*pi*(nu - 3)) ; % diagonal replacement
 
-end
-
 % supported plate kernels for plotting
-if strcmpi(type, 'supported_plate_eval')
+case {'supported_plate_eval'}
     srcnorm = srcinfo.n;
     srctang = srcinfo.d;
     srcd2 = srcinfo.d2;
