@@ -25,6 +25,11 @@ yt = repmat(targ(2,:).',1,nsrc);
 rx = xt-xs;
 ry = yt-ys;
 
+
+rx = rx(:);
+ry = ry(:);
+
+
 nx = fix(rx/d);
 rx = rx - nx*d;
 
@@ -35,10 +40,6 @@ ry2 = ry.*ry;
 r2 = rx2+ry2;
 
 r = sqrt(r2);
-
-rx = rx(:);
-ry = ry(:);
-r = r(:);
 
 npt = size(r,1);
 
@@ -255,7 +256,7 @@ if nargout == 1
         isub = (abs(nx(:)) > max(ls)) | ifar;
 
         if any(isub)
-        vali = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
+        vali = chnk.helm2d.green(zk,[0;0],[rx(isub).'+ nx(isub).'*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         val(:,isub,:) = val(:,isub,:) - vali;
         end

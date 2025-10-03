@@ -67,14 +67,15 @@ y = (t.r(2,:)).' - s.r(2,:);
 r2 = x.^2 + y.^2;
 r4 = r2.^2;
 
-if (strcmpi(type,'s'))
+switch lower(type)
+case {'s', 'single'}
     logr = beta*log(r2)/2;
     rirjor2 = (kron(gamma*x./r2,[1 0; 1 0]) + ...
         kron(gamma*y./r2,[0 1; 0 1])).* ...
         (kron(x,[1 1; 0 0]) + kron(y,[0 0; 1 1]));
     mat = kron(logr+gamma/2,eye(2)) + rirjor2;
-end
-if (strcmpi(type,'strac'))
+
+case {'strac'}
     dirx = t.n(1,:); dirx = dirx(:);
     diry = t.n(2,:); diry = diry(:);
     rdotv = dirx(:).*x + diry(:).*y;
@@ -85,8 +86,8 @@ if (strcmpi(type,'strac'))
         kron(y.*dirx./r2,[0 -1; 1 0]) + ...
         kron(rdotv./r2,[1 0; 0 1]));
     mat = term1+term2;
-end
-if (strcmpi(type,'sgrad'))
+
+case {'sgrad', 'sg'}
     mat = zeros(4*m,2*n);
     tmp = beta*x./r2;
     mat(1:4:end,1:2:end) = tmp;
@@ -116,8 +117,7 @@ if (strcmpi(type,'sgrad'))
     tmp = gamma*(2*r2.*y-y.^2.*(2*y))./r4;
     mat(4:4:end,2:2:end) = mat(4:4:end,2:2:end) + tmp;
     
-end
-if (strcmpi(type,'d'))
+case {'d', 'double'}
     dirx = s.n(1,:); dirx = dirx(:).';
     diry = s.n(2,:); diry = diry(:).';
     rdotv = x.*dirx + y.*diry;
@@ -128,9 +128,8 @@ if (strcmpi(type,'d'))
         kron(y.*dirx./r2,[0 1; -1 0]) + ...
         kron(rdotv./r2,[1 0; 0 1]));
     mat = -(term1+term2);
-end
 
-if (strcmpi(type,'dalt'))
+case {'dalt'}
     dirx = s.n(1,:); dirx = dirx(:).';
     diry = s.n(2,:); diry = diry(:).';
     rdotv = x.*dirx + y.*diry;
@@ -139,9 +138,8 @@ if (strcmpi(type,'dalt'))
         (kron(x,[1 1; 0 0]) + kron(y,[0 0; 1 1]));
     term1 = eta*(kron(rdotv./r2,[2 0; 0 2]));
     mat = -(term1+term2);
-end
 
-if (strcmpi(type,'daltgrad'))
+case {'daltgrad', 'daltg'}
     dirx = s.n(1,:); dirx = dirx(:).';
     diry = s.n(2,:); diry = diry(:).';
     rdotv = x.*dirx + y.*diry;
@@ -185,9 +183,7 @@ if (strcmpi(type,'daltgrad'))
         -2*eta*(diry./r2 - 2*rdotv.*y./r4);
     mat(4:4:end,2:2:end) = aij_xl;
 
-end
-
-if (strcmpi(type,'dalttrac'))
+case {'dalttrac'}
     dirx = s.n(1,:); dirx = dirx(:).';
     diry = s.n(2,:); diry = diry(:).';
     rdotv = x.*dirx + y.*diry;
@@ -239,7 +235,8 @@ if (strcmpi(type,'dalttrac'))
     tmp = mu*(matg(2:4:end,:) + matg(3:4:end,:));
     mat(1:2:end,:) = mat(1:2:end,:) + tmp.*n2 + 2*mu*matg(1:4:end,:).*n1;
     mat(2:2:end,:) = mat(2:2:end,:) + tmp.*n1 + 2*mu*matg(4:4:end,:).*n2;
-
+otherwise
+        error('Unknown elasticity kernel type ''%s''.', type);
 end
 
 end
