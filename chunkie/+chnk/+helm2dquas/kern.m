@@ -337,15 +337,11 @@ case {'trans_rep_grad','trep_g', 'trans_rep_g'}
   if(nargin >= 6); coef = varargin{1}; end;
   
   srcnorm = srcinfo.n(:,:);
-  
-  % submat = zeros(nt,ns,6);
-  % S
+
   [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
 
   nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
   nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
-  % D
-  % submatd  = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
 
   submat = zeros(nkappa,2,nt,2*ns);
   
@@ -354,7 +350,7 @@ case {'trans_rep_grad','trep_g', 'trans_rep_g'}
     
   submat(:,2,:,1:2:2*ns) = reshape(-coef(1)*(hess(:,:,2).*nxsrc + hess(:,:,3).*nysrc),nkappa,1,nt,ns);
   submat(:,2,:,2:2:2*ns) = reshape(coef(2)*grad(:,:,2),nkappa,1,nt,ns);
-  submat = reshape(submat,nkappa*2*nt,2*ns);
+  submat = reshape(permute(submat,[1,3,2,4]),nkappa*2*nt,2*ns);
   
 
 otherwise
