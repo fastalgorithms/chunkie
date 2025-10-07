@@ -283,13 +283,13 @@ end
 
 % smooth for sufficiently far, adaptive otherwise
 
-rho = 1.8;
-optsflag = [];  optsflag.rho = rho;
-flag = flagnear_rectangle(chnkr,targinfo.r,optsflag);
+%rho = 1.8;
+%optsflag = [];  optsflag.rho = rho;
+%flag = flagnear_rectangle(chnkr0,targinfo0.r,optsflag);
 
-npoly = chnkr.k*2;
-nlegnew = chnk.ellipse_oversample(rho,npoly,eps);
-nlegnew = max(nlegnew,chnkr.k);
+%npoly = chnkr.k*2;
+%nlegnew = chnk.ellipse_oversample(rho,npoly,eps);
+%nlegnew = max(nlegnew,chnkr.k);
 
 
 spmat = chunkerkernevalmat_adap(chnkr0,kern0,opdims0, ...
@@ -299,8 +299,8 @@ spmat = chunkerkernevalmat_adap(chnkr0,kern0,opdims0, ...
 if corrections
     % TODO: find more elegant solution that avoids building a dense flag matrix
     flaginv = ~flag;
-    mat0 = spmat - chunkerkernevalmat_smooth(chnkr0,kern0,opdims0,targinfo0, ...
-        flaginv,opts);
+    mat0 = spmat - chunkerkernevalmat_smooth2(chnkr0,kern0,opdims0,targinfo0, ...
+        flag,opts);
     mat(irow0,icol0) = sparse(mat0);
     continue
 end
@@ -363,6 +363,117 @@ else
         rowkill = (opdims(1)*(rowkill(:)-1)).' + (1:opdims(1)).';
         mat(rowkill,jmat:jmatend) = 0;
     end
+end
+
+end
+
+function mat = chunkerkernevalmat_smooth2(chnkr,kern,opdims, ...
+    targinfo,flag,opts)
+
+if isa(kern,'kernel')
+    kerneval = kern.eval;
+else
+    kerneval = kern;
+end
+
+k = chnkr.k;
+nch = chnkr.nch;
+
+if nargin < 5
+    flag = [];
+end
+if nargin < 6
+    opts = [];
+end
+
+% Extract target info
+targs = targinfo.r;
+[~,nt] = size(targs);
+targd = zeros(chnkr.dim,nt); targd2 = zeros(chnkr.dim,nt);
+targn = zeros(chnkr.dim,nt);
+if isfield(targinfo, 'd')
+    targd = targinfo.d;
+end
+
+if isfield(targinfo, 'd2')
+    targd2 = targinfo.d2;
+end
+
+if isfield(targinfo, 'n')
+    targn = targinfo.n;
+end
+datat = [];
+if isfield(targinfo, 'data')
+    datat = targinfo.data;
+end
+
+
+% using adaptive quadrature
+
+
+if isempty(flag)
+
+
+    mat = sparse(opdims(1)*nt,opdims(2)*chnkr.npt);
+    
+else
+    is = zeros(nnz(flag)*opdims(1)*opdims(2)*k,1);
+    js = is;
+    vs = is;
+    istart = 1;
+
+    r = chnkr.r;
+    d = chnkr.d;
+    n = chnkr.n;
+    d2 = chnkr.d2;
+    data = chnkr.data;
+    for i = 1:nch
+        jmat = 1 + (i-1)*k*opdims(2);
+        jmatend = i*k*opdims(2);
+                        
+        [ji] = find(flag(:,i));
+        datat2 = [];
+        if ~isempty(datat)
+            datat2 = datat(:,ji);
+        end
+        srcinfo = [];
+        srcinfo.r = r(:,:,i);
+        srcinfo.d = d(:,:,i);
+        srcinfo.n = n(:,:,i);
+        srcinfo.d2 = d2(:,:,i);
+
+        if ~isempty(data); srcinfo.data = data(:,:,i); end
+
+        targinfo = [];
+        targinfo.r = targs(:,ji);
+        targinfo.d = targd(:,ji);
+        targinfo.n = targn(:,ji);
+        targinfo.d2 = targd2(:,ji);
+        targinfo.data = datat2;
+
+        mat1 = kerneval(srcinfo,targinfo);
+        wts1 = chnkr.wts(:,i);
+        wts2 = repmat( (wts1(:)).', opdims(2), 1);
+        wts2 = ( wts2(:) ).';
+        mat1 = mat1.*wts2;
+
+        js1 = jmat:jmatend;
+        js1 = repmat( (js1(:)).',opdims(1)*numel(ji),1);
+                
+        indji = (ji-1)*opdims(1);
+        indji = repmat( (indji(:)).', opdims(1),1) + ( (1:opdims(1)).');
+        indji = indji(:);
+        
+        indji = repmat(indji,1,opdims(2)*k);
+        
+        iend = istart+numel(mat1)-1;
+        is(istart:iend) = indji(:);
+        js(istart:iend) = js1(:);
+        vs(istart:iend) = mat1(:);
+        istart = iend+1;
+    end
+    mat = sparse(is,js,vs,opdims(1)*nt,opdims(2)*chnkr.npt);
+    
 end
 
 end
