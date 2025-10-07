@@ -1,4 +1,4 @@
-function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts)
+function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts, ising)
 %KERNEL.HELM2DQUAS   Construct the quasi periodic Helmholtz kernel.
 %   KERNEL.HELM2DQUAS('s', ZK, KAPPA, D) or 
 %   KERNEL.HELM2DQUAS('single', ZK, KAPPA, D) constructs the
@@ -86,8 +86,8 @@ obj.opdims = [numel(kappa) 1];
 % lattice sum parameters
 l=2; N = 40; a = 15; M = 1e4;
 
-if nargin == 6
-    if isefield(quad_opts,'l')
+if nargin >= 6
+    if isfield(quad_opts,'l')
         l = quad_opts.l;
     end
     if isfield(quad_opts,'N')
@@ -101,6 +101,10 @@ if nargin == 6
     end
 end
 
+if nargin < 7
+    ising = 1;
+end
+
 ns = (0:N).';
 sn = chnk.helm2dquas.latticecoefs(ns,zk,d,kappa,(exp(1i*kappa*d)),a,M,l+1);
 
@@ -110,18 +114,13 @@ quas_param.d = d;
 quas_param.l = l;
 quas_param.sn = sn;
 
-% obj.params.kappa = kappa;
-% obj.params.d = d;
-% obj.params.l = l;
-% obj.params.Sn = Sn;
-
 obj.params.quas_param = quas_param;
-
+obj.params.ising = ising;
 switch lower(type)
 
     case {'s', 'single'}
         obj.type = 's';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 's',quas_param);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 's',quas_param,[],ising);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
@@ -133,7 +132,7 @@ switch lower(type)
 
     case {'d', 'double'}
         obj.type = 'd';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'd',quas_param);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'd',quas_param,[],ising);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
@@ -145,13 +144,13 @@ switch lower(type)
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'sprime',quas_param);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'sprime',quas_param,[],ising);
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'dprime',quas_param);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'dprime',quas_param,[],ising);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -162,7 +161,7 @@ switch lower(type)
         end
         obj.type = 'c';
         obj.params.coefs = coefs;
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c',quas_param, coefs);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c',quas_param,coefs,ising);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
@@ -179,7 +178,7 @@ switch lower(type)
         end
         obj.type = 'cprime';
         obj.params.coefs = coefs;
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'cprime',quas_param, coefs);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'cprime',quas_param,coefs,ising);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -231,7 +230,10 @@ switch lower(type)
         error('Unknown Helmholtz kernel type ''%s''.', type);
 
 end
-
+if obj.params.ising == 0
+    obj.sing = 'smooth'; 
+    obj.splitinfo = [];
+end
 end
 
 function f = helm2dquas_s_split(zk,s,t,quas_param)

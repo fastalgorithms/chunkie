@@ -56,6 +56,7 @@ classdef chunker
 %   quiver(obj,varargin) - quiver plot of the chnkr points and normals
 %   scatter(obj,varargin) - scatter plot of the chnkr nodes
 %   tau = taus(obj) - unit tangents to curve
+%   cgrph = tochunkgraph(obj) - convert to chunkgraph
 %   obj = refine(obj,varargin) - refine the curve
 %   a = area(obj) - for a closed curve, area inside 
 %   s = arclength(obj) - get values of arclength along curve
@@ -363,6 +364,7 @@ classdef chunker
         quiver(obj,varargin)
         scatter(obj,varargin)
         tau = taus(obj)
+        cgrph = tochunkgraph(obj)
         obj = refine(obj,varargin)
         a = area(obj)
         s = arclength(obj)
