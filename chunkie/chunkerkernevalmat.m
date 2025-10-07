@@ -264,6 +264,8 @@ if forceadap
     continue
 end
 
+% TODO: switch to oversampling version with bounding ellipse like chunkerkerneval
+
 optsflag = []; optsflag.fac = fac;
 flag = flagnear(chnkr0,targinfo0.r,optsflag);
 
@@ -280,17 +282,6 @@ if forcepquad
         continue
     end
 end
-
-% smooth for sufficiently far, adaptive otherwise
-
-%rho = 1.8;
-%optsflag = [];  optsflag.rho = rho;
-%flag = flagnear_rectangle(chnkr0,targinfo0.r,optsflag);
-
-%npoly = chnkr.k*2;
-%nlegnew = chnk.ellipse_oversample(rho,npoly,eps);
-%nlegnew = max(nlegnew,chnkr.k);
-
 
 spmat = chunkerkernevalmat_adap(chnkr0,kern0,opdims0, ...
         targinfo0,flag,optsadap);
