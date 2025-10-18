@@ -116,6 +116,48 @@ switch lower(type)
         obj.sing = 'hs';
         obj.opdims = [2,1];
 
+    case {'cn', 'combined dn'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cn';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cn',coefs);
+        obj.sing = 'hs';
+        obj.opdims = [1,1];
+
+    case {'sint', 's int'}
+        obj.type = 'sint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sint');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'sintt', 's int trans'}
+        obj.type = 'sint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sintt');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'dint', 'd int'}
+        obj.type = 'dint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'dint');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'cint', 'c int'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cint';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cint',coefs);
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+
+
     otherwise
         error('Unknown Laplace kernel type ''%s''.', type);
 
