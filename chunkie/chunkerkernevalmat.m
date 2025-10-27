@@ -264,6 +264,8 @@ if forceadap
     continue
 end
 
+% TODO: switch to oversampling version with bounding ellipse like chunkerkerneval
+
 optsflag = []; optsflag.fac = fac;
 flag = flagnear(chnkr0,targinfo0.r,optsflag);
 
@@ -281,25 +283,13 @@ if forcepquad
     end
 end
 
-% smooth for sufficiently far, adaptive otherwise
-
-%rho = 1.8;
-%optsflag = [];  optsflag.rho = rho;
-%flag = flagnear_rectangle(chnkr0,targinfo0.r,optsflag);
-
-%npoly = chnkr.k*2;
-%nlegnew = chnk.ellipse_oversample(rho,npoly,eps);
-%nlegnew = max(nlegnew,chnkr.k);
-
-
 spmat = chunkerkernevalmat_adap(chnkr0,kern0,opdims0, ...
         targinfo0,flag,optsadap);
 
 
 if corrections
-    % TODO: find more elegant solution that avoids building a dense flag matrix
-    flaginv = ~flag;
-    mat0 = spmat - chunkerkernevalmat_smooth2(chnkr0,kern0,opdims0,targinfo0, ...
+    mat0 = spmat - chunkerkernevalmat_smooth_corrections(chnkr0,kern0,opdims0,targinfo0, ...
+
         flag,opts);
     mat(irow0,icol0) = sparse(mat0);
     continue
@@ -367,7 +357,7 @@ end
 
 end
 
-function mat = chunkerkernevalmat_smooth2(chnkr,kern,opdims, ...
+function mat = chunkerkernevalmat_smooth_corrections(chnkr,kern,opdims, ...
     targinfo,flag,opts)
 
 if isa(kern,'kernel')
