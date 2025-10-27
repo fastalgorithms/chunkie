@@ -289,7 +289,6 @@ spmat = chunkerkernevalmat_adap(chnkr0,kern0,opdims0, ...
 
 if corrections
     mat0 = spmat - chunkerkernevalmat_smooth_corrections(chnkr0,kern0,opdims0,targinfo0, ...
-
         flag,opts);
     mat(irow0,icol0) = sparse(mat0);
     continue
