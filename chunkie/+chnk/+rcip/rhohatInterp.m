@@ -74,7 +74,7 @@ rhohatinterp = cell(nedge,1);
 srcinfo = cell(nedge,1);
 wts = cell(nedge,1);
 
-ileftright = rcipsav.ileftright
+ileftright = rcipsav.ileftright;
 
 % figure out which edge the indices belong to 
 % THIS ASSUMES WE HAVE THE SAME ORDER ON EDGES
