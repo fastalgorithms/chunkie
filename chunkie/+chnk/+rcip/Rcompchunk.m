@@ -1,4 +1,4 @@
-function [R,rcipsav]=Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
+function [R,rcipsav]=Rcompchunk(chnkr,iedgechunks,fkern,ndim,vert0, ...
     Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,...
     sbclmat,sbcrmat,lvmat,rvmat,u,opts)
 %CHNK.RCIP.Rcompchunk carry out the forward recursion for computing
@@ -44,12 +44,12 @@ rcipsav.circS = circS;
 rcipsav.ilist = ilist;
 rcipsav.nsub = nsub;
 
-if (nargin < 15 || isempty(sbclmat) || isempty(sbcrmat) || ...
+if (nargin < 16 || isempty(sbclmat) || isempty(sbcrmat) || ...
         isempty(lvmat) || isempty(rvmat) || isempty(u))
     [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k); 
 end
 
-if nargin < 20
+if nargin < 21
     opts = [];
 end
 
@@ -166,7 +166,7 @@ if(size(fkern)==1)
     fkernlocal = fkern;
     if isa(fkern, 'kernel')
         if isa(fkern.shifted_eval, 'function_handle')
-            fkernlocal.eval = @(s,t) fkern.shifted_eval(s, t, ctr(:,1));
+            fkernlocal.eval = @(s,t) fkern.shifted_eval(s, t, vert0);
         end
     end
 else
@@ -179,7 +179,7 @@ else
             if isa(fkern(ici,icj), 'kernel')
                 if isa(fkern(ici,icj).shifted_eval, 'function_handle')
                     fkernlocal(i,j).eval = ...
-                      @(s,t) fkern(ici,icj).shifted_eval(s,t,ctr(:,i));
+                      @(s,t) fkern(ici,icj).shifted_eval(s,t,vert0);
                 end
             end
         end
