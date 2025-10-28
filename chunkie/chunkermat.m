@@ -65,6 +65,7 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %                      corrections for near corners if input chnkobj is
 %                      of type chunkergraph
 %           opts.rcip_ignore = [], list of vertices to ignore in rcip
+%           opts.rcip_savedepth = (10), depth to save rcip info
 %           opts.nsub_or_tol = (40) specify the level of refinements in rcip
 %                    or a tolerance where the number of levels is given by
 %                    ceiling(log_{2}(1/tol^2));
@@ -83,6 +84,9 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 % Optional output
 %   opts - with the updated opts structure which stores the relevant
 %          quantities in opts.auxquads.<opts.quad><opts.type>
+%   rcipsav - precomputed structure of rcip data at corners
+%             for subsequent postprocessing of the solution at targets close 
+%             to the corner
 %
 % Examples:
 %   sysmat = chunkermat(chnkr,kern); % standard options
@@ -135,6 +139,7 @@ l2scale = false;
 isrcip = true;
 rcip_ignore = [];
 nsub = 40;
+rcip_savedepth = 10;
 adaptive_correction = false;
 sing = 'log';
 
@@ -161,6 +166,9 @@ end
 
 if(isfield(opts,'rcip'))
     isrcip = opts.rcip;
+end
+if(isfield(opts,'rcip_savedepth'))
+    rcip_savedepth = opts.rcip_savedepth;
 end
 if(isfield(opts,'rcip_ignore'))
     rcip_ignore = opts.rcip_ignore;
@@ -466,6 +474,8 @@ if(icgrph && isrcip)
     npt_all = horzcat(chnkobj.echnks.npt);
     [~,nv] = size(chnkobj.verts);
     ngl = chnkrs(1).k;
+
+    rcipsav = cell(nv,1);
     
     for ivert=setdiff(1:nv,rcip_ignore)
         clist = chnkobj.vstruc{ivert}{1};
@@ -512,11 +522,14 @@ if(icgrph && isrcip)
         optsrcip = opts;
         optsrcip.nonsmoothonly = false;
         optsrcip.corrections = false;
+        optsrcip.rcip_savedepth = rcip_savedepth;
 
-        R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
+        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
             Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
             sbclmat,sbcrmat,lvmat,rvmat,u,optsrcip);
-       
+
+        rcipsav{ivert}.starind = starind;
+
         sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
         if (~nonsmoothonly)
             
@@ -574,6 +587,11 @@ if(icgrph && isrcip)
             vsysmat = [vsysmat;sysmat_tmp(:)];
         end    
     end
+
+    if nargout > 2
+        varargout{2} = rcipsav;
+    end
+
     
 end
 
