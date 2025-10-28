@@ -50,4 +50,18 @@ idslce = (cgrph.npt - cgrph_slc.npt) + (1:cgrph_slc.npt);
 matdiff = norm(sysmat_slc - sysmat(idslce, idslce));
 fprintf('error in sliced system matrix is %e\n',matdiff)
 assert(matdiff < 1e-10)
+
+
+% test getting ids of edges
+ids = edgeids(cgrph,[3,4,2,1]);
+
+% test values are correct
+assert(all(sort(ids) == (1:sum([cgrph.echnks(1:4).npt]))));
+% test sorted by input list
+assert(~all(sort(ids) == ids));
+
+ids = edgeids(cgrph,ichs);
+% compare edgeids to manual version
+assert(all(ids == idslce));
+
 end
