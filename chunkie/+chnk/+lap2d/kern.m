@@ -151,9 +151,54 @@ case {'cgrad', 'cg'}
     submat = coef(1)*reshape(permute(submat,[3,1,2]),2*nt,ns);
     submat = submat+coef(2)*reshape(permute(grad,[3,1,2]),2*nt,ns);
 
+
+
+
+if strcmpi(type,'sint')
+    %srcnorm = chnk.normal2d(srcinfo);
+    [s] = chnk.lap2d.green(src,targ);
+    rx = bsxfun(@minus,targ(1,:).',src(1,:));
+    ry = bsxfun(@minus,targ(2,:).',src(2,:));
+    nrt = rx.*targinfo.n(1,:).' + ry.*targinfo.n(2,:).';
+    submat = nrt.*(s/2+1/(8*pi));
+end
+
+if strcmpi(type,'sintt')
+    %srcnorm = chnk.normal2d(srcinfo);
+    [s] = chnk.lap2d.green(src,targ);
+    rx = bsxfun(@minus,targ(1,:).',src(1,:));
+    ry = bsxfun(@minus,targ(2,:).',src(2,:));
+    nrt = rx.*srcinfo.n(1,:) + ry.*srcinfo.n(2,:);
+    submat = -nrt.*(s/2+1/(8*pi));
+end
+
+if strcmpi(type,'dint')
+    %srcnorm = chnk.normal2d(srcinfo);
+    [s] = chnk.lap2d.green(src,targ);
+    ntsx = bsxfun(@times,targinfo.n(1,:).',srcinfo.n(1,:));
+    ntsy = bsxfun(@times,targinfo.n(2,:).',srcinfo.n(2,:));
+    nts = ntsx+ntsy;
+    submat = -nts.*s;
+end
+
+if strcmpi(type,'cint')
+    coef = ones(2,1);
+    if(nargin == 4); coef = varargin{1}; end
+    %srcnorm = chnk.normal2d(srcinfo);
+    [s] = chnk.lap2d.green(src,targ);
+    ntsx = bsxfun(@times,targinfo.n(1,:).',srcinfo.n(1,:));
+    ntsy = bsxfun(@times,targinfo.n(2,:).',srcinfo.n(2,:));
+    nts = ntsx+ntsy;
+    submat = -nts.*s;
+
+    rx = bsxfun(@minus,targ(1,:).',src(1,:));
+    ry = bsxfun(@minus,targ(2,:).',src(2,:));
+    nrt = rx.*targinfo.n(1,:).' + ry.*targinfo.n(2,:).';
+    submat = coef(1)*submat+coef(2)*(nrt.*(s/2+1/(8*pi)));
+end
+
 otherwise
     error('Unknown Laplace kernel type ''%s''.', type);
 end
 
 end
-
