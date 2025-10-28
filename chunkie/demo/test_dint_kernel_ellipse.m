@@ -9,14 +9,13 @@ cparams = [];
 
 cparams.eps = 1e-6;
 cparams.nover = 0;
-cparams.maxchunklen = 0.5;       % setting a chunk length helps when the
-                                    % frequency is known'
+cparams.maxchunklen = 0.5;      
 
 
 
 chnkr = chunkerfunc(@(t) ellipse(t,4,1), cparams);
 
-figure(1)                                                   % plot the chunker-object (supposed to be a circle centered at 1 with radius 1)
+figure(1)                                                   % plot the chunker-object 
 clf
 plot(chnkr, '-x')
 hold on
