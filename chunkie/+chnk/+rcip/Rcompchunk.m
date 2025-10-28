@@ -53,19 +53,18 @@ if nargin < 21
     opts = [];
 end
 
-savedeep = false;
-if isfield(opts,'savedeep')
-    savedeep = opts.savedeep;
+savedepth = 10;
+if isfield(opts,'rcip_savedepth')
+    savedepth = opts.rcip_savedepth;
 end
+savedepth = max(savedepth,0);
+savedepth = min(savedepth,nsub);
 
-rcipsav.savedeep = savedeep;
+rcipsav.savedepth = savedepth;
 
-if savedeep
-    rcipsav.R = cell(nsub+1,1);
-    rcipsav.MAT = cell(nsub,1);
-    rcipsav.chnkrlocals = cell(nsub,1);
-end
-
+rcipsav.R = cell(nsub+1,1);
+rcipsav.MAT = cell(nsub,1);
+rcipsav.chnkrlocals = cell(nsub,1);
 
 % grab only those kernels relevant to this vertex
 
@@ -260,12 +259,15 @@ for level=1:nsub
     if level==1    %  Dumb and lazy initializer for R, for now
   %R=eye(nR); 
         R = inv(MAT(starL,starL));
-        if savedeep
+        if level >= nsub-savedepth+1
             rcipsav.R{1} = R;
         end
     end
+    if savedepth < nsub && level == nsub-savedepth+1
+        rcipsav.R{level} = R;
+    end
     R=chnk.rcip.SchurBana(Pbc,PWbc,MAT,R,starL,circL,starS,circS);   
-    if savedeep
+    if level >= nsub-savedepth+1
         rcipsav.R{level+1} = R;
         rcipsav.MAT{level} = MAT(starL,circL);
         rcipsav.chnkrlocals{level} = merge(chnkrlocal);
