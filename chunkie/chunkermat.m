@@ -85,7 +85,7 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %   opts - with the updated opts structure which stores the relevant
 %          quantities in opts.auxquads.<opts.quad><opts.type>
 %   rcipsav - precomputed structure of rcip data at corners
-%             for subsequent postprocessing solution at targets closed 
+%             for subsequent postprocessing of the solution at targets close 
 %             to the corner
 %
 % Examples:
