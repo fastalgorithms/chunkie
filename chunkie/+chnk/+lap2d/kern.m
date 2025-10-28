@@ -154,34 +154,32 @@ case {'cgrad', 'cg'}
 
 
 
-if strcmpi(type,'sint')
+case{'sint'}
     %srcnorm = chnk.normal2d(srcinfo);
     [s] = chnk.lap2d.green(src,targ);
     rx = bsxfun(@minus,targ(1,:).',src(1,:));
     ry = bsxfun(@minus,targ(2,:).',src(2,:));
     nrt = rx.*targinfo.n(1,:).' + ry.*targinfo.n(2,:).';
     submat = nrt.*(s/2+1/(8*pi));
-end
 
-if strcmpi(type,'sintt')
+
+case{'sintt'}
     %srcnorm = chnk.normal2d(srcinfo);
     [s] = chnk.lap2d.green(src,targ);
     rx = bsxfun(@minus,targ(1,:).',src(1,:));
     ry = bsxfun(@minus,targ(2,:).',src(2,:));
     nrt = rx.*srcinfo.n(1,:) + ry.*srcinfo.n(2,:);
     submat = -nrt.*(s/2+1/(8*pi));
-end
 
-if strcmpi(type,'dint')
+
+case{'dint'}
     %srcnorm = chnk.normal2d(srcinfo);
     [s] = chnk.lap2d.green(src,targ);
     ntsx = bsxfun(@times,targinfo.n(1,:).',srcinfo.n(1,:));
     ntsy = bsxfun(@times,targinfo.n(2,:).',srcinfo.n(2,:));
     nts = ntsx+ntsy;
     submat = -nts.*s;
-end
-
-if strcmpi(type,'cint')
+case{'cint'}
     coef = ones(2,1);
     if(nargin == 4); coef = varargin{1}; end
     %srcnorm = chnk.normal2d(srcinfo);
@@ -195,7 +193,7 @@ if strcmpi(type,'cint')
     ry = bsxfun(@minus,targ(2,:).',src(2,:));
     nrt = rx.*targinfo.n(1,:).' + ry.*targinfo.n(2,:).';
     submat = coef(1)*submat+coef(2)*(nrt.*(s/2+1/(8*pi)));
-end
+
 
 otherwise
     error('Unknown Laplace kernel type ''%s''.', type);
