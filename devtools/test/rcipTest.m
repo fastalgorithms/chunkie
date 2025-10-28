@@ -185,7 +185,7 @@ for icorner=1:ncorner
     iedgechunks = corners{icorner}.iedgechunks;
     optsrcip = [];
     optsrcip.savedeep = true;
-    tic; [R{icorner},rcipsav{icorner}] = chnk.rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
+    tic; [R{icorner},rcipsav{icorner}] = chnk.rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim,vert(:,icorner), ...
         Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,...,
         [],[],[],[],[],optsrcip);
     toc
