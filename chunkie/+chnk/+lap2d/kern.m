@@ -153,7 +153,7 @@ case {'cgrad', 'cg'}
 
 
 
-
+% integral of the single layer
 case{'sint'}
     %srcnorm = chnk.normal2d(srcinfo);
     [s] = chnk.lap2d.green(src,targ);
@@ -162,7 +162,7 @@ case{'sint'}
     nrt = rx.*targinfo.n(1,:).' + ry.*targinfo.n(2,:).';
     submat = nrt.*(s/2+1/(8*pi));
 
-
+% ''adjoint'' of the previous one.
 case{'sintt'}
     %srcnorm = chnk.normal2d(srcinfo);
     [s] = chnk.lap2d.green(src,targ);
@@ -171,7 +171,7 @@ case{'sintt'}
     nrt = rx.*srcinfo.n(1,:) + ry.*srcinfo.n(2,:);
     submat = -nrt.*(s/2+1/(8*pi));
 
-
+% integral of the double layer
 case{'dint'}
     %srcnorm = chnk.normal2d(srcinfo);
     [s] = chnk.lap2d.green(src,targ);
@@ -179,6 +179,7 @@ case{'dint'}
     ntsy = bsxfun(@times,targinfo.n(2,:).',srcinfo.n(2,:));
     nts = ntsx+ntsy;
     submat = -nts.*s;
+% integral of the combined field (coef(1)* integral D + coef(2)*integral S)
 case{'cint'}
     coef = ones(2,1);
     if(nargin == 4); coef = varargin{1}; end

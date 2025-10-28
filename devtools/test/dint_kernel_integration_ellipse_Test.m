@@ -1,9 +1,8 @@
-clear
-
-
+dint_kernel_integration_ellipse_Test0();
 % test the volume integral of the double-layer in an ellipse
 %
 
+function dint_kernel_integration_ellipse_Test0()
 
 cparams = [];
 
@@ -58,3 +57,4 @@ fprintf('relative error %5.2e\n',relerr);
 
 assert(abserr<1e-9)
 assert(relerr<1e-9)
+end
