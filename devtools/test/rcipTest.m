@@ -206,6 +206,8 @@ opts.rcip_savedepth = Inf;
 
 sysmat2 = sysmat2 + eye(np);
 
+assert(norm(sysmat - sysmat2) < 1e-10)
+
 [sol,flag,relres,iter] = gmres(sysmat,ubdry,np,eps*20,np);
 [sol2,flag,relres,iter] = gmres(sysmat2,ubdry,np,eps*20,np);
 
