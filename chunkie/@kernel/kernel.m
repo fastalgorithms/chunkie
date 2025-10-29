@@ -10,6 +10,7 @@ classdef kernel
 %      'laplace'    ('lap', 'l')                    's', 'd', 'sp', 'c'
 %      'helmholtz'  ('helm', 'h')                   's', 'd', 'sp', 'dp', 'c'
 %                                                   'cp'
+%      'helmholtz1d'  ('helm1d', 'h1d')             's'
 %      'helmholtz difference'                       's', 'd', 'sp', 'dp'
 %         ('helmdiff', 'hdiff', 'helm_diff')
 %      'elasticity' ('elast', 'e')                  's', 'strac', 'd', 'dalt'
@@ -100,6 +101,8 @@ classdef kernel
                       obj = kernel.lap2d(varargin{:});
                   case {'helmholtz', 'helm', 'h'}
                       obj = kernel.helm2d(varargin{:});
+                  case {'helmholtz1d', 'helm1d', 'h1d'}
+                      obj = kernel.helm1d(varargin{:});
                   case {'helmholtz difference', 'helmdiff', 'hdiff', 'helm_diff'}
                       obj = kernel.helm2ddiff(varargin{:});
                   case {'stokes', 'stok', 's'}
@@ -157,6 +160,7 @@ classdef kernel
 
         obj = lap2d(varargin);
         obj = helm2d(varargin);
+        obj = helm1d(varargin);
         obj = helm2ddiff(varargin);
         obj = stok2d(varargin);
         obj = elast2d(varargin);
