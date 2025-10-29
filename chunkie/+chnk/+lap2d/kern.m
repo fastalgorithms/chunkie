@@ -162,7 +162,7 @@ case{'sint'}
     nrt = rx.*targinfo.n(1,:).' + ry.*targinfo.n(2,:).';
     submat = nrt.*(s/2+1/(8*pi));
 
-% ''adjoint'' of the previous one.
+% transpose of the previous one.
 case{'sintt'}
     %srcnorm = chnk.normal2d(srcinfo);
     [s] = chnk.lap2d.green(src,targ);

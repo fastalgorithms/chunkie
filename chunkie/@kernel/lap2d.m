@@ -29,6 +29,21 @@ function obj = lap2d(type, coefs)
 %
 %   KERNEL.LAP2D('cg', coefs) or KERNEL.LAP2D('cgrad', coefs) constructs
 %   the gradient of the combined-layer Laplace kernel with parameter coefs
+%   
+%   KERNEL.LAP2D('sint') or KERNEL.LAP2D('s int') constructs the volume
+%   integral of the single layer Laplace kernel
+%
+%   KERNEL.LAP2D('sintt') or KERNEL.LAP2D('s int trans') constructs the transpose of the 
+%   volume integral of the single layer Laplace kernel
+%   
+%   KERNEL.LAP2D('dint') or KERNEL.LAP2D('d int') constructs the volume
+%   integral of the double layer Laplace kernel
+%
+%   KERNEL.LAP2D('cint', coefs) or KERNEL.LAP2D('c int', coefs) constructs the volume
+%   integral of the combined-layer Laplace kernel with parameter coefs, 
+%   i.e. (coef(1)*  KERNEL.LAP2D('dint') + coef(2)* KERNEL.LAP2D('sint')). If no
+%   value of coefs is specified the default is coefs = [1 1] 
+%   
 %
 % See also CHNK.LAP2D.KERN.
 
