@@ -145,7 +145,7 @@ t = tiledlayout(1,3,'TileSpacing','compact');
 nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = uin;
-h=pcolor(xxtarg,yytarg,imag(zztarg),"FaceColor","interp");
+h=pcolor(xxtarg,yytarg,imag(zztarg)); shading interp
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
 colormap(redblue);
@@ -158,7 +158,7 @@ title('$u^{\textrm{inc}}$','Interpreter','latex','FontSize',12)
 nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = uscat;
-h=pcolor(xxtarg,yytarg,imag(zztarg),"FaceColor","interp");
+h=pcolor(xxtarg,yytarg,imag(zztarg)); shading interp;
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
 colormap(redblue);
@@ -171,7 +171,7 @@ title('$u^{\textrm{scat}}$','Interpreter','latex','FontSize',12)
 nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = utot;
-h=pcolor(xxtarg,yytarg,imag(zztarg),"FaceColor","interp");
+h=pcolor(xxtarg,yytarg,imag(zztarg)); shading interp;
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
 colormap(redblue);

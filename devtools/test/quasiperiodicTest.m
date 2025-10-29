@@ -7,12 +7,16 @@ function quasiperiodicTest0()
 % problem parameters
 d= 1;
 zk = 1;
-kappa = [pi-0.1-1i,0.2];
+kappa = [pi-0.1-1i,0.2,-0.1,0.25i];
 coefs = [1;0.5];
 coefa = [1,0.3;-1i,0.2];
+nkappa = length(kappa);
 
-src = []; src.r = [0;-1]; src.n = [1;-2];
-targ = []; targ.r = [1.1;0.3]; targ.n = [-1;0.3];
+src = []; src.r = [[0;-1.1],[1;-1],[0.1;-0.3]]; src.n = [[1;-2],[2;-1],[1;0]];
+targ = []; targ.r = [[1.1;0.3],[2;0]]; targ.n = [[-1;0.3],[0.1;1]];
+ns = size(src.r,2);
+nt = size(targ.r,2);
+
 
 % kernels
 skern = kernel('hq','s',zk,kappa,d);
@@ -60,33 +64,71 @@ c2trval = c2trkern.eval(src,targ);
 % test quasiperiodicitiy
 targ_s = targ; targ_s.r = targ.r + [d;0];
 svalshift = skern.eval(src,targ_s);
-assert(norm(svalshift - exp(1i*kappa(:)*d).*sval) <  1e-12)
+assert(norm(svalshift - repmat(exp(1i*kappa(:)*d),nt,1).*sval) <  1e-12)
 
 % test combined
 assert(norm((coefs(1)*dval + coefs(2)*sval)-cval) <  1e-12)
 assert(norm((coefs(1)*dpval + coefs(2)*spval)-cpval) <  1e-12)
 
 % test all
-all_assemb = zeros(size(allval));
-all_assemb(1:2:end, 1:2:end) = coefa(1,1)*dval;
-all_assemb(1:2:end, 2:2:end) = coefa(1,2)*sval;
-all_assemb(2:2:end, 1:2:end) = coefa(2,1)*dpval;
-all_assemb(2:2:end, 2:2:end) = coefa(2,2)*spval;
+all_assemb = zeros(2,nkappa*nt,2*ns);
+
+all_assemb(1,:, 1:2:end) = coefa(1,1)*dval;
+all_assemb(1,:, 2:2:end) = coefa(1,2)*sval;
+all_assemb(2,:, 1:2:end) = coefa(2,1)*dpval;
+all_assemb(2,:, 2:2:end) = coefa(2,2)*spval;
+all_assemb = reshape(all_assemb,[2,nkappa,nt,2*ns]);
+all_assemb = permute(all_assemb,[2,1,3,4]);
+all_assemb = reshape(all_assemb, size(allval) );
+
 assert(norm(all_assemb - allval) <  1e-12)
 
-% test transmission representiatoon
-assert(norm([coefs(1)*dval , coefs(2)*sval]-trval) <  1e-12)
-assert(norm([coefs(1)*dpval , coefs(2)*spval]-trpval) <  1e-12)
+% test transmission representation
+tr_assemb = zeros(nkappa*nt,2,ns);
+tr_assemb(:,1,:) = coefs(1)*dval;
+tr_assemb(:,2,:) = coefs(2)*sval;
+assert(norm(tr_assemb(:,:)-trval) <  1e-12)
+trp_assemb = zeros(nkappa*nt,2,ns);
+trp_assemb(:,1,:) = coefs(1)*dpval;
+trp_assemb(:,2,:) = coefs(2)*spval;
+assert(norm(trp_assemb(:,:)-trpval) <  1e-12)
 
 % test gradients
 assert(norm((coefs(1)*dgval + coefs(2)*sgval)-cgval) <  1e-12)
-assert(norm([coefs(1)*dgval , coefs(2)*sgval]-trgval) <  1e-12)
+trg_assemb = zeros(2*nkappa*nt,2,ns);
+trg_assemb(:,1,:) = coefs(1)*dgval;
+trg_assemb(:,2,:) = coefs(2)*sgval;
+assert(norm(trg_assemb(:,:)-trgval) <  1e-12)
 
 % test c2trans
-c2trval_assemb = zeros(size(c2trval));
-c2trval_assemb(1:2:end, :) = coefs(1)*dval + coefs(2)*sval;
-c2trval_assemb(2:2:end, :) = coefs(1)*dpval + coefs(2)*spval;
+c2trval_assemb = zeros(nkappa,2,nt,ns);
+c2trval_assemb(:,1,:,:) = reshape(coefs(1)*dval + coefs(2)*sval,nkappa,1,nt,ns);
+c2trval_assemb(:,2,:,:) = reshape(coefs(1)*dpval + coefs(2)*spval,nkappa,1,nt,ns);
+c2trval_assemb = reshape(c2trval_assemb,[],ns);
 assert(norm(c2trval_assemb-c2trval) <  1e-12)
+
+% test ising parameter
+skern1a = kernel('hq','s',zk,kappa,d,[],[],0);
+skern1b = kernel('h','s',zk);
+sval1b = skern1b.eval(src,targ); 
+sval1b = repmat(reshape(sval1b,1,nt,ns), nkappa,1,1);
+sval1 = skern1a.eval(src,targ) + reshape(sval1b,nt*nkappa,ns);
+assert(norm(sval-sval1) <  1e-12)
+
+dkern1a = kernel('hq','d',zk,kappa,d,[],[],0);
+dkern1b = kernel('h','d',zk);
+dval1b = dkern1b.eval(src,targ); 
+dval1b = repmat(reshape(dval1b,1,nt,ns), nkappa,1,1);
+dval1 = dkern1a.eval(src,targ) + reshape(dval1b,nt*nkappa,ns);
+assert(norm(dval-dval1) <  1e-12)
+
+allkern1a = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'all',quas_param,coefa,0));
+allkern1b = kernel(@(s,t) chnk.helm2d.kern(zk,s,t,'all',coefa));
+allval1a = allkern1a.eval(src,targ);
+allval1b = allkern1b.eval(src,targ); 
+allval1b = reshape(allval1b,1,2*nt,2*ns); allval1b = repmat(allval1b,length(kappa),1,1);
+allval1b = reshape(allval1b,length(kappa)*2*nt,2*ns);
+assert(norm(allval1a+allval1b -allval) <  1e-12)
 end
 
 
@@ -97,7 +139,7 @@ function quasiperiodicTest1()
 % problem parameters
 d= 8;
 zk = 1;
-kappa = .05+0.1i;
+kappa = .05+.1i;
 
 % setup geometry
 nch = 2^3;

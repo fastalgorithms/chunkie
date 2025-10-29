@@ -1,5 +1,7 @@
 %KERNELOPTEST verify kernel class operations are correct
+kernelopTest0()
 
+function kernelopTest0()
 % setup points
 src = []; 
 src.r = [[0;0],[0;1]];
@@ -36,5 +38,8 @@ ckern2 = skern - dkern;
 assert(norm(ckern1.eval(src,targ) - (skern.eval(src,targ)+dkern.eval(src,targ)))<1e-10)
 assert(norm(ckern2.eval(src,targ) - (skern.eval(src,targ)-dkern.eval(src,targ)))<1e-10)
 
-
+% conjugate a kernel
+conj_dkern = conj(dkern);
+assert(norm(conj_dkern.eval(src,targ) - conj_dkern.eval(src,targ))<1e-10)
+end
 
