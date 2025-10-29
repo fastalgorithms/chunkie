@@ -534,7 +534,8 @@ if(icgrph && isrcip)
         optsrcip.corrections = false;
         optsrcip.rcip_savedepth = rcip_savedepth;
 
-        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
+
+        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim,chnkobj.verts(:,ivert), ...
             Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
             sbclmat,sbcrmat,lvmat,rvmat,u,optsrcip);
 
