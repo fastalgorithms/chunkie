@@ -1,15 +1,17 @@
+trappermatTest0();
+
+
+function trappermatTest0()
 
 %TRAPPERMATTEST
 %
 % test the matrix builder and do a basic solve
 
-clearvars; close all;
 zk = 1.0;
 quadorder = 16;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 cparams = [];
 cparams.npt = 200;
@@ -115,4 +117,9 @@ relerr = norm(utarg-Dsol,'fro')/(sqrt(trap.npt)*norm(utarg,'fro'));
 relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
+
+
+
+end
+
 

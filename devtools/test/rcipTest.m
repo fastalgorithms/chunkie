@@ -1,11 +1,11 @@
+rcipTest0();
 
+function rcipTest0()
 %RCIPTEST
 %
 % This file tests the rcip routines for solving the exterior dirichlet 
 % problem on a domain defined by two arcs of circles meeting at two vertices
 
-clearvars; close all;
-addpaths_loc();
 
 ncurve = 2;
 chnkr(1,ncurve) = chunker();
@@ -52,11 +52,21 @@ inds = [0, cumsum(nch)];
 fcurve = cell(1,ncurve);
 figure(1)
 clf; hold on;
+chnkrcell = cell(ncurve,1);
 for icurve = 1:ncurve
     fcurve{icurve} = @(t) circulararc(t,cpars{icurve});
     chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
     plot(chnkr(icurve)); quiver(chnkr(icurve));
+    chnkrcell{icurve} = chnkr(icurve);
 end
+
+cends = chunkends(chnkrcell{icurve});
+vert = [cends(:,1,1), cends(:,2,end)];
+
+cg = chunkgraph(vert,[2 1; 1 2],chnkrcell); % equivalent chunkgraph
+
+%%
+
 
 iedgechunks = [1 2; 1 chnkr(2).nch];
 isstart = [1 0];
@@ -83,7 +93,7 @@ nt = 20;
 ts = 0.0+2*pi*rand(1,nt);
 targets = [cos(ts);sin(ts)];
 targets = 0.2*targets;
-targets(:,1) = [0.95;0];
+targets(:,1) = [0.999999;0];
 targets(:,2) = [0,0.36];
 targets(:,3) = [-0.95;0];
 targets(:,2) = [0,0.36];
@@ -152,8 +162,6 @@ ndim = 1;
 
 nsub = 40;
 
-opts = [];
-
 
 for icorner=1:ncorner
     clist = corners{icorner}.clist;
@@ -178,11 +186,11 @@ for icorner=1:ncorner
     
     [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = chnk.rcip.setup(ngl,ndim, ...
       nedge,isstart);
-    opts_use = [];
     
     iedgechunks = corners{icorner}.iedgechunks;
     optsrcip = [];
-    optsrcip.savedeep = true;
+    optsrcip.nsub = nsub;
+    optsrcip.rcip_savedepth = Inf;
     tic; [R{icorner},rcipsav{icorner}] = chnk.rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
         Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,...,
         [],[],[],[],[],optsrcip);
@@ -192,18 +200,48 @@ for icorner=1:ncorner
 end
 sysmat = sysmat + eye(np);
 
+opts = [];
+opts.nsub = nsub; 
+opts.rcip_savedepth = Inf;
+[sysmat2,~,rcipsav] = chunkermat(cg,fkern,opts);
+
+sysmat2 = sysmat2 + eye(np);
+
 [sol,flag,relres,iter] = gmres(sysmat,ubdry,np,eps*20,np);
+[sol2,flag,relres,iter] = gmres(sysmat2,ubdry,np,eps*20,np);
 
 %
 
 % interpolate to fine grid
 
-ndepth = 10;
+ndepth = 20;
 cor = cell(1,ncorner);
 
 for icorner = 1:ncorner
-    solhat = sol(starinds{icorner});
-    [solhatinterp,srcinfo,wts] = chnk.rcip.rhohatInterp(solhat,rcipsav{icorner},ndepth);
+    starindtmp = rcipsav{icorner}.starind;
+    solhat = sol(starindtmp);
+    [solhatinterpcell,srcinfocell,wtscell] = chnk.rcip.rhohatInterp(solhat,rcipsav{icorner},ndepth);
+
+    rtmp = [];
+    dtmp = [];
+    d2tmp = [];
+    ntmp = [];
+    datatmp = [];
+    solhatinterp = [];
+    wts = [];
+    for j = 1:length(srcinfocell)
+        rtmp = [rtmp, srcinfocell{j}.r];
+        dtmp = [dtmp, srcinfocell{j}.d];
+        d2tmp = [d2tmp, srcinfocell{j}.d2];
+        ntmp = [ntmp, srcinfocell{j}.n];
+        if isfield(srcinfocell{j},'data')
+            datatmp = [datatmp, srcinfocell{j}.data];
+        end
+        solhatinterp = [solhatinterp; solhatinterpcell{j}(:)];
+        wts = [wts; wtscell{j}(:)];
+
+    end
+    srcinfo = struct('r',rtmp,'d',dtmp,'d2',d2tmp,'n',ntmp,'data',datatmp);
 
     targtemp = targets(:,:) - rcipsav{icorner}.ctr(:,1);
     targinfo = [];
@@ -240,6 +278,13 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
+assert(relerr < 1e-10)
+assert(relerr2 < 1e-10)
+
+
+
+end
+
 
 %%
 
@@ -250,6 +295,8 @@ fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 %
 % Auxiliary routines for generating boundary
 %
+
+
 
 function [r,d,d2] = circulararc(t,cpars)
 %%circulararc

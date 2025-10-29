@@ -7,10 +7,13 @@ function submat = nearbuildmat(r,d,n,d2,data,i,j,fkern,opdims,...
 rs = r(:,:,j); ds = d(:,:,j); d2s = d2(:,:,j); ns = n(:,:,j);
 rt = r(:,:,i); dt = d(:,:,i); d2t = d2(:,:,i); nt = n(:,:,i);
 
+
 if(isempty(data))
     dd = [];
+    dds = [];
 else
     dd = data(:,:,i);
+    dds = data(:,:,j);
 end
 
 if nargin < 14
@@ -62,8 +65,16 @@ end
 rfine = (ainterp1*(rs.')).'; dfine = (ainterp1*(ds.')).'; 
 d2fine = (ainterp1*(d2s.')).'; nfine = (ainterp1*(ns.')).';
 
+if (not (isempty(data)))
+   ddsfine = (ainterp1*(dds.')).';
+end
+
 srcinfo = []; srcinfo.r = rfine; srcinfo.d = dfine; srcinfo.n = nfine;
 srcinfo.d2 = d2fine; srcinfo.n = nfine;
+
+if (not(isempty(data)))
+   srcinfo.data = ddsfine;
+end
 
 targinfo = []; targinfo.r = rt; targinfo.d = dt; targinfo.n = nt;
 targinfo.d2 = d2t; targinfo.n = nt; targinfo.data = dd;

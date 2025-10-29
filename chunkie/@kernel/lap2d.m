@@ -23,6 +23,13 @@ function obj = lap2d(type, coefs)
 %   coefs(1)*KERNEL.LAP2D('d') + coefs(2)*KERNEL.LAP2D('s'). If no
 %   value of coefs is specified the default is coefs = [1 1]  
 %
+%   KERNEL.LAP2D('cp', coefs) or KERNEL.LAP2D('cprime', coefs) constructs
+%   the normal derivative of the combined-layer Laplace kernel with
+%   parameter coefs
+%
+%   KERNEL.LAP2D('cg', coefs) or KERNEL.LAP2D('cgrad', coefs) constructs
+%   the gradient of the combined-layer Laplace kernel with parameter coefs
+%
 % See also CHNK.LAP2D.KERN.
 
 % author: Dan Fortunato
@@ -103,6 +110,16 @@ switch lower(type)
         obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r'};
         obj.splitinfo.functions = @(s,t) lap2d_c_split(s,t,coefs);
+
+    case {'cp', 'cprime'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cp';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cprime', coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'cprime', sigma, coefs);
+        obj.sing = 'hs';
 
     case {'cg', 'cgrad'}
         if ( nargin < 2 )

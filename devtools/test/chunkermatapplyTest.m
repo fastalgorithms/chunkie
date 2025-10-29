@@ -1,10 +1,12 @@
+chunkermatapplyTest0();
+
+
+function chunkermatapplyTest0()
 %CHUNKERMATAPPLYTEST test the routines for a matrix free apply of the system
 %matrix
 %
 % 
 
-clearvars; clear all;
-addpaths_loc();
 
 seed = 8675309;
 rng(seed);
@@ -223,6 +225,11 @@ assert(relerr < 1e-13)
 % relerr = norm(sol1-sol2)/norm(sol1);
 % fprintf('relative solve error %5.2e\n',relerr);
 % assert(relerr < 1e-10)
+
+
+
+
+end
 
 
 function [r,d,d2] = sinearc(t,amp,frq)

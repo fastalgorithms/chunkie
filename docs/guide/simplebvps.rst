@@ -5,7 +5,7 @@
 Solving Standard Boundary Value Problems
 =========================================
 
-Chunkie uses the integral equation method to solve PDEs.
+ChunkIE uses the integral equation method to solve PDEs.
 In contrast with finite element methods, where the PDE is
 typically converted to a weak form, the standard approach for
 an integral equation method is to select an integral representation
@@ -68,7 +68,7 @@ is represented by its values at the nodes of a :matlab:`chunker`
 object. Because :math:`K` is defined in terms of the Green function
 for :math:`\mathcal{L}` it often has mild (or even strong) singularities
 when restricted to :math:`\Gamma`. One of the key features of
-chunkie is that the function :matlab:`layermat` will automatically return
+chunkie is that the function :matlab:`chunkermat` will automatically return
 a Nyström discretization of a layer potential using high-order
 accurate quadrature rules [BGR2010]_.
 
@@ -76,7 +76,7 @@ After solving the discrete system for :math:`\sigma`, the PDE solution,
 :math:`u`, can then be recovered by evaluating the layer potential
 representation at any points of interest. This integral is nearly singular
 for points near the boundary. Chunkie provides the function
-:matlab:`layereval` for doing this accurately, employing adaptive
+:matlab:`chunkerkerneval` for doing this accurately, employing adaptive
 integration when necessary.
 
 
@@ -231,17 +231,18 @@ can be solved with very little coding:
    :alt: solution of Laplace equation
    :align: center
 		
+.. _helmholtzsimple:
 
 A Helmholtz Scattering Problem
 -------------------------------
 
-In a scattering problem, an incident field $u^{\\textrm{inc}}$ is specified
-in the exterior of an object and a scattered field $u^{\\textrm{scat}}$ is
-determined so that the total field $u = u^{\\textrm{inc}}+u^{\\textrm{scat}}$
+In a scattering problem, an incident field $u^{\textrm{inc}}$ is specified
+in the exterior of an object and a scattered field $u^{\textrm{scat}}$ is
+determined so that the total field $u = u^{\textrm{inc}}+u^{\textrm{scat}}$
 satisfies the PDE and a given boundary condition. It is also required that 
 the scattered field radiates outward from the object. For a sound-soft object
 in acoustic scattering, the total field is zero on the object boundary.
-This results in the following boundary value problem for $u^{\\textrm{scat}}$
+This results in the following boundary value problem for $u^{\textrm{scat}}$
 in the exterior of the object:
 
 .. math::

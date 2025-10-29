@@ -66,6 +66,7 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %                      corrections for near corners if input chnkobj is
 %                      of type chunkergraph
 %           opts.rcip_ignore = [], list of vertices to ignore in rcip
+%           opts.rcip_savedepth = (10), depth to save rcip info
 %           opts.nsub_or_tol = (40) specify the level of refinements in rcip
 %                    or a tolerance where the number of levels is given by
 %                    ceiling(log_{2}(1/tol^2));
@@ -84,6 +85,9 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 % Optional output
 %   opts - with the updated opts structure which stores the relevant
 %          quantities in opts.auxquads.<opts.quad><opts.type>
+%   rcipsav - precomputed structure of rcip data at corners
+%             for subsequent postprocessing of the solution at targets close 
+%             to the corner
 %
 % Examples:
 %   sysmat = chunkermat(chnkr,kern); % standard options
@@ -136,6 +140,7 @@ l2scale = false;
 isrcip = true;
 rcip_ignore = [];
 nsub = 40;
+rcip_savedepth = 10;
 adaptive_correction = false;
 sing = 'log';
 
@@ -162,6 +167,9 @@ end
 
 if(isfield(opts,'rcip'))
     isrcip = opts.rcip;
+end
+if(isfield(opts,'rcip_savedepth'))
+    rcip_savedepth = opts.rcip_savedepth;
 end
 if(isfield(opts,'rcip_ignore'))
     rcip_ignore = opts.rcip_ignore;
@@ -196,6 +204,9 @@ for i=1:nchunkers
     targinfo = [];
    	targinfo.r = chnkrs(i).r(:,2); targinfo.d = chnkrs(i).d(:,2); 
    	targinfo.d2 = chnkrs(i).d2(:,2); targinfo.n = chnkrs(i).n(:,2);
+    if ~isempty(chnkrs(i).data)
+	    targinfo.data = chnkrs(i).data(:, 2);
+    end
     lchunks(i) = chnkrs(i).npt;
     
     for j=1:nchunkers
@@ -205,6 +216,9 @@ for i=1:nchunkers
         srcinfo = []; 
         srcinfo.r = chnkrs(j).r(:,1); srcinfo.d = chnkrs(j).d(:,1); 
         srcinfo.d2 = chnkrs(j).d2(:,1); srcinfo.n = chnkrs(j).n(:,1);
+        if ~isempty(chnkrs(j).data)
+	        srcinfo.data = chnkrs(j).data(:, 1);
+        end
 
         if (size(kern) == 1)
             ftemp = kern.eval(srcinfo,targinfo);
@@ -414,10 +428,6 @@ for i=1:nchunkers
         if nonsmoothonly
             sysmat_tmp = sparse(chnkr.npt,chnkr.npt);
         else
-            if (quadorder ~= chnkr.k)
-                warning(['native rule: quadorder', ... 
-                    ' must equal chunker order (%d)'],chnkr.k)
-            end
             sysmat_tmp = chnk.quadnative.buildmat(chnkr,ftmp,opdims);
         end
     else
@@ -474,6 +484,8 @@ if(icgrph && isrcip)
     npt_all = horzcat(chnkobj.echnks.npt);
     [~,nv] = size(chnkobj.verts);
     ngl = chnkrs(1).k;
+
+    rcipsav = cell(nv,1);
     
     for ivert=setdiff(1:nv,rcip_ignore)
         clist = chnkobj.vstruc{ivert}{1};
@@ -520,11 +532,14 @@ if(icgrph && isrcip)
         optsrcip = opts;
         optsrcip.nonsmoothonly = false;
         optsrcip.corrections = false;
+        optsrcip.rcip_savedepth = rcip_savedepth;
 
-        R = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
+        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
             Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
             sbclmat,sbcrmat,lvmat,rvmat,u,optsrcip);
-       
+
+        rcipsav{ivert}.starind = starind;
+
         sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
         if (~nonsmoothonly)
             
@@ -582,6 +597,11 @@ if(icgrph && isrcip)
             vsysmat = [vsysmat;sysmat_tmp(:)];
         end    
     end
+
+    if nargout > 2
+        varargout{2} = rcipsav;
+    end
+
     
 end
 
@@ -632,6 +652,7 @@ end
 
 targs = chnkrt.r(:,:); targn = chnkrt.n(:,:); 
 targd = chnkrt.d(:,:); targd2 = chnkrt.d2(:,:);
+targdata = chnkrt.data(:,:);
 
 [~,nt] = size(targs);
 
@@ -654,6 +675,7 @@ r = chnkr.r;
 d = chnkr.d;
 n = chnkr.n;
 d2 = chnkr.d2;
+data = chnkr.data;
 
 wtss = chnkr.wts;
 
@@ -662,14 +684,26 @@ for i = 1:nch
     jmatend = i*k*opdims(2);
                     
     [ji] = find(flag(:,i));
-    mat1 =  chnk.adapgausswts(r,d,n,d2,ct,bw,i,targs(:,ji), ...
-                targd(:,ji),targn(:,ji),targd2(:,ji),kernev,opdims,t,w,opts);
-            
+    if ~isempty(targdata)
+        mat1 =  chnk.adapgausswts(r,d,n,d2,data,ct,bw,i,targs(:,ji), ...
+                targd(:,ji),targn(:,ji),targd2(:,ji),targdata(:,ji),...
+                kernev,opdims,t,w,opts);
+    else
+        mat1 =  chnk.adapgausswts(r,d,n,d2,data,ct,bw,i,targs(:,ji), ...
+                targd(:,ji),targn(:,ji),targd2(:,ji),[],...
+                kernev,opdims,t,w,opts);
+    end            
     if corrections
         targinfo = []; targinfo.r = targs(:,ji); targinfo.d = targd(:,ji);
         targinfo.n = targn(:,ji); targinfo.d2 = targd2(:,ji);
+        if ~isempty(targdata)
+            targinfo.data = targdata(:,ji);
+        end
         srcinfo = []; srcinfo.r = r(:,:,i); srcinfo.d = d(:,:,i); 
         srcinfo.n = n(:,:,i); srcinfo.d2 = d2(:,:,i);
+        if ~isempty(data)
+            srcinfo.data = data(:,:,i);
+        end
         wtsi = wtss(:,i); wtsi = repmat(wtsi(:).',opdims(2),1);
         mat1 = mat1 - kernev(srcinfo,targinfo).*(wtsi(:).');
     end

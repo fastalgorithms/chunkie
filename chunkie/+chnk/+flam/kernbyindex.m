@@ -112,8 +112,12 @@ for itrg=1:nchunkers
     di = chnkr_trg.d(:,iuni); 
     ni = chnkr_trg.n(:,iuni);
     d2i = chnkr_trg.d2(:,iuni);
+    datai = [];
+    if ~isempty(chnkr_trg.data)
+        datai = chnkr_trg.data(:,iuni);
+    end
     targinfo = []; targinfo.r = ri; targinfo.d = di; targinfo.d2 = d2i;
-        targinfo.n = ni;
+        targinfo.n = ni; targinfo.data = datai;
 
     wtarg = chnkr_trg.wts(iuni); 
     wtarg = repmat(wtarg(:).',opdims(1),1);
@@ -140,8 +144,12 @@ for itrg=1:nchunkers
         dj = chnkr_src.d(:,juni);
         nj = chnkr_src.n(:,juni); 
         d2j = chnkr_src.d2(:,juni);
+        dataj = [];
+        if ~isempty(chnkr_src.data)
+            dataj = chnkr_src.data(:,juni);
+        end
         srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
-        srcinfo.n = nj;
+        srcinfo.n = nj; srcinfo.data = dataj;
          
         wsrc = chnkr_src.wts(juni); 
         wsrc = repmat( (wsrc(:)).', opdims(2), 1);

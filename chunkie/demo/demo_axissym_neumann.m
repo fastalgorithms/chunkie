@@ -1,4 +1,4 @@
-addpaths_loc();
+%addpaths_loc();
 clear();
 
 rng(pi)

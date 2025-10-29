@@ -28,7 +28,7 @@ t = chnkrs(1).tstor;
 w = chnkrs(1).wstor;
 chnkrout = chunker(pref,t,w);
 
-for i = 1:length(chnkrs)
+for i = 1:numel(chnkrs)
   chnkrtemp = chnkrs(i);
   assert(chnkrtemp.dim == chnkrout.dim && chnkrtemp.k == chnkrout.k,...
       'chunkers to merge must be in same dimension and same order');

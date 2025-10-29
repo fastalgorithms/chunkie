@@ -1,9 +1,12 @@
+chunkerclassunitTest0();
+
+
+function chunkerclassunitTest0()
 %chunkerclassunitTest
 %
 % setting up some tests for methods of the chunker class
 %
 
-addpaths_loc();
 % adversarial constructor tests
 isuccess = 0;
 try
@@ -49,3 +52,34 @@ if (i2 > 0)
 assert(chnkr.adj(1,i2) == j)
 end
 end
+
+% test transforms 
+v = [1;2];
+com1 = chnkr.r(:,:)*chnkr.wts(:)/sum(chnkr.wts(:));
+chnkr2 = v + chnkr;
+com2 = chnkr2.r(:,:)*chnkr2.wts(:)/sum(chnkr2.wts(:));
+assert(norm(v-(com2-com1))/norm(v) < 1e-14)
+chnkr2 = chnkr + v; % add on either side
+com2 = chnkr2.r(:,:)*chnkr2.wts(:)/sum(chnkr2.wts(:));
+assert(norm(v-(com2-com1))/norm(v) < 1e-14)
+
+A = [1 2; 2 3]; 
+chnkr2 = A*chnkr;
+assert(abs(area(chnkr2) - det(A)*area(chnkr))/abs(area(chnkr)) < 1e-14);
+s = 2; 
+chnkr2 = s*chnkr;
+assert(abs(area(chnkr2) - s^2*area(chnkr))/abs(area(chnkr)) < 1e-14);
+chnkr2 = chnkr*s; % scale on either side 
+assert(abs(area(chnkr2) - s^2*area(chnkr))/abs(area(chnkr)) < 1e-14);
+
+caught = false;
+try
+    chnkr2 = chnkr*A; % only transform by matrix on left
+catch
+    caught = true;
+end
+assert(caught);
+
+end
+
+

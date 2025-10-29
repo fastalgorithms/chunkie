@@ -11,7 +11,8 @@ classdef kernel
 %      'helmholtz'  ('helm', 'h')                   's', 'd', 'sp', 'dp', 'c'
 %                                                   'cp'
 %      'helmholtz1d'  ('helm1d', 'h1d')             's'
-%      'helmholtz difference' ('helmdiff', 'hdiff') 's', 'd', 'sp', 'dp'
+%      'helmholtz difference'                       's', 'd', 'sp', 'dp'
+%         ('helmdiff', 'hdiff', 'helm_diff')
 %      'elasticity' ('elast', 'e')                  's', 'strac', 'd', 'dalt'
 %      'stokes'     ('stok', 's')                   'svel', 'spres', 
 %                                                   'strac', 'sgrad'
@@ -23,7 +24,9 @@ classdef kernel
 %      'axis sym helmholtz'                         's' 'd' 'sp' 'c'
 %         ('axissymh', 'axissymhelm')
 %      'axis sym helmholtz difference'              's' 'd' 'sp' 'dp'
-%         ('axissymhdiff', 'axissymhelmdiff') 
+%         ('axissymhdiff', 'axissymhelmdiff', 'axissymhelm_diff') 
+%      'quasiperiodic helmholtz'                    's', 'd', 'sp', 'dp', 'c'
+%         ('helmquas', 'hq')                        'cp'
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.
@@ -48,6 +51,15 @@ classdef kernel
 %        kernel values. K.eval(s,t) is an m x n matrix if s and t are a
 %        single source and target, respectively. For scalar kernels,
 %        opdims = [1 1].
+%
+%      - K.sing: a string/character array specifying the singularity  
+%        strength of the kernel for sources and targets which are on
+%        the same curve. Currently recognized singularities are considered
+%        as part of a hierarchy
+%        - 'smooth' a smooth integral kernel
+%        - 'log' sum of above type kernel and phi(s)log(s-t)
+%        - 'pv' sum of above type kernels and phi(s)/(s-t)
+%        - 'hs' sum of above type kernels and phi(s)/(s-t)^2
 %
 %      - K.fmm: A function handle which calls the FMM for the corresponding
 %        kernel. K.fmm(eps, s, t, sigma) evaluates the kernel with density
@@ -91,7 +103,7 @@ classdef kernel
                       obj = kernel.helm2d(varargin{:});
                   case {'helmholtz1d', 'helm1d', 'h1d'}
                       obj = kernel.helm1d(varargin{:});
-                  case {'helmholtz difference', 'helmdiff', 'hdiff'}
+                  case {'helmholtz difference', 'helmdiff', 'hdiff', 'helm_diff'}
                       obj = kernel.helm2ddiff(varargin{:});
                   case {'stokes', 'stok', 's'}
                       obj = kernel.stok2d(varargin{:});
@@ -104,8 +116,10 @@ classdef kernel
                   case {'axis sym helmholtz', 'axissymh', 'axissymhelm'}
                       obj = kernel.axissymhelm2d(varargin{:});
                   case {'axis sym helmholtz difference', 'axissymhdiff' ...
-                           'axissymhelmdiff'}
-                      obj = kernel.axissymhelm2ddiff(varargin{:});    
+                           'axissymhelmdiff', 'axissymhelm_diff'}
+                      obj = kernel.axissymhelm2ddiff(varargin{:});   
+                  case {'quasiperiodic helmholtz', 'helmquas', 'hq'}
+                      obj = kernel.helm2dquas(varargin{:});   
                   otherwise
                       error('Kernel ''%s'' not found.', kern);
               end
@@ -152,6 +166,7 @@ classdef kernel
         obj = elast2d(varargin);
         obj = axissymhelm2d(varargin);
         obj = axissymhelm2ddiff(varargin);
+        obj = helm2dquas(varargin);
         obj = zeros(varargin);
         obj = nans(varargin);
 
