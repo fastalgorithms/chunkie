@@ -4,9 +4,9 @@ verts = [0 0.3 1 1 .5;
 evs = [[1;2],[2;3],[3;4],[4;5],[5;1]];
 evs = flipud(evs);
 cgrph = chunkgraph(verts,evs);
-% figure(1)
-% plot(cgrph)
-% quiver(cgrph)
+figure(1);clf
+plot(cgrph)
+quiver(cgrph)
 
 x = linspace(0,1,80)+1e-2; x = x(1:end-1); y = x;
 [xx,yy] = meshgrid(x,y);
@@ -68,7 +68,7 @@ nchs = [3,2];
 cs = 0*[-1, -1];
 nedge = length(cgrph.echnks);
 [cgrph_fin, isort, rfins, matkerns2, plotkerns2, idignore] = chnk.fins.build_fins(cgrph, matkerns, plotkerns, iverts, iedges, iedges_ref, nchs, cs);
-figure(1);clf
+figure(3);clf
 plot(cgrph_fin)
 quiver(cgrph_fin)
 hold on
@@ -80,11 +80,20 @@ axis equal
 assert(norm(cgrph_fin.r(:,:) - cgrph.r(:,isort)) == 0)
 
 opts = []; opts.rcip_ignore = [idignore];
+tic;
 A2 = chunkermat(cgrph_fin,matkerns2,opts);
 A2 = A2 + eye(size(A2));
+toc;
+opts = []; opts.rcip_ignore = [idignore]; opts.adaptive_correction = true;
+tic;
+A3 = chunkermat(cgrph_fin,matkerns2,opts);
+A3 = A3 + eye(size(A3));
+toc;
+
 
 norm(A2 - A(isort,isort))
-assert(norm(A2 - A(isort,isort)) < 1e-12)
+norm(A3 - A(isort,isort))
+assert(norm(A3 - A(isort,isort)) < 1e-12)
 
 
 B  = chunkerkerneval(cgrph,plotkerns, rhs,targs);

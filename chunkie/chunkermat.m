@@ -72,6 +72,9 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %           opts.adaptive_correction = (false) flag for whether to use
 %                    adaptive quadrature for near touching panels on
 %                    different chunkers
+%           opts.rcip_adaptive_correction = (false) flag for whether to use
+%                    adaptive quadrature for near touching panels on
+%                    different chunkers within rcip
 %           opts.eps = (1e-14) tolerance for adaptive quadrature
 %  ilist - cell array of integer arrays ([]), list of panel interactions that 
 %          should be ignored when constructing matrix entries or quadrature
@@ -141,6 +144,7 @@ rcip_ignore = [];
 nsub = 40;
 rcip_savedepth = 10;
 adaptive_correction = false;
+rcip_adaptive_correction = false;
 sing = 'log';
 
 % get opts from struct if available
@@ -189,6 +193,9 @@ end
 
 if (isfield(opts,'adaptive_correction'))
     adaptive_correction = opts.adaptive_correction;
+end
+if (isfield(opts,'rcip_adaptive_correction'))
+    rcip_adaptive_correction = opts.rcip_adaptive_correction;
 end
 
 nchunkers = length(chnkrs);
@@ -523,6 +530,7 @@ if(icgrph && isrcip)
         optsrcip.nonsmoothonly = false;
         optsrcip.corrections = false;
         optsrcip.rcip_savedepth = rcip_savedepth;
+        optsrcip.adaptive_correction = rcip_adaptive_correction;
 
         [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim, ...
             Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
