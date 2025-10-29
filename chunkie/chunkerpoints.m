@@ -10,7 +10,7 @@ function chnkr = chunkerpoints(src,opts)
 %         lives (typically 2), k is the number of Gauss-Legendre nodes 
 %         per panel (typically 16), and nch is the total number of panels.
 %   opts - a structure containing optional argumensts (defaults)
-%       opts.ifclosedtrue - a boolean. True if the desired curve 
+%       opts.ifclosed - (true) a boolean. True if the desired curve 
 %           is closed, and False if not. Note that no checking is done. 
 %           All this changes is the corresponding chunker adjacency info.
 %
