@@ -13,69 +13,16 @@ chnkr(1,ncurve) = chunker();
 % set wave number
 zk = 1.1;
 
-nch = 8*ones(1,ncurve);
+funs = cell(2,1); 
+funs{1} = @(t) circle(t); funs{2} = @(t) circle(t);
+cparamcell = cell(2,1);
+cparams1 = []; cparams1.ta = 0; cparams1.tb = pi/1.1; cparams1.nchmin = 1;
+cparams2 = []; cparams2.ta = 0; cparams2.tb = pi/1.4; cparams2.nchmin = 8;
+cparamcell{1} = cparams1; cparamcell{2} = cparams2;
 
-a = -1.0;
-b = 1.0;
+vert = [-1 1; 0 0];
 
-% set angles for top and bottom curve
-theta = [pi/2.2 pi/2.4];
-
-% set parametrization start and end points for chunkie objects
-tab = [-theta(1)/2 -theta(2)/2; theta(1)/2 theta(2)/2];
-
-% set parameters for curve parametrization
-vert = [a b; 0 0];
-cpars = cell(1,ncurve);
-cpars{1}.v0 = vert(:,1); cpars{1}.v1 = vert(:,2);
-cpars{1}.theta = theta(1); cpars{1}.ifconvex = 0; cpars{1}.islocal = -1;
-
-cpars{2}.v0 = vert(:,1); cpars{2}.v1 = vert(:,2);
-cpars{2}.theta = theta(2); cpars{2}.ifconvex = 2; cpars{2}.islocal = -1;
-
-% number of gauss legendre nodes
-ngl = 16;
-pref = [];
-pref.k = ngl;
-
-cparams = cell(1,ncurve);
-for i=1:ncurve
-    cparams{i}.ta = tab(1,i); 
-    cparams{i}.tb = tab(2,i);
-    cparams{i}.ifclosed = false;
-end
-
-inds = [0, cumsum(nch)];
-
-[glxs,glwts,glu,glv] = lege.exps(ngl);
-
-fcurve = cell(1,ncurve);
-figure(1)
-clf; hold on;
-chnkrcell = cell(ncurve,1);
-for icurve = 1:ncurve
-    fcurve{icurve} = @(t) circulararc(t,cpars{icurve});
-    chnkr(icurve) = chunkerfuncuni(fcurve{icurve},nch(icurve),cparams{icurve},pref);
-    plot(chnkr(icurve)); quiver(chnkr(icurve));
-    chnkrcell{icurve} = chnkr(icurve);
-end
-
-cends = chunkends(chnkrcell{icurve});
-vert = [cends(:,1,1), cends(:,2,end)];
-
-cg = chunkgraph(vert,[2 1; 1 2],chnkrcell); % equivalent chunkgraph
-
-%%
-
-
-iedgechunks = [1 2; 1 chnkr(2).nch];
-isstart = [1 0];
-nedge = 2;
-ndim=1;
-[Pbc,PWbc,starL,circL,starS,circS,ilist] = chnk.rcip.setup(ngl,ndim, ...
-      nedge,isstart);
-
-fkern = @(s,t) -2*chnk.helm2d.kern(zk,s,t,'D');
+cg = chunkgraph(vert,[1 2; 2 1],funs,cparamcell); % equivalent chunkgraph
 
 %
 
@@ -102,16 +49,11 @@ scatter(sources(1,:),sources(2,:),'o');
 scatter(targets(1,:),targets(2,:),'x');
 axis equal 
 
-
-
-
-chnkrtotal = merge(chnkr);
+chnkrtotal = merge(cg.echnks);
 fkern = @(s,t) -2*chnk.helm2d.kern(zk,s,t,'D');
 np = chnkrtotal.k*chnkrtotal.nch;
 start = tic; D = chunkermat(chnkrtotal,fkern);
 t1 = toc(start);
-
-
 
 kerns = @(s,t) chnk.helm2d.kern(zk,s,t,'s');
 
@@ -133,69 +75,57 @@ targinfo = []; targinfo.r = targets;
 kernmatstarg = kerns(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
-
-
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 
-
 sysmat = D;
-
-RG = speye(np);
-ncorner = 2;
-corners= cell(1,ncorner);
-R = cell(1,ncorner);
-rcipsav = cell(1,ncorner);
-starinds = cell(1,ncorner);
-
-
-corners{1}.clist = [1,2];
-corners{1}.isstart = [1,0];
-corners{1}.nedge = 2;
-corners{1}.iedgechunks = [1 2; 1 chnkr(2).nch];
-
-corners{2}.clist = [1,2];
-corners{2}.isstart = [0 1];
-corners{2}.nedge = 2;
-corners{2}.iedgechunks = [1 2; chnkr(1).nch 1];
 
 ndim = 1;
 
 nsub = 40;
+nch_all = horzcat(cg.echnks.nch);
+npt_all = horzcat(cg.echnks.npt);
+[~,nv] = size(cg.verts);
+ngl = cg.k;
+irowlocs = cumsum([1 cg.echnks.npt]);
+rcipsav = cell(nv,1);
 
-
-for icorner=1:ncorner
-    clist = corners{icorner}.clist;
-    isstart = corners{icorner}.isstart;
-    nedge = corners{icorner}.nedge;
-    
+for ivert=1:nv
+    clist = cg.vstruc{ivert}{1};
+    isstart = cg.vstruc{ivert}{2};
+    isstart(isstart==1) = 0;
+    isstart(isstart==-1) = 1;
+    nedge = length(isstart);
+    iedgechunks = zeros(2,nedge);
+    iedgechunks(1,:) = clist;
+    iedgechunks(2,:) = 1;
+    nch_use = nch_all(clist);
+    iedgechunks(2,isstart==0) = nch_use(isstart==0);
     
     starind = zeros(1,2*ngl*ndim*nedge);
+    corinds = cell(nedge,1);
     for i=1:nedge
         i1 = (i-1)*2*ngl*ndim+1;
         i2 = i*2*ngl*ndim;
         if(isstart(i))
-            
-            starind(i1:i2) = inds(clist(i))*ngl*ndim+(1:2*ngl*ndim);
+        starind(i1:i2) = irowlocs(clist(i))+(1:2*ngl*ndim)-1;
+            corinds{i} = 1:2*ngl;
         else
-            
-            starind(i1:i2) = inds(clist(i)+1)*ngl*ndim-fliplr(0:2*ngl*ndim-1);
+            starind(i1:i2) = irowlocs(clist(i)+1)-fliplr(0:2*ngl*ndim-1)-1;
+            corinds{i} = (npt_all(clist(i))-2*ngl + 1):npt_all(clist(i));
         end
     end
     
-    starinds{icorner} = starind;
-    
-    [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = chnk.rcip.setup(ngl,ndim, ...
-      nedge,isstart);
-    
-    iedgechunks = corners{icorner}.iedgechunks;
+    [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = ...
+        chnk.rcip.setup(cg.k,ndim,nedge,isstart);
+
     optsrcip = [];
-    optsrcip.savedeep = true;
-    tic; [R{icorner},rcipsav{icorner}] = chnk.rcip.Rcompchunk(chnkr,iedgechunks,fkern,ndim,vert(:,icorner), ...
+    optsrcip.save_depth = Inf;
+    tic; [R{ivert},rcipsav{ivert}] = chnk.rcip.Rcompchunk(cg.echnks,iedgechunks,fkern,ndim,cg.verts(:,ivert), ...
         Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,...,
         [],[],[],[],[],optsrcip);
     toc
     
-    sysmat(starind,starind) = inv(R{icorner}) - eye(2*ngl*nedge*ndim);
+    sysmat(starind,starind) = inv(R{ivert}) - eye(2*cg.k*nedge*ndim);
 end
 sysmat = sysmat + eye(np);
 
@@ -211,17 +141,21 @@ assert(norm(sysmat - sysmat2) < 1e-10)
 [sol,flag,relres,iter] = gmres(sysmat,ubdry,np,eps*20,np);
 [sol2,flag,relres,iter] = gmres(sysmat2,ubdry,np,eps*20,np);
 
+assert(norm(sol-sol2) < 1e-10)
+
 %
 
 % interpolate to fine grid
 
 ndepth = 20;
-cor = cell(1,ncorner);
+cor = cell(1,nv);
+starinds = cell(1,nv);
 
-for icorner = 1:ncorner
-    starindtmp = rcipsav{icorner}.starind;
+for ivert = 1:nv
+    starindtmp = rcipsav{ivert}.starind;
+    starinds{ivert} = starindtmp;
     solhat = sol(starindtmp);
-    [solhatinterpcell,srcinfocell,wtscell] = chnk.rcip.rhohatInterp(solhat,rcipsav{icorner},ndepth);
+    [solhatinterpcell,srcinfocell,wtscell] = chnk.rcip.rhohatInterp(solhat,rcipsav{ivert},ndepth);
 
     rtmp = [];
     dtmp = [];
@@ -244,20 +178,20 @@ for icorner = 1:ncorner
     end
     srcinfo = struct('r',rtmp,'d',dtmp,'d2',d2tmp,'n',ntmp,'data',datatmp);
 
-    targtemp = targets(:,:) - rcipsav{icorner}.ctr(:,1);
+    targtemp = targets(:,:) - rcipsav{ivert}.ctr(:,1);
     targinfo = [];
     targinfo.r = targtemp;
     
     cmat = fkern(srcinfo,targinfo);
     mu = solhatinterp(:).*wts(:);
-    cor{icorner} = cmat*mu;
+    cor{ivert} = cmat*mu;
 end
 
 %
 
 soltemp = sol;
-for icorner = 1:ncorner
-    soltemp(starinds{icorner}) = 0;
+for ivert = 1:nv
+    soltemp(starinds{ivert}) = 0;
 end
     
 
@@ -267,8 +201,8 @@ start=tic; Dsol = chunkerkerneval(chnkrtotal,fkern,soltemp,targets,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
 
-for icorner = 1:ncorner
-    Dsol = Dsol + cor{icorner};
+for ivert = 1:nv
+    Dsol = Dsol + cor{ivert};
 end
 %
 
@@ -281,8 +215,6 @@ fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
 assert(relerr < 1e-10)
 assert(relerr2 < 1e-10)
-
-
 
 end
 
@@ -298,128 +230,11 @@ end
 %
 
 
+function [r,d,d2] = circle(t)
 
-function [r,d,d2] = circulararc(t,cpars)
-%%circulararc
-% return position, first and second derivatives of a circular arc
-% that passes through points (x,y)=(a,0) and (x,y)=(b,0) with opening
-% angle theta0.
-%
-% Inputs:
-% t - paramter values (-theta0/2,theta0/2) to evaluate these quantities
-%
-% Outputs:
-% r - coordinates
-% d - first derivatives w.r.t. t
-% d2 - second derivatives w.r.t. t
-
-v0 = cpars.v0;
-v1 = cpars.v1;
-theta0 = cpars.theta;
-ifconvex = cpars.ifconvex;
-
-a = v0(1);
-b = v1(1);
-
-islocal = -1;
-if isfield(cpars,'islocal')
-  islocal = cpars.islocal; 
-end
-
-if islocal == -1
-  cx = (a+b)/2;
-  r0 = (b-a)/2/sin(theta0/2);
-
-  if ifconvex 
-    cy = v0(2)+(b-a)/2/tan(theta0/2);
-    theta = 3*pi/2+t;
-  else
-    cy = v0(2)-(b-a)/2/tan(theta0/2);
-    theta = pi/2+t;
-  end
-
-
-  xs = r0*cos(theta);
-  ys = r0*sin(theta);
-
-  xp = -ys;
-  yp = xs;
-
-  xpp = -xs;
-  ypp = -ys;
-
-  xs = cx + xs;
-  ys = cy + ys;
-  
-else
-
-  r0 = (b-a)/2/sin(theta0/2);  
-  if ~ifconvex
-    if islocal == 0
-      cx = r0*cos(pi/2+theta0/2);
-      sx = r0*sin(pi/2+theta0/2);
-    elseif islocal == 1
-      cx = r0*cos(pi/2-theta0/2);
-      sx = r0*sin(pi/2-theta0/2);     
-    end
-  elseif ifconvex
-    if islocal == 0
-      cx = r0*cos(3*pi/2+theta0/2);
-      sx = r0*sin(3*pi/2+theta0/2);
-    elseif islocal == 1
-      cx = r0*cos(3*pi/2-theta0/2);
-      sx = r0*sin(3*pi/2-theta0/2);     
-    end   
-  end
-
-%   t2 = t.*t;
-%   t3 = t2.*t;
-%   t4 = t3.*t;
-%   t5 = t4.*t;
-%   t6 = t5.*t;
-%   t7 = t6.*t;
-%   t8 = t7.*t;
-%   t9 = t8.*t;
-%   t10 = t9.*t;
-%   
-% 
-%   ct = -t2/2 + t4/24 - t6/720 + t8/40320 - t10/3628800;
-%   st =  t - t3/6 + t5/120 - t7/5040 + t9/362880;
-
-% better to use sin(t) directly instead of its series expansion because
-% 1. the evaluation of sin(t) is accurate at t=0;
-% 2. one needs to determine how many terms are needed in series expansion,
-% which looks simple but it could be either inefficient or inaccurate
-% depending on the value of t; 3. if we write "if" statements, it's
-% difficult to vectorize the evaluation.
-
-% same reason that we should use -2*sin(t/2).^2 instead of its Taylor
-% expansion, but of course one should NOT use cos(t)-1.
-  ct = -2*sin(t/2).^2;
-  st = sin(t);
-  
-  ctp = -st;
-  stp = cos(t);
-  
-  ctpp = -stp;
-  stpp = -st;
-  
-  xs = -sx*st + cx*ct;
-  ys =  cx*st + sx*ct;
-  
-  xp = -sx*stp + cx*ctp;
-  yp =  cx*stp + sx*ctp;
-
-  xpp = -sx*stpp + cx*ctpp;
-  ypp =  cx*stpp + sx*ctpp;
-end    
-    
-
-r = [(xs(:)).'; (ys(:)).'];
-d = [(xp(:)).'; (yp(:)).'];
-d2 = [(xpp(:)).'; (ypp(:)).'];
+c = cos(t(:).'); s = sin(t(:).');
+r = [c; s]; 
+d = [-s; c];
+d2 = [-c; -s];
 
 end
-
-
-
