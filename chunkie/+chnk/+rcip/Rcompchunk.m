@@ -112,8 +112,6 @@ for i = 1:nedge
 
         rr = rvmat*(r.'); r = r - rr(:);
         ctr(:,i) = rr;
-        % r = r - vert0;
-        % ctr(:,i) = vert0;
         rcs(:,:,i) = sbcrmat*(r.');
         dcs(:,:,i) = u*(d.');
         d2cs(:,:,i) = u*(d2.');
@@ -124,8 +122,6 @@ for i = 1:nedge
         ileftright(i) = -1;
         rl = lvmat*(r.'); r = r - rl(:);
         ctr(:,i) = rl;
-        % r = r - vert0;
-        % ctr(:,i) = vert0;
         rcs(:,:,i) = sbclmat*(r.');
         dcs(:,:,i) = u*(d.');
         d2cs(:,:,i) = u*(d2.');
