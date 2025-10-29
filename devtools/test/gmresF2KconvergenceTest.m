@@ -1,32 +1,67 @@
-clearvars; close all;
+gmresF2KconvergenceTest0();
+
+
+function gmresF2KconvergenceTest0()
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%   .  .  .  builds a simple chunker 
+%            and tests new gmres using chunkermat
+%            from the Helmholtz transmission problem
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 iseed = 8675309;
 rng(iseed);
-npts = 1e3;
-% A = zI+K
-matK = (rand(npts)-0.5)*1e-8; % K is a small random matrix
-z = 1i; % z is any complex number
-matA = z*eye(npts) + matK;
-rhs = matA * rand(npts,1);
-rhs = rhs(:);
 
-start = tic; [sol1,flag,relres,iter1,resvec1] = gmres(matA,rhs,[],1e-15,100); t1 = toc(start);
-% test new gmres 
-% set up parameters
-opts = [];
-opts.max_iterations = 1e4;
-opts.threshold = 1e-100;
-x = zeros(size(rhs));
-% test gmres for 
-[sol3,iter3,resvec3] = gmresF2K(z,matK,rhs,x, opts);
-resvec3 = abs(resvec3);
-resvec3 = resvec3(resvec3~=0);
+kvec = 20*[1;-1.5];
+zk = norm(kvec);
+
+% discretize domain
+cparams = [];
+cparams.eps = 1.0e-6;
+cparams.nover = 0;
+cparams.maxchunklen = 4.0/zk; % setting a chunk length helps when the
+                              % frequency is known
+                              
+pref = []; 
+pref.k = 16;
+narms = 5;
+amp = 0.25;
+chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+chnkr = refine(chnkr);
+
+fkern = kernel('helm','c',zk,[1,-zk*1i]);
+sysmatK = chunkermat(chnkr,fkern)*1e-6;
+sysmatA = 0.5*eye(chnkr.k*chnkr.nch) + sysmatK;
+rhs = -planewave(kvec(:),chnkr.r(:,:)); rhs = rhs(:);
+
+tol = 1e-40;
+maxit = 200;
+opts.tol = tol;
+opts.maxit = maxit;
+dens0 = sysmatA\rhs;
+[dens1,~,~,iter1,resvec1] = gmres(sysmatA,rhs,[],tol,maxit); 
+[dens2,iter2,resvec2,~] = gmresF2K(sysmatK,rhs,0.5,[],opts); 
 
 clf;
-plot(log10(resvec1),Color='b',LineWidth=2); 
-hold on;
-plot(log10(resvec3),Color='r',LineWidth=2); 
-legend('Native GMRES', 'GMRES for F2K operators');
+plot(log10(abs(resvec1)));
+hold on; 
+plot(log10(abs(resvec2)));
+legend('GMRES','GMRESF2K');
+title('convergence of gmres vs gmresF2K');
+norm(dens0-dens1)
+norm(dens0-dens2)
+assert(norm(dens0-dens1)<1e-10);
+assert(norm(dens0-dens2)<1e-10);
 
-fprintf("Native GMRES exited with flag %i (3=stalled), converged to %f digits. \n",flag,log10(resvec1(end)));
-fprintf("New GMRES for F2K operators converged to %f digits. \n",log10(resvec3(end)));
-assert(resvec3(end)<opts.threshold)
+residue1 = sysmatA*dens1-rhs;
+residue2 = sysmatA*dens2-rhs;
+
+assert(norm(residue1)<1e-10);
+assert(norm(residue2)<1e-10);
+
+fprintf('standard gmres converged in %d iterations to %.4e.\n',iter1(end),resvec1(end));
+fprintf('gmres for zI+K converged in %d iterations to %.4e.\n',iter2,resvec2(end));
+
+end

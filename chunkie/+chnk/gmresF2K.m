@@ -1,87 +1,159 @@
-function [x,k,g] = gmresF2K(z, K, b, x, opts)
-    % Solve (z*I + K) x = b
-    % z is a complex number
-    % K is a matrix or function handle 
-    m = opts.max_iterations;  
-    tol = opts.threshold;
+function [x,iter,resvec,resfin] = gmresF2K(K, b, z, x, opts)
+%GMRESF2K   Stall-free Generalized Minimum Residual Method 
+%           for operators of the form A*x = (z*I+K)*x = b,
+%           where z is a complex number, and
+%           K is a matrix or function handle.
+%   returns X: the solution,
+%           ITER: number of iterations,
+%           RESVEC: residue for all iterations,
+%           RESFIN: final value for residue.
+%
+%   X = GMRES(K,B) attempts to solve the system of linear equations (I+K)*X = B
+%   for X.  The N-by-N matrix K must be square and the right hand side 
+%   column vector B must have length N. This uses the unrestarted
+%   method with MIN(N,100) total iterations.
+%
+%   X = GMRES(KFUN,B) accepts a function handle KFUN instead of the matrix
+%   K. KFUN(X) accepts a vector input X and returns the matrix-vector
+%   product K*X. In all of the following syntaxes, you can replace K by
+%   KFUN.
+%
+%   X = GMRES(KFUN,B,Z) attempts to solve the system of linear equations 
+%   (Z*I+K)*X = B for X, where Z is a complex number.
+% 
+%   X = GMRES(KFUN,B,Z,X0) specifies the first initial guess. 
+%   If X0 is [] then GMRESF2K uses the default, an all zero vector.
+%
+%   X = GMRES(KFUN,B,Z,X0,OPTS) specifies the tolerance and maximum 
+%   number of iterations of the method.  
+%   If OPTS.TOL is [] then GMRESF2K uses the default, 1e-16.
+%   If OPTS.MAXIT is [] then GMRESF2K uses the default, min(N,100).
+%
+%   Example:
+%      n = 21; A = gallery('wilk',n);  b = sum(A,2);
+%      tol = 1e-12;  maxit = 15; M = diag([10:-1:1 1 1:10]);
+%      opts = []; opts.max_iterations = 1e4; opts.threshold = 1e-100;
+%      x = gmresF2K(A,b,1,[],opts);
+%   Or, use this matrix-vector product function
+%      %-----------------------------------------------------------------%
+%      function y = kfun(x,n)
+%      y = [0; x(1:n-1)] + [((n-1)/2:-1:0)'; (1:(n-1)/2)'].*x+[x(2:n); 0];
+%      %-----------------------------------------------------------------%
+%   as inputs to GMRESF2K:
+%      x1 = gmresF2K(@(x)kfun(x,n),b,1,[],opts);
+
+    if nargin < 2, error('gmresF2K: need at least K and b'); end
     n = numel(b);
+
+    if nargin < 5 || isempty(opts), opts = struct; end
+    if ~isfield(opts,'maxit') && ~isfield(opts,'max_iterations')
+        opts.maxit = min(n,100);
+    end
+    if ~isfield(opts,'tol') && ~isfield(opts,'threshold')
+        opts.tol = 1e-16;
+    end
+
+    if nargin < 4 || isempty(x), x = zeros(size(b)); end
+    if nargin < 3 || isempty(z), z = 1; end
+
     if isa(K,'function_handle')
         Kop = @(v) K(v);
     else
         Kop = @(v) K*v;
     end
 
-    r = b - z*x - Kop(x);
-    beta = norm(r); 
-    bnorm = norm(b); 
-    if bnorm==0, bnorm=1; end
-    if beta/bnorm <= tol, return; end
+    if isreal(z)
+        usecomplex = false;
+    else
+        usecomplex = true;
+    end
+
+    n = length(b);
+    if isempty(x), x = zeros(size(b)); end
+    m = opts.maxit;
+    tol = opts.tol;
+
+    r = b-z*x-Kop(x);
     
-    Q = zeros(n,m+1);          % Krylov basis
-    H = complex(zeros(m+1,m)); % Hessenberg
-    c = complex(zeros(m,1)); 
-    s = complex(zeros(m,1));
-    g = complex(zeros(m+1,1));
+    beta = norm(r);
+    b_norm = norm(b);
+
+    % Preallocate
+    Q = zeros(n, m+1);
+    H = zeros(m+1, m);
+    cs = zeros(m,1);
+    sn = zeros(m,1);
+    g = zeros(m+1,1);
+    resvec = zeros(m,1);
+    % Init
+    Q(:,1) = r / beta;
+    g(1) = beta;
+
+    if b_norm < tol || abs(g(1)) / b_norm < tol
+        return
+    end
     
-    Q(:,1) = r/beta; g(1) = beta;
-    kend = m;
     for k = 1:m
-        % Arnoldi / MGS
-        w = Kop(Q(:,k));
-        for i = 1:k
-            H(i,k) = Q(:,i)'*w;
-            w = w - H(i,k)*Q(:,i);
-        end
-        H(k+1,k) = norm(w);
-        if H(k+1,k) ~= 0
-            Q(:,k+1) = w/H(k+1,k); 
-        else
-            Q(:,k+1) = Q(:,k); 
-        end
+
+        % Arnoldi
+        [H(1:k+1, k), Q(:, k+1)] = arnoldi(K, Q, k);
+        H(k, k) = H(k, k) + z;
+        [H(1:k+1, k), cs(k), sn(k)] = apply_givens_rotation(H(1:k+1,k), cs, sn, k, usecomplex);
         
-        H(k,k) = H(k,k)+z;
-
-        % Apply previous rotations
-        for i = 1:k-1
-            Hik  = H(i,k); 
-            Hik1 = H(i+1,k);
-            H(i,k)   = conj(c(i))*Hik - s(i)*Hik1;
-            H(i+1,k) = conj(s(i))*Hik + c(i)*Hik1;
+        % Apply Givens rotation 
+        g(k + 1) = -sn(k) * g(k);
+        g(k)     =  cs(k) * g(k);
+        
+        % Find residue and error 
+        %err(k) = norm(Q(:, 1:k+1)*g(k + 1));
+        
+        yk = H(1:k, 1:k) \ g(1:k);
+        xk = x + Q(:, 1:k) * yk;
+        resvec(k) = norm(b-z*xk-Kop(xk)); 
+        
+        current_relative_tol = abs(g(k + 1)) / b_norm;
+        if (current_relative_tol <= tol)
+            break;
         end
 
-        % New rotation to zero H(k+1,k)
-        [c(k),s(k),rlen] = cgivens(H(k,k), H(k+1,k));
-        H(k,k) = rlen; H(k+1,k)=0;
-    
-        % Update g (||r_k|| = |g(k+1)|)
-        gk = g(k);
-        g(k)   = conj(c(k))*gk - s(k)*g(k+1);
-        g(k+1) = conj(s(k))*gk + c(k)*g(k+1);
-
-        % Stop if reached tolerance
-        if abs(g(k+1))/bnorm <= tol, kend = k; break; end
-    end
-
-    if kend == m
-        kend = m;
     end
     
-    % Solve using least squares
-    y = zeros(kend,1);
-    for i = kend:-1:1
-        ssum = g(i);
-        for j = i+1:kend
-            ssum = ssum - H(i,j)*y(j);
-        end
-        y(i) = ssum / H(i,i);
-    end
-    
-    x = x + Q(:,1:kend)*y;
+    y = H(1:k, 1:k) \ g(1:k);
+    x = x + Q(:, 1:k) * y;
+    iter = k;
+    resfin = norm(b-z*x-Kop(x));
+    resvec = resvec(1:k);
 end
 
-function [c,s,r] = cgivens(a,b)
-    % Complex Givens
-    % [conj(c) -s; conj(s) c]*[a;b] = [r;0]
+function [h, cs_k, sn_k] = apply_givens_rotation(h, cs, sn, k, usecomplex)
+    for i = 1:k-1
+        temp   =  cs(i)*h(i) + sn(i)*h(i+1);
+        h(i+1) = -sn(i)*h(i) + cs(i)*h(i+1);
+        h(i)   = temp;
+    end
+    if usecomplex
+        rotate = @cgivens_rotation;
+    else
+        rotate = @givens_rotation;
+    end
+    [cs_k, sn_k] = rotate(h(k), h(k+1));
+    h(k)   = cs_k*h(k) + sn_k*h(k+1);
+    h(k+1) = 0.0;
+end
+
+function [cs, sn] = givens_rotation(v1, v2)
+    if (v1 == 0)
+        cs = 0;
+        sn = 1;
+    else
+        t = sqrt(v1^2 + v2^2);
+        cs = v1 / t; 
+        sn = v2 / t;
+    end
+end
+
+function [c,s,r] = cgivens_rotation(a,b)
+    % Complex Givens: [conj(c) -s; conj(s) c]*[a;b] = [r;0], 
     aa = abs(a); bb = abs(b);
     r = hypot(aa,bb);
     if r==0, c=1; s=0; else, c=a/r; s=b/r; end
