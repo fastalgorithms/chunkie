@@ -34,8 +34,6 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     dxdz = 2*(dz)/2/r/r0;
     dxdr0 = (r0^2 - r^2 - (dz)^2)/2/r/r0^2;
     dxdz0 = -dxdz;
-
-
   
     %!
     %! if xminus is very small, use the forward recurrence
@@ -64,8 +62,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
             iffwd = 0;
         end
         
-    end
-    
+    end    
     
 
     gvals = zeros(maxm+1,1);

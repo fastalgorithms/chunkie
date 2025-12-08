@@ -1,5 +1,6 @@
 function obj = axissymlap2d(type, m)
 %KERNEL.AXISSYMLAP2D   Construct the axissymmetric Laplace kernel.
+% See also CHNK.AXISSYMHELM2D.KERN.
 
 if ( nargin < 1 )
     error('Missing Laplace kernel type.');

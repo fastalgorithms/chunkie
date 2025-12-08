@@ -113,6 +113,8 @@ classdef kernel
                       obj = kernel.axissymlap2d(varargin{:});    
                   case {'axis sym helmholtz', 'axissymh', 'axissymhelm'}
                       obj = kernel.axissymhelm2d(varargin{:});
+                  case {'axissymlaplace'}
+                      obj = kernel.axissymlap2d(varargin{:});
                   case {'axis sym helmholtz difference', 'axissymhdiff' ...
                            'axissymhelmdiff'}
                       obj = kernel.axissymhelm2ddiff(varargin{:});   

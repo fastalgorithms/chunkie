@@ -14,11 +14,8 @@ function [gval, gdz, gdr, gdrp, gdrpr, gdzz, gdrz, gdrpz] = gfunc(r, rp, dr, z, 
     n       = 3;
     
     t = (dz.^2+dr.^2)./(2.*r.*rp);
-    [q0,q1,q0d] = chnk.axissymlap2d.qleg_half(t);
-    
-    chi = t+1;
-    %q0d = (-chi.*q0+q1)./(2*(chi.^2-1));
-    
+    [q0,q1,q0d] = chnk.axissymlap2d.qleg_half(t);    
+
     gval = domega3*(rp./r).^((n-2)/2).*q0;
     gdz  = domega3*(rp./r).^((n-2)/2).*q0d ...
           ./(rp.*r).*dz;
@@ -31,9 +28,9 @@ function [gval, gdz, gdr, gdrp, gdrpr, gdzz, gdrz, gdrpz] = gfunc(r, rp, dr, z, 
     gdr  = domega3*(rp./r).^((n-2)/2)./(rp.*r) ...
            .*rfac;
 
+
     % Amandin hessian stuff
     chi = 1+t;
-    %q0dd = ((1/4)*q0 + 2*chi.*q0d)./(1-chi.^2);
     q0dd = ((1/4)*q0 + 2*chi.*q0d)./(-t.^2-2*t);
 
     rfac = 1./(rp.*r).*q0d + (dz./(rp.*r)).^2.*q0dd;
@@ -49,4 +46,28 @@ function [gval, gdz, gdr, gdrp, gdrpr, gdzz, gdrz, gdrpz] = gfunc(r, rp, dr, z, 
         + (2*chi./(rp.*r) - 3./(2*r.^2) - 3./(2*rp.^2)).*q0d ...
         + (-chi./r+1./rp).*(-chi./rp + 1./r).*q0dd;
     gdrpr = 2*pi*sqrt(rp./r).*rfac;
+
+
+    
+    
+    % % check the scaling here correctly
+    % m = 1000;
+    % dint = 0;
+    % h = 2*pi/m;
+    % for i = 1:m
+    %     s = (i-1)*h;
+    %     x = r;
+    %     y = 0;
+    %     xp = rp*cos(s);
+    %     yp = rp*sin(s);
+    %     dist = sqrt( (x-xp)^2 + (y-yp)^2 + (z-zp)^2 );
+    %     dint = dint + h/dist;
+    % end
+
+    % dint = dint*pi*rp;
+    
+    % disp(['gval = ' num2str(gval)]);
+    % disp(['dint = ' num2str(dint)]);
+    % disp(['ratio = ' num2str(gval/dint)]);
+
 end

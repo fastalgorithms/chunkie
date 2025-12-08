@@ -74,6 +74,7 @@ if strcmpi(type, 'sprime')
 end
 
 if strcmpi(type, 's')
+<<<<<<< HEAD
     submat = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
 end
 
@@ -91,3 +92,10 @@ if strcmpi(type, 'dprime')
         + hess(:,:,4).*nxs.*nyt + hess(:,:,2).*nyt.*nys);
 end
 
+=======
+    submat = chnk.axissymlap2d.green(src, targ, origin);
+    
+end
+
+
+>>>>>>> upstream/lap_axisym
