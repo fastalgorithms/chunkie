@@ -1,4 +1,4 @@
-function submat = kern(srcinfo, targinfo, origin, type)
+function submat = kern_0th_mode(srcinfo, targinfo, origin, type)
 %CHNK.AXISSYMLAP2D.KERN axissymmetric Laplace layer potential kernels in 2D
 % 
 % Syntax: submat = chnk.axissymlap2d.kern(srcinfo,targinfo,type)
@@ -55,27 +55,51 @@ targ = targinfo.r;
 
 if strcmpi(type, 'd')
     srcnorm = srcinfo.n;
-    [~, grad] = chnk.axissymlap2d.green(src, targ, origin);
+    [~, grad] = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
     nx = repmat(srcnorm(1,:), nt, 1);
     ny = repmat(srcnorm(2,:), nt, 1);
-    % Due to lack of translation invariance in r, no sign flip needed, 
-    % as gradient is computed with repsect to r'
-    submat = (grad(:,:,2).*nx + grad(:,:,3).*ny);
+    % dr'*nr' + dz'*nz'
+    submat = -(grad(:,:,2).*nx + grad(:,:,4).*ny);
+end
+
+if strcmpi(type, 's')
+    [val, ~] = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
+    submat = val;
 end
 
 if strcmpi(type, 'sprime')
     targnorm = targinfo.n;
-    [~, grad] = chnk.axissymlap2d.green(src, targ, origin);
-
+    [~, grad] = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
     nx = repmat((targnorm(1,:)).',1,ns);
     ny = repmat((targnorm(2,:)).',1,ns);
-    submat = (grad(:,:,1).*nx - grad(:,:,3).*ny);
-
+    % dr*nr + dz*nz
+    submat = -(grad(:,:,1).*nx + grad(:,:,3).*ny);
 end
 
-if strcmpi(type, 's')
-<<<<<<< HEAD
-    submat = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
+if strcmpi(type, 'sgradr')
+    [~, grad] = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
+    submat = grad(:,:,1);
+end
+
+if strcmpi(type, 'sgradz')
+    [~, grad] = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
+    submat = grad(:,:,3);
+end
+
+if strcmpi(type, 'dgradr')
+    h = 1e-200;
+    targ_cr = targinfo;
+    targ_cr.r(1,:) = targ_cr.r(1,:) + 1i*h;
+    D_cr = kern_0th_mode(srcinfo, targ_cr, origin, 'd');
+    submat = imag(D_cr)/h;
+end
+
+if strcmpi(type, 'dgradz')
+    h = 1e-200;
+    targ_cz = targinfo;
+    targ_cz.r(2,:) = targ_cz.r(2,:) + 1i*h;
+    D_cz = kern_0th_mode(srcinfo, targ_cz, origin, 'd');
+    submat = imag(D_cz)/h;
 end
 
 if strcmpi(type, 'dprime')
@@ -92,10 +116,4 @@ if strcmpi(type, 'dprime')
         + hess(:,:,4).*nxs.*nyt + hess(:,:,2).*nyt.*nys);
 end
 
-=======
-    submat = chnk.axissymlap2d.green(src, targ, origin);
-    
 end
-
-
->>>>>>> upstream/lap_axisym
