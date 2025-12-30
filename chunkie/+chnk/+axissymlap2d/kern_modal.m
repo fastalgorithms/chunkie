@@ -1,4 +1,4 @@
-function submat = kern(srcinfo, targinfo, origin, type)
+function submat = kern_modal(srcinfo, targinfo, origin, type, m)
 %CHNK.AXISSYMLAP2D.KERN axissymmetric Laplace layer potential kernels in 2D
 % 
 % Syntax: submat = chnk.axissymlap2d.kern(srcinfo,targinfo,type)
@@ -37,6 +37,7 @@ function submat = kern(srcinfo, targinfo, origin, type)
 %                type == 's', single layer kernel S
 %                type == 'sprime', normal derivative of single
 %                      layer S'
+%   m - int, mode
 %
 %
 % Output:
@@ -55,27 +56,25 @@ targ = targinfo.r;
 
 if strcmpi(type, 'd')
     srcnorm = srcinfo.n;
-    [~, grad] = chnk.axissymlap2d.green(src, targ, origin);
+    [~, grad] = chnk.axissymlap2d.green_modal(src, targ, origin, m);
     nx = repmat(srcnorm(1,:), nt, 1);
     ny = repmat(srcnorm(2,:), nt, 1);
-    % Due to lack of translation invariance in r, no sign flip needed, 
-    % as gradient is computed with repsect to r'
-    submat = (grad(:,:,2).*nx + grad(:,:,3).*ny);
+    % dr'*nr' + dz'*nz'
+    submat = -(grad(:,:,2).*nx + grad(:,:,4).*ny);
+end
+
+if strcmpi(type, 's')
+    [val, ~] = chnk.axissymlap2d.green_modal(src, targ, origin, m);
+    submat = val;
 end
 
 if strcmpi(type, 'sprime')
     targnorm = targinfo.n;
-    [~, grad] = chnk.axissymlap2d.green(src, targ, origin);
-
+    [~, grad] = chnk.axissymlap2d.green_modal(src, targ, origin, m);
     nx = repmat((targnorm(1,:)).',1,ns);
     ny = repmat((targnorm(2,:)).',1,ns);
-    submat = (grad(:,:,1).*nx - grad(:,:,3).*ny);
-
-end
-
-if strcmpi(type, 's')
-<<<<<<< HEAD
-    submat = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
+    % dr*nr + dz*nz
+    submat = -(grad(:,:,1).*nx + grad(:,:,3).*ny);
 end
 
 if strcmpi(type, 'dprime')
@@ -85,17 +84,10 @@ if strcmpi(type, 'dprime')
     nyt = repmat((targnorm(2,:)).',1,ns);
     nxs = repmat(srcnorm(1,:), nt, 1);
     nys = repmat(srcnorm(2,:), nt, 1);
-    
     % hess = d_{rr'}, d_{zz'}, d_{rz'}, d_{r'z}
-    [~, ~, hess] = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
+    [~, ~, hess] = chnk.axissymlap2d.green_modal(src, targ, origin, m);
     submat = (hess(:,:,1).*nxt.*nxs + hess(:,:,3).*nys.*nxt ...
         + hess(:,:,4).*nxs.*nyt + hess(:,:,2).*nyt.*nys);
 end
 
-=======
-    submat = chnk.axissymlap2d.green(src, targ, origin);
-    
 end
-
-
->>>>>>> upstream/lap_axisym
