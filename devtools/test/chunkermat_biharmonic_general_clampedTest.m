@@ -1,21 +1,25 @@
-chunkermat_flex2d_exteriorclampedTest0();
+chunkermat_biharmonic_general_clampedTest0();
 
+function chunkermat_biharmonic_general_clampedTest0()
 
-function chunkermat_flex2d_exteriorclampedTest0()
-
-%CHUNKERMAT_FLEX2D_EXTERIORCLAMPEDTEST
+%CHUNKERMAT_BIHARMONIC_GENERALCLAMPEDTEST
 %
 % test the matrix builder and do a basic solve
 
 iseed = 8675309;
 rng(iseed);
 
-zk = 1.1;
+a = 0.77;
+b = 1.3;
+c = 1/pi;
+
+zk1 = sqrt((- b + sqrt(b^2 + 4*a*c)) / (2*a));
+zk2 = sqrt((- b - sqrt(b^2 + 4*a*c)) / (2*a));
 
 cparams = [];
-% cparams.eps = 1.0e-6;
+% cparams.eps = 1.0e-12;
 cparams.nover = 1;
-cparams.maxchunklen = 4.0/zk;
+cparams.maxchunklen = 4.0/zk1;
 pref = []; 
 pref.k = 16;
 narms = 3;
@@ -56,8 +60,8 @@ axis equal
 
 % defining kernels for rhs and analytic sol test
 
-kern1 = @(s,t) chnk.flex2d.kern(zk, s, t, 's');
-kern2 = @(s,t) chnk.flex2d.kern(zk, s, t, 'clamped_plate_bcs');
+kern1 = @(s,t) chnk.flex2d.kern([], s, t, 's_general',a,b,c);
+kern2 = @(s,t) chnk.flex2d.kern([], s, t, 'clamped_plate_bcs_general',a,b,c);
 
 % eval u and du/dn on bdry
 
@@ -75,7 +79,7 @@ utarg = kernmatstarg*strengths;
 
 % build clamped plate matrix
 
-fkern =  @(s,t) chnk.flex2d.kern(zk, s, t, 'clamped_plate');
+fkern =  @(s,t) chnk.flex2d.kern([], s, t, 'clamped_plate_general',a,b,c);
 
 kappa = signed_curvature(chnkr);
 kappa = kappa(:);
@@ -105,7 +109,7 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 
 % evaluate at targets and compare
 
-ikern = @(s,t) chnk.flex2d.kern(zk, s, t, 'clamped_plate_eval'); 
+ikern = @(s,t) chnk.flex2d.kern([], s, t, 'clamped_plate_general_eval',a,b,c); 
 
 start=tic; Dsol = chunkerkerneval(chnkr, ikern,sol,targets);
 t1 = toc(start);
@@ -120,7 +124,8 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(1:2:end)+sol(2:2:end)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
-assert(relerr < 1e-10);
+assert(relerr < 1e-9);
+assert(relerr2 < 1e-9);
 
 
 end

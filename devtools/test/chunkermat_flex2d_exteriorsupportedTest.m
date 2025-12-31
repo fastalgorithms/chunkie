@@ -112,7 +112,7 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 
 % solve linear system
 
-start = tic; sol = gmres(sys,rhs,[],1e-12,200); t1 = toc(start);
+start = tic; sol = gmres(sys,rhs,[],1e-10,200); t1 = toc(start);
 
 fprintf('%5.2e s : time for dense gmres\n',t1)
 

@@ -14,7 +14,7 @@ zk = 1.1;
 nu = 0.3;
 
 cparams = [];
-cparams.eps = 1.0e-6;
+% cparams.eps = 1.0e-6;
 cparams.nover = 1;
 cparams.maxchunklen = 4.0/zk;
 pref = []; 
@@ -109,7 +109,7 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 
 % solve linear system
 
-start = tic; sol = gmres(sys,rhs,[],1e-13,200); t1 = toc(start);
+start = tic; sol = gmres(sys,rhs,[],1e-10,200); t1 = toc(start);
 
 fprintf('%5.2e s : time for dense gmres\n',t1)
 
