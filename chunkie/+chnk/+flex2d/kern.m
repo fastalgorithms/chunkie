@@ -760,10 +760,56 @@ case {'supported_plate_eval'}
     submat(:,2:2:end) = K2;
 
 
-<<<<<<< Updated upstream
 % supported plate kernels for far field evaluation
 case{'supported_plate_eval_ff'}
-=======
+    srcnorm = srcinfo.n;
+    srctang = srcinfo.d;
+    srcd2 = srcinfo.d2;
+    coefs = varargin{1};
+    nu = coefs(1);
+    
+    nx = repmat(srcnorm(1,:),nt,1);
+    ny = repmat(srcnorm(2,:),nt,1);
+    
+    dx = repmat(srctang(1,:),nt,1);
+    dy = repmat(srctang(2,:),nt,1);
+    
+    ds = sqrt(dx.*dx+dy.*dy);
+    
+    taux = dx./ds;
+    tauy = dy./ds;
+    
+    dx1 = repmat(srctang(1,:),nt,1);
+    dy1 = repmat(srctang(2,:),nt,1);
+    
+    d2x1 = repmat(srcd2(1,:),nt,1);
+    d2y1 = repmat(srcd2(2,:),nt,1);
+    
+    denom = sqrt(dx1.^2+dy1.^2).^3;
+    numer = dx1.*d2y1-d2x1.*dy1;
+    
+    kappa = numer./denom; 
+    
+    kp = repmat(srcinfo.data(1,:),nt,1);
+    
+    a1 = 2-nu;
+    a2 = (-1+nu)*(7+nu)/(3 - nu);
+    a3 = (1-nu)*(3+nu)/(1+nu);
+    
+    [~, grad, hess, third] = chnk.flex2d.hkdiffgreen_ff(zk, src, targ, false); 
+    
+    K1 = -1/(2*zk^2)*(third(:,:,1).*nx.^3 + 3*third(:,:,2).*nx.^2.*ny + 3*third(:,:,3).*nx.*ny.^2 + third(:,:,4).*ny.^3) + ...
+         -a1/(2*zk^2)*(third(:,:,1).*nx.*taux.^2 + third(:,:,2).*(ny.*taux.^2 + 2*nx.*taux.*tauy) + third(:,:,3).*(nx.*tauy.^2 + 2*ny.*taux.*tauy) + third(:,:,4).*ny.*tauy.^2) + ...
+         a2*kappa./(2*zk^2).*(hess(:,:,1).*nx.^2 + 2*hess(:,:,2).*nx.*ny + hess(:,:,3).*ny.^2) + ...
+         -a3*kp./(2*zk^2).*(grad(:,:,1).*taux + grad(:,:,2).*tauy);
+
+    K2 = -1/(2*zk^2).*(grad(:,:,1).*nx + grad(:,:,2).*ny);
+
+    submat = zeros(nt,2*ns);
+
+    submat(:,1:2:end) = K1;
+    submat(:,2:2:end) = K2;
+
 %%% GENERAL BIHARMONIC KERNELS (STOKES, OR FLEX + TENSION)
 % The differential operator is given by:
 %
@@ -888,15 +934,11 @@ case {'clamped_plate_general'}
 
 % clamped plate kernels for plotting
 case {'clamped_plate_general_eval'}
-
-    submat = zeros(nt,2*ns);
-
->>>>>>> Stashed changes
+    a = varargin{1};
+    b = varargin{2};
+    c = varargin{3};
     srcnorm = srcinfo.n;
     srctang = srcinfo.d;
-    srcd2 = srcinfo.d2;
-    coefs = varargin{1};
-    nu = coefs(1);
     
     nx = repmat(srcnorm(1,:),nt,1);
     ny = repmat(srcnorm(2,:),nt,1);
@@ -908,36 +950,7 @@ case {'clamped_plate_general_eval'}
     
     taux = dx./ds;
     tauy = dy./ds;
-    
-    dx1 = repmat(srctang(1,:),nt,1);
-    dy1 = repmat(srctang(2,:),nt,1);
-    
-    d2x1 = repmat(srcd2(1,:),nt,1);
-    d2y1 = repmat(srcd2(2,:),nt,1);
-    
-    denom = sqrt(dx1.^2+dy1.^2).^3;
-    numer = dx1.*d2y1-d2x1.*dy1;
-    
-    kappa = numer./denom; 
-    
-    kp = repmat(srcinfo.data(1,:),nt,1);
-    
-    a1 = 2-nu;
-    a2 = (-1+nu)*(7+nu)/(3 - nu);
-    a3 = (1-nu)*(3+nu)/(1+nu);
-    
-    [~, grad, hess, third] = chnk.flex2d.hkdiffgreen_ff(zk, src, targ, false); 
-    
-    K1 = -1/(2*zk^2)*(third(:,:,1).*nx.^3 + 3*third(:,:,2).*nx.^2.*ny + 3*third(:,:,3).*nx.*ny.^2 + third(:,:,4).*ny.^3) + ...
-         -a1/(2*zk^2)*(third(:,:,1).*nx.*taux.^2 + third(:,:,2).*(ny.*taux.^2 + 2*nx.*taux.*tauy) + third(:,:,3).*(nx.*tauy.^2 + 2*ny.*taux.*tauy) + third(:,:,4).*ny.*tauy.^2) + ...
-         a2*kappa./(2*zk^2).*(hess(:,:,1).*nx.^2 + 2*hess(:,:,2).*nx.*ny + hess(:,:,3).*ny.^2) + ...
-         -a3*kp./(2*zk^2).*(grad(:,:,1).*taux + grad(:,:,2).*tauy);
 
-    K2 = -1/(2*zk^2).*(grad(:,:,1).*nx + grad(:,:,2).*ny);
-
-<<<<<<< Updated upstream
-    submat = zeros(nt,2*ns);
-=======
     zk1 = sqrt((- b + sqrt(b^2 + 4*a*c)) / (2*a));
     zk2 = sqrt((- b - sqrt(b^2 + 4*a*c)) / (2*a));
 
@@ -954,13 +967,12 @@ case {'clamped_plate_general_eval'}
 
     K2 =  -((hess(:, :, 1).*(nx.*nx) + hess(:, :, 2).*(2*nx.*ny) + hess(:, :, 3).*(ny.*ny)))+...
           ((hess(:, :, 1).*(taux.*taux) + hess(:, :, 2).*(2*taux.*tauy) + hess(:, :, 3).*(tauy.*tauy))); % -G_{ny ny}  + G_{tauy tauy}
->>>>>>> Stashed changes
 
+    submat = zeros(nt,2*ns);
+    
     submat(:,1:2:end) = K1;
     submat(:,2:2:end) = K2;
 
-<<<<<<< Updated upstream
-=======
 % boundary conditions applied to a point source
 case {'free_plate_bcs_general'}
     targnorm = targinfo.n;
@@ -1432,7 +1444,6 @@ case {'supported_plate_bcs_general'}
     submat(:,2:2:end) = K2;
 
 
->>>>>>> Stashed changes
 end
 
 end
