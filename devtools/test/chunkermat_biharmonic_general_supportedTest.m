@@ -10,8 +10,8 @@ function chunkermat_biharmonic_general_supportedTest0()
 iseed = 8675309;
 rng(iseed);
 
-a = 1;
-b = 0;
+a = 1.7;
+b = 0.8;
 c = 1/pi;
 nu = 0.3;
 
@@ -108,7 +108,7 @@ M2 = chunkermat(chnkr,fkern2, opts2);
 
 c0 = (nu - 1)*(nu + 3)*(2*nu - 1)/(2*(3 - nu));
 
-M(2:2:end,1:2:end) = M(2:2:end,1:2:end) + M2 + c0.*kappa(:).^2.*eye(chnkr.npt);
+M(2:2:end,1:2:end) = M(2:2:end,1:2:end) + M2 + c0.*kappa(:).^2.*eye(chnkr.npt) - b/(2*a)*eye(chnkr.npt); % extra term shows up for the general problem
 M = M - 0.5*eye(2*chnkr.npt);
 
 sys =  M;
