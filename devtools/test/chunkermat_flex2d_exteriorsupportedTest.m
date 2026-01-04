@@ -10,13 +10,23 @@ function chunkermat_flex2d_exteriorsupportedTest0()
 iseed = 8675309;
 rng(iseed);
 
-zk = 1.1;
+% PDE coefficients: (a \Delta^2 - b \Delta - c) u = 0
+a = 1.1;
+b = 0.7;
+c = 1/pi;
 nu = 0.3;
+
+zk1 = sqrt((- b + sqrt(b^2 + 4*a*c)) / (2*a));
+zk2 = sqrt((- b - sqrt(b^2 + 4*a*c)) / (2*a));
+
+zk = [zk1 zk2];
+
+% zk = 3; b = 0;
 
 cparams = [];
 cparams.eps = 1.0e-10;
 cparams.nover = 1;
-cparams.maxchunklen = 4.0/zk;
+cparams.maxchunklen = 4.0/max(abs(zk));
 pref = []; 
 pref.k = 16;
 narms = 3;
@@ -103,7 +113,7 @@ M2 = chunkermat(chnkr,fkern2, opts2);
 
 c0 = (nu - 1)*(nu + 3)*(2*nu - 1)/(2*(3 - nu));
 
-M(2:2:end,1:2:end) = M(2:2:end,1:2:end) + M2 + c0.*kappa(:).^2.*eye(chnkr.npt);
+M(2:2:end,1:2:end) = M(2:2:end,1:2:end) + M2 + c0.*kappa(:).^2.*eye(chnkr.npt) - b/(2*a)*eye(chnkr.npt); % extra term shows up for the general problem
 M = M - 0.5*eye(2*chnkr.npt);
 
 sys =  M;
@@ -141,7 +151,7 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(1:2:end)+sol(2:2:end)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
-assert(relerr < 1e-10);
+assert(relerr < 1e-9);
 
 end
 

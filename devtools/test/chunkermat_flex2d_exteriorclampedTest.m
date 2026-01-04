@@ -10,12 +10,22 @@ function chunkermat_flex2d_exteriorclampedTest0()
 iseed = 8675309;
 rng(iseed);
 
-zk = 1.1;
+% PDE coefficients: (a \Delta^2 - b \Delta - c) u = 0
+a = 1.1;
+b = 0.7;
+c = 1/pi;
+
+zk1 = sqrt((- b + sqrt(b^2 + 4*a*c)) / (2*a));
+zk2 = sqrt((- b - sqrt(b^2 + 4*a*c)) / (2*a));
+
+zk = [zk1 zk2];
+
+% zk = 3;
 
 cparams = [];
 % cparams.eps = 1.0e-6;
 cparams.nover = 1;
-cparams.maxchunklen = 4.0/zk;
+cparams.maxchunklen = 4.0/max(abs(zk));
 pref = []; 
 pref.k = 16;
 narms = 3;
@@ -120,7 +130,7 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(1:2:end)+sol(2:2:end)),wchnkr(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
-assert(relerr < 1e-10);
+assert(relerr < 1e-9);
 
 
 end

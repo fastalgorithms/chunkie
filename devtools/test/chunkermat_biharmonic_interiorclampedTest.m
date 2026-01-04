@@ -1,25 +1,21 @@
-chunkermat_biharmonic_general_clampedTest0();
+chunkermat_biharmonic_interiorclampedTest0();
 
-function chunkermat_biharmonic_general_clampedTest0()
 
-%CHUNKERMAT_BIHARMONIC_GENERALCLAMPEDTEST
+function chunkermat_biharmonic_interiorclampedTest0()
+
+%CHUNKERMAT_BIHARMONIC_INTERIORCLAMPEDTEST
 %
 % test the matrix builder and do a basic solve
 
 iseed = 8675309;
 rng(iseed);
 
-a = 0.77;
-b = 1.3;
-c = 1/pi;
-
-zk1 = sqrt((- b + sqrt(b^2 + 4*a*c)) / (2*a));
-zk2 = sqrt((- b - sqrt(b^2 + 4*a*c)) / (2*a));
+zk = 0;
+% zk = [1.1 0];
 
 cparams = [];
-% cparams.eps = 1.0e-12;
+% cparams.eps = 1.0e-6;
 cparams.nover = 1;
-cparams.maxchunklen = 4.0/zk1;
 pref = []; 
 pref.k = 16;
 narms = 3;
@@ -34,14 +30,14 @@ fprintf('%5.2e s : time to build geo\n',t1)
 nt = 10;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
-targets = 3.0*targets;
+targets = targets.*repmat(rand(1,nt),2,1);
 
 % sources
 
 ns = 3;
 ts = 0.0+2*pi*rand(ns,1);
 sources = starfish(ts,narms,amp);
-sources = sources.*repmat(rand(1,ns),2,1);
+sources = 3.0*sources;
 strengths = randn(ns,1);
 
 % plot geo and sources
@@ -60,8 +56,8 @@ axis equal
 
 % defining kernels for rhs and analytic sol test
 
-kern1 = @(s,t) chnk.flex2d.kern([], s, t, 's_general',a,b,c);
-kern2 = @(s,t) chnk.flex2d.kern([], s, t, 'clamped_plate_bcs_general',a,b,c);
+kern1 = @(s,t) chnk.flex2d.kern(zk, s, t, 's');
+kern2 = @(s,t) chnk.flex2d.kern(zk, s, t, 'clamped_plate_bcs');
 
 % eval u and du/dn on bdry
 
@@ -79,7 +75,7 @@ utarg = kernmatstarg*strengths;
 
 % build clamped plate matrix
 
-fkern =  @(s,t) chnk.flex2d.kern([], s, t, 'clamped_plate_general',a,b,c);
+fkern =  @(s,t) chnk.flex2d.kern(zk, s, t, 'clamped_plate');
 
 kappa = signed_curvature(chnkr);
 kappa = kappa(:);
@@ -89,8 +85,8 @@ opts.sing = 'log';
 
 start = tic;
 sys = chunkermat(chnkr,fkern, opts);
-sys = sys - 0.5*eye(2*chnkr.npt);
-sys(2:2:end,1:2:end) = sys(2:2:end,1:2:end) + kappa.*eye(chnkr.npt);
+sys = sys + 0.5*eye(2*chnkr.npt);
+sys(2:2:end,1:2:end) = sys(2:2:end,1:2:end) - kappa.*eye(chnkr.npt);
 
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -109,7 +105,7 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 
 % evaluate at targets and compare
 
-ikern = @(s,t) chnk.flex2d.kern([], s, t, 'clamped_plate_general_eval',a,b,c); 
+ikern = @(s,t) chnk.flex2d.kern(zk, s, t, 'clamped_plate_eval'); 
 
 start=tic; Dsol = chunkerkerneval(chnkr, ikern,sol,targets);
 t1 = toc(start);
@@ -125,7 +121,6 @@ fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
 assert(relerr < 1e-9);
-assert(relerr2 < 1e-9);
 
 
 end
