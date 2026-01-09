@@ -332,6 +332,9 @@ nch = chnkr.nch;
 
 srcinfo = []; srcinfo.r = chnkr.r(:,:); srcinfo.n = chnkr.n(:,:);
 srcinfo.d = chnkr.d(:,:); srcinfo.d2 = chnkr.d2(:,:);
+if ~isempty(chnkr.data)
+    srcinfo.data = chnkr.data(:,:);
+end
 
 mat = kerneval(srcinfo,targinfo);
 wts = chnkr.wts;
