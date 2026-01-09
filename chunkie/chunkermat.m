@@ -380,7 +380,7 @@ for i=1:nchunkers
                 auxquads = chnk.quadggq.setup(k,type);
                 opts.auxquads.ggqlog = auxquads;
             end
-        elseif strcmpi(sing, 'removable')
+        elseif strcmpi(singi, 'removable')
             type = 'removable';
             if (isfield(opts,'auxquads') && isfield(opts.auxquads,'ggqremovable'))
                 auxquads = opts.auxquads.ggqremovable;
