@@ -1,27 +1,19 @@
-chunkermat_flex2d_exteriorfreeTest0();
+chunkermat_biharmonic_interiorfreeTest0();
 
 
-function chunkermat_flex2d_exteriorfreeTest0()
+function chunkermat_biharmonic_interiorfreeTest0()
 
-%CHUNKERMAT_FLEX2D_EXTERIORFREETEST
+%CHUNKERMAT_BIHARMONIC_INTERIORFREETEST
 %
 % test the matrix builder and do a basic solve
 
 iseed = 8675309;
 rng(iseed);
 
-% PDE coefficients: (a \Delta^2 - b \Delta - c) u = 0
-a = 1.1;
-b = 0.7;
-c = 1/pi;
 nu = 0.3;
 
-zk1 = sqrt((- b + sqrt(b^2 + 4*a*c)) / (2*a));
-zk2 = sqrt((- b - sqrt(b^2 + 4*a*c)) / (2*a));
-
-zk = [zk1 zk2];
-
-% zk = 3;
+zk = 0;
+% zk = [1.1 0];
 
 cparams = [];
 % cparams.eps = 1.0e-6;
@@ -41,14 +33,14 @@ fprintf('%5.2e s : time to build geo\n',t1)
 nt = 10;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
-targets = 3.0*targets;
+targets = targets.*repmat(rand(1,nt),2,1);
 
 % sources
 
 ns = 3;
 ts = 0.0+2*pi*rand(ns,1);
 sources = starfish(ts,narms,amp);
-sources = sources.*repmat(rand(1,ns),2,1);
+sources = 3.0*sources;
 strengths = randn(ns,1);
 
 % plot geo and sources
@@ -105,15 +97,35 @@ D = chunkermat(chnkr, double, opts);
 H = chunkermat(chnkr, hilbert, opts2);     
 
 sysmat = zeros(2*chnkr.npt);
-sysmat(1:2:end,1:2:end) = sysmat1(1:4:end,1:2:end) + sysmat1(3:4:end,1:2:end)*H  - 2*((1+nu)/2)^2*D*D;
-sysmat(2:2:end,1:2:end) = sysmat1(2:4:end,1:2:end) + sysmat1(4:4:end,1:2:end)*H;
+sysmat(1:2:end,1:2:end) = sysmat1(1:4:end,1:2:end) - sysmat1(3:4:end,1:2:end)*H  + 2*((1+nu)/2)^2*D*D;
+sysmat(2:2:end,1:2:end) = sysmat1(2:4:end,1:2:end) - sysmat1(4:4:end,1:2:end)*H;
 sysmat(1:2:end,2:2:end) = sysmat1(1:4:end,2:2:end) + sysmat1(3:4:end,2:2:end);
 sysmat(2:2:end,2:2:end) = sysmat1(2:4:end,2:2:end) + sysmat1(4:4:end,2:2:end);
 
-D = [-1/2 + (1/8)*(1+nu).^2, 0; 0, 1/2];  % jump matrix 
+D = -[-1/2 + (1/8)*(1+nu).^2, 0; 0, 1/2];  % jump matrix 
 D = kron(eye(chnkr.npt), D);
 
 sys =  D + sysmat;
+
+v = zeros(2*chnkr.npt,3);
+w = zeros(2*chnkr.npt,3);
+
+v(1:2:end,1) = cos(1.7*chnkr.r(1,:)) + exp(-chnkr.r(2,:)+0.3);
+v(2:2:end,1) = -.3*exp(-2*chnkr.r(2,:));
+v(1:2:end,2) = cos(chnkr.r(1,:).^2+0.1) + chnkr.r(1,:).*chnkr.r(2,:);
+v(2:2:end,2) = sin(1.3*chnkr.r(2,:)) + exp(-chnkr.r(1,:)-0.3);
+v(1:2:end,3) = cos(2*chnkr.r(2,:)+0.4) + exp(-chnkr.r(1,:));
+v(2:2:end,3) = sin(chnkr.r(2,:).^2) + exp(-chnkr.r(1,:).^2);
+
+w(1:2:end,3) = exp(1.1*chnkr.r(1,:)) + cos(-chnkr.r(2,:)+0.3);
+w(2:2:end,3) = sin(-2.2*chnkr.r(2,:));
+w(1:2:end,2) = exp(0.1*chnkr.r(1,:).^2+0.3) + sin(chnkr.r(1,:)).*chnkr.r(2,:);
+w(2:2:end,2) = sin(1.3*chnkr.r(2,:)) - exp(-chnkr.r(1,:)-0.3);
+w(1:2:end,1) = sin(2.1*chnkr.r(2,:)+0.7) + exp(-chnkr.r(1,:).^4);
+w(2:2:end,1) = -exp(chnkr.r(2,:).^2) + cos(-chnkr.r(1,:).^2);
+
+sys = sys + v*w.';
+
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 
@@ -137,13 +149,24 @@ ikern = @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate_eval', nu);
 
 dens_comb = zeros(3*chnkr.npt,1);
 dens_comb(1:3:end) = sol(1:2:end);
-dens_comb(2:3:end) = H*sol(1:2:end);
+dens_comb(2:3:end) = -H*sol(1:2:end);
 dens_comb(3:3:end) = sol(2:2:end);
 
 start1 = tic;
 Dsol = chunkerkerneval(chnkr, ikern,dens_comb,targets);
 t2 = toc(start1);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t2)
+
+% postprocessing - determining constants in the null space
+
+Amat = zeros(3);
+Amat(:,1) = 1;
+Amat(:,2) = targets(1,1:3);
+Amat(:,3) = targets(2,1:3);
+
+cs = Amat \ (utarg(1:3) - Dsol(1:3));
+
+Dsol = Dsol + cs(1)*ones(nt,1) + cs(2)*targets(1,:).' + cs(3)*targets(2,:).';
 
 % calculate error
 

@@ -1,30 +1,21 @@
-chunkermat_flex2d_exteriorfreeTest0();
+chunkermat_biharmonic_interiorsupportedTest0();
 
 
-function chunkermat_flex2d_exteriorfreeTest0()
+function chunkermat_biharmonic_interiorsupportedTest0()
 
-%CHUNKERMAT_FLEX2D_EXTERIORFREETEST
+%CHUNKERMAT_BIHARMONIC_INTERIORSUPPORTEDTEST
 %
 % test the matrix builder and do a basic solve
 
 iseed = 8675309;
 rng(iseed);
 
-% PDE coefficients: (a \Delta^2 - b \Delta - c) u = 0
-a = 1.1;
-b = 0.7;
-c = 1/pi;
 nu = 0.3;
-
-zk1 = sqrt((- b + sqrt(b^2 + 4*a*c)) / (2*a));
-zk2 = sqrt((- b - sqrt(b^2 + 4*a*c)) / (2*a));
-
-zk = [zk1 zk2];
-
-% zk = 3;
+zk = 0; 
+% zk = [1.1 0];
 
 cparams = [];
-% cparams.eps = 1.0e-6;
+cparams.eps = 1.0e-10;
 cparams.nover = 1;
 cparams.maxchunklen = 4.0/max(abs(zk));
 pref = []; 
@@ -32,6 +23,7 @@ pref.k = 16;
 narms = 3;
 amp = 0.25;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+chnkr = makedatarows(chnkr,2);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)
@@ -41,14 +33,14 @@ fprintf('%5.2e s : time to build geo\n',t1)
 nt = 10;
 ts = 0.0+2*pi*rand(nt,1);
 targets = starfish(ts,narms,amp);
-targets = 3.0*targets;
+targets = targets.*repmat(rand(1,nt),2,1);
 
 % sources
 
 ns = 3;
 ts = 0.0+2*pi*rand(ns,1);
 sources = starfish(ts,narms,amp);
-sources = sources.*repmat(rand(1,ns),2,1);
+sources = 3.0*sources;
 strengths = randn(ns,1);
 
 % plot geo and sources
@@ -68,7 +60,7 @@ axis equal
 % defining kernels for rhs and analytic sol test
 
 kern1 = @(s,t) chnk.flex2d.kern(zk, s, t, 's');
-kern2 = @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate_bcs',nu);
+kern2 = @(s,t) chnk.flex2d.kern(zk, s, t, 'supported_plate_bcs',nu);
 
 % eval boundary conditions on bdry
 
@@ -85,35 +77,37 @@ targinfo = []; targinfo.r = targets;
 kernmatstarg = kern1(srcinfo,targinfo);
 utarg = kernmatstarg*strengths;
 
-% defining free plate kernels
+% calculating curvature info
 
-fkern1 =  @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate', nu);        % build the desired kernel
-double = @(s,t) chnk.lap2d.kern(s,t,'d');
-hilbert = @(s,t) chnk.lap2d.kern(s,t,'hilb');
+kappa = signed_curvature(chnkr);
+kp = arclengthder(chnkr,kappa);
+kpp = arclengthder(chnkr,kp);
+
+chnkr.data(1,:,:) = kp;
+chnkr.data(2,:,:) = kpp;
+
+% defining supported plate kernels
+
+fkern1 =  @(s,t) chnk.flex2d.kern(zk, s, t, 'supported_plate_log',nu);           % build the desired kernel
+fkern2 =  @(s,t) chnk.flex2d.kern(zk, s, t, 'supported_plate_smooth',nu);           % build the desired kernel
 
 opts = [];
 opts.sing = 'log';
 
 opts2 = [];
-opts2.sing = 'pv';
-
-% building system matrix
+opts2.quad = 'native';
+opts2.sing = 'smooth';
 
 start = tic;
-sysmat1 = chunkermat(chnkr,fkern1, opts);
-D = chunkermat(chnkr, double, opts);
-H = chunkermat(chnkr, hilbert, opts2);     
+M = chunkermat(chnkr,fkern1, opts);
+M2 = chunkermat(chnkr,fkern2, opts2);
 
-sysmat = zeros(2*chnkr.npt);
-sysmat(1:2:end,1:2:end) = sysmat1(1:4:end,1:2:end) + sysmat1(3:4:end,1:2:end)*H  - 2*((1+nu)/2)^2*D*D;
-sysmat(2:2:end,1:2:end) = sysmat1(2:4:end,1:2:end) + sysmat1(4:4:end,1:2:end)*H;
-sysmat(1:2:end,2:2:end) = sysmat1(1:4:end,2:2:end) + sysmat1(3:4:end,2:2:end);
-sysmat(2:2:end,2:2:end) = sysmat1(2:4:end,2:2:end) + sysmat1(4:4:end,2:2:end);
+c0 = (nu - 1)*(nu + 3)*(2*nu - 1)/(2*(3 - nu));
 
-D = [-1/2 + (1/8)*(1+nu).^2, 0; 0, 1/2];  % jump matrix 
-D = kron(eye(chnkr.npt), D);
+M(2:2:end,1:2:end) = M(2:2:end,1:2:end) + M2 - c0.*kappa(:).^2.*eye(chnkr.npt) - max(zk.^2)/2*eye(chnkr.npt); % extra term shows up for the general problem
+M = M + 0.5*eye(2*chnkr.npt);
 
-sys =  D + sysmat;
+sys =  M;
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 
@@ -133,16 +127,10 @@ fprintf('difference between direct and iterative %5.2e\n',err)
 
 % evaluate at targets and compare
 
-ikern = @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate_eval', nu); 
-
-dens_comb = zeros(3*chnkr.npt,1);
-dens_comb(1:3:end) = sol(1:2:end);
-dens_comb(2:3:end) = H*sol(1:2:end);
-dens_comb(3:3:end) = sol(2:2:end);
+ikern = @(s,t) chnk.flex2d.kern(zk, s, t, 'supported_plate_eval',nu);                              % build the kernel of evaluation          
 
 start1 = tic;
-Dsol = chunkerkerneval(chnkr, ikern,dens_comb,targets);
-t2 = toc(start1);
+Dsol = chunkerkerneval(chnkr, ikern, sol, targets);t2 = toc(start1);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t2)
 
 % calculate error
