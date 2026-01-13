@@ -9,7 +9,7 @@ classdef kernel
 %      ----                                         ----
 %      'laplace'    ('lap', 'l')                    's', 'd', 'sp', 'c'
 %      'helmholtz'  ('helm', 'h')                   's', 'd', 'sp', 'dp', 'c'
-%                                                   'cp'
+%                                                   'cp', 'freq_diff'
 %      'helmholtz difference' ('helmdiff', 'hdiff') 's', 'd', 'sp', 'dp'
 %      'elasticity' ('elast', 'e')                  's', 'strac', 'd', 'dalt'
 %      'stokes'     ('stok', 's')                   'svel', 'spres', 
