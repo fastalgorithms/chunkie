@@ -63,6 +63,9 @@ switch lower(type)
     case {'d', 'dprime'}
         srcuse.dipstr = sigma(:).';
         srcuse.dipvec = srcinfo.n(1:2,:);
+    case {'freq_diff'}
+        srcuse.dipstr = sigma(:).';
+        srcuse.dipvec = srcinfo.n(1:2,:);
     case {'c', 'cprime'}
         coefs = varargin{1};
         srcuse.charges = coefs(2)*sigma(:).';
@@ -87,7 +90,7 @@ U = hfmm2d(eps, zk, srcuse, pg, targuse, pgt);
 % Assign potentials
 if ( nargout > 0 )
     switch lower(type)
-        case {'s', 'd', 'c'}
+        case {'s', 'd', 'c', 'freq_diff'}
             varargout{1} = U.pottarg.';
         case {'sprime', 'dprime', 'cprime','sp','dp','cp'}
             if ( ~isfield(targinfo, 'n') )
