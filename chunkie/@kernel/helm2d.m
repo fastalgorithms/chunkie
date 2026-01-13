@@ -6,6 +6,9 @@ function obj = helm2d(type, zk, coefs)
 %   KERNEL.HELM2D('d', ZK) or KERNEL.HELM2D('double', ZK) constructs the
 %   double-layer Helmholtz kernel with wavenumber ZK.
 %
+%   KERNEL.HELM2D('freq_diff', ZK) or KERNEL.HELM2D('freq_diff', ZK) constructs the
+%   frequency derivative double-layer Helmholtz kernel with wavenumber ZK.
+%
 %   KERNEL.HELM2D('sp', ZK) or KERNEL.HELM2D('sprime', ZK) constructs the
 %   derivative of the single-layer Helmholtz kernel with wavenumber ZK.
 %
@@ -56,6 +59,12 @@ switch lower(type)
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
         obj.splitinfo.action = {'r','r','r'};
         obj.splitinfo.functions = @(s,t) helm2d_d_split(zk,s,t);
+
+    case {'freq_diff'}
+        obj.type = 'freq_diff';
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'freq_diff');
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'freq_diff', sigma);
+        obj.sing = 'smooth';
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
