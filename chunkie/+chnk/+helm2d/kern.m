@@ -90,6 +90,27 @@ if strcmpi(type,'d_diff')
   submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
 end
 
+% double layer (frequency difference)
+if strcmpi(type,'freq_diff')
+    [~,ns] = size(src);
+    [~,nt] = size(targ);
+
+    xs = repmat(src(1,:),nt,1);
+    ys = repmat(src(2,:),nt,1);
+
+    xt = repmat(targ(1,:).',1,ns);
+    yt = repmat(targ(2,:).',1,ns);
+
+    rx = xt-xs;
+    ry = yt-ys;
+
+    srcnorm = srcinfo.n(:,:);
+    val = chnk.helm2d.green(zk,src,targ);
+    nx = repmat(srcnorm(1,:),nt,1);
+    ny = repmat(srcnorm(2,:),nt,1);
+    submat = val.*( (rx.*nx) + (ry.*ny) ); % grad(:,:,2).*ny);
+end
+
 % normal derivative of single layer
 if strcmpi(type,'sprime')
   targnorm = targinfo.n(:,:);
