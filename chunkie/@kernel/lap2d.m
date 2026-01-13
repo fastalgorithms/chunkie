@@ -29,6 +29,21 @@ function obj = lap2d(type, coefs)
 %
 %   KERNEL.LAP2D('cg', coefs) or KERNEL.LAP2D('cgrad', coefs) constructs
 %   the gradient of the combined-layer Laplace kernel with parameter coefs
+%   
+%   KERNEL.LAP2D('sint') or KERNEL.LAP2D('s int') constructs the volume
+%   integral of the single layer Laplace kernel
+%
+%   KERNEL.LAP2D('sintt') or KERNEL.LAP2D('s int trans') constructs the transpose of the 
+%   volume integral of the single layer Laplace kernel
+%   
+%   KERNEL.LAP2D('dint') or KERNEL.LAP2D('d int') constructs the volume
+%   integral of the double layer Laplace kernel
+%
+%   KERNEL.LAP2D('cint', coefs) or KERNEL.LAP2D('c int', coefs) constructs the volume
+%   integral of the combined-layer Laplace kernel with parameter coefs, 
+%   i.e. (coef(1)*  KERNEL.LAP2D('dint') + coef(2)* KERNEL.LAP2D('sint')). If no
+%   value of coefs is specified the default is coefs = [1 1] 
+%   
 %
 % See also CHNK.LAP2D.KERN.
 
@@ -132,6 +147,35 @@ switch lower(type)
         obj.fmm = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'cgrad', sigma,coefs);
         obj.sing = 'hs';
         obj.opdims = [2,1];
+
+    case {'sint', 's int'}
+        obj.type = 'sint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sint');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'sintt', 's int trans'}
+        obj.type = 'sint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sintt');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'dint', 'd int'}
+        obj.type = 'dint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'dint');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'cint', 'c int'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cint';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cint',coefs);
+        obj.sing = 'log';
+        obj.opdims = [1,1];
 
     otherwise
         error('Unknown Laplace kernel type ''%s''.', type);
