@@ -1,10 +1,10 @@
 %%%%%%%%%%  SLOW CODE FOR FREDHOLM DETERMINANT USING CHEBYSHEV %%%%%%%%%
 % m = 4;
-clear;
+% clear;
 % f = @(zk) get_determinant(zk, get_chunker(1));
 % |f - p| < 1.3/n^2
-chnkreps = get_chunker(1.5);
-f = chebfun(@(zk) get_determinant(zk, chnkreps), [3,4]);
+chnkreps = get_chunker(3);
+f = chebfun(@(zk) get_determinant(zk, chnkreps), [3.3,3.5]);
 plot(real(f), 'k.');
 rts1 = roots(f, 'complex');
 
@@ -16,7 +16,6 @@ function det1 = get_determinant(zk, chnkr1)
 %%
     A = A + eye(chnkr1.npt);
 %%
-
     det1 = det(A);
 end
 

@@ -1,4 +1,4 @@
-
+%%%%%%   LAPLACE GREEN   %%%%%%%%
 function [val,grad,hess] = green(src,targ,nolog)
 
 if (nargin < 3)

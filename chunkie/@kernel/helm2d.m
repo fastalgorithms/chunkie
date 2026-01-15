@@ -64,7 +64,7 @@ switch lower(type)
         obj.type = 'freq_diff';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'freq_diff');
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'freq_diff', sigma);
-        obj.sing = 'smooth';
+        obj.sing = 'log';
 
     case {'sp', 'sprime'}
         obj.type = 'sp';

@@ -3,7 +3,7 @@
 clear;
 % zk = 1:0.1:100;
 % err = zeros(1,length(zk));
-% h0 = 1e-5;
+% h0 = 1e-3;
 % for i = 1:length(zk)
 %     h = h0/zk(i);
 %     xp = exp(pi + h);
@@ -33,10 +33,10 @@ for i = 1:length(zk)
      Ak = chunkermat(chnkr, Freqk); 
      err1(i) = norm(Ap - Am);
      % err(i) = norm((1/h)*(Ap - Am) - 2*Ak);
-     err(i) = norm((Ap - Am)/h - 2*Ak);
+     err(i) = norm(Ap - Am - 2*h*Ak);
 end
 loglog(zk, err, 'k.');
-hold on; loglog(zk, (h0./zk).^2, 'b.');
+hold on; loglog(zk, (h0./zk).^3, 'b.');
 %hold on; loglog(zk, (h0./zk), 'r.');
 
 

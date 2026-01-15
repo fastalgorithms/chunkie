@@ -11,10 +11,7 @@ targ = targinfo.r(:,:);
 [~, nt] = size(targ);
 [~, ns] = size(src);
 
-
-
-
-% single layer 
+% Single Layer 
 
 if strcmpi(type,'s')
   [~, ~, hess] = chnk.obihar2d.green(k, src, targ);
@@ -112,61 +109,60 @@ end
 % and for the pressure we have p = delta - k^2/(2*pi)*logr   
 
 if strcmpi(type, 'sinkv')
-    l = k^2;
-    [val, grad, hess] = chnk.lap2d.green(src, targ);
+    % % % % l = k^2;
+    [~, grad, ~] = chnk.lap2d.green(src, targ);
 
     %%%%%%%%% green's function = grad(Green_laplacian) %%%%%%
 
-    % u1 = grad(:,:,1);
-    % u2 = grad(:,:,2);
-    % 
-    % 
-    % if nargout == 1
-    %   K = zeros(2*nt, 2*ns);     
-    %   K(1:2:end, 1:2:end) = u1;
-    %   K(1:2:end, 2:2:end) = u2;
-    %   K(2:2:end, 1:2:end) = u1;
-    %   K(2:2:end, 2:2:end) = u2;
-    %   varargout = {K};
-    % else
-    %   varargout = {u1, u2, u1, u2};
-    % end
-
-    %%%%%%%%%%%%%  sigma = -p.Id + (grad(u) + grad(u).')
-
-    s11 = -l*val + hess(:,:,1);
-    s12 = hess(:,:,2);
-    s22 = -l*val + hess(:,:,3);
-    % 
-    % if nargout == 1
-    %   K = zeros(2*nt, 2*ns);     
-    %   K(1:2:end, 1:2:end) = s11;
-    %   K(1:2:end, 2:2:end) = s12;
-    %   K(2:2:end, 1:2:end) = s12;
-    %   K(2:2:end, 2:2:end) = s22;
-    %   varargout = {K};
-    % else
-    %   varargout = {s11, s12, s12, s22};
-    % end
-
-
-    %%%%%%%%%%%%%%%  traction = sigma.nu
-    nx = repmat(srcinfo.n(1,:),nt,1);
-    ny = repmat(srcinfo.n(2,:),nt,1);
-
-    u1 = s11.*nx + s12.*ny;
-    u2 = s22.*nx + s12.*ny;
+    u1 = grad(:,:,1);
+    u2 = grad(:,:,2);
 
 
     if nargout == 1
-      K = zeros(2*nt, 2*ns);     
-      K(1:2:end, 1:2:end) = u1;
-      K(1:2:end, 2:2:end) = u2;
-      K(2:2:end, 1:2:end) = u1;
-      K(2:2:end, 2:2:end) = u2;
+      K = zeros(2*nt, ns);     
+      K(1:2:end, :) = u1;
+      K(2:2:end, :) = u2; 
       varargout = {K};
     else
-      varargout = {u1, u2, u1, u2};
+      varargout = {u1, u2};
     end
+    return
+
+    %%%%%%%%%%%%%  sigma = -p.Id + (grad(u) + grad(u).')
+
+    % % % % % % s11 = -l*val + hess(:,:,1);
+    % % % % % % s12 = hess(:,:,2);
+    % % % % % % s22 = -l*val + hess(:,:,3);
+    % % % % % % 
+    % % % % % % if nargout == 1
+    % % % % % %   K = zeros(2*nt, 2*ns);     
+    % % % % % %   K(1:2:end, 1:2:end) = s11;
+    % % % % % %   K(1:2:end, 2:2:end) = s12;
+    % % % % % %   K(2:2:end, 1:2:end) = s12;
+    % % % % % %   K(2:2:end, 2:2:end) = s22;
+    % % % % % %   varargout = {K};
+    % % % % % % else
+    % % % % % %   varargout = {s11, s12, s12, s22};
+    % % % % % % end
+
+
+    %%%%%%%%%%%%%%%  traction = sigma.nu
+    % % % % % % nx = repmat(srcinfo.n(1,:),nt,1);
+    % % % % % % ny = repmat(srcinfo.n(2,:),nt,1);
+    % % % % % % 
+    % % % % % % u1 = s11.*nx + s12.*ny;
+    % % % % % % u2 = s22.*nx + s12.*ny;
+    % % % % % % 
+    % % % % % % 
+    % % % % % % if nargout == 1
+    % % % % % %   K = zeros(2*nt, 2*ns);     
+    % % % % % %   K(1:2:end, 1:2:end) = u1;
+    % % % % % %   K(1:2:end, 2:2:end) = u2;
+    % % % % % %   K(2:2:end, 1:2:end) = u1;
+    % % % % % %   K(2:2:end, 2:2:end) = u2;
+    % % % % % %   varargout = {K};
+    % % % % % % else
+    % % % % % %   varargout = {u1, u2, u1, u2};
+    % % % % % % end
 
 end

@@ -1,6 +1,6 @@
-chunkermat_stok2dTest0();
-
-function chunkermat_stok2dTest0()
+% chunkermat_stok2dTest0();
+% 
+% function chunkermat_stok2dTest0()
 
 %CHUNKERMAT_HELM2DTEST
 %
@@ -70,7 +70,8 @@ utarg = kernmatstarg*strengths;
 % build Stokes dirichlet matrix
 coefs = [1,1];
 fkern = kernel('stok', 'cvel', mu, coefs);
-start = tic; D = chunkermat(chnkr,fkern);
+start = tic; 
+D = chunkermat(chnkr,fkern);
 t1 = toc(start);
 
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -89,9 +90,15 @@ fprintf('%5.2e s : time for dense gmres\n',t1)
 opts.usesmooth=false;
 opts.verb=false;
 opts.forcefmm=true;
-start=tic; Dsol = chunkerkerneval(chnkr,fkern,sol,targets,opts); 
+start=tic; 
+Dsol = chunkerkerneval(chnkr,fkern,sol,targets,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n',t1)
+
+
+
+
+%%%%%%%%%%%%%%%%%%%
 
 % test Stokes SLP velocity
 fkerns = kernel('stok', 'svel', mu);
@@ -216,4 +223,4 @@ relerr = norm(g(:) - gex(:))/norm(gex(:));
 
 assert(relerr < 1e-10)
 
-end
+% end
