@@ -108,7 +108,7 @@ if strcmpi(type,'freq_diff')
     val = chnk.helm2d.green(zk,src,targ);
     nx = repmat(srcnorm(1,:),nt,1);
     ny = repmat(srcnorm(2,:),nt,1);
-    submat = val.*( (rx.*nx) + (ry.*ny) ); % grad(:,:,2).*ny);
+    submat = zk*val.*( (rx.*nx) + (ry.*ny) ); % grad(:,:,2).*ny);
 end
 
 % normal derivative of single layer
