@@ -34,7 +34,7 @@ switch lower(type)
     case {'strac', 'straction'}
         obj.type = 'strac';
         obj.eval = @(s,t) chnk.elast2d_string.kern(lam, mu, s, t, 'strac',ifimage);
-        obj.sing = 'removable';
+        obj.sing = 'log';
 
  
     otherwise

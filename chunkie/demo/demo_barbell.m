@@ -10,7 +10,7 @@
 clearvars; close all;
 iseed = 8675309;
 rng(iseed,'twister');
-addpaths_loc();
+%addpaths_loc();
 
 % define geometry and boundary conditions
 % (vertices defined by another function)

@@ -68,13 +68,17 @@ hp = zeros(1,ns);
 if (ifimage)
     if (isfield(s,'data'))
         hp = s.data(1,:);
+        if (size(s.data(:,:),1)>1)
+            nx = s.data(2,:);
+            ny = s.data(3,:);
+        else
+            nx = s.n(1,:);
+            ny = s.n(2,:);
+        end
     else
         error('missing data field in elastic strings');
     end
 end
-
-nx = s.n(1,:);
-ny = s.n(2,:);
 
 rimx = s.r(1,:) + hp.*nx;
 rimy = s.r(2,:) + hp.*ny;
@@ -92,8 +96,8 @@ alph = (lam + mu)/(lam + 2*mu);
 
 switch lower(type)
     case {'s'}
-        nxs = s.n(1,:);
-        nys = s.n(2,:);
+        nxs = nx;
+        nys = ny;
 
         taux =  nys;
         tauy = -nxs;
@@ -150,10 +154,10 @@ K(1:2:end, 2:2:end) = Kxy;
 K(2:2:end, 2:2:end) = Kyy;
 
 if (ifimage)
-    K(1:2:end,1:2:end) = K(1:2:end,1:2:end) + Wxx;
-    K(2:2:end,1:2:end) = K(2:2:end,1:2:end) + Wyx;
-    K(1:2:end,2:2:end) = K(1:2:end,2:2:end) + Wxy;
-    K(2:2:end,2:2:end) = K(2:2:end,2:2:end) + Wyy;
+    K(1:2:end,1:2:end) = K(1:2:end,1:2:end) - Wxx;
+    K(2:2:end,1:2:end) = K(2:2:end,1:2:end) - Wyx;
+    K(1:2:end,2:2:end) = K(1:2:end,2:2:end) - Wxy;
+    K(2:2:end,2:2:end) = K(2:2:end,2:2:end) - Wyy;
 end
 
 end
