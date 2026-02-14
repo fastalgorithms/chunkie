@@ -20,9 +20,8 @@ class overloads some MATLAB commands, like :matlab:`plot` and
 code below creates a :matlab:`chunker` object for a circle and
 plots the geometry and the normal vectors.
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START CIRCLE
    :end-before: % END CIRCLE
 	  
@@ -52,9 +51,8 @@ plots the geometry and the normal vectors.
 Some utilities are provided that define a family of
 parameterized curves:
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalliteralinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START MORE PARAMS
    :end-before: % END MORE PARAMS
 
@@ -71,9 +69,8 @@ parameterized curves:
 For a given set of points, a spline curve can be fit to them and
 discretized as a chunker using `chunkerfit`:
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START CHUNKERFIT
    :end-before: % END CHUNKERFIT
 
@@ -85,9 +82,8 @@ discretized as a chunker using `chunkerfit`:
 
 Given a set of vertices, a rounded polygon can be defined:
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START ROUNDED POLY
    :end-before: % END ROUNDED POLY
 
@@ -121,9 +117,8 @@ circle and its orientation is also reversed, so
 that the normal for the combined domain consistently points out
 of the interior. 
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START SHIFT AND REVERSE
    :end-before: % END SHIFT AND REVERSE
 
@@ -136,9 +131,8 @@ It is also possible to find the points on the interior of a
 :matlab:`chunker` object, which is convenient in many plotting
 tasks:
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START INTERIOR
    :end-before: % END INTERIOR
 
@@ -158,9 +152,8 @@ tasks:
 There is more available. The :matlab:`chunker` class documentation
 gives a survey of the available methods:
 
-.. include:: ../../chunkie/@chunker/chunker.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/@chunker/chunker.m
+   :language: matlab
    :start-after: classdef chunker
    :end-before: % author
 

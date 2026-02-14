@@ -163,9 +163,8 @@ Thus implementing this problem remains relatively straightforward as
 illustrated below:
 
 
-.. include:: ../../chunkie/demo/demo_Neumann_combined.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/demo/demo_Neumann_combined.m
+   :language: matlab
    :start-after: %% Define geometry 
    :end-before: % END DEMO NEUMANN COMBINED 
 
@@ -245,9 +244,8 @@ $S$ and $D$ respectively.
 Here is an example illustrating a mixed boundary value problem on a star-shaped
 domain:
 
-.. include:: ../../chunkie/demo/demo_mixed_bc.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/demo/demo_mixed_bc.m
+   :language: matlab
    :start-after: %% Define geometry 
    :end-before: % END DEMO MIXED BC 
 

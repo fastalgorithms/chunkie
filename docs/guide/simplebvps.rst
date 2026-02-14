@@ -183,9 +183,8 @@ Many of the most common kernel types are available in chunkie,
 including the normal derivative of the single layer kernel, which is
 called "sprime". This can be obtained via 
 
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START SPRIME
    :end-before: % END SPRIME
 
@@ -219,9 +218,8 @@ of singularity it has.
 Because these standard kernels are built into chunkie, this PDE
 can be solved with very little coding:
    
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START LAPLACE NEUMANN
    :end-before: % END LAPLACE NEUMANN
 
@@ -297,9 +295,8 @@ The above is a second kind integral equation and is invertible.
 As before, this is relatively straightforward to implement in :matlab:`chunkie`
 using the built-in kernels:
 
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START BASIC SCATTERING
    :end-before: % END BASIC SCATTERING
 
@@ -342,9 +339,8 @@ In that case, the equation
    \right ] (x_0) \; ,
 
    
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START STOKES VELOCITY PROBLEM
    :end-before: % END STOKES VELOCITY PROBLEM
 
