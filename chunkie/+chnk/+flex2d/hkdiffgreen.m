@@ -1,4 +1,4 @@
-function [val,grad,hess,der3,der4,der5] = hkdiffgreen(k,src,targ,ifr2logr)
+function [val,grad,hess,der3,der4,der5,der6] = hkdiffgreen(k,src,targ,ifr2logr)
 %HKDIFFGREEN evaluate the difference of the 
 % Helmholtz Green function and the modified Helmholtz Green function
 % for the given sources and targets, i.e. 
@@ -63,11 +63,13 @@ dx2 = dx.*dx;
 dx3 = dx2.*dx;
 dx4 = dx3.*dx;
 dx5 = dx4.*dx;
+dx6 = dx5.*dx;
 
 dy2 = dy.*dy;
 dy3 = dy2.*dy;
 dy4 = dy3.*dy;
 dy5 = dy4.*dy;
+dy6 = dy5.*dy;
 
 r2 = dx2 + dy2;
 r = sqrt(r2);
@@ -76,10 +78,11 @@ rm2 = rm1.*rm1;
 rm3 = rm1.*rm2;
 rm4 = rm1.*rm3;
 rm5 = rm1.*rm4;
+rm6 = rm1.*rm5;
 
 % get value and r derivatives
       
-[g0,g1,g21,g321,g4321,g54321] = diff_h0k0_and_rders(k,r,r2logrfac);
+[g0,g1,g21,g321,g4321,g54321,g654321] = diff_h0k0_and_rders(k,r,r2logrfac);
 
 %     evaluate potential and derivatives
 
@@ -129,23 +132,39 @@ if nargout > 5
         dy3.*(10*g4321).*rm4 + dy.*(15*g321).*rm3;
 end
 
+if nargout > 6
+    der6(:,:,1) = dx6.*g654321.*rm6 + 15*dx4.*g54321.*rm5 + 45*dx2.*g4321.*rm4 + 15*g321.*rm3 ;
+    der6(:,:,2) = dy.*(dx5.*g654321.*rm6 + 10*dx3.*g54321.*rm5 + 15*dx.*g4321.*rm4);
+    der6(:,:,3) = dy2.*(dx4.*g654321.*rm6 + 6*dx2.*g54321.*rm5 + 3*g4321.*rm4) + ...
+        dx4.*g54321.*rm5 + 6*dx2.*g4321.*rm4 + 3*g321.*rm3;
+    der6(:,:,4) = dy3.*(dx3.*g654321.*rm6 + 3*dx.*g54321.*rm5) + ...
+        dy.*(3*dx3.*g54321.*rm5 + 9*dx.*g4321.*rm4);
+    der6(:,:,5) = dx2.*(dy4.*g654321.*rm6 + 6*dy2.*g54321.*rm5 + 3*g4321.*rm4) + ...
+        dy4.*g54321.*rm5 + 6*dy2.*g4321.*rm4 + 3*g321.*rm3;
+    der6(:,:,6) = dx.*(dy5.*g654321.*rm6 + 10*dy3.*g54321.*rm5 + 15*dy.*g4321.*rm4);
+    der6(:,:,7) = dy6.*g654321.*rm6 + 15*dy4.*g54321.*rm5 + 45*dy2.*g4321.*rm4 + 15*g321.*rm3 ;
 end
 
-function [g0,g1,g21,g321,g4321,g54321] = diff_h0k0_and_rders(k,r,r2logrfac)
+end
+
+function [g0,g1,g21,g321,g4321,g54321,g654321] = diff_h0k0_and_rders(k,r,r2logrfac)
 % g0 = g
 % g1 = g'
-% g21 = g'' - g'/r
+% g21 = g'' - g'/r = g'' - g1/r
 % g321 = g''' - 3*g''/r + 3g'/r^2 = g''' - 3*g21/r
 % g4321 = g'''' - 6*g'''/r + 15*g''/r^2 - 15*g'/r^3 
 %       = g''''- 6 g321/r - 3 g21/r^2
 % g54321 = g''''' - 10g''''/r + 45g'''/r^2 -105g''/r^3 + 105g'/r^4
 %        = g5 - 10g4321/r - 15 g321/r^2
+% g654321 = g'''''' - 15g'''''/r + 105g''''/r2 - 420g'''/r3 + 945g''/r4 - 945g'/r5
+%         = g6 - 15g54321/r - 45g4321/r2 - 15g321/r3
 
 g0 = zeros(size(r));
 g1 = zeros(size(r));
 g321 = zeros(size(r));
 g4321 = zeros(size(r));
 g54321 = zeros(size(r));
+g654321 = zeros(size(r));
 g21 = zeros(size(r));
 
 io4 = 1i*0.25;
@@ -170,6 +189,7 @@ rm1 = 1./rnot;
 rm2 = rm1.*rm1;
 rm3 = rm1.*rm2;
 rm4 = rm1.*rm3;
+rm5 = rm1.*rm4;
 
 r2fac = (1-r2logrfac)*k*k*0.5*o2p;
 logr = log(rnot);
@@ -186,6 +206,9 @@ g54321(~isus) = io4*(k*( (12*k*rm3-2*k^3*rm1).*h0  + ...
     (-24*rm4+7*k*k*rm2-k^4).*h1) - 1i*k*( (12*1i*k*rm3+1i*2*k^3*rm1).*h0i + ...
     (-24*rm4-7*k*k*rm2-k^4).*h1i)) - r2fac*4*rm3 - 10*g4321(~isus).*rm1 - ...
     15*g321(~isus).*rm2;
+g654321(~isus) = io4*((-k^6-60*k^2*rm4+9*k^4*rm2).*h0 + (120*k*rm5-33*k^3*rm3+3*k^5*rm1).*h1 ...
+    + (-k^6-60*k^2*rm4-9*k^4*rm2).*h0i + (-120*k*rm5-33*k^3*rm3-3*k^5*rm1).*1i.*h1i ) ...
+    + r2fac*12*rm4 - 15*g54321(~isus).*rm1 - 45*g4321(~isus).*rm2 - 15*g321(~isus).*rm3 ;
 
 % manually cancel when small
 
@@ -195,6 +218,7 @@ rm2 = rm1.*rm1;
 rm3 = rm1.*rm2;
 rm4 = rm1.*rm3;
 rm5 = rm1.*rm4;
+rm6 = rm1.*rm5;
 
 r2 = rsus.*rsus; 
 r4 = r2.*r2;
@@ -234,6 +258,12 @@ d = fac.*(fac-1).*(fac-2).*(fac-3).*(fac-4) - ...
     105*(fac.*(fac-1)-fac);
 jdiffd54321 = chnk.flex2d.pseval(cf1.*d,r4).*rsus;
 fd54321 = chnk.flex2d.pseval(cf2.*d,r4).*rsus;
+% g654321 = g'''''' - 15g'''''/r + 105g''''/r2 - 420g'''/r3 + 945g''/r4 - 945g'/r5
+d = fac.*(fac-1).*(fac-2).*(fac-3).*(fac-4).*(fac-5) - ...
+    15*fac.*(fac-1).*(fac-2).*(fac-3).*(fac-4) + 105*fac.*(fac-1).*(fac-2).*(fac-3) - ...
+    420*fac.*(fac-1).*(fac-2) + 945*(fac.*(fac-1)-fac);
+jdiffd654321 = chnk.flex2d.pseval(cf1.*d,r4);
+fd654321 = chnk.flex2d.pseval(cf2.*d,r4);
 
 % combine to get derivative of i/4 H - K/2pi 
 gam = 0.57721566490153286060651209;
@@ -246,6 +276,7 @@ j2 = besselj(2,k*rsus);
 j3 = besselj(3,k*rsus);
 j4 = besselj(4,k*rsus);
 j5 = besselj(5,k*rsus);
+j6 = besselj(6,k*rsus);
 g0(isus) = io4*j0 - o2p*(f  + logr.*jdiff) + const1*r2;
 g1(isus) = io4*(-k*j1) - o2p*(fd1 + logr.*jdiffd1 + jdiff.*rm1) + 2*const1*rsus;
 g21(isus) = io4*(k*k*j2) - o2p*(fd21 + logr.*jdiffd21 + 2*jdiffd1.*rm1 - 2*jdiff.*rm2);
@@ -255,6 +286,8 @@ g4321(isus) = io4*(k^4*j4)- o2p*(fd4321 + logr.*jdiffd4321 + 4*jdiffd321.*rm1 - 
     12*jdiffd21.*rm2 + 32*jdiffd1.*rm3 - 48*jdiff.*rm4);
 g54321(isus) = io4*(-k^5*j5) - o2p*(fd54321 + logr.*jdiffd54321 + ...
     5*jdiffd4321.*rm1 - 20*jdiffd321.*rm2 + 80*jdiffd21.*rm3 - 240*jdiffd1.*rm4 + 384*jdiff.*rm5);
+g654321(isus) = io4*(k^6*j6) - o2p*(fd654321 + logr.*jdiffd654321 + 6*jdiffd54321.*rm1 - ...
+    30*jdiffd4321.*rm2 + 160*jdiffd321.*rm3 - 720*jdiffd21.*rm4 + 2304*jdiffd1.*rm5 - 3840*jdiff.*rm6);
 
 end
 
