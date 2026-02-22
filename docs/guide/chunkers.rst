@@ -51,7 +51,7 @@ plots the geometry and the normal vectors.
 Some utilities are provided that define a family of
 parameterized curves:
 
-.. literalliteralinclude:: ../../chunkie/guide/guide_chunkers.m
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
    :language: matlab
    :start-after: % START MORE PARAMS
    :end-before: % END MORE PARAMS
