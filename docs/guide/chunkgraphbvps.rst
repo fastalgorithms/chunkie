@@ -69,12 +69,12 @@ the following PDE:
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    (\Delta + k^2) u^{\textrm{scat}} &= 0 & \textrm{ in } \mathbb{R}^2 \setminus \Omega \; , \\
    \frac{\partial u^{\textrm{scat}}}{\partial n} &= -\frac{\partial u^{\textrm{inc}}}{\partial n} & \textrm{ on } \Gamma \; , \\
    \sqrt{|x|} \left( \frac{x}{|x|} \cdot \nabla u^{\textrm{scat}} - ik u^{\textrm{scat}} \right )
    &\to 0 & \textrm{ as } |x|\to \infty \; ,
-   \end{align*}
+   \end{aligned}
 
 The Green function for the Helmholtz equation is
 
@@ -87,10 +87,10 @@ single and double layer potential operators
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    [S_{k}\sigma](x) &:= \int_\Gamma G_k(x,y) \sigma(y) ds(y)  \\
    [D_{k}\sigma](x) &:= \int_\Gamma n(y)\cdot \nabla_y G_k(x,y) \sigma(y) ds(y) 
-   \end{align*}
+   \end{aligned}
    
 A robust choice for the layer potential representation for this problem is
 a *right preconditioned combined field* layer potential, which is a linear combination
@@ -112,10 +112,10 @@ results in the equation
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    -\frac{\partial u^{\textrm{inc}}(x_0)}{\partial n} &= \lim_{x\in \mathbb{R}^2\setminus \Omega, x\to x_0}  \beta[(S_{k} + i\alpha D_{k} S_{ik})\sigma](x) \\
    &= \sigma(x_0) + \beta[S_{k}'\sigma ](x_0) + i\beta \alpha [(D_{k}' - D_{ik}')S_{ik}\sigma](x_{0}) + i \beta \alpha [S_{ik}'S_{ik}'\sigma](x_0) \;,
-   \end{align*}
+   \end{aligned}
 
 where $S_{k}'$ and $D_{k}'$ represent the normal derivatives of 
 the single and double layer potentials respectively, and we have used 
@@ -186,11 +186,11 @@ for the potential $u$ on a domain $\Omega$ with boundary $\Gamma$,
 .. math::
 
    
-   \begin{align*}
+   \begin{aligned}
    \Delta u &= 0 & \textrm{ in } \Omega \; , \\
    u &= f_{D} & \textrm{ on } \Gamma_{D} \; , \\
    \frac{\partial u}{\partial n} &= f_{N} & \textrm{ on } \Gamma_{N} \; , 
-   \end{align*}
+   \end{aligned}
 
 where $\Gamma_{D}$ and $\Gamma_{N}$ are a partition of the boundary, 
 i.e. $\Gamma = \Gamma_{D} \cup \Gamma_{N}$, with 
@@ -223,20 +223,20 @@ where
 
 .. math::
    
-   \begin{align*}
+   \begin{aligned}
    [S_{\Gamma_{N}}\sigma_{N}](x) = \int_{\Gamma_{N}} G_0(x,y) \sigma_{N}(y) ds(y) \; ,\\
    [D_{\Gamma_{D}}\sigma_{D}](x) = \int_{\Gamma_{D}} n(y) \cdot \nabla_{y} G_0(x,y) \sigma_{D}(y) ds(y) \; .
-   \end{align*}
+   \end{aligned}
 
 On imposing the boundary conditions, we get the following system of integral equations
 for $\sigma_{D}$ and $\sigma_{N}$
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    \sigma_{D}(x) - 2[D_{\Gamma_{D}}\sigma_{D}](x) + 2[S_{\Gamma_{N}}\sigma_{N}](x) &= f_{D} \,, \,\, \textrm{ on } \Gamma_{D} \,, \\
    \sigma_{N}(x) - 2[D'_{\Gamma_{D}}\sigma_{D}](x) + 2[S'_{\Gamma_{N}}\sigma_{N}](x) &= f_{N} \,,\,\,  \textrm{ on } \Gamma_{N} \,, 
-   \end{align*}
+   \end{aligned}
 
 where $S'$ and $D'$ are restrictions of the normal derivatives of 
 $S$ and $D$ respectively. 
