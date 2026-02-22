@@ -27,9 +27,8 @@ Consider the following domain consisting of $9$
 dielectrics. We use the :matlab:`plot_regions` 
 functionality of the :matlab:`chunkgraph` to identify its regions and edges.
 
-.. include:: ../../chunkie/demo/demo_concentric_transmission.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/demo/demo_concentric_transmission.m
+   :language: matlab
    :start-after: %% Build geometry
    :end-before: % END DOMAIN 
 
@@ -146,18 +145,16 @@ postprocessing/plotting).
 This simplifies the task of genertaing the system matrix quite a bit,
 requiring only a few lines of code:
 
-.. include:: ../../chunkie/demo/demo_concentric_transmission.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/demo/demo_concentric_transmission.m
+   :language: matlab
    :start-after: %% Build system
    :end-before: % solve 
 
 The solution can then be plotted in the bulk using :matlab:`chunkerkerneval`
 and the :matlab:`kerns_eval` matrix of kernels:
 
-.. include:: ../../chunkie/demo/demo_concentric_transmission.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/demo/demo_concentric_transmission.m
+   :language: matlab
    :start-after: %% Compute field 
    :end-before: % END TRANSMISSION PROBLEM 
 

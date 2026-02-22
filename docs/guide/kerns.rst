@@ -20,9 +20,8 @@ The constructor for the kernel objects take the form
 The kernel class documentation lists the information that can be stored
 in the object
     
-.. include:: ../../chunkie/@kernel/kernel.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/@kernel/kernel.m
+   :language: matlab
    :start-after: classdef kernel
    :end-before: % author
 
@@ -100,16 +99,14 @@ function in a separate file. The example below implements the kernel
 evaluator for the kernel $K(x,y) = \exp(\imath k|x-y|)$ in a file called
 ``expkernel.m``. 
 
-.. include:: ../../chunkie/guide/expkernel.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/expkernel.m
+   :language: matlab
 
 You can then create an empty kernel object and point the eval
 property to this function:
 
-.. include:: ../../chunkie/guide/guide_kernels.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_kernels.m
+   :language: matlab
    :start-after: % START CREATE KERNEL
    :end-before: % END CREATE KERNEL		
 
@@ -120,9 +117,8 @@ Combining kernel objects
 Given two kernel objects with compatible dimensions, it is
 possible to add and scale them.
 
-.. include:: ../../chunkie/guide/guide_kernels.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_kernels.m
+   :language: matlab
    :start-after: % START ADDING KERNELS
    :end-before: % END ADDING KERNELS
 
@@ -140,9 +136,8 @@ first build an empty matrix of the desired size and then
 to assign each entry a kernel.
 
 
-.. include:: ../../chunkie/guide/guide_kernels.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_kernels.m
+   :language: matlab
    :start-after: % START MATRIX OF KERNELS
    :end-before: % END MATRIX OF KERNELS
 
@@ -152,9 +147,8 @@ create matrix-valued kernels. A matrix of kernels can
 be merged into a single matrix-valued kernel using the
 :matlab:`kernel` constructor.
 
-.. include:: ../../chunkie/guide/guide_kernels.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_kernels.m
+   :language: matlab
    :start-after: % START INTERLEAVE
    :end-before: % END INTERLEAVE
 
@@ -162,7 +156,7 @@ be merged into a single matrix-valued kernel using the
 Built-in Kernels  
 ---------------------
 
-chunkIE includes built-in kernels that arise in the solution of the
+chunkIE literalincludes built-in kernels that arise in the solution of the
 following PDEs.
 
 - :ref:`lap`
@@ -219,10 +213,8 @@ types can be obtained with either calling sequence below
 The documentation of the :matlab:`kernel.lap2d` function has details on any
 expected additional arguments and default values:
 
-.. include:: ../../chunkie/@kernel/lap2d.m
-   :literal:
-   :code: matlab
-   :start-line: 1
+.. literalinclude:: ../../chunkie/@kernel/lap2d.m
+   :language: matlab
    :end-before: % author
 
 .. _helm:
@@ -242,10 +234,8 @@ where $k$ is the wavenumber, $x=(x_{1},x_{2})$, and $y=(y_{1},y_{2})$.
 The documentation of the :matlab:`kernel.helm2d` function has details on any
 expected additional arguments and default values:
 
-.. include:: ../../chunkie/@kernel/helm2d.m
-   :literal:
-   :code: matlab
-   :start-line: 1
+.. literalinclude:: ../../chunkie/@kernel/helm2d.m
+   :language: matlab
    :end-before: % author
 
 
@@ -306,10 +296,8 @@ as follows
    D_{ij}(x,y) = -T_{jki}(x,y) n_k(y) \; .
 
 
-.. include:: ../../chunkie/@kernel/stok2d.m
-   :literal:
-   :code: matlab
-   :start-line: 1
+.. literalinclude:: ../../chunkie/@kernel/stok2d.m
+   :language: matlab
    :end-before: % author
 
 .. _elasticity:
@@ -342,10 +330,8 @@ The standard traction and double layer operators are analogous to the
 Stokes case.
 
 
-.. include:: ../../chunkie/@kernel/elast2d.m
-   :literal:
-   :code: matlab
-   :start-line: 1
+.. literalinclude:: ../../chunkie/@kernel/elast2d.m
+   :language: matlab
    :end-before: % author
 
    
