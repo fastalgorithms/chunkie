@@ -27,6 +27,8 @@ function chnkr = refine(chnkr,opts)
 %       opts.nover = oversample boundary nover times (0)
 %       opts.maxiter_lvlr = number of iterations allowed when attempting
 %                           level restriction (1000)
+%       opts.stype - type of split ('a'), 'a' arclength split, 
+%               't' parameter space split.
 %
 % Output:
 %   chnkr - modified chunker object
@@ -49,6 +51,7 @@ lvlrfac = chunker.lvlrfacdefault;
 maxchunklen = Inf;
 nover = 0;
 splitchunks = [];
+stype = 'a';
 
 maxiter_lvlr=1000;
 maxiter_maxlen=1000;
@@ -61,6 +64,7 @@ if isfield(opts,'maxchunklen'); maxchunklen = opts.maxchunklen; end
 if isfield(opts,'nchmax'); nchmax = opts.nchmax; end
 if isfield(opts,'nover'); nover= opts.nover; end
 if isfield(opts,'splitchunks'); splitchunks = opts.splitchunks; end
+if isfield(opts,'stype'); stype = opts.stype; end
 
 
 nch = chnkr.nch;
@@ -80,9 +84,7 @@ chunklens(1:nch) = sum(ws,1);
 [x,w,u] = lege.exps(k);
 
 
-% splitting type
 
-stype = 'a';
 
 
 % chunks told to split

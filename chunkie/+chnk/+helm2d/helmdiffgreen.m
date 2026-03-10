@@ -160,7 +160,7 @@ g21 = zeros(size(r));
 io4 = 1i*0.25;
 o2p = 1/(2*pi);
 
-isus = abs(k)*r < 1;
+isus = abs(k*r) < 1;
 %isus = false(size(r));
 %isus = true(size(r));
 
