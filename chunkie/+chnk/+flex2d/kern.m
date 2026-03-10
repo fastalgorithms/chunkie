@@ -162,27 +162,6 @@ case {'sp', 'sprime'} % normal derivative of flexural wave single layer
 
    submat = grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg;
 
-case {'d', 'double'} % normal derivative of flexural wave single layer
-
-   srcnorm = srcinfo.n;
-   nx = repmat((srcnorm(1,:)).',1,ns);
-   ny = repmat((srcnorm(2,:)).',1,ns);
-
-   [~,grad] = chnk.flex2d.hkdiffgreen(zk,src,targ);  
-   submat = -1/(2*zk^2).*(grad(:,:,1).*nx + grad(:,:,2).*ny);
-
-case {'dp', 'dprime'}
-  targnorm = targinfo.n(:,:);
-  srcnorm = srcinfo.n(:,:);
-  [~,~,hess] = chnk.flex2d.hkdiffgreen(zk,src,targ);
-  nxsrc = repmat(srcnorm(1,:),nt,1);
-  nysrc = repmat(srcnorm(2,:),nt,1);
-  nxtarg = repmat((targnorm(1,:)).',1,ns);
-  nytarg = repmat((targnorm(2,:)).',1,ns);
-  submat = -1/(2*zk^2)*(hess(:,:,1).*nxsrc.*nxtarg + hess(:,:,2).*(nysrc.*nxtarg+nxsrc.*nytarg)...
-      + hess(:,:,3).*nysrc.*nytarg);
-
-
 %%% CLAMPED PLATE KERNELS
 
 % boundary conditions applied to a point source
@@ -858,6 +837,7 @@ case {'supported_plate_eval_old'}
     submat(:,1:2:end) = K1;
     submat(:,2:2:end) = K2;
 
+
 % supported plate kernels for far field evaluation
 case{'supported_plate_eval_ff'}
     srcnorm = srcinfo.n;
@@ -904,6 +884,7 @@ case{'supported_plate_eval_ff'}
     K2 = -1/(2*zk^2).*(grad(:,:,1).*nx + grad(:,:,2).*ny);
 
     submat = zeros(nt,2*ns);
+
     submat(:,1:2:end) = K1;
     submat(:,2:2:end) = K2;
 
@@ -1328,5 +1309,4 @@ end
 
 
 end
-
 
