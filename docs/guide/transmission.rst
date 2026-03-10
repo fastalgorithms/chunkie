@@ -27,9 +27,8 @@ Consider the following domain consisting of $9$
 dielectrics. We use the :matlab:`plot_regions` 
 functionality of the :matlab:`chunkgraph` to identify its regions and edges.
 
-.. include:: ../../chunkie/demo/demo_concentric_transmission.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/demo/demo_concentric_transmission.m
+   :language: matlab
    :start-after: %% Build geometry
    :end-before: % END DOMAIN 
 
@@ -45,13 +44,13 @@ the following transmission boundary value problem
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    \Delta u_{j} + k_{j}^2 u_{j} &=0 & \textrm{ in } \Omega_{j} \; , j=1,2\ldots n_{r}\\
    u_{r_{\ell,+}} - u_{r_{\ell,-}} &= f_{\ell} & \textrm{ on } \Gamma_{\ell} \;, \ell=1,2,\ldots n_{e}\,, \\
    \beta_{r_{\ell,+}}\frac{\partial u_{r_{\ell,+}}}{\partial n} - \beta_{r_{\ell,-}}\frac{\partial u_{r_{\ell,-}}}{\partial n} &= g_{\ell} & \textrm{ on } \Gamma_{\ell}\;, \ell=1,2,\ldots n_{e}\,,\\
    \sqrt{|x|} \left( \frac{x}{|x|} \cdot \nabla u_{1} - ik_{1} u_{1} \right )
    &\to 0 & \textrm{ as } |x|\to \infty \;.
-   \end{align*}
+   \end{aligned}
 
 Here $\beta_{j} = 1$ for the transverse magnetic mode and 
 $\beta_{j} = 1/\varepsilon_{j}$ for the transverse electric mode. 
@@ -74,10 +73,10 @@ Recall that the single and and double layer potentials are given by
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    [S_{k}\sigma](x) &:= \int_\Gamma G_k(x,y) \sigma(y) ds(y)\;,  \\
    [D_{k}\sigma](x) &:= \int_\Gamma n(y)\cdot \nabla_y G_k(x,y) \sigma(y) ds(y) \;,
-   \end{align*}
+   \end{aligned}
 
 where $\Gamma = \cup_{\ell=1}^{n_{e}} \Gamma_{\ell}$.
 
@@ -86,16 +85,16 @@ and double layer potential operators as:
 
 .. math::
    
-   \begin{align*}
+   \begin{aligned}
    u_{j}(x) &= \frac{1}{\beta_{j}}[D_{k_{j}}\sigma](x) - [S_{k_{j}}\mu](x) & \textrm{ in } \Omega_{j}\;,
-   \end{align*}
+   \end{aligned}
 
 Then, imposing the boundary conditions on this representation results
 in the following equation for $\sigma, \mu$:
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    \begin{bmatrix}
    \sigma\\
    \mu
@@ -114,7 +113,7 @@ in the following equation for $\sigma, \mu$:
    \beta_{r_{\ell,+}} \beta_{r_{\ell,-}}f_{\ell}\\
    g_{\ell}
    \end{bmatrix} \;\; \textrm{ on } \Gamma_{\ell}\;, 
-   \end{align*}
+   \end{aligned}
 
 for $\ell=1,2,\ldots n_{e}$ where $\gamma_{\ell} = \frac{2}{\beta_{r_{\ell,+}} + \beta_{r_{\ell,-}}}$.
 
@@ -146,18 +145,16 @@ postprocessing/plotting).
 This simplifies the task of genertaing the system matrix quite a bit,
 requiring only a few lines of code:
 
-.. include:: ../../chunkie/demo/demo_concentric_transmission.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/demo/demo_concentric_transmission.m
+   :language: matlab
    :start-after: %% Build system
    :end-before: % solve 
 
 The solution can then be plotted in the bulk using :matlab:`chunkerkerneval`
 and the :matlab:`kerns_eval` matrix of kernels:
 
-.. include:: ../../chunkie/demo/demo_concentric_transmission.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/demo/demo_concentric_transmission.m
+   :language: matlab
    :start-after: %% Compute field 
    :end-before: % END TRANSMISSION PROBLEM 
 

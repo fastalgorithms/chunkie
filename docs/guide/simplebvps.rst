@@ -26,10 +26,10 @@ value problem
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    \mathcal{L} u &= 0 & \textrm{ in } \Omega \; ,\\
    \mathcal{B} u &= f & \textrm{ on } \Gamma \; ,
-   \end{align*}
+   \end{aligned}
 
 where :math:`\mathcal{L}` is a linear, constant coefficient PDE
 operator and :math:`\mathcal{B}` is a linear trace operator that
@@ -87,10 +87,10 @@ Consider the Laplace Neumann boundary value problem:
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    \Delta u &= 0 & \textrm{ in } \Omega \; ,\\
    \frac{\partial u}{\partial n} &= f & \textrm{ on } \Gamma \; ,
-   \end{align*}
+   \end{aligned}
 
 where :math:`n` is the outward normal.
 This is a model for the equilibrium heat distribution in a
@@ -133,14 +133,14 @@ results in the equation
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    f(x_0) &= \lim_{x\in \Omega, x\to x_0} n(x_0)\cdot \nabla_x
    \int_\Gamma G_0(x,y) \sigma(y) \, ds(y)  \\
    &= \frac{1}{2} \sigma(x_0) + P.V. \int_\Gamma n(x_0) \cdot \nabla_x G_0(x_0,y)
    \sigma(y) \, ds(y) \\
    &=: \left [\left ( \frac{1}{2} \mathcal{I} + \mathcal{S}' \right ) \sigma
    \right ] (x_0) \; ,
-   \end{align*} 
+   \end{aligned} 
 
 where :math:`P.V.` indicates that the integral should be interpreted
 in the principal value sense, :math:`\mathcal{I}` is the identity operator, and
@@ -183,9 +183,8 @@ Many of the most common kernel types are available in chunkie,
 including the normal derivative of the single layer kernel, which is
 called "sprime". This can be obtained via 
 
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START SPRIME
    :end-before: % END SPRIME
 
@@ -219,9 +218,8 @@ of singularity it has.
 Because these standard kernels are built into chunkie, this PDE
 can be solved with very little coding:
    
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START LAPLACE NEUMANN
    :end-before: % END LAPLACE NEUMANN
 
@@ -247,12 +245,12 @@ in the exterior of the object:
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    (\Delta + k^2) u^{\textrm{scat}} &= 0 & \textrm{ in } \mathbb{R}^2 \setminus \Omega \; , \\
    u^{\textrm{scat}} &= -u^{\textrm{inc}} & \textrm{ on } \Gamma \; , \\
    \sqrt{|x|} \left( \frac{x}{|x|} \cdot \nabla u^{\textrm{scat}} - ik u^{\textrm{scat}} \right )
    &\to 0 & \textrm{ as } |x|\to \infty \; ,
-   \end{align*}
+   \end{aligned}
 
 The Green function for the Helmholtz equation is
 
@@ -265,10 +263,10 @@ single and double layer potential operators
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    [S\sigma](x) &:= \int_\Gamma G_k(x,y) \sigma(y) ds(y)  \\
    [D\sigma](x) &:= \int_\Gamma n(y)\cdot \nabla_y G_k(x,y) \sigma(y) ds(y) 
-   \end{align*}
+   \end{aligned}
    
 A robust choice for the layer potential representation for this problem is
 a *combined field* layer potential, which is a linear combination
@@ -283,10 +281,10 @@ results in the equation
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    -u^{\textrm{inc}}(x_0) &= \lim_{x\in \mathbb{R}^2\setminus \Omega, x\to x_0} [(D-ik S)\sigma](x)  \\
    &= \frac{1}{2} \sigma(x_0) + [ (\mathcal{D} -ik \mathcal{S})\sigma ](x_0)
-   \end{align*}
+   \end{aligned}
 
 where we have used the exterior jump condition for the double layer potential.
 As above, the integrals in the operators restricted to the boundary must sometimes
@@ -297,9 +295,8 @@ The above is a second kind integral equation and is invertible.
 As before, this is relatively straightforward to implement in :matlab:`chunkie`
 using the built-in kernels:
 
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START BASIC SCATTERING
    :end-before: % END BASIC SCATTERING
 
@@ -342,9 +339,8 @@ In that case, the equation
    \right ] (x_0) \; ,
 
    
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START STOKES VELOCITY PROBLEM
    :end-before: % END STOKES VELOCITY PROBLEM
 
