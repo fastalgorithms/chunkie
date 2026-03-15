@@ -21,7 +21,7 @@ function edge_regs = find_edge_regions(obj)
     edge_regs = zeros(2,size(obj.edgesendverts,2));
     nreg = length(obj.regions);
     for i = 1:nreg
-        id_edge = obj.regions{i}{1};
+        id_edge = cell2mat(obj.regions{i});
         edge_regs(1,id_edge(id_edge>0)) = i;
         edge_regs(2,-id_edge(id_edge<0)) = i;
     end
