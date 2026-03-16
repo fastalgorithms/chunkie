@@ -82,7 +82,14 @@ for i = 1:7
    end
 end
 
-
+edgereg = find_edge_regions(cgrph);
+for i = 1:7
+    edges = cell2mat(rgntrue{i});
+    assert(all(edgereg(1,edges(edges>0)) == i))
+    assert(all(edgereg(2,abs(edges(edges<0))) == i))
+end
+assert(min(edgereg(:))==1)
+assert(max(edgereg(:))==length(cgrph.regions))
 
 end
 
