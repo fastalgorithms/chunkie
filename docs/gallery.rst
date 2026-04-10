@@ -47,3 +47,14 @@ Gallery
       +++
       `Read the Paper <https://arxiv.org/abs/2510.22748>`_	     
       
+   .. grid-item-card:: Corrugated Helmholtz waveguides
+      :img-top: assets/images/gallery/matched_five_layer.png
+      :width: 100%
+
+      **Authors:** Fruzsina Agocs, Tristan Goodwill, Jeremy G. Hoskins
+
+      For the image above, chunkIE was used to compute the scattering off of a junction of
+      corrugated waveguides with embedded Neumann obstacles. 
+
+      +++
+      `Read the Paper <https://arxiv.org/abs/2509.02951>`_	     
