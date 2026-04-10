@@ -35,6 +35,8 @@ a scattering problem, producing the image above:
 
    % discretize domain
 
+   narms = 5;
+   amp = 0.5;
    chnkr = chunkerfunc(@(t) starfish(t,narms,amp),struct('maxchunklen',4/zk)); 
    
    % build CFIE and solve
