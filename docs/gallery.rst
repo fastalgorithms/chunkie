@@ -58,3 +58,26 @@ Gallery
 
       +++
       `Read the Paper <https://arxiv.org/abs/2509.02951>`_	     
+
+   .. grid-item-card:: Large waveguide circuits
+      :img-top: assets/images/gallery/quilt_ex.png
+      :width: 100%
+
+      **Authors:** Tristan Goodwill, Shidong Jiang, Manas Rachh, Kosuke Sugita
+
+      For the image above, chunkIE was used to compute modal impedance to impeadance maps 
+      for individual junctions. The total system was then solved using a domain-decomposition method.
+      +++
+      `Read the Paper <https://arxiv.org/abs/2509.20695>`_	     
+
+   .. grid-item-card:: Acoustic boundary layers
+      :img-top: assets/images/gallery/wg_pp_abs4.png
+      :width: 100%
+
+      **Authors:** Jacob Linden, Travis Askham, Jeremy G. Hoskins 
+
+      In this example, chunkIE was used used to solve the Helmholtz equation with visco-thermal 
+      boundary conditions. The geometry is inspired by the cross section of a speaker phase plug.
+      +++
+      `Read the Paper <https://arxiv.org/abs/2601.17283>`_	     
+
