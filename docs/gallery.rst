@@ -34,18 +34,6 @@ Gallery
       +++
       `Read the Paper <https://arxiv.org/abs/2510.22748>`_	     
 
-   .. grid-item-card:: Linearized water wave problems
-      :img-top: assets/images/gallery/ross_rift_4.png
-      :width: 100%
-
-      **Authors:** Travis Askham, Tristan Goodwill, Jeremy G. Hoskins, Peter Nekrasov, Manas Rachh
-
-      For the image above, chunkIE (and `fmm3dbie <https://fmm3dbie.readthedocs.io>`_)
-      were used to compute the scattering of linearized water waves
-      off of a realistic ice sheet rift geometry.
-
-      +++
-      `Read the Paper <https://arxiv.org/abs/2510.22748>`_	     
       
    .. grid-item-card:: Corrugated Helmholtz waveguides
       :img-top: assets/images/gallery/matched_five_layer.png
