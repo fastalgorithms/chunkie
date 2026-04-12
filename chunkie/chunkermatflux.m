@@ -1,4 +1,4 @@
-function fluxes = chunkermatflux(chunkobj,kerns,dens,fun,rcipsav,opts)
+function fluxes = chunkermatflux(chunkobj,kern,dens,fun,rcipsav,opts)
 %%%CHUNKERMATFLUX evaluate integral of layer potential on the boundary.
 % This is particularly useful when RCIP is used, which prevents the naive
 % use of chunkermat
@@ -9,7 +9,7 @@ function fluxes = chunkermatflux(chunkobj,kerns,dens,fun,rcipsav,opts)
 %   fluxes = chunkermat(chnkr,kerns,sol,fun,rcipsav)
 % Input:
 %   chnkobj - chunker object describing boundary
-%   kerns - kernel function or matrix of kernels. 
+%   kern - kernel function or matrix of kernels. 
 %   dens - layer potential density 
 %   fun - if provided, this will routine will compute int_gamma
 %       fun(x,y)*K[dens]. Default is fun(x,y) = 1
@@ -21,12 +21,42 @@ function fluxes = chunkermatflux(chunkobj,kerns,dens,fun,rcipsav,opts)
 % Output:
 %   fluxes - integral of fun(x,y)*K[dens] over each edge of the chunker
 %
-% TODO: what if the boundary is just a chunker? Vector valued
-% kernels/densities
-% test with fun to give int_omega u.
+% TODO: what if the boundary is just a chunker? What about if it is an
+% array of chunkers?
+% Vector valued kernels/densities
+% What if RCIP was off?
+% Test computing int_omega u.
+% Test with a chunkgraph with 3 incident edges.
+
+% if (class(chnkobj) == "chunker")
+%     chnkrs = chnkobj;
+%     npttot = chnkobj.npt;
+% elseif(class(chnkobj) == "chunkgraph")
+%     icgrph = 1;
+%     chnkrs = chnkobj.echnks;
+%     npttot = chnkobj.npt;
+% else
+%     msg = "CHUNKERMATFLUX: first input is not a chunker or chunkgraph object";
+%     error(msg)
+% end
+
+if ~isa(kern,'kernel')
+    try 
+        kern = kernel(kern);
+    catch
+        error('CHUNKERMAT: second input kern not of supported type');
+    end
+end
+
+if nargin < 4
+    fun = @(x,y) 1+0*x;
+end
+if isempty(fun)
+    fun = @(x,y) 1+0*x;
+end
 
 opts.rcip = false;
-sysmat0 = chunkermat(chunkobj,kerns,opts);
+sysmat0 = chunkermat(chunkobj,kern,opts);
 
 npts = [chunkobj.echnks.npt];
 nedge = length(npts);
@@ -38,6 +68,7 @@ idstart = [1,cumsum(npts)+1];
 ids_rcip = cell(2,nedge);
 ids_ignore = cell(2,nedge);
 
+% create list of interactions done incorrectly by chunkermat
 for i = 1:nedge
     ids_rcip{1,i} = idstart(i)+(1:2*16)-1;
     ids_rcip{2,i} = flip(idstart(i+1)-(1:2*16));
@@ -46,6 +77,7 @@ for i = 1:nedge
     ids_ignore{2,i} = flip(idstart(i+1)-(1:3*16));
 end
 
+% zero out interactions done incorrectly by chunkermat
 for i = 1:nvert
     vstruc = chunkobj.vstruc{i};
     for j = 1:length(vstruc{1})
@@ -57,6 +89,7 @@ for i = 1:nvert
     end
 end
 
+% compute the contribution to the fluxes done correctly by chunkermat
 val = sysmat0*dens;
 
 ids = [];
@@ -66,8 +99,10 @@ for i = 1:nedge
     fluxes(i) = sum(val(ids).*chunkobj.wts(ids).');
 end
 
+% now go back and add the vertex contributions
 nverts = size(chunkobj.verts,2);
 
+% TODO: grab this from rcipsav
 ndepth = 40;
 for ivert = 1:nverts
     starindtmp = rcipsav{ivert}.starind;
@@ -75,6 +110,7 @@ for ivert = 1:nverts
     solhat = dens(starindtmp);
     [solhatinterpcell,srcinfocell,wtscell] = chnk.rcip.rhohatInterp(solhat,rcipsav{ivert},ndepth);
 
+    % construct panels and density for this vertex
     solinterp = [];
     % solhatinterp2 = [];
     chnkrs = cell(1,length(srcinfocell));
@@ -106,18 +142,21 @@ for ivert = 1:nverts
         solinterp = [solinterp; zeros(16,1);solhat.val(:)];
     end
 
+    % construct local chunkgraph for this edge (centered at [0;0])
     verts = [[0;0]];
     edge2verts = [[NaN;NaN],[NaN;NaN]];
     cgrphloc = chunkgraph(verts,edge2verts,chnkrs);
 
+    % get local kernels
     clear fkernloc
     if (size(kern) == 1)
         fkernloc = kern;
     else
         fkernloc(length(srcinfocell),length(srcinfocell)) = kernel();
-        fkernloc(:,:) = kerns(chunkobj.vstruc{ivert}{1},chunkobj.vstruc{ivert}{1});
+        fkernloc(:,:) = kern(chunkobj.vstruc{ivert}{1},chunkobj.vstruc{ivert}{1});
     end 
 
+    % get local chunkermat
     opts = []; opts.rcip = false; %opts.adaptive_correction = true;
     sysmatloc = chunkermat(cgrphloc,fkernloc,opts);
 
@@ -125,6 +164,7 @@ for ivert = 1:nverts
 
     % val_loc = val_loc + solinterp;
 
+    % compute local contribution to the fluxes
     for j = 1:length(srcinfocell)
         ids = edgeids(cgrphloc,j);
         flux_loc = sum(val_loc(ids).*cgrphloc.wts(ids).');
@@ -134,6 +174,7 @@ for ivert = 1:nverts
     end
 end
 
+% add up all fluxes, if requested.
 if isfield(opts,'tot')
     if opts.tot
         fluxes = sum(fluxes);
