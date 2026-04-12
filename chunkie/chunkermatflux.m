@@ -55,10 +55,10 @@ if ~isa(kern,'kernel')
 end
 
 if nargin < 4
-    fun = @(x,y) 1+0*x;
+    fun = ones(1,chnkobj.npt);
 end
 if isempty(fun)
-    fun = @(x,y) 1+0*x;
+    fun = ones(1,chnkobj.npt);
 end
 
 if nargin < 5
