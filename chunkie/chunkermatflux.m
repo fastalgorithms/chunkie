@@ -1,7 +1,7 @@
-function fluxes = chunkermatflux(chunkobj,kerns,dens,fun,rcipsav)
+function fluxes = chunkermatflux(chunkobj,kerns,dens,fun,rcipsav,opts)
 %%%CHUNKERMATFLUX evaluate integral of layer potential on the boundary.
 % This is particularly useful when RCIP is used, which prevents the naive
-% use of a chunkermat from
+% use of chunkermat
 % 
 % Syntax: 
 %   fluxes = chunkermat(chnkr,kerns,sol)
@@ -9,15 +9,22 @@ function fluxes = chunkermatflux(chunkobj,kerns,dens,fun,rcipsav)
 %   fluxes = chunkermat(chnkr,kerns,sol,fun,rcipsav)
 % Input:
 %   chnkobj - chunker object describing boundary
-% Input:
-%   chnkobj - chunker object describing boundary
 %   kerns - kernel function or matrix of kernels. 
 %   dens - layer potential density 
-%   fun - if provided, this will routine will compute 
+%   fun - if provided, this will routine will compute int_gamma
+%       fun(x,y)*K[dens]. Default is fun(x,y) = 1
+%   rcipsav - precomputed structure of rcip data at corners (see
+%       chunkermat)
+%   opts  - options structure. available options (default settings)
+%       opts.tot - (false) if true, return the sum over all edges as a
+%                  number, rather than individual edges
+% Output:
+%   fluxes - integral of fun(x,y)*K[dens] over each edge of the chunker
 %
+% TODO: what if the boundary is just a chunker? Vector valued
+% kernels/densities
+% test with fun to give int_omega u.
 
-
-% correctly compute fluxes including corner singularities
 opts.rcip = false;
 sysmat0 = chunkermat(chunkobj,kerns,opts);
 
@@ -31,7 +38,6 @@ idstart = [1,cumsum(npts)+1];
 ids_rcip = cell(2,nedge);
 ids_ignore = cell(2,nedge);
 
-ids = [];
 for i = 1:nedge
     ids_rcip{1,i} = idstart(i)+(1:2*16)-1;
     ids_rcip{2,i} = flip(idstart(i+1)-(1:2*16));
@@ -53,6 +59,7 @@ end
 
 val = sysmat0*dens;
 
+ids = [];
 fluxes = zeros(1,nedge);
 for i = 1:nedge
     ids = edgeids(chunkobj,i);
@@ -103,9 +110,13 @@ for ivert = 1:nverts
     edge2verts = [[NaN;NaN],[NaN;NaN]];
     cgrphloc = chunkgraph(verts,edge2verts,chnkrs);
 
-    clear fkern_loc
-    fkernloc(length(srcinfocell),length(srcinfocell)) = kernel();
-    fkernloc(:,:) = kerns(chunkobj.vstruc{ivert}{1},chunkobj.vstruc{ivert}{1});
+    clear fkernloc
+    if (size(kern) == 1)
+        fkernloc = kern;
+    else
+        fkernloc(length(srcinfocell),length(srcinfocell)) = kernel();
+        fkernloc(:,:) = kerns(chunkobj.vstruc{ivert}{1},chunkobj.vstruc{ivert}{1});
+    end 
 
     opts = []; opts.rcip = false; %opts.adaptive_correction = true;
     sysmatloc = chunkermat(cgrphloc,fkernloc,opts);
@@ -123,5 +134,9 @@ for ivert = 1:nverts
     end
 end
 
-
+if isfield(opts,'tot')
+    if opts.tot
+        fluxes = sum(fluxes);
+    end
+end
 end
