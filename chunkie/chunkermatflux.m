@@ -27,6 +27,10 @@ function fluxes = chunkermatflux(chunkobj,kern,dens,fun,rcipsav,opts)
 % What if RCIP was off?
 % Test computing int_omega u.
 % Test with a chunkgraph with 3 incident edges.
+% Compute RCIP when we have to apply a singular op to a smooth rhs, e.g.
+%   Sprime on a polygon applied to piecewise smooth density
+% pass opts to chunkermat, pass ilist to chunkermat?
+% change chunkermat to chunkermatapply?
 
 % if (class(chnkobj) == "chunker")
 %     chnkrs = chnkobj;
