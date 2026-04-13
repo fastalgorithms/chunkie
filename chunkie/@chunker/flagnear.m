@@ -68,7 +68,7 @@ for i = 1:length(T.nodes)
             
             % get all pairwise distances
             itarg = inbor(inbor > npt)-npt;
-            srcs = reshape(chnkr.rstor(:,isrc),dim,1,length(isrc));
+            srcs = reshape(real(chnkr.rstor(:,isrc)),dim,1,length(isrc));
             targs = reshape(pts(:,itarg),dim,length(itarg),1);
             dists = reshape(sqrt(sum((bsxfun(@minus,targs,srcs)).^2,1)), ...
                 length(itarg),length(isrc));
