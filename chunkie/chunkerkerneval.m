@@ -162,8 +162,12 @@ else
     error("CHUNKERKERNEVAL: input 4 is not a supported type");
 end
 
-if ~isreal(chnkobj.r) && opts_use.accel
-    warning('WARNING: accel not supported for complex chunkers')
+if ~isreal(chnkobj.r) && (opts_use.accel || opts_use.forcefmm)
+    warning('WARNING: fmm not supported for complex chunkers')
+end
+
+if ~isreal(targobj.r) && (opts_use.accel || opts_use.forcefmm || opts_use.flam)
+    warning('WARNING: accel not supported for complex targets')
 end
 
 if icgrph && mk > 1
