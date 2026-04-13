@@ -16,8 +16,6 @@ zks = pi*[1,1.3];
 zk1 = zks(1);
 zk2 = zks(2);
 
-close all
-
 a = 3;
 b = 1/a/2;
 t0 =-5;
@@ -34,6 +32,11 @@ cparams.tb = xmax;
 cparams.ifclosed = 0;
 chnkr = chunkerfuncuni(f, nch, cparams);
 
+rends = chunkends(chnkr,[1,chnkr.nch]);
+verts = rends(:,[1,4]);
+fchnk{1} = chnkr;
+cgrph = chunkgraph(real(verts),[1;2],fchnk);
+
 
 ddiff = kernel('helmdiff', 'd', zks);
 sdiff = (-1)*kernel('helmdiff', 's', zks);
@@ -43,13 +46,13 @@ spdiff = (-1)*kernel('helmdiff', 'sp', zks);
 K = kernel([ddiff, sdiff; ...
            dpdiff, spdiff]);
 
-n = 2*chnkr.npt;
-sysmat = chunkermat(chnkr, K);
+n = 2*cgrph.npt;
+sysmat = chunkermat(cgrph, K);
 sysmat = sysmat - eye(n);
 
 %% Analytic solution test
 
-r = chnkr.r;
+r = cgrph.r;
 r0 = [0.1; -3];
 s = [];
 s.r = r0;
@@ -58,27 +61,23 @@ sk1 = kernel('helm', 's', zk1);
 dk1 = kernel('helm', 'd', zk1);
 skp1 = kernel('helm', 'sp', zk1);
 rhs = complex(zeros(n,1));
-rhs(1:2:end) = sk1.eval(s, chnkr);
-rhs(2:2:end) = skp1.eval(s, chnkr);
+rhs(1:2:end) = sk1.eval(s, cgrph);
+rhs(2:2:end) = skp1.eval(s, cgrph);
 
 dens = sysmat \ rhs;
 
-rt = [0.3; 2];
+rt = [[0.3; 2] [-0.5;0.001]];
 targ = [];
 targ.r = rt;
 Keval = kernel([dk1, (-1)*sk1]);
 
 opts = [];
-opts.forcesmooth = true;
+% opts.forcesmooth = true;
 opts.accel = false;
-pot = chunkerkerneval(chnkr, Keval, dens, targ, opts);
+pot = chunkerkerneval(cgrph, Keval, dens, targ, opts);
 
 uex = sk1.eval(s, targ);
-assert(norm(uex - pot) < 1e-10); 
-
-
-
-
+assert(norm(uex - pot) < 1e-12); 
 
 end
 
