@@ -163,11 +163,11 @@ else
 end
 
 if ~isreal(chnkobj.r) && (opts_use.accel || opts_use.forcefmm)
-    warning('WARNING: fmm not supported for complex chunkers')
+    warning('fmm not supported for complex chunkers')
 end
 
 if ~isreal(targinfo.r) && (opts_use.accel || opts_use.forcefmm || opts_use.flam)
-    warning('WARNING: accel not supported for complex targets')
+    warning('accel not supported for complex targets')
 end
 
 if icgrph && mk > 1
