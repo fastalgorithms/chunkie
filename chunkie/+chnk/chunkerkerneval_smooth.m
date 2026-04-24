@@ -141,7 +141,7 @@ else
     wts = wts(:);
     
     if strcmpi(imethod,'flam')
-        xflam1 = chnkr.r(:,:);
+        xflam1 = real(chnkr.r(:,:));
         xflam1 = repmat(xflam1,opdims(2),1);
         xflam1 = reshape(xflam1,chnkr.dim,numel(xflam1)/chnkr.dim);
 

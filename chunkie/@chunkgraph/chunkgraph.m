@@ -304,7 +304,7 @@ classdef chunkgraph
                         end
 
                         vs = chunkends(chnkr,[1,chnkr.nch]);
-                        vs = vs(:, [1,4]);
+                        vs = real(vs(:, [1,4]));
 
                     else
                         msg = "CHUNKGRAPH:CONSTRUCTOR: invalid edge descriptor." + ...
