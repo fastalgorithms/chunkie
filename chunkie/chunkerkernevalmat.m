@@ -269,7 +269,7 @@ end
 optsflag = []; optsflag.fac = fac;
 chnkrflag = chunkerpoints(struct('r',real(chnkr0.r), ... 
     'd',real(chnkr0.d),'d2',real(chnkr0.d2)));
-flag = flagnear(chnkrflag,targinfo0.r,optsflag);
+flag = flagnear(chnkrflag,real(targinfo0.r),optsflag);
 
 if forcepquad
     spmat = chunkerkernevalmat_pquad(chnkr0,kern0,opdims0, ...
