@@ -212,7 +212,7 @@ optssmooth = [];
 optsadap = []; 
 optsadap.eps = eps;
 
-if corrections
+if corrections || nonsmoothonly
     mat = sparse(nout,icollocs(end)-1);
 else
     mat = zeros(nout,icollocs(end)-1);
@@ -267,7 +267,9 @@ end
 % TODO: switch to oversampling version with bounding ellipse like chunkerkerneval
 
 optsflag = []; optsflag.fac = fac;
-flag = flagnear(chnkr0,targinfo0.r,optsflag);
+chnkrflag = chunkerpoints(struct('r',real(chnkr0.r), ... 
+    'd',real(chnkr0.d),'d2',real(chnkr0.d2)));
+flag = flagnear(chnkrflag,targinfo0.r,optsflag);
 
 if forcepquad
     spmat = chunkerkernevalmat_pquad(chnkr0,kern0,opdims0, ...
