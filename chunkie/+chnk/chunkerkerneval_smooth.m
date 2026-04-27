@@ -62,7 +62,7 @@ diam = max(diamsrc, diamtarg);
 % these are automatically ignored by the fmm and 
 % in chunkermat corrections
 if ~(strcmpi(imethod,'fmm') && isempty(flag))
-    flagslf = chnk.flagself(targinfo.r, chnkr.r, 1e-14*diam);
+    flagslf = chnk.flagself(real(targinfo.r), real(chnkr.r), 1e-14*diam);
     if isempty(flagslf)
         selfzero = sparse(opdims(1)*size(targinfo.r(:,:),2), ...
             opdims(2)*chnkr.npt);
