@@ -113,9 +113,9 @@ classdef kernel
                       obj = kernel.zeros(varargin{:});
                   case {'nans', 'nan'}
                       obj = kernel.nans(varargin{:});
-                  case {'axis sym helmholtz', 'axissymh', 'axissymhelm'}
+                  case {'axis sym helmholtz', 'axissymh', 'axissymhelm', 'axissymhelmholtz'}
                       obj = kernel.axissymhelm2d(varargin{:});
-                  case {'axis sym laplace', 'axissyml', 'axissymlap'}
+                  case {'axis sym laplace', 'axissyml', 'axissymlap', 'axissymlaplace'}
                       obj = kernel.axissymlap2d(varargin{:});
                   case {'axis sym helmholtz difference', 'axissymhdiff' ...
                            'axissymhelmdiff', 'axissymhelm_diff'}

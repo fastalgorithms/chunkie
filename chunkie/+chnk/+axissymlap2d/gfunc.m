@@ -18,8 +18,8 @@ function [gval,gdz,gdr,gdrp,gdzz,gdrrp,gdrz,gdrpz] = gfunc(r,rp,dr,dz,n)
     inear = (t<1e-2);
     xm1n = t(inear);
     xm1f = t(~inear);
-    [q0f,~,qdf,qddf] = runbackward(xm1f,n); 
-    [q0n,~,qdn,qddn] = runforward(xm1n,n); 
+    [q0f,~,qdf,qddf] = chnk.axissymlap2d.runbackward(xm1f,n); 
+    [q0n,~,qdn,qddn] = chnk.axissymlap2d.runforward(xm1n,n); 
     q0 = zeros(size(t)); % q0 = Q_{n/2-2}
     q0d = q0; q0dd = q0;
     q0(inear) = q0n; q0(~inear) = q0f;
