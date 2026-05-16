@@ -86,7 +86,7 @@ if strcmpi(type,'sprimeprime')
     [~,~,hess] = chnk.axissymlap2d.green(src, targ, origin, dimension);
     nxtarg = repmat((targnorm(1,:)).',1,ns);
     nytarg = repmat((targnorm(2,:)).',1,ns);
-    submat = hess(:,:,1).*nxtarg.*nxtarg + 2*hess(:,:,5).*nytarg.*nxtarg ...
+    submat = hess(:,:,1).*nxtarg.*nxtarg - 2*hess(:,:,5).*nytarg.*nxtarg ...
                                           + hess(:,:,3).*nytarg.*nytarg;
 end
 
@@ -95,7 +95,7 @@ if strcmpi(type,'q')
     [~,~,hess] = chnk.axissymlap2d.green(src, targ, origin, dimension);
     nxsrc = repmat(srcnorm(1,:),nt,1);
     nysrc = repmat(srcnorm(2,:),nt,1);
-    submat = hess(:,:,2).*nxsrc.*nxsrc - 2*hess(:,:,6).*nysrc.*nxsrc ... 
+    submat = hess(:,:,2).*nxsrc.*nxsrc + 2*hess(:,:,6).*nysrc.*nxsrc ... 
                                       + hess(:,:,3).*nysrc.*nysrc;
 end
 
@@ -112,7 +112,7 @@ if strcmpi(type,'q_sum_dp')
               - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
 
     % add Q
-    submat = submat + (hess(:,:,2).*nxsrc.*nxsrc - 2*hess(:,:,6).*nysrc.*nxsrc ... 
+    submat = submat + (hess(:,:,2).*nxsrc.*nxsrc + 2*hess(:,:,6).*nysrc.*nxsrc ... 
                                       + hess(:,:,3).*nysrc.*nysrc);
 end
 

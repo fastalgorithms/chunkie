@@ -62,6 +62,34 @@ switch lower(type)
         obj.fmm = [];
         obj.sing = 'hs';
 
+    case {'spp', 'sprimeprime'}
+        obj.type = 'spp';
+        obj.eval = @(s,t) chnk.axissymlap2d.kern(s, t, [0,0], 'sprimeprime', n);
+        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern(s, t, o, 'sprimeprime', n);
+        obj.fmm = [];
+        obj.sing = 'hs';
+
+    case {'q'}
+        obj.type = 'q';
+        obj.eval = @(s,t) chnk.axissymlap2d.kern(s, t, [0,0], 'q', n);
+        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern(s, t, o, 'q', n);
+        obj.fmm = [];
+        obj.sing = 'hs';
+
+    case {'q_sum_dp'}
+        obj.type = 'q_sum_dp';
+        obj.eval = @(s,t) chnk.axissymlap2d.kern(s, t, [0,0], 'q_sum_dp', n);
+        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern(s, t, o, 'q_sum_dp', n);
+        obj.fmm = [];
+        obj.sing = 'hs';
+
+    case {'spp_sum_dp'}
+        obj.type = 'spp_sum_dp';
+        obj.eval = @(s,t) chnk.axissymlap2d.kern(s, t, [0,0], 'spp_sum_dp', n);
+        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern(s, t, o, 'spp_sum_dp', n);
+        obj.fmm = [];
+        obj.sing = 'hs';
+     
     otherwise
         error('Unknown axissym Laplace kernel type ''%s''.', type);
 
