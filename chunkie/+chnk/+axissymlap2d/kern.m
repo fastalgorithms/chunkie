@@ -81,5 +81,57 @@ if strcmpi(type, 's')
     submat = chnk.axissymlap2d.green(src, targ, origin, dimension);  
 end
 
+if strcmpi(type,'sprimeprime')
+    targnorm = targinfo.n(:,:);
+    [~,~,hess] = chnk.axissymlap2d.green(src, targ, origin, dimension);
+    nxtarg = repmat((targnorm(1,:)).',1,ns);
+    nytarg = repmat((targnorm(2,:)).',1,ns);
+    submat = hess(:,:,1).*nxtarg.*nxtarg + 2*hess(:,:,5).*nytarg.*nxtarg ...
+                                          + hess(:,:,3).*nytarg.*nytarg;
+end
+
+if strcmpi(type,'q')
+    srcnorm = srcinfo.n(:,:);
+    [~,~,hess] = chnk.axissymlap2d.green(src, targ, origin, dimension);
+    nxsrc = repmat(srcnorm(1,:),nt,1);
+    nysrc = repmat(srcnorm(2,:),nt,1);
+    submat = hess(:,:,2).*nxsrc.*nxsrc - 2*hess(:,:,6).*nysrc.*nxsrc ... 
+                                      + hess(:,:,3).*nysrc.*nysrc;
+end
+
+if strcmpi(type,'q_sum_dp')
+    % D'
+    targnorm = targinfo.n;
+    srcnorm = srcinfo.n;
+    [~,~,hess] = chnk.axissymlap2d.green(src, targ, origin, dimension);
+    nxsrc = repmat(srcnorm(1,:),nt,1);
+    nysrc = repmat(srcnorm(2,:),nt,1);
+    nxtarg = repmat((targnorm(1,:)).',1,ns);
+    nytarg = repmat((targnorm(2,:)).',1,ns);
+    submat = hess(:,:,4).*nxsrc.*nxtarg + hess(:,:,5).*nysrc.*nxtarg ... 
+              - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
+
+    % add Q
+    submat = submat + (hess(:,:,2).*nxsrc.*nxsrc - 2*hess(:,:,6).*nysrc.*nxsrc ... 
+                                      + hess(:,:,3).*nysrc.*nysrc);
+end
+
+if strcmpi(type,'spp_sum_dp')
+    % D'
+    targnorm = targinfo.n;
+    srcnorm = srcinfo.n;
+    [~,~,hess] = chnk.axissymlap2d.green(src, targ, origin, dimension);
+    nxsrc = repmat(srcnorm(1,:),nt,1);
+    nysrc = repmat(srcnorm(2,:),nt,1);
+    nxtarg = repmat((targnorm(1,:)).',1,ns);
+    nytarg = repmat((targnorm(2,:)).',1,ns);
+    submat = hess(:,:,4).*nxsrc.*nxtarg + hess(:,:,5).*nysrc.*nxtarg ... 
+              - hess(:,:,6).*nxsrc.*nytarg + hess(:,:,3).*nysrc.*nytarg;
+
+    % add S''
+    submat = submat + (hess(:,:,1).*nxtarg.*nxtarg + 2*hess(:,:,5).*nytarg.*nxtarg ...
+                                          + hess(:,:,3).*nytarg.*nytarg);
+end
+
 
 end

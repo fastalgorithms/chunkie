@@ -1,5 +1,5 @@
 function [val, grad, hess] = green(src, targ, origin, n)
-%CHNK.AXISSYMHELM2D.GREEN evaluate the Laplace green's function
+%CHNK.AXISSYMLAP2D.GREEN evaluate the Laplace green's function
 % for the given sources and targets. 
 %
 % Note: that the first coordinate is r, and the second z.
@@ -11,6 +11,8 @@ function [val, grad, hess] = green(src, targ, origin, n)
 % Since the kernels are not translationally invariant in r, the size
 % of the gradient is 3, for d/dr, d/dr', and d/dz
 %
+% Similarly the hessian is of size 6 and ordered as 
+%   d_{rr}, d_{r'r'}, d_{zz}, d_{rr'}, d_{rz}, d_{r'z}
 
 [~, ns] = size(src);
 [~, nt] = size(targ);
