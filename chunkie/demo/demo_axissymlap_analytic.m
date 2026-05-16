@@ -1,4 +1,4 @@
-clearvars; clc;
+%clearvars; clc;
 iftorus = 0;
 cparams = [];
 cparams.eps = 1.0e-10;
@@ -119,10 +119,3 @@ title('upcompin');
 
 title(tileplot,'Laplace Interior Dirichlet in n-dimension');
 
-%{
-figure(2); clf;
-zval = chnkrhalf.r(2,:).';
-plot(zval,upcomp,'DisplayName','upcomp'); hold on;
-plot(zval,uptrue,'DisplayName','uptrue'); legend;
-title('Dp(targ) for targ on boundary against z(targ)');
-%}
