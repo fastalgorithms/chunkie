@@ -857,7 +857,35 @@ if islogical(fw) || (isnumeric(fw) && isscalar(fw))
         error("chunkermat: opts.forcewlchs=true requires a single helm2d, lap2d, or stok2d kernel");
     end
     t = lower(kern.type);
-    if strcmp(fam, 'stokes')
+    if strcmp(fam, 'elasticity')
+        % Elasticity SLP/DLP/Strac/Dalt are 2x2 opdims kernels; populate
+        % the 4 sub-block layout cells.  Supported: s, d, strac, dalt.
+        if ismember(t, {'s','single'})
+            el_kind = 's';
+        elseif ismember(t, {'d','double'})
+            el_kind = 'd';
+        elseif ismember(t, {'strac','straction'})
+            el_kind = 'strac';
+        elseif ismember(t, {'dalt'})
+            el_kind = 'dalt';
+        else
+            error("chunkermat: opts.forcewlchs=true: elast2d kernel type %s not supported", kern.type);
+        end
+        if m ~= 2 || n ~= 2
+            error("chunkermat: opts.forcewlchs=true on elast2d '%s' requires opdims=[2 2]", el_kind);
+        end
+        if ~isfield(kern.params, 'lam') || isempty(kern.params.lam) || ...
+           ~isfield(kern.params, 'mu')  || isempty(kern.params.mu)
+            error("chunkermat: opts.forcewlchs (elasticity) requires kern.params.lam and kern.params.mu");
+        end
+        lam = kern.params.lam;
+        mu  = kern.params.mu;
+        coef = wlchs_extract_scalar(kern, el_kind, [lam, mu], 'elasticity');
+        layout{1,1} = struct('type',[el_kind '_xx'],'coef',coef,'lam',lam,'mu',mu,'family','elasticity');
+        layout{1,2} = struct('type',[el_kind '_xy'],'coef',coef,'lam',lam,'mu',mu,'family','elasticity');
+        layout{2,1} = struct('type',[el_kind '_yx'],'coef',coef,'lam',lam,'mu',mu,'family','elasticity');
+        layout{2,2} = struct('type',[el_kind '_yy'],'coef',coef,'lam',lam,'mu',mu,'family','elasticity');
+    elseif strcmp(fam, 'stokes')
         % Stokes velocity SLP/DLP is a 2x2 opdims kernel; populate the 4
         % sub-block layout cells.  Supported: 'svel' (single layer),
         % 'dvel' (double layer), 'strac' (traction).
@@ -925,13 +953,15 @@ elseif isstruct(fw)
     if isfield(fw, 'family') && ~isempty(fw.family)
         fam_default = lower(fw.family);
     end
-    if ~ismember(fam_default, {'helmholtz','laplace','stokes'})
-        error("chunkermat: opts.forcewlchs.family must be 'helmholtz', 'laplace', or 'stokes'");
+    if ~ismember(fam_default, {'helmholtz','laplace','stokes','elasticity'})
+        error("chunkermat: opts.forcewlchs.family must be 'helmholtz', 'laplace', 'stokes', or 'elasticity'");
     end
     zk_default = [];
     mu_default = [];
+    lam_default = [];
     if isfield(fw, 'zk') && ~isempty(fw.zk), zk_default = fw.zk; end
     if isfield(fw, 'mu') && ~isempty(fw.mu), mu_default = fw.mu; end
+    if isfield(fw, 'lam') && ~isempty(fw.lam), lam_default = fw.lam; end
 
     L = fw.layout;
     if ~iscell(L) || size(L,1) ~= m || size(L,2) ~= n
@@ -944,6 +974,7 @@ elseif isstruct(fw)
             ent_fam = fam_default;
             ent_zk  = zk_default;
             ent_mu  = mu_default;
+            ent_lam = lam_default;
             if iscell(entry)
                 t = entry{1}; a = entry{2};
             elseif isstruct(entry)
@@ -956,8 +987,9 @@ elseif isstruct(fw)
                 if isfield(entry, 'family') && ~isempty(entry.family)
                     ent_fam = lower(entry.family);
                 end
-                if isfield(entry, 'zk') && ~isempty(entry.zk), ent_zk = entry.zk; end
-                if isfield(entry, 'mu') && ~isempty(entry.mu), ent_mu = entry.mu; end
+                if isfield(entry, 'zk')  && ~isempty(entry.zk),  ent_zk  = entry.zk;  end
+                if isfield(entry, 'mu')  && ~isempty(entry.mu),  ent_mu  = entry.mu;  end
+                if isfield(entry, 'lam') && ~isempty(entry.lam), ent_lam = entry.lam; end
             else
                 error("chunkermat: opts.forcewlchs.layout{%d,%d} bad form", r, c);
             end
@@ -979,6 +1011,14 @@ elseif isstruct(fw)
                     if isempty(ent_mu)
                         error("chunkermat: forcewlchs stokes layout entry (%d,%d) needs mu", r, c);
                     end
+                case 'elasticity'
+                    allowed_e = {'s_xx','s_xy','s_yx','s_yy', ...
+                                 'd_xx','d_xy','d_yx','d_yy', ...
+                                 'strac_xx','strac_xy','strac_yx','strac_yy', ...
+                                 'dalt_xx','dalt_xy','dalt_yx','dalt_yy'};
+                    if isempty(ent_lam) || isempty(ent_mu)
+                        error("chunkermat: forcewlchs elasticity layout entry (%d,%d) needs lam and mu", r, c);
+                    end
                 otherwise
                     error("chunkermat: unknown family %s", ent_fam);
             end
@@ -991,16 +1031,19 @@ elseif isstruct(fw)
                     error("chunkermat: forcewlchs c layout entry needs coefs [c1, c2]");
                 end
                 layout{r,c} = struct('type', 'c', 'coefs', a(:).', ...
-                                     'zk', ent_zk, 'mu', ent_mu, 'family', ent_fam);
+                                     'zk', ent_zk, 'mu', ent_mu, ...
+                                     'lam', ent_lam, 'family', ent_fam);
             elseif strcmpi(t, 'sc') || strcmpi(t, 'spcombined')
                 if ~isvector(a) || numel(a) ~= 2
                     error("chunkermat: forcewlchs sc layout entry needs coefs [c1, c2]");
                 end
                 layout{r,c} = struct('type', 'sc', 'coefs', a(:).', ...
-                                     'zk', ent_zk, 'mu', ent_mu, 'family', ent_fam);
+                                     'zk', ent_zk, 'mu', ent_mu, ...
+                                     'lam', ent_lam, 'family', ent_fam);
             else
                 layout{r,c} = struct('type', lower(t), 'coef', a, ...
-                                     'zk', ent_zk, 'mu', ent_mu, 'family', ent_fam);
+                                     'zk', ent_zk, 'mu', ent_mu, ...
+                                     'lam', ent_lam, 'family', ent_fam);
             end
         end
     end
@@ -1162,14 +1205,15 @@ end
 end
 
 function fam = wlchs_kernel_family(kern)
-% Returns 'helmholtz', 'laplace', 'stokes', or '' if the kernel is
-% unsupported by the wLCHS path.
+% Returns 'helmholtz', 'laplace', 'stokes', 'elasticity', or '' if the
+% kernel is unsupported by the wLCHS path.
 fam = '';
 if ~isa(kern, 'kernel'), return; end
 if strcmpi(kern.name, 'zeros'), return; end
-if strcmpi(kern.name, 'helmholtz'), fam = 'helmholtz'; return; end
-if strcmpi(kern.name, 'laplace'),   fam = 'laplace';   return; end
-if strcmpi(kern.name, 'stokes'),    fam = 'stokes';    return; end
+if strcmpi(kern.name, 'helmholtz'),  fam = 'helmholtz';  return; end
+if strcmpi(kern.name, 'laplace'),    fam = 'laplace';    return; end
+if strcmpi(kern.name, 'stokes'),     fam = 'stokes';     return; end
+if strcmpi(kern.name, 'elasticity'), fam = 'elasticity'; return; end
 end
 
 function tf = wlchs_has_self_correction(type, family)
@@ -1192,6 +1236,11 @@ switch lower(family)
         tf = ismember(lower(type), {'svel_xx','svel_xy','svel_yx','svel_yy', ...
                                      'dvel_xx','dvel_xy','dvel_yx','dvel_yy', ...
                                      'strac_xx','strac_xy','strac_yx','strac_yy'});
+    case 'elasticity'
+        tf = ismember(lower(type), {'s_xx','s_xy','s_yx','s_yy', ...
+                                     'd_xx','d_xy','d_yx','d_yy', ...
+                                     'strac_xx','strac_xy','strac_yx','strac_yy', ...
+                                     'dalt_xx','dalt_xy','dalt_yx','dalt_yy'});
     otherwise
         tf = false;
 end
@@ -1208,6 +1257,9 @@ switch lower(spec.family)
         [delta, U_src_cell] = chnk.kernsplit.lap2d_self_correction(chnkr, type, U_src_cell);
     case 'stokes'
         [delta, U_src_cell] = chnk.kernsplit.sto2d_self_correction(chnkr, type, spec.mu, U_src_cell);
+    case 'elasticity'
+        [delta, U_src_cell] = chnk.kernsplit.elast2d_self_correction( ...
+            chnkr, type, spec.lam, spec.mu, U_src_cell);
     otherwise
         error('wlchs_self_correction_dispatch: unsupported family %s', spec.family);
 end
@@ -1221,6 +1273,9 @@ switch lower(spec.family)
         [delta, U_src_cell] = chnk.kernsplit.lap2d_adj_correction(chnkr, type, U_src_cell);
     case 'stokes'
         [delta, U_src_cell] = chnk.kernsplit.sto2d_adj_correction(chnkr, type, spec.mu, U_src_cell);
+    case 'elasticity'
+        [delta, U_src_cell] = chnk.kernsplit.elast2d_adj_correction( ...
+            chnkr, type, spec.lam, spec.mu, U_src_cell);
     otherwise
         error('wlchs_adj_correction_dispatch: unsupported family %s', spec.family);
 end
@@ -1281,6 +1336,28 @@ switch lower(spec.family)
             otherwise
                 error('wlchs_kernel_eval: stokes sub-block %s not supported', sub);
         end
+    case 'elasticity'
+        tlow = lower(type);
+        if startsWith(tlow, 's_')
+            K_full = chnk.elast2d.kern(spec.lam, spec.mu, si, ti, 's');
+        elseif startsWith(tlow, 'd_')
+            K_full = chnk.elast2d.kern(spec.lam, spec.mu, si, ti, 'd');
+        elseif startsWith(tlow, 'strac_')
+            K_full = chnk.elast2d.kern(spec.lam, spec.mu, si, ti, 'strac');
+        elseif startsWith(tlow, 'dalt_')
+            K_full = chnk.elast2d.kern(spec.lam, spec.mu, si, ti, 'dalt');
+        else
+            error('wlchs_kernel_eval: elasticity type %s not supported', type);
+        end
+        sub = tlow(end-1:end);
+        switch sub
+            case 'xx', K = K_full(1:2:end, 1:2:end);
+            case 'xy', K = K_full(1:2:end, 2:2:end);
+            case 'yx', K = K_full(2:2:end, 1:2:end);
+            case 'yy', K = K_full(2:2:end, 2:2:end);
+            otherwise
+                error('wlchs_kernel_eval: elasticity sub-block %s not supported', sub);
+        end
     otherwise
         error('wlchs_kernel_eval: unsupported family %s', spec.family);
 end
@@ -1295,7 +1372,7 @@ function coef = wlchs_extract_scalar(kern, t, param, family)
 %
 % `param` carries family-specific data (zk for helmholtz, [] for laplace).
 if nargin < 4 || isempty(family), family = 'helmholtz'; end
-if strcmp(family, 'laplace') || strcmp(family, 'stokes')
+if strcmp(family, 'laplace') || strcmp(family, 'stokes') || strcmp(family, 'elasticity')
     src_probe = struct('r',[0;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
     tgt_probe = struct('r',[2;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
 else
@@ -1342,6 +1419,23 @@ switch lower(family)
             base = chnk.stok2d.kern(mu, src_probe, tgt_probe, 'strac');
         else
             error('wlchs_extract_scalar: stok type %s not supported', t);
+        end
+        coef = val(1,1) / base(1,1);
+    case 'elasticity'
+        % param = [lam, mu]. Elasticity sub-blocks return 2x2 matrices;
+        % ratio on a non-zero entry gives the scalar prefactor (assumes
+        % the user's kern is a scalar multiple of bare kernel.elast2d).
+        lam = param(1); mu = param(2);
+        if ismember(lower(t), {'s','single'})
+            base = chnk.elast2d.kern(lam, mu, src_probe, tgt_probe, 's');
+        elseif ismember(lower(t), {'d','double'})
+            base = chnk.elast2d.kern(lam, mu, src_probe, tgt_probe, 'd');
+        elseif ismember(lower(t), {'strac','straction'})
+            base = chnk.elast2d.kern(lam, mu, src_probe, tgt_probe, 'strac');
+        elseif strcmpi(t, 'dalt')
+            base = chnk.elast2d.kern(lam, mu, src_probe, tgt_probe, 'dalt');
+        else
+            error('wlchs_extract_scalar: elasticity type %s not supported', t);
         end
         coef = val(1,1) / base(1,1);
     otherwise

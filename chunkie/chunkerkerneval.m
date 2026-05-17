@@ -53,9 +53,10 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %       opts.eps = tolerance for adaptive integration
 %       opts.forcewlchs - if = true, use kernel-split (Helsing-style)
 %               panel quadrature for close evaluation. Supports
-%               Helmholtz (s/d/sp) and Laplace (s/d/sp) scalar kernels
-%               -- kern must be a single kernel object. Delivers 10+
-%               digits of accuracy at close off-curve targets. (false)
+%               Helmholtz (s/d/sp), Laplace (s/d/sp), and elasticity
+%               (s/d/strac/dalt; opdims=[2 2]) kernels -- kern must be
+%               a single kernel object. Delivers 10+ digits of accuracy
+%               at close off-curve targets. (false)
 %
 % output:
 %   fints - opdims(1) x nt array of integral values where opdims is the 
@@ -156,17 +157,24 @@ else
 end
 
 if use_wlchs
-    % Single scalar kernel (helm/lap, opdims=[1 1]).
+    % Single kernel: scalar (helm/lap, opdims=[1 1]) or elasticity (opdims=[2 2]).
     if size(kern,1) ~= 1 || size(kern,2) ~= 1 || ~isa(kern,'kernel')
         error("CHUNKERKERNEVAL: forcewlchs=true requires a single kernel object");
     end
-    is_helm = strcmpi(kern.name, 'helmholtz');
-    is_lap  = strcmpi(kern.name, 'laplace');
-    if ~is_helm && ~is_lap
-        error("CHUNKERKERNEVAL: forcewlchs supports Helmholtz or Laplace kernels");
+    is_helm  = strcmpi(kern.name, 'helmholtz');
+    is_lap   = strcmpi(kern.name, 'laplace');
+    is_elast = strcmpi(kern.name, 'elasticity');
+    if ~is_helm && ~is_lap && ~is_elast
+        error("CHUNKERKERNEVAL: forcewlchs supports Helmholtz, Laplace, or elasticity kernels");
     end
-    if ~ismember(lower(kern.type), {'s','single','d','double','sp','sprime'})
-        error("CHUNKERKERNEVAL: forcewlchs currently supports only s/d/sp layers");
+    if is_elast
+        if ~ismember(lower(kern.type), {'s','single','d','double','strac','straction','dalt'})
+            error("CHUNKERKERNEVAL: forcewlchs (elasticity) supports types s, d, strac, dalt");
+        end
+    else
+        if ~ismember(lower(kern.type), {'s','single','d','double','sp','sprime'})
+            error("CHUNKERKERNEVAL: forcewlchs currently supports only s/d/sp layers");
+        end
     end
     wlchs_type   = kern.type;
     wlchs_family = kern.name;
@@ -187,7 +195,7 @@ if use_wlchs
             base_probe = -0.25i * wlchs_zk * besselh(1, wlchs_zk);
         end
         wlchs_coef = val_probe / base_probe;
-    else  % laplace
+    elseif is_lap
         wlchs_zk = [];
         if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
             tgt_probe.r = [2;0];
@@ -197,23 +205,45 @@ if use_wlchs
             base_probe = 1/(2*pi);
         end
         wlchs_coef = val_probe / base_probe;
+    else  % elasticity
+        if ~isfield(kern.params,'lam') || isempty(kern.params.lam) || ...
+           ~isfield(kern.params,'mu')  || isempty(kern.params.mu)
+            error("CHUNKERKERNEVAL: forcewlchs (elasticity) requires kern.params.lam and kern.params.mu");
+        end
+        wlchs_lam = kern.params.lam;
+        wlchs_mu  = kern.params.mu;
+        wlchs_zk  = [];
+        % Probe far from r=0 for log/Cauchy stability
+        tgt_probe.r = [2;0];
+        val_probe = kern.eval(src_probe, tgt_probe);
+        switch lower(wlchs_type)
+            case {'s','single'},        et = 's';
+            case {'d','double'},        et = 'd';
+            case {'strac','straction'}, et = 'strac';
+            case 'dalt',                et = 'dalt';
+        end
+        base_probe = chnk.elast2d.kern(wlchs_lam, wlchs_mu, src_probe, ...
+            tgt_probe, et);
+        wlchs_coef = val_probe(1,1) / base_probe(1,1);
     end
 
     % Non-rcipsav path: dispatch directly to kernsplit on the (possibly
     % merged) chunker. Targets pass through as raw point coords or struct
-    % with .r and .n when normals are needed (sp).
+    % with .r and .n when normals are needed (sp; elasticity strac).
     if length(chnkr) > 1
         chnkr_use = merge(chnkr);
     else
         chnkr_use = chnkr;
     end
     targ_pts = local_target_points(targobj);
-    needs_tgt_normals = any(strcmpi(wlchs_type, {'sp','sprime'}));
+    is_strac_helm = any(strcmpi(wlchs_type, {'sp','sprime'}));
+    is_strac_elast = is_elast && any(strcmpi(wlchs_type, {'strac','straction'}));
+    needs_tgt_normals = is_strac_helm || is_strac_elast;
     targ_n = [];
     if needs_tgt_normals
         targ_n = local_target_normals(targobj);
         if isempty(targ_n)
-            error(['CHUNKERKERNEVAL: forcewlchs with sp kernel ' ...
+            error(['CHUNKERKERNEVAL: forcewlchs with sp/strac kernel ' ...
                    'requires target normals; pass targobj as a struct with .n']);
         end
     end
@@ -233,6 +263,16 @@ if use_wlchs
         case 'laplace'
             fints = wlchs_coef * chnk.kernsplit.lap2d_panel_eval(chnkr_use, ...
                 wlchs_type, dens, targ_for_eval, [], hpe_opts);
+        case 'elasticity'
+            switch lower(wlchs_type)
+                case {'s','single'},        et = 's';
+                case {'d','double'},        et = 'd';
+                case {'strac','straction'}, et = 'strac';
+                case 'dalt',                et = 'dalt';
+            end
+            val = chnk.kernsplit.elast2d_panel_eval(chnkr_use, et, ...
+                wlchs_lam, wlchs_mu, dens, targ_for_eval, [], hpe_opts);
+            fints = wlchs_coef * val(:);
         otherwise
             error('CHUNKERKERNEVAL: forcewlchs family %s not supported', wlchs_family);
     end
