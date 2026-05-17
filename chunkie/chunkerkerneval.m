@@ -54,9 +54,25 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %       opts.forcewlchs - if = true, use kernel-split (Helsing-style)
 %               panel quadrature for close evaluation. Supports
 %               Helmholtz (s/d/sp), Laplace (s/d/sp), and elasticity
-%               (s/d/strac/dalt; opdims=[2 2]) kernels -- kern must be
-%               a single kernel object. Delivers 10+ digits of accuracy
-%               at close off-curve targets. (false)
+%               (s/d/strac/dalt; opdims=[2 2]) kernels — kern must be
+%               a single kernel object. Delivers 10+ digits of
+%               accuracy at moderately close off-curve targets
+%               (d > 0.1*panel_length for elasticity; the genuinely
+%               singular pieces are wLCHS-corrected, bounded pieces
+%               degrade for very-close targets). Combine with
+%               opts.rcipsav for the open-arc / corner case to also
+%               use kernel-split close eval on the fine-mesh density
+%               reconstruction. (false)
+%       opts.rcipsav - cell array of per-vertex RCIP data returned as the
+%               third output of chunkermat when opts.rcip = true. If set,
+%               chunkerkerneval performs RCIP-aware field evaluation:
+%               the density at each vertex's starind is treated as the
+%               RCIP-transformed coarse density (only valid for far-field
+%               smooth quadrature) and replaced for close interactions by
+%               a fine-mesh density reconstructed via
+%               chnk.rcip.rhohatInterp. Requires chnkobj to be a
+%               chunkgraph. With nsub=30, accuracy stays at ~1e-12 down
+%               to target distances ~1e-5 from a vertex.
 %
 % output:
 %   fints - opdims(1) x nt array of integral values where opdims is the 
@@ -145,97 +161,294 @@ if isfield(opts,'eps'); opts_use.eps = opts.eps; end
 if isfield(opts,'proxybylevel'); opts_use.proxybylevel = opts.proxybylevel; end
 
 % Kernel-split (Helsing-style) panel quadrature for accurate close
-% evaluation of Laplace S, D, S' layer potentials.
+% evaluation of Helmholtz / Laplace S, D, S' layer potentials.
+%
+% Two forms:
+%   opts.forcewlchs = true            -- single scalar kernel
+%   opts.forcewlchs = struct('zk',zk,'layout', {{ {'zero',0}, {'s',c}, ... }})
+%                                     -- 1xN block kernel (e.g. helmos
+%                                       Keval = kernel([Z, c*S])).  The
+%                                       layout selects which density
+%                                       component is the active one and
+%                                       which kernsplit type to apply.
 fw_raw = [];
 if isfield(opts,'forcewlchs') && ~isempty(opts.forcewlchs)
     fw_raw = opts.forcewlchs;
 end
-if (islogical(fw_raw) || isnumeric(fw_raw)) && isscalar(fw_raw)
+fw_is_block = false;
+fw_active_col = 1;
+fw_ndim_dens  = 1;
+if isstruct(fw_raw) && isfield(fw_raw, 'layout')
+    fw_is_block = true;
+    L = fw_raw.layout;
+    if size(L,1) ~= 1
+        error("CHUNKERKERNEVAL: forcewlchs struct layout must be 1xN (single output row)");
+    end
+    use_wlchs = true;
+elseif (islogical(fw_raw) || isnumeric(fw_raw)) && isscalar(fw_raw)
     use_wlchs = logical(fw_raw);
 else
     use_wlchs = false;
 end
 
 if use_wlchs
-    % Single kernel: scalar (helm/lap, opdims=[1 1]) or elasticity (opdims=[2 2]).
-    if size(kern,1) ~= 1 || size(kern,2) ~= 1 || ~isa(kern,'kernel')
-        error("CHUNKERKERNEVAL: forcewlchs=true requires a single kernel object");
-    end
-    is_helm  = strcmpi(kern.name, 'helmholtz');
-    is_lap   = strcmpi(kern.name, 'laplace');
-    is_elast = strcmpi(kern.name, 'elasticity');
-    if ~is_helm && ~is_lap && ~is_elast
-        error("CHUNKERKERNEVAL: forcewlchs supports Helmholtz, Laplace, or elasticity kernels");
-    end
-    if is_elast
-        if ~ismember(lower(kern.type), {'s','single','d','double','strac','straction','dalt'})
-            error("CHUNKERKERNEVAL: forcewlchs (elasticity) supports types s, d, strac, dalt");
+    if fw_is_block
+        % --- struct form: decode the single non-zero entry in the layout
+        active_col = -1; t_active = ''; coef_active = 0;
+        for c_ = 1:numel(L)
+            entry = L{c_};
+            if iscell(entry)
+                et = entry{1}; ec = entry{2};
+            elseif isstruct(entry)
+                et = entry.type;
+                if isfield(entry,'coef'), ec = entry.coef;
+                else, ec = entry.coefs;
+                end
+            else
+                error("CHUNKERKERNEVAL: forcewlchs.layout entry must be cell or struct");
+            end
+            if ~strcmpi(et, 'zero')
+                if active_col > 0
+                    error("CHUNKERKERNEVAL: forcewlchs.layout must have exactly one non-zero entry");
+                end
+                active_col = c_; t_active = lower(et); coef_active = ec;
+            end
+        end
+        if active_col < 0
+            error("CHUNKERKERNEVAL: forcewlchs.layout has no non-zero entries");
+        end
+        if ~ismember(t_active, {'s','single','d','double','sp','sprime'})
+            error("CHUNKERKERNEVAL: forcewlchs supports only s/d/sp layers (got %s)", t_active);
+        end
+        wlchs_type   = t_active;
+        wlchs_coef   = coef_active;
+        fw_active_col = active_col;
+        fw_ndim_dens  = numel(L);
+        if isfield(fw_raw,'zk') && ~isempty(fw_raw.zk)
+            wlchs_family = 'helmholtz';
+            wlchs_zk     = fw_raw.zk;
+        else
+            wlchs_family = 'laplace';
+            wlchs_zk     = [];
         end
     else
-        if ~ismember(lower(kern.type), {'s','single','d','double','sp','sprime'})
-            error("CHUNKERKERNEVAL: forcewlchs currently supports only s/d/sp layers");
+        % --- boolean form: single scalar kernel (helm/lap, opdims=[1 1]) or
+        % a single elasticity kernel (opdims=[2 2]).
+        if size(kern,1) ~= 1 || size(kern,2) ~= 1 || ~isa(kern,'kernel')
+            error("CHUNKERKERNEVAL: forcewlchs=true requires a single kernel object");
         end
-    end
-    wlchs_type   = kern.type;
-    wlchs_family = kern.name;
-
-    src_probe = struct('r',[0;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
-    tgt_probe = struct('r',[1;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
-    val_probe = kern.eval(src_probe, tgt_probe);
-    if is_helm
-        if ~isfield(kern.params,'zk') || isempty(kern.params.zk)
-            error("CHUNKERKERNEVAL: forcewlchs Helmholtz requires kern.params.zk");
+        is_helm = strcmpi(kern.name, 'helmholtz');
+        is_lap  = strcmpi(kern.name, 'laplace');
+        is_elast = strcmpi(kern.name, 'elasticity');
+        if ~is_helm && ~is_lap && ~is_elast
+            error("CHUNKERKERNEVAL: forcewlchs supports Helmholtz, Laplace, or elasticity kernels");
         end
-        wlchs_zk = kern.params.zk;
-        if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
-            base_probe = 0.25i * besselh(0, wlchs_zk);
-        elseif strcmpi(wlchs_type,'d') || strcmpi(wlchs_type,'double')
-            base_probe = 0.25i * wlchs_zk * besselh(1, wlchs_zk);
+        if is_elast
+            if ~ismember(lower(kern.type), {'s','single','d','double','strac','straction','dalt'})
+                error("CHUNKERKERNEVAL: forcewlchs (elasticity) supports types s, d, strac, dalt");
+            end
         else
-            base_probe = -0.25i * wlchs_zk * besselh(1, wlchs_zk);
+            if ~ismember(lower(kern.type), {'s','single','d','double','sp','sprime'})
+                error("CHUNKERKERNEVAL: forcewlchs currently supports only s/d/sp layers");
+            end
         end
-        wlchs_coef = val_probe / base_probe;
-    elseif is_lap
-        wlchs_zk = [];
-        if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
+        wlchs_type   = kern.type;
+        wlchs_family = kern.name;
+
+        src_probe = struct('r',[0;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
+        tgt_probe = struct('r',[1;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
+        val_probe = kern.eval(src_probe, tgt_probe);
+        if is_helm
+            if ~isfield(kern.params,'zk') || isempty(kern.params.zk)
+                error("CHUNKERKERNEVAL: forcewlchs Helmholtz requires kern.params.zk");
+            end
+            wlchs_zk = kern.params.zk;
+            if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
+                base_probe = 0.25i * besselh(0, wlchs_zk);
+            elseif strcmpi(wlchs_type,'d') || strcmpi(wlchs_type,'double')
+                base_probe = 0.25i * wlchs_zk * besselh(1, wlchs_zk);
+            else
+                base_probe = -0.25i * wlchs_zk * besselh(1, wlchs_zk);
+            end
+            wlchs_coef = val_probe / base_probe;
+        elseif is_lap
+            wlchs_zk = [];
+            if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
+                tgt_probe.r = [2;0];
+                val_probe = kern.eval(src_probe, tgt_probe);
+                base_probe = -log(2)/(2*pi);
+            else
+                base_probe = 1/(2*pi);
+            end
+            wlchs_coef = val_probe / base_probe;
+        else  % elasticity
+            if ~isfield(kern.params,'lam') || isempty(kern.params.lam) || ...
+               ~isfield(kern.params,'mu')  || isempty(kern.params.mu)
+                error("CHUNKERKERNEVAL: forcewlchs (elasticity) requires kern.params.lam and kern.params.mu");
+            end
+            wlchs_lam = kern.params.lam;
+            wlchs_mu  = kern.params.mu;
+            wlchs_zk  = [];
+            % Probe far from r=0 for log/Cauchy stability
             tgt_probe.r = [2;0];
             val_probe = kern.eval(src_probe, tgt_probe);
-            base_probe = -log(2)/(2*pi);
-        else
-            base_probe = 1/(2*pi);
+            switch lower(wlchs_type)
+                case {'s','single'},        et = 's';
+                case {'d','double'},        et = 'd';
+                case {'strac','straction'}, et = 'strac';
+                case 'dalt',                et = 'dalt';
+            end
+            base_probe = chnk.elast2d.kern(wlchs_lam, wlchs_mu, src_probe, ...
+                tgt_probe, et);
+            wlchs_coef = val_probe(1,1) / base_probe(1,1);
         end
-        wlchs_coef = val_probe / base_probe;
-    else  % elasticity
-        if ~isfield(kern.params,'lam') || isempty(kern.params.lam) || ...
-           ~isfield(kern.params,'mu')  || isempty(kern.params.mu)
-            error("CHUNKERKERNEVAL: forcewlchs (elasticity) requires kern.params.lam and kern.params.mu");
-        end
-        wlchs_lam = kern.params.lam;
-        wlchs_mu  = kern.params.mu;
-        wlchs_zk  = [];
-        % Probe far from r=0 for log/Cauchy stability
-        tgt_probe.r = [2;0];
-        val_probe = kern.eval(src_probe, tgt_probe);
-        switch lower(wlchs_type)
-            case {'s','single'},        et = 's';
-            case {'d','double'},        et = 'd';
-            case {'strac','straction'}, et = 'strac';
-            case 'dalt',                et = 'dalt';
-        end
-        base_probe = chnk.elast2d.kern(wlchs_lam, wlchs_mu, src_probe, ...
-            tgt_probe, et);
-        wlchs_coef = val_probe(1,1) / base_probe(1,1);
+    end
+end
+
+% RCIP-aware path: zero out coarse-mesh density at vertex starinds, recurse
+% to compute the contribution from the rest of the boundary, and then add
+% per-vertex contributions evaluated against the reconstructed fine-mesh
+% density.
+if isfield(opts,'rcipsav') && ~isempty(opts.rcipsav)
+    if ~icgrph
+        error("CHUNKERKERNEVAL: opts.rcipsav requires a chunkgraph input");
+    end
+    rcipsav = opts.rcipsav;
+
+    if size(kern,1) > 1
+        error("CHUNKERKERNEVAL: opts.rcipsav with multi-region (mk>1) " + ...
+            "kernel matrices is not yet supported");
     end
 
-    % Non-rcipsav path: dispatch directly to kernsplit on the (possibly
-    % merged) chunker. Targets pass through as raw point coords or struct
-    % with .r and .n when normals are needed (sp; elasticity strac).
+    % Density layout: single kernel -> ndim_dens=1; block kernel
+    % (struct-form forcewlchs) -> ndim_dens = numel(layout) and we pick
+    % out the active density component for the kernsplit corner step.
+    if use_wlchs && ~fw_is_block
+        ndim_dens = size(dens,1)/sum(arrayfun(@(c) c.npt, chnkr));
+        if ndim_dens ~= 1
+            error("CHUNKERKERNEVAL: forcewlchs=true with rcipsav and a " + ...
+                "block kernel requires the struct form: " + ...
+                "opts.forcewlchs = struct('zk',zk,'layout',{...}).");
+        end
+    end
+
+    dens_zeroed = dens;
+    for ivert = 1:length(rcipsav)
+        if isempty(rcipsav{ivert}); continue; end
+        dens_zeroed(rcipsav{ivert}.starind) = 0;
+    end
+    opts_inner = rmfield(opts,'rcipsav');
+    if fw_is_block
+        % The smooth far-field recursive call takes the block kernel
+        % directly; remove forcewlchs so the recursion doesn't re-enter
+        % the wlchs branch (which is for close eval only).
+        opts_inner = rmfield(opts_inner, 'forcewlchs');
+    end
+    [fints,ids] = chunkerkerneval(chnkobj,kern,dens_zeroed,targobj,opts_inner);
+
+    % Per-vertex per-edge fine-mesh contribution
+    targ_pts = local_target_points(targobj);
+    targ_n = local_target_normals(targobj);
+    needs_tgt_normals = use_wlchs && (any(strcmpi(wlchs_type, {'sp','sprime'})) || ...
+        (strcmpi(wlchs_family,'elasticity') && any(strcmpi(wlchs_type, {'strac','straction'}))));
+    if needs_tgt_normals
+        if isempty(targ_n)
+            error(['CHUNKERKERNEVAL: forcewlchs+rcipsav with sp/strac kernel ' ...
+                   'requires target normals; pass targobj as a struct with .n']);
+        end
+        targ_struct = struct('r', targ_pts, 'n', targ_n);
+    end
+    for ivert = 1:length(rcipsav)
+        if isempty(rcipsav{ivert}); continue; end
+        rcs = rcipsav{ivert};
+        ngl   = rcs.k;
+        nedge = rcs.nedge;
+
+        rhohat = dens(rcs.starind);
+        [rho_cell,src_cell,wts_cell] = chnk.rcip.rhohatInterp(rhohat,rcs,rcs.nsub);
+
+        for j = 1:nedge
+            rj  = src_cell{j}.r;
+            nj  = src_cell{j}.n;
+            dj  = src_cell{j}.d;
+            d2j = src_cell{j}.d2;
+            wj  = wts_cell{j};
+
+            npts_j = size(rj,2);
+            nch_j = npts_j/ngl;
+            assert(mod(npts_j,ngl)==0, ...
+                'CHUNKERKERNEVAL: rcipsav fine-mesh point count not divisible by ngl');
+
+            pref_j = []; pref_j.k = ngl;
+            chnkr_j = chunker(pref_j);
+            chnkr_j = chnkr_j.addchunk(nch_j);
+            chnkr_j.r   = reshape(rj,  size(rj,1),  ngl,nch_j);
+            chnkr_j.n   = reshape(nj,  size(nj,1),  ngl,nch_j);
+            chnkr_j.d   = reshape(dj,  size(dj,1),  ngl,nch_j);
+            chnkr_j.d2  = reshape(d2j, size(d2j,1), ngl,nch_j);
+            chnkr_j.wts = reshape(wj,  ngl,nch_j);
+
+            adj = zeros(2,nch_j);
+            adj(1,2:nch_j)   = 1:nch_j-1;
+            adj(2,1:nch_j-1) = 2:nch_j;
+            chnkr_j.adj = adj;
+
+            % rcs.ctr is [dim, nedge]: per-edge offset stored in Rcompchunk.
+            % Was using rcs.ctr(:,1) for all edges — correct for j=1, wrong
+            % for j>=2 (placed source panels at the wrong vertex coordinate,
+            % occasionally on top of targets, triggering downstream issues).
+            chnkr_j = chnkr_j + rcs.ctr(:,j);
+
+            if use_wlchs
+                if fw_is_block
+                    rho_j = rho_cell{j}(fw_active_col:fw_ndim_dens:end);
+                else
+                    rho_j = rho_cell{j}(:);
+                end
+                if strcmpi(wlchs_family,'elasticity')
+                    switch lower(wlchs_type)
+                        case {'s','single'},        et = 's';
+                        case {'d','double'},        et = 'd';
+                        case {'strac','straction'}, et = 'strac';
+                        case 'dalt',                et = 'dalt';
+                    end
+                    if needs_tgt_normals
+                        tg_e = targ_struct;
+                    else
+                        tg_e = targ_pts;
+                    end
+                    val_e = chnk.kernsplit.elast2d_panel_eval( ...
+                        chnkr_j, et, wlchs_lam, wlchs_mu, rho_j, tg_e);
+                    cor_j = wlchs_coef * val_e(:);
+                elseif strcmpi(wlchs_family,'laplace')
+                    cor_j = wlchs_coef * chnk.kernsplit.lap2d_panel_eval( ...
+                        chnkr_j, wlchs_type, rho_j, targ_pts);
+                elseif needs_tgt_normals
+                    cor_j = wlchs_coef * chnk.kernsplit.helm2d_panel_eval( ...
+                        chnkr_j, wlchs_type, wlchs_zk, rho_j, targ_struct);
+                else
+                    cor_j = wlchs_coef * chnk.kernsplit.helm2d_panel_eval( ...
+                        chnkr_j, wlchs_type, wlchs_zk, rho_j, targ_pts);
+                end
+            else
+                cor_j = chunkerkerneval(chnkr_j,kern,rho_cell{j}(:),targobj,opts_inner);
+            end
+            fints = fints + cor_j;
+        end
+    end
+    return
+end
+
+% Non-rcipsav path with forcewlchs: dispatch directly to kernsplit on the
+% (possibly merged) chunker. Targets pass through as raw point coords.
+if use_wlchs
     if length(chnkr) > 1
         chnkr_use = merge(chnkr);
     else
         chnkr_use = chnkr;
     end
     targ_pts = local_target_points(targobj);
+    is_elast = strcmpi(wlchs_family,'elasticity');
     is_strac_helm = any(strcmpi(wlchs_type, {'sp','sprime'}));
     is_strac_elast = is_elast && any(strcmpi(wlchs_type, {'strac','straction'}));
     needs_tgt_normals = is_strac_helm || is_strac_elast;
@@ -247,34 +460,43 @@ if use_wlchs
                    'requires target normals; pass targobj as a struct with .n']);
         end
     end
+    % Pass forcefmm into kernsplit's smooth-quadrature step. (Default off
+    % is safe — see helm2d_panel_eval; per-component rcipsav callers leave
+    % it unset, but a single global eval with many targets benefits from FMM.)
     hpe_opts = struct();
     if isfield(opts,'forcefmm') && opts.forcefmm
         hpe_opts.forcefmm = true;
     end
-    if needs_tgt_normals
-        targ_for_eval = struct('r', targ_pts, 'n', targ_n);
+    if fw_is_block
+        dens_active = dens(fw_active_col:fw_ndim_dens:end);
     else
-        targ_for_eval = targ_pts;
+        dens_active = dens;
     end
-    switch lower(wlchs_family)
-        case 'helmholtz'
-            fints = wlchs_coef * chnk.kernsplit.helm2d_panel_eval(chnkr_use, ...
-                wlchs_type, wlchs_zk, dens, targ_for_eval, [], hpe_opts);
-        case 'laplace'
-            fints = wlchs_coef * chnk.kernsplit.lap2d_panel_eval(chnkr_use, ...
-                wlchs_type, dens, targ_for_eval, [], hpe_opts);
-        case 'elasticity'
-            switch lower(wlchs_type)
-                case {'s','single'},        et = 's';
-                case {'d','double'},        et = 'd';
-                case {'strac','straction'}, et = 'strac';
-                case 'dalt',                et = 'dalt';
-            end
-            val = chnk.kernsplit.elast2d_panel_eval(chnkr_use, et, ...
-                wlchs_lam, wlchs_mu, dens, targ_for_eval, [], hpe_opts);
-            fints = wlchs_coef * val(:);
-        otherwise
-            error('CHUNKERKERNEVAL: forcewlchs family %s not supported', wlchs_family);
+    if is_elast
+        switch lower(wlchs_type)
+            case {'s','single'},        et = 's';
+            case {'d','double'},        et = 'd';
+            case {'strac','straction'}, et = 'strac';
+            case 'dalt',                et = 'dalt';
+        end
+        if needs_tgt_normals
+            targ_for_eval = struct('r', targ_pts, 'n', targ_n);
+        else
+            targ_for_eval = targ_pts;
+        end
+        val = chnk.kernsplit.elast2d_panel_eval(chnkr_use, et, ...
+            wlchs_lam, wlchs_mu, dens_active, targ_for_eval, [], hpe_opts);
+        fints = wlchs_coef * val(:);
+    elseif strcmpi(wlchs_family,'laplace')
+        fints = wlchs_coef * chnk.kernsplit.lap2d_panel_eval(chnkr_use, ...
+            wlchs_type, dens_active, targ_pts, [], hpe_opts);
+    elseif needs_tgt_normals
+        targ_struct = struct('r', targ_pts, 'n', targ_n);
+        fints = wlchs_coef * chnk.kernsplit.helm2d_panel_eval(chnkr_use, ...
+            wlchs_type, wlchs_zk, dens_active, targ_struct, [], hpe_opts);
+    else
+        fints = wlchs_coef * chnk.kernsplit.helm2d_panel_eval(chnkr_use, ...
+            wlchs_type, wlchs_zk, dens_active, targ_pts, [], hpe_opts);
     end
     if icgrph && size(kern,1) > 1
         ids = chunkgraphinregion(chnkobj, targ_pts);
@@ -650,14 +872,13 @@ else % do only those flagged
         indji = (ji-1)*opdims(1);
         ind = (indji(:)).' + (1:opdims(1)).';
         ind = ind(:);
-        fints(ind) = fints(ind) + fints1;
+        fints(ind) = fints(ind) + fints1;        
 
     end
 
 end
 
 end
-
 
 function r = local_target_points(targobj)
 %LOCAL_TARGET_POINTS  pull the dim x nt point array from any of the
@@ -677,7 +898,7 @@ end
 function n = local_target_normals(targobj)
 %LOCAL_TARGET_NORMALS  pull a dim x nt target-normal array if the target
 % representation carries one; return [] otherwise. Used for forcewlchs
-% with normal-derivative kernels (sp).
+% with normal-derivative kernels (sp, dp).
 if isa(targobj,'chunker') || isa(targobj,'chunkgraph')
     n = targobj.n(:,:);
 elseif isstruct(targobj) && isfield(targobj,'n') && ~isempty(targobj.n)

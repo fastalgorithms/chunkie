@@ -101,6 +101,11 @@ if ndepth > nsub
 end
 
 savedepth = rcipsav.savedepth;
+use_myinv = isfield(rcipsav,'use_myinv') && rcipsav.use_myinv;
+myinv_subdim = 1;
+if isfield(rcipsav,'myinv_subdim') && ~isempty(rcipsav.myinv_subdim)
+    myinv_subdim = rcipsav.myinv_subdim;
+end
 
 if ndepth <= savedepth
     
@@ -123,7 +128,11 @@ if ndepth <= savedepth
     for i = 1:ndepth
         R1 = rcipsav.R{nsub-i+1};
         MAT = rcipsav.MAT{nsub-i+1};
-        rhotemp = R0\rhohat0;
+        if use_myinv
+            rhotemp = chnk.rcip.myinv(R0, myinv_subdim)*rhohat0;
+        else
+            rhotemp = R0\rhohat0;
+        end
         rhohat0 = R1*(Pbc*rhotemp(starS,:) - MAT*rhohat0(circS,:));
         if i == ndepth
             wt = weights(cl);

@@ -1,4 +1,4 @@
-  function A=SchurBana(P,PW,K,A,starL,circL,starS,circS)
+  function A=SchurBana(P,PW,K,A,starL,circL,starS,circS,use_myinv,myinv_subdim)
   %CHNK.RCIP.SCHURBANA block inverse used in RCIP
   % 
   % uses a matrix block inversion formula to recursively compute the
@@ -63,10 +63,21 @@
   
   % author: Johan Helsing (part of the RCIP tutorial)
     
+  if nargin < 9 || isempty(use_myinv)
+      use_myinv = false;
+  end
+  if nargin < 10 || isempty(myinv_subdim)
+      myinv_subdim = 1;
+  end
   VA=K(circL,starL)*A;
   PTA=PW'*A;
   PTAU=PTA*K(starL,circL);
-  DVAUI=inv(K(circL,circL)-VA*K(starL,circL));
+  Mschur = K(circL,circL)-VA*K(starL,circL);
+  if use_myinv
+      DVAUI=chnk.rcip.myinv(Mschur, myinv_subdim);
+  else
+      DVAUI=inv(Mschur);
+  end
   DVAUIVAP=DVAUI*(VA*P);
   A(starS,starS)=PTA*P+PTAU*DVAUIVAP;
   A(circS,circS)=DVAUI;
