@@ -1,6 +1,9 @@
 quasiperiodicTest0();
 quasiperiodicTest1();
 quasiperiodicTest2();
+quasiperiodicTest_flex_clamped();
+quasiperiodicTest_flex_free();
+quasiperiodicTest_flex_supported();
 
 function quasiperiodicTest0()
 % test the representation
@@ -242,7 +245,7 @@ function quasiperiodicTest2()
 
 % problem parameters
 d = 8;
-kappa = .05+.1i;
+kappa = .05-.1i;
 
 % setup geometry
 nch = 2^3;
@@ -251,28 +254,295 @@ cparams = []; cparams.ta = -d/2; cparams.tb = d/2;
 chnkr = chunkerfuncuni(@(t) sin_func(t,d,A),nch,cparams);
 chnkr = reverse(chnkr);
 
+% chnkr = chunkerfunc(@starfish);
+
 % setup system
 skern = kernel('lq','s',kappa,d);
-dkern = kernel('lq','d',kappa,d);
+spkern = kernel('lq','sp',kappa,d);
 
-sysmat = chunkermat(chnkr,dkern);
-sysmat = sysmat + .5*eye(size(sysmat,2));
+sysmat = chunkermat(chnkr,spkern);
+sysmat = sysmat - .5*eye(size(sysmat,2));
 
 % solve
 src = struct("r",[3*d/4;-1.5]);
 
-rhs = skern.eval(src,chnkr);
+rhs = spkern.eval(src,chnkr);
 
 soln = sysmat\rhs;
 
 % check analytic solution
 targ = [10*d/3;2];
 utrue = skern.eval(src,struct("r",targ));
-u = chunkerkerneval(chnkr,dkern,soln,targ);
+u = chunkerkerneval(chnkr,skern,soln,targ);
 
 assert(abs(u-utrue) < 1e-10)
 
+% % ploting
+% Lplot = d/1.5;
+% nplot = 50;
+% xts = linspace(-Lplot,Lplot,nplot); yts=xts+Lplot/2;
+% [X,Y] = meshgrid(xts,yts);
+% targ = [X(:).';Y(:).'];
+% 
+% % targ = [2+0*yts;yts];
+% ntarg = size(targ,2);
+% tic;
+% yc = sin_func(X(:),d,A); yc = yc(2,:);
+% iup = Y(:).'>yc;
+% % iup = ~chunkerinterior(chnkr,targ);
+% toc
+% targup = targ(:,iup.');
+% 
+% tic;
+% uin = NaN*zeros(ntarg,1)+NaN*1i;
+% src.n = [0;1];
+% uin(iup) = skern.eval(src,struct("r",targup));
+% uscat = NaN*zeros(ntarg,1)+NaN*1i;
+% opts = []; opts.forcesmooth = false; opts.eps = 1e-6;
+% uscat(iup) = chunkerkerneval(chnkr,skern,soln,targup,opts);
+% toc
+% %
+% utot = uin-uscat;
+% maxu = max(abs(uin));
+% figure(2);clf
+% subplot(1,3,1)
+% h = pcolor(X,Y,reshape(imag(uin),nplot,[])); set(h,'edgecolor','none')
+% title('$u_{\rm{true}}$','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar; clim([-maxu,maxu])
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+% 
+% subplot(1,3,2)
+% h= pcolor(X,Y,reshape(imag(uscat),nplot,[])); set(h,'edgecolor','none')
+% title('$u$','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar; clim([-maxu,maxu])
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+% 
+% subplot(1,3,3)
+% h = pcolor(X,Y,reshape(log10(abs(utot)),nplot,[])); set(h,'edgecolor','none')
+% title('$\log_{10} $ error','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar; 
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+
+
 end
+
+function quasiperiodicTest_flex_clamped()
+% test an integral equation for the quasiperiodic clamped plate problem
+
+% problem parameters
+d = 2; zk = 7; kappa = 0.2-0.1*1i;
+l = 2; N = 40; a = 15; M = 1e4;
+sn = chnk.flex2dquas.latticecoefs((0:N).', zk, d, kappa, exp(1i*kappa*d), a, M, l+1);
+
+% setup geometry
+nch = 2^3; A = .2;
+cparams = []; cparams.ta = -d/2; cparams.tb = d/2;
+chnkr = reverse(chunkerfuncuni(@(t) sin_func(t,d,A), nch, cparams));
+curv = signed_curvature(chnkr); curv = curv(:);
+
+opts_s = []; opts_s.sing = 'smooth'; opts_s.quad = 'native';
+opts_l = []; opts_l.sing = 'log';
+
+% build system: quasi periodic part uses smooth quadrature (ising=0) since
+% the self-interaction and nsub nearest periodic copies are subtracted and
+% handled separately via the free-space kernel with log quadrature
+ising = 0; nsub = 1;
+alpha = exp(1i*kappa*d);
+
+fkern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate', kappa, d, sn, [], [], l, ising, nsub);
+fkern_0 = @(s,t) chnk.flex2d.kern(    zk, s, t, 'clamped_plate');
+
+sys   = reshape(chunkermat(chnkr, fkern,   opts_s), 1, 2*chnkr.npt, 2*chnkr.npt);
+sys_0 = reshape(chunkermat(chnkr, fkern_0, opts_l), 1, 2*chnkr.npt, 2*chnkr.npt);
+for ii = [-nsub:-1, 1:nsub]
+    sys_0 = sys_0 + alpha^ii .* reshape(chunkerkernevalmat(chnkr + ii*[d;0], fkern_0, chnkr), 1, 2*chnkr.npt, 2*chnkr.npt);
+end
+
+sys = sys + sys_0 - reshape(0.5*eye(2*chnkr.npt), 1, 2*chnkr.npt, 2*chnkr.npt);
+sys(:,2:2:end,1:2:end) = sys(:,2:2:end,1:2:end) + reshape(curv .* eye(chnkr.npt), 1, chnkr.npt, chnkr.npt);
+
+% solve
+ising = 1;
+src    = struct('r', [0; -1.5]);
+bskern = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_bcs', kappa, d, sn, [], [], l, ising);
+skern  = @(s,t) chnk.flex2dquas.kern(zk, s, t, 's',                  kappa, d, sn, [], [], l, ising);
+
+rhs = -bskern(src, chnkr);
+sol = squeeze(sys) \ rhs;
+
+% check: total field vanishes exterior => uscat + uin = 0
+targ    = struct('r', [3*d/4; 1.5]);
+ikern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_eval', kappa, d, sn, [], [], l, 0);
+ikern_0 = @(s,t) chnk.flex2d.kern(    zk, s, t, 'clamped_plate_eval');
+
+wts    = repmat(chnkr.wts(:).', 2, 1);
+uscat  = (ikern(chnkr, targ) .* wts(:).' + chunkerkernevalmat(chnkr, ikern_0, targ, opts_l)) * sol;
+uin    = skern(src, targ);
+assert(abs(uscat + uin) < 1e-8)
+
+end
+
+
+function quasiperiodicTest_flex_free()
+% test an integral equation for the quasiperiodic free plate problem
+
+% problem parameters
+d = 2; zk = 7; kappa = 0.2-0.1*1i; nu = 0.3;
+l = 2; N = 40; a = 15; M = 1e4;
+sn            = chnk.flex2dquas.latticecoefs((0:N).', zk, d, kappa, exp(1i*kappa*d), a, M, l+1);
+[s0_l, sn_l] = chnk.lap2dquas.latticecoefs((1:N), d, kappa, l);
+
+% setup geometry
+nch = 2^3; A = .2;
+cparams = []; cparams.ta = -d/2; cparams.tb = d/2;
+chnkr = reverse(chunkerfuncuni(@(t) sin_func(t,d,A), nch, cparams));
+
+opts_s = []; opts_s.sing = 'smooth'; opts_s.quad = 'native';
+opts_l = []; opts_l.sing = 'log';
+opts_pv = []; opts_pv.sing = 'pv';
+
+% build system: quasi periodic part uses smooth quadrature (ising=0) since
+% the self-interaction and nsub nearest periodic copies are subtracted and
+% handled separately via the free-space kernels with log/pv quadrature
+ising = 0; nsub = 1;
+alpha = exp(1i*kappa*d);
+
+fkern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate', kappa, d, sn, s0_l, sn_l, l, ising, nu, nsub);
+double  = @(s,t) chnk.lap2dquas.kern(      s, t, 'd',          kappa, d, s0_l, sn_l, l, ising, nsub);
+hilbert = @(s,t) chnk.lap2dquas.kern(      s, t, 'hilb',       kappa, d, s0_l, sn_l, l, ising, nsub);
+fkern_0   = @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate', nu);
+double_0  = @(s,t) chnk.lap2d.kern(      s, t, 'd');
+hilbert_0 = @(s,t) chnk.lap2d.kern(      s, t, 'hilb');
+
+sysmat1 = reshape(chunkermat(chnkr, fkern,   opts_s), 1, 4*chnkr.npt, 2*chnkr.npt);
+D       = reshape(chunkermat(chnkr, double,  opts_s), 1, chnkr.npt, chnkr.npt);
+H       = reshape(chunkermat(chnkr, hilbert, opts_s), 1, chnkr.npt, chnkr.npt);
+
+sysmat1_0 = reshape(chunkermat(chnkr, fkern_0,   opts_l),  1, 4*chnkr.npt, 2*chnkr.npt);
+D_0       = reshape(chunkermat(chnkr, double_0,  opts_l),  1, chnkr.npt, chnkr.npt);
+H_0       = reshape(chunkermat(chnkr, hilbert_0, opts_pv), 1, chnkr.npt, chnkr.npt);
+for ii = [-nsub:-1, 1:nsub]
+    sysmat1_0 = sysmat1_0 + alpha^ii .* reshape(chunkerkernevalmat(chnkr + ii*[d;0], fkern_0,   chnkr), 1, 4*chnkr.npt, 2*chnkr.npt);
+    D_0       = D_0       + alpha^ii .* reshape(chunkerkernevalmat(chnkr + ii*[d;0], double_0,  chnkr), 1, chnkr.npt, chnkr.npt);
+    H_0       = H_0       + alpha^ii .* reshape(chunkerkernevalmat(chnkr + ii*[d;0], hilbert_0, chnkr), 1, chnkr.npt, chnkr.npt);
+end
+
+sysmat1 = sysmat1 + sysmat1_0;
+D = D + D_0;
+H = H + H_0;
+
+s11b   = permute(sysmat1(:,3:4:end,1:2:end), [2,3,1]);
+s21b   = permute(sysmat1(:,4:4:end,1:2:end), [2,3,1]);
+D_perm = permute(D, [2,3,1]);
+H_perm = permute(H, [2,3,1]);
+
+k11tmp = permute(pagemtimes(s11b, H_perm) - 2*((1+nu)/2)^2*pagemtimes(D_perm, D_perm), [3,1,2]);
+k21tmp = permute(pagemtimes(s21b, H_perm), [3,1,2]);
+
+sysmat = zeros(1, 2*chnkr.npt, 2*chnkr.npt);
+sysmat(:,1:2:end,1:2:end) = sysmat1(:,1:4:end,1:2:end) + k11tmp;
+sysmat(:,2:2:end,1:2:end) = sysmat1(:,2:4:end,1:2:end) + k21tmp;
+sysmat(:,1:2:end,2:2:end) = sysmat1(:,1:4:end,2:2:end) + sysmat1(:,3:4:end,2:2:end);
+sysmat(:,2:2:end,2:2:end) = sysmat1(:,2:4:end,2:2:end) + sysmat1(:,4:4:end,2:2:end);
+
+Djump = reshape(kron(eye(chnkr.npt), [-1/2 + (1/8)*(1+nu)^2, 0; 0, 1/2]), 1, 2*chnkr.npt, 2*chnkr.npt);
+sys = Djump + sysmat;
+
+% solve
+ising = 1;
+src    = struct('r', [0; -1.5]);
+bskern = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_bcs', kappa, d, sn, s0_l, sn_l, l, ising, nu);
+skern  = @(s,t) chnk.flex2dquas.kern(zk, s, t, 's',              kappa, d, sn, s0_l, sn_l, l, ising);
+
+rhs = -bskern(src, chnkr);
+sol = squeeze(sys) \ rhs;
+
+% build combined density [phi; H*phi; psi] for free_plate_eval
+dens_comb = zeros(3*chnkr.npt, size(rhs,2));
+dens_comb(1:3:end,:) = sol(1:2:end,:);
+dens_comb(2:3:end,:) = squeeze(H) * sol(1:2:end,:);
+dens_comb(3:3:end,:) = sol(2:2:end,:);
+
+% check: total field vanishes exterior => uscat + uin = 0
+targ    = struct('r', [3*d/4; 1.5]);
+ikern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_eval', kappa, d, sn, s0_l, sn_l, l, 0, nu);
+ikern_0 = @(s,t) chnk.flex2d.kern(    zk, s, t, 'free_plate_eval', nu);
+
+wts   = repmat(chnkr.wts(:).', 3, 1);
+uscat = (ikern(chnkr, targ) .* wts(:).' + chunkerkernevalmat(chnkr, ikern_0, targ, opts_l)) * dens_comb;
+uin   = skern(src, targ);
+assert(abs(uscat + uin) < 1e-8)
+
+end
+
+
+function quasiperiodicTest_flex_supported()
+% test an integral equation for the quasiperiodic supported plate problem
+
+% problem parameters
+d = 2; zk = 7; kappa = 0.2-0.1*1i; nu = 0.3;
+l = 2; N = 40; a = 15; M = 1e4;
+sn            = chnk.flex2dquas.latticecoefs((0:N).', zk, d, kappa, exp(1i*kappa*d), a, M, l+1);
+[s0_l, sn_l] = chnk.lap2dquas.latticecoefs((1:N), d, kappa, l);
+
+% setup geometry (curvature arc-length derivatives stored in chnkr.data)
+nch = 2^3; A = .2;
+cparams = []; cparams.ta = -d/2; cparams.tb = d/2;
+chnkr = reverse(chunkerfuncuni(@(t) sin_func(t,d,A), nch, cparams));
+chnkr = makedatarows(chnkr, 2);
+curv  = signed_curvature(chnkr); curv = curv(:);
+chnkr.data(1,:,:) = arclengthder(chnkr, curv);
+chnkr.data(2,:,:) = arclengthder(chnkr, squeeze(chnkr.data(1,:,:)));
+
+opts_s = []; opts_s.sing = 'smooth'; opts_s.quad = 'native';
+opts_l = []; opts_l.sing = 'log';
+
+% build system: quasi periodic part uses smooth quadrature (ising=0) since
+% the self-interaction and nsub nearest periodic copies are subtracted and
+% handled separately via the free-space kernels with log/smooth quadrature
+ising = 0; nsub = 1;
+alpha = exp(1i*kappa*d);
+c0    = (nu - 1)*(nu + 3)*(2*nu - 1)/(2*(3 - nu));
+
+fkern    = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate',        kappa, d, sn, [], [], l, ising, nu, nsub);
+fkern_0l = @(s,t) chnk.flex2d.kern(    zk, s, t, 'supported_plate_log',    nu);
+fkern_0s = @(s,t) chnk.flex2d.kern(    zk, s, t, 'supported_plate_smooth', nu);
+
+M3 = reshape(chunkermat(chnkr, fkern, opts_s), 1, 2*chnkr.npt, 2*chnkr.npt);
+
+M  = chunkermat(chnkr, fkern_0l, opts_l);
+M2 = reshape(chunkermat(chnkr, fkern_0s, opts_s), 1, chnkr.npt, chnkr.npt);
+M(2:2:end,1:2:end) = M(2:2:end,1:2:end) + c0 .* curv.^2 .* eye(chnkr.npt);
+M  = reshape(M - 0.5*eye(2*chnkr.npt), 1, 2*chnkr.npt, 2*chnkr.npt);
+for ii = [-nsub:-1, 1:nsub]
+    M  = M  + alpha^ii .* reshape(chunkerkernevalmat(chnkr + ii*[d;0], fkern_0l, chnkr),                            1, 2*chnkr.npt, 2*chnkr.npt);
+    M2 = M2 + alpha^ii .* reshape(chunkerkernevalmat(chnkr + ii*[d;0], fkern_0s, chnkr, struct('forcesmooth',true)), 1, chnkr.npt,   chnkr.npt);
+end
+
+M(:,2:2:end,1:2:end) = M(:,2:2:end,1:2:end) + M2;
+sys = M3 + M;
+
+% solve
+ising = 1;
+src    = struct('r', [0; -1.5]);
+bskern = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_bcs', kappa, d, sn, s0_l, sn_l, l, ising, nu);
+skern  = @(s,t) chnk.flex2dquas.kern(zk, s, t, 's',                   kappa, d, sn, s0_l, sn_l, l, ising);
+
+rhs = -bskern(src, chnkr);
+sol = squeeze(sys) \ rhs;
+
+% check: total field vanishes exterior => uscat + uin = 0
+targ    = struct('r', [3*d/4; 1.5]);
+ikern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_eval', kappa, d, sn, s0_l, sn_l, l, 0, nu);
+ikern_0 = @(s,t) chnk.flex2d.kern(    zk, s, t, 'supported_plate_eval', nu);
+
+wts   = repmat(chnkr.wts(:).', 2, 1);
+uscat = (ikern(chnkr, targ) .* wts(:).' + chunkerkernevalmat(chnkr, ikern_0, targ, opts_l)) * sol;
+uin   = skern(src, targ);
+assert(abs(uscat + uin) < 1e-8)
+
+end
+
 
 function [r,d,d2] = sin_func(t,d,A)
 omega = 2*pi/d;
