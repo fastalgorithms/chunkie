@@ -854,9 +854,36 @@ if islogical(fw) || (isnumeric(fw) && isscalar(fw))
     end
     fam = wlchs_kernel_family(kern);
     if isempty(fam)
-        error("chunkermat: opts.forcewlchs=true requires a single helm2d or lap2d kernel");
+        error("chunkermat: opts.forcewlchs=true requires a single helm2d, lap2d, or stok2d kernel");
     end
     t = lower(kern.type);
+    if strcmp(fam, 'stokes')
+        % Stokes velocity SLP/DLP is a 2x2 opdims kernel; populate the 4
+        % sub-block layout cells.  Supported: 'svel' (single layer),
+        % 'dvel' (double layer), 'strac' (traction).
+        if ismember(t, {'s','single','svel','svelocity'})
+            stok_kind = 'svel';
+        elseif ismember(t, {'d','double','dvel','dvelocity'})
+            stok_kind = 'dvel';
+        elseif ismember(t, {'strac','straction'})
+            stok_kind = 'strac';
+        else
+            error("chunkermat: opts.forcewlchs=true: stok kernel type %s not supported", kern.type);
+        end
+        if m ~= 2 || n ~= 2
+            error("chunkermat: opts.forcewlchs=true on stok '%s' requires opdims=[2 2]", stok_kind);
+        end
+        if ~isfield(kern.params, 'mu') || isempty(kern.params.mu)
+            error("chunkermat: opts.forcewlchs (stokes) requires kern.params.mu");
+        end
+        mu = kern.params.mu;
+        coef = wlchs_extract_scalar(kern, stok_kind, mu, 'stokes');
+        layout{1,1} = struct('type',[stok_kind '_xx'],'coef',coef,'mu',mu,'family','stokes');
+        layout{1,2} = struct('type',[stok_kind '_xy'],'coef',coef,'mu',mu,'family','stokes');
+        layout{2,1} = struct('type',[stok_kind '_yx'],'coef',coef,'mu',mu,'family','stokes');
+        layout{2,2} = struct('type',[stok_kind '_yy'],'coef',coef,'mu',mu,'family','stokes');
+        return_after = false;  %#ok<NASGU>
+    else
     if m ~= 1 || n ~= 1
         error("chunkermat: opts.forcewlchs=true requires a single scalar (opdims=[1 1]) helm or lap kernel");
     end
@@ -888,20 +915,23 @@ if islogical(fw) || (isnumeric(fw) && isscalar(fw))
         coef = wlchs_extract_scalar(kern, t, zk, fam);
         layout{1,1} = struct('type', t, 'coef', coef, 'zk', zk, 'family', fam);
     end
+    end  % end of stokes / non-stokes branch
 elseif isstruct(fw)
     if ~isfield(fw, 'layout')
         error("chunkermat: opts.forcewlchs struct needs field 'layout'");
     end
-    % Top-level defaults; per-entry struct can override family / zk.
+    % Top-level defaults; per-entry struct can override family / zk / mu.
     fam_default = 'helmholtz';
     if isfield(fw, 'family') && ~isempty(fw.family)
         fam_default = lower(fw.family);
     end
-    if ~ismember(fam_default, {'helmholtz','laplace'})
-        error("chunkermat: opts.forcewlchs.family must be 'helmholtz' or 'laplace'");
+    if ~ismember(fam_default, {'helmholtz','laplace','stokes'})
+        error("chunkermat: opts.forcewlchs.family must be 'helmholtz', 'laplace', or 'stokes'");
     end
     zk_default = [];
+    mu_default = [];
     if isfield(fw, 'zk') && ~isempty(fw.zk), zk_default = fw.zk; end
+    if isfield(fw, 'mu') && ~isempty(fw.mu), mu_default = fw.mu; end
 
     L = fw.layout;
     if ~iscell(L) || size(L,1) ~= m || size(L,2) ~= n
@@ -913,6 +943,7 @@ elseif isstruct(fw)
             if isempty(entry); continue; end
             ent_fam = fam_default;
             ent_zk  = zk_default;
+            ent_mu  = mu_default;
             if iscell(entry)
                 t = entry{1}; a = entry{2};
             elseif isstruct(entry)
@@ -926,6 +957,7 @@ elseif isstruct(fw)
                     ent_fam = lower(entry.family);
                 end
                 if isfield(entry, 'zk') && ~isempty(entry.zk), ent_zk = entry.zk; end
+                if isfield(entry, 'mu') && ~isempty(entry.mu), ent_mu = entry.mu; end
             else
                 error("chunkermat: opts.forcewlchs.layout{%d,%d} bad form", r, c);
             end
@@ -940,6 +972,13 @@ elseif isstruct(fw)
                     end
                 case 'laplace'
                     allowed_e = lap_types;
+                case 'stokes'
+                    allowed_e = {'svel_xx','svel_xy','svel_yx','svel_yy', ...
+                                 'dvel_xx','dvel_xy','dvel_yx','dvel_yy', ...
+                                 'strac_xx','strac_xy','strac_yx','strac_yy'};
+                    if isempty(ent_mu)
+                        error("chunkermat: forcewlchs stokes layout entry (%d,%d) needs mu", r, c);
+                    end
                 otherwise
                     error("chunkermat: unknown family %s", ent_fam);
             end
@@ -952,16 +991,16 @@ elseif isstruct(fw)
                     error("chunkermat: forcewlchs c layout entry needs coefs [c1, c2]");
                 end
                 layout{r,c} = struct('type', 'c', 'coefs', a(:).', ...
-                                     'zk', ent_zk, 'family', ent_fam);
+                                     'zk', ent_zk, 'mu', ent_mu, 'family', ent_fam);
             elseif strcmpi(t, 'sc') || strcmpi(t, 'spcombined')
                 if ~isvector(a) || numel(a) ~= 2
                     error("chunkermat: forcewlchs sc layout entry needs coefs [c1, c2]");
                 end
                 layout{r,c} = struct('type', 'sc', 'coefs', a(:).', ...
-                                     'zk', ent_zk, 'family', ent_fam);
+                                     'zk', ent_zk, 'mu', ent_mu, 'family', ent_fam);
             else
                 layout{r,c} = struct('type', lower(t), 'coef', a, ...
-                                     'zk', ent_zk, 'family', ent_fam);
+                                     'zk', ent_zk, 'mu', ent_mu, 'family', ent_fam);
             end
         end
     end
@@ -1123,13 +1162,14 @@ end
 end
 
 function fam = wlchs_kernel_family(kern)
-% Returns 'helmholtz', 'laplace', or '' if the kernel is unsupported by
-% the wLCHS path.
+% Returns 'helmholtz', 'laplace', 'stokes', or '' if the kernel is
+% unsupported by the wLCHS path.
 fam = '';
 if ~isa(kern, 'kernel'), return; end
 if strcmpi(kern.name, 'zeros'), return; end
 if strcmpi(kern.name, 'helmholtz'), fam = 'helmholtz'; return; end
 if strcmpi(kern.name, 'laplace'),   fam = 'laplace';   return; end
+if strcmpi(kern.name, 'stokes'),    fam = 'stokes';    return; end
 end
 
 function tf = wlchs_has_self_correction(type, family)
@@ -1138,6 +1178,9 @@ function tf = wlchs_has_self_correction(type, family)
 % points). For combined 'c' = c1*D + c2*S we return true and let the
 % application step multiply c2 (zero if S is absent); same idea for 'sc'.
 % Laplace: S, D, S', D' all have nontrivial self corrections.
+% Stokes: each velocity-SLP sub-block has a non-trivial self correction
+% (analytic diagonal limit on all four sub-blocks; log close-eval on the
+% (xx, yy) diagonal sub-blocks).
 if nargin < 2 || isempty(family), family = 'helmholtz'; end
 switch lower(family)
     case 'helmholtz'
@@ -1145,6 +1188,10 @@ switch lower(family)
                                     'c','combined','sc','spcombined'});
     case 'laplace'
         tf = ismember(lower(type), {'s','single','d','double','sp','sprime','dp','dprime'});
+    case 'stokes'
+        tf = ismember(lower(type), {'svel_xx','svel_xy','svel_yx','svel_yy', ...
+                                     'dvel_xx','dvel_xy','dvel_yx','dvel_yy', ...
+                                     'strac_xx','strac_xy','strac_yx','strac_yy'});
     otherwise
         tf = false;
 end
@@ -1159,6 +1206,8 @@ switch lower(spec.family)
         [delta, U_src_cell] = chnk.kernsplit.helm2d_self_correction(chnkr, type, spec.zk, U_src_cell);
     case 'laplace'
         [delta, U_src_cell] = chnk.kernsplit.lap2d_self_correction(chnkr, type, U_src_cell);
+    case 'stokes'
+        [delta, U_src_cell] = chnk.kernsplit.sto2d_self_correction(chnkr, type, spec.mu, U_src_cell);
     otherwise
         error('wlchs_self_correction_dispatch: unsupported family %s', spec.family);
 end
@@ -1170,6 +1219,8 @@ switch lower(spec.family)
         [delta, U_src_cell] = chnk.kernsplit.helm2d_adj_correction(chnkr, type, spec.zk, U_src_cell);
     case 'laplace'
         [delta, U_src_cell] = chnk.kernsplit.lap2d_adj_correction(chnkr, type, U_src_cell);
+    case 'stokes'
+        [delta, U_src_cell] = chnk.kernsplit.sto2d_adj_correction(chnkr, type, spec.mu, U_src_cell);
     otherwise
         error('wlchs_adj_correction_dispatch: unsupported family %s', spec.family);
 end
@@ -1210,6 +1261,26 @@ switch lower(spec.family)
             otherwise
                 error('wlchs_kernel_eval: lap type %s not supported', type);
         end
+    case 'stokes'
+        tlow = lower(type);
+        if startsWith(tlow, 'svel_')
+            K_full = chnk.stok2d.kern(spec.mu, si, ti, 'svel');
+        elseif startsWith(tlow, 'dvel_')
+            K_full = chnk.stok2d.kern(spec.mu, si, ti, 'dvel');
+        elseif startsWith(tlow, 'strac_')
+            K_full = chnk.stok2d.kern(spec.mu, si, ti, 'strac');
+        else
+            error('wlchs_kernel_eval: stokes type %s not supported', type);
+        end
+        sub = tlow(end-1:end);
+        switch sub
+            case 'xx', K = K_full(1:2:end, 1:2:end);
+            case 'xy', K = K_full(1:2:end, 2:2:end);
+            case 'yx', K = K_full(2:2:end, 1:2:end);
+            case 'yy', K = K_full(2:2:end, 2:2:end);
+            otherwise
+                error('wlchs_kernel_eval: stokes sub-block %s not supported', sub);
+        end
     otherwise
         error('wlchs_kernel_eval: unsupported family %s', spec.family);
 end
@@ -1224,7 +1295,7 @@ function coef = wlchs_extract_scalar(kern, t, param, family)
 %
 % `param` carries family-specific data (zk for helmholtz, [] for laplace).
 if nargin < 4 || isempty(family), family = 'helmholtz'; end
-if strcmp(family, 'laplace')
+if strcmp(family, 'laplace') || strcmp(family, 'stokes')
     src_probe = struct('r',[0;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
     tgt_probe = struct('r',[2;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
 else
@@ -1258,6 +1329,21 @@ switch lower(family)
                 error('wlchs_extract_scalar: lap type %s not supported', t);
         end
         coef = val / base;
+    case 'stokes'
+        % Stokes svel/dvel return 2x2 matrices; ratio on a non-zero entry
+        % gives the scalar prefactor (assumes the user's kern is a scalar
+        % multiple of the bare Stokes kernel of type t).
+        mu = param;
+        if ismember(lower(t), {'s','single','svel','svelocity'})
+            base = chnk.stok2d.kern(mu, src_probe, tgt_probe, 'svel');
+        elseif ismember(lower(t), {'d','double','dvel','dvelocity'})
+            base = chnk.stok2d.kern(mu, src_probe, tgt_probe, 'dvel');
+        elseif ismember(lower(t), {'strac','straction'})
+            base = chnk.stok2d.kern(mu, src_probe, tgt_probe, 'strac');
+        else
+            error('wlchs_extract_scalar: stok type %s not supported', t);
+        end
+        coef = val(1,1) / base(1,1);
     otherwise
         error('wlchs_extract_scalar: unsupported family %s', family);
 end
