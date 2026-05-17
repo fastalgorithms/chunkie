@@ -52,10 +52,10 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %               between adaptive/smooth rule
 %       opts.eps = tolerance for adaptive integration
 %       opts.forcewlchs - if = true, use kernel-split (Helsing-style)
-%               panel quadrature for close evaluation. Supports Laplace
-%               (s/d/sp) scalar kernels -- kern must be a single kernel
-%               object. Delivers 10+ digits of accuracy at close
-%               off-curve targets. (false)
+%               panel quadrature for close evaluation. Supports
+%               Helmholtz (s/d/sp) and Laplace (s/d/sp) scalar kernels
+%               -- kern must be a single kernel object. Delivers 10+
+%               digits of accuracy at close off-curve targets. (false)
 %
 % output:
 %   fints - opdims(1) x nt array of integral values where opdims is the 
@@ -156,13 +156,14 @@ else
 end
 
 if use_wlchs
-    % Single scalar kernel (laplace, opdims=[1 1]).
+    % Single scalar kernel (helm/lap, opdims=[1 1]).
     if size(kern,1) ~= 1 || size(kern,2) ~= 1 || ~isa(kern,'kernel')
         error("CHUNKERKERNEVAL: forcewlchs=true requires a single kernel object");
     end
-    is_lap = strcmpi(kern.name, 'laplace');
-    if ~is_lap
-        error("CHUNKERKERNEVAL: forcewlchs supports Laplace kernels");
+    is_helm = strcmpi(kern.name, 'helmholtz');
+    is_lap  = strcmpi(kern.name, 'laplace');
+    if ~is_helm && ~is_lap
+        error("CHUNKERKERNEVAL: forcewlchs supports Helmholtz or Laplace kernels");
     end
     if ~ismember(lower(kern.type), {'s','single','d','double','sp','sprime'})
         error("CHUNKERKERNEVAL: forcewlchs currently supports only s/d/sp layers");
@@ -172,15 +173,31 @@ if use_wlchs
 
     src_probe = struct('r',[0;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
     tgt_probe = struct('r',[1;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
-    if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
-        tgt_probe.r = [2;0];
-        val_probe = kern.eval(src_probe, tgt_probe);
-        base_probe = -log(2)/(2*pi);
-    else
-        val_probe = kern.eval(src_probe, tgt_probe);
-        base_probe = 1/(2*pi);
+    val_probe = kern.eval(src_probe, tgt_probe);
+    if is_helm
+        if ~isfield(kern.params,'zk') || isempty(kern.params.zk)
+            error("CHUNKERKERNEVAL: forcewlchs Helmholtz requires kern.params.zk");
+        end
+        wlchs_zk = kern.params.zk;
+        if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
+            base_probe = 0.25i * besselh(0, wlchs_zk);
+        elseif strcmpi(wlchs_type,'d') || strcmpi(wlchs_type,'double')
+            base_probe = 0.25i * wlchs_zk * besselh(1, wlchs_zk);
+        else
+            base_probe = -0.25i * wlchs_zk * besselh(1, wlchs_zk);
+        end
+        wlchs_coef = val_probe / base_probe;
+    else  % laplace
+        wlchs_zk = [];
+        if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
+            tgt_probe.r = [2;0];
+            val_probe = kern.eval(src_probe, tgt_probe);
+            base_probe = -log(2)/(2*pi);
+        else
+            base_probe = 1/(2*pi);
+        end
+        wlchs_coef = val_probe / base_probe;
     end
-    wlchs_coef = val_probe / base_probe;
 
     % Non-rcipsav path: dispatch directly to kernsplit on the (possibly
     % merged) chunker. Targets pass through as raw point coords or struct
@@ -210,6 +227,9 @@ if use_wlchs
         targ_for_eval = targ_pts;
     end
     switch lower(wlchs_family)
+        case 'helmholtz'
+            fints = wlchs_coef * chnk.kernsplit.helm2d_panel_eval(chnkr_use, ...
+                wlchs_type, wlchs_zk, dens, targ_for_eval, [], hpe_opts);
         case 'laplace'
             fints = wlchs_coef * chnk.kernsplit.lap2d_panel_eval(chnkr_use, ...
                 wlchs_type, dens, targ_for_eval, [], hpe_opts);
