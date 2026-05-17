@@ -77,6 +77,14 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %                    adaptive quadrature for near touching panels on
 %                    different chunkers within rcip
 %           opts.eps = (1e-14) tolerance for adaptive quadrature
+%           opts.open_arc_eye = boolean (false), if true and opdims=[2,2],
+%                    overwrite the (1,1) ndim-sub-block of each per-chunker
+%                    diagonal block with -I before RCIP correction. This is
+%                    used by the Bruno-Lintner open-arc Helmholtz Dirichlet
+%                    formulation, where K = [Z, c*S; c*T, Z] and the caller
+%                    adds eye(nsys) outside; the override makes the (1,1)
+%                    diagonal vanish and the (2,2) diagonal equal I, giving
+%                    the system [0, c*S; c*T, I].
 %           opts.srhs_eval = function handle ([]), enables the singular-RHS
 %                    RCIP recursion (Helsing & Karlsson 2022, vector form).
 %                    Signature:
@@ -181,6 +189,7 @@ rcip_savedepth = 10;
 adaptive_correction = false;
 rcip_adaptive_correction = false;
 sing = 'log';
+open_arc_eye = false;
 
 % get opts from struct if available
 
@@ -231,6 +240,16 @@ if (isfield(opts,'adaptive_correction'))
 end
 if (isfield(opts,'rcip_adaptive_correction'))
     rcip_adaptive_correction = opts.rcip_adaptive_correction;
+end
+if isfield(opts,'open_arc_eye')
+    open_arc_eye = opts.open_arc_eye;
+end
+% Bruno-Lintner block-kernel sub-block size for the (1,1) override:
+%   helmos / Helmholtz block kernel:    opdims=[2,2], sub_ndim=1 (default)
+%   open-arc Stokes mobility:           opdims=[4,4], sub_ndim=2
+open_arc_eye_subdim = 1;
+if isfield(opts,'open_arc_eye_subdim') && ~isempty(opts.open_arc_eye_subdim)
+    open_arc_eye_subdim = opts.open_arc_eye_subdim;
 end
 
 % forcewlchs: kernel-split self/adjacent-panel correction for Laplace
@@ -537,6 +556,32 @@ for i=1:nchunkers
                     'forcewlchs skipped on chunker %d: %s', i, ME.message);
             else
                 rethrow(ME);
+            end
+        end
+    end
+    if open_arc_eye
+        % Bruno-Lintner open-arc override: overwrite the top-left
+        % d-by-d sub-block of each diagonal point block with -I_d, so
+        % that after the caller's +eye(nsys) the block system reads
+        % [0, c*A; c*B, I_d]. Default d=1 (helmos opdims=[2,2], scalar
+        % sub-blocks); d=2 for the open-arc Stokes mobility 4x4 block
+        % kernel where each sub-block is itself a 2x2 Stokes operator.
+        d = open_arc_eye_subdim;
+        if opdims(1) ~= opdims(2) || opdims(1) ~= 2*d
+            error('chunkermat: open_arc_eye requires opdims = [2*subdim, 2*subdim] (got [%d,%d], subdim=%d)', ...
+                  opdims(1), opdims(2), d);
+        end
+        npts2 = size(sysmat_tmp, 1);
+        Npts  = npts2 / opdims(1);
+        block_off = (0:Npts-1) * opdims(1);
+        for jj = 1:d
+            for ii = 1:d
+                lin = sub2ind(size(sysmat_tmp), block_off + ii, block_off + jj);
+                if ii == jj
+                    sysmat_tmp(lin) = -1;
+                else
+                    sysmat_tmp(lin) = 0;
+                end
             end
         end
     end
