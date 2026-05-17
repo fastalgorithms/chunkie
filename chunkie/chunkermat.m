@@ -77,7 +77,21 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %                    adaptive quadrature for near touching panels on
 %                    different chunkers within rcip
 %           opts.eps = (1e-14) tolerance for adaptive quadrature
-%  ilist - cell array of integer arrays ([]), list of panel interactions that 
+%           opts.forcewlchs = kernel-split self/adjacent-panel correction
+%                    for Laplace S, D, S', D' kernels. After GGQ buildmat
+%                    fills self+adj with generic singular quadrature,
+%                    overwrite supported entries with wLCHS values from
+%                    chnk.kernsplit. Two forms supported:
+%                       opts.forcewlchs = true
+%                            (kern must be a single lap2d scalar kernel
+%                            of type 's', 'd', 'sp', or 'dp'; scalar
+%                            multiplier auto-extracted by probing).
+%                       opts.forcewlchs = struct('layout', L)
+%                            where L is an opdims(1)-by-opdims(2) cell
+%                            array; L{r,c} = [] for a zero block, or
+%                            {type, coef} / struct('type',t,'coef',a)
+%                            for a Laplace scalar kernel.
+%  ilist - cell array of integer arrays ([]), list of panel interactions that
 %          should be ignored when constructing matrix entries or quadrature
 %          corrections. 
 %
@@ -197,6 +211,13 @@ if (isfield(opts,'adaptive_correction'))
 end
 if (isfield(opts,'rcip_adaptive_correction'))
     rcip_adaptive_correction = opts.rcip_adaptive_correction;
+end
+
+% forcewlchs: kernel-split self/adjacent-panel correction for Laplace
+% S/D/Sp/Dp kernels. See doc above for accepted forms.
+forcewlchs_opt = [];
+if isfield(opts,'forcewlchs') && ~isempty(opts.forcewlchs)
+    forcewlchs_opt = opts.forcewlchs;
 end
 
 nchunkers = length(chnkrs);
@@ -433,13 +454,42 @@ for i=1:nchunkers
     elseif strcmpi(quad,'native')
 
         if nonsmoothonly
-            sysmat_tmp = sparse(chnkr.npt,chnkr.npt);
+            sysmat_tmp = sparse(opdims(1)*chnkr.npt, opdims(2)*chnkr.npt);
         else
             sysmat_tmp = chnk.quadnative.buildmat(chnkr,ftmp,opdims);
         end
     else
         warning('specified quadrature method not available');
         return;
+    end
+
+    if ~isempty(forcewlchs_opt)
+        % In ~nonsmoothonly mode, sysmat_tmp has smooth GL values for the
+        % whole block (native quad) or smooth + GGQ self/adj corrections
+        % (ggq quad). chunkermat_apply_wlchs_adj ADDs the kernel-split
+        % delta over smooth GL on self+adj entries. When ggq quad is in
+        % use, the GGQ self/adj corrections it wrote get overwritten by
+        % the wLCHS values -- so prefer quad='native' for cleanliness.
+        % In nonsmoothonly mode, sysmat_tmp is sparse (zero from native,
+        % or GGQ corrections from ggq); add wLCHS deltas as sparse too.
+        if size(kern,1) > 1 || size(kern,2) > 1
+            block_kern = kern(i,i);
+        else
+            block_kern = kern;
+        end
+        try
+            sysmat_tmp = chunkermat_apply_wlchs_adj( ...
+                sysmat_tmp, chnkr, opdims, block_kern, forcewlchs_opt, nonsmoothonly);
+        catch ME
+            if contains(ME.message, 'forcewlchs') ...
+                    || contains(ME.message, 'wlchs') ...
+                    || contains(ME.message, 'unsupported')
+                warning('chunkermat:wlchsSkipped', ...
+                    'forcewlchs skipped on chunker %d: %s', i, ME.message);
+            else
+                rethrow(ME);
+            end
+        end
     end
 
     if adaptive_correction
@@ -734,4 +784,231 @@ end
 
 mat = sparse(is,js,vs,opdims(1)*nt,opdims(2)*chnkr.npt);
 
+end
+
+
+function sysmat = chunkermat_apply_wlchs_adj(sysmat, chnkr, opdims, kern, fw, nonsmoothonly)
+% Apply wLCHS self/adjacent-panel corrections to sysmat for Laplace
+% S/D/Sp/Dp entries. See chunkermat opts.forcewlchs comment.
+%
+% Behaviour depends on nonsmoothonly:
+%   false (default) - sysmat is dense; ENTRIES on self+adj blocks are
+%                     OVERWRITTEN with smooth-GL + wLCHS-delta. Used by
+%                     the dense matrix-build path.
+%   true            - sysmat is sparse; wLCHS deltas (smooth-subtracted)
+%                     are ADDED on top of whatever GGQ corrections were
+%                     already in sysmat. For matrix-free apply, the caller
+%                     should also use quad='native' so sysmat starts at
+%                     zero and the result is just the wLCHS delta.
+if nargin < 6 || isempty(nonsmoothonly), nonsmoothonly = false; end
+
+% Decode forcewlchs spec: build a 2D cell `layout` (opdims(1) x opdims(2))
+% where layout{r,c} is either [] (no wLCHS, leave entry alone), or
+% struct('type', t, 'coef', a, 'family', 'laplace').
+m = opdims(1); n = opdims(2);
+layout = cell(m, n);
+lap_types  = {'s','single','d','double','sp','sprime','dp','dprime'};
+if islogical(fw) || (isnumeric(fw) && isscalar(fw))
+    % Boolean form: kern must be a single scalar Laplace kernel, or zero.
+    if ~fw, return; end
+    if isa(kern, 'kernel') && (strcmpi(kern.name, 'zeros') || ...
+            (isprop(kern, 'iszero') && kern.iszero))
+        return;
+    end
+    fam = wlchs_kernel_family(kern);
+    if isempty(fam)
+        error("chunkermat: opts.forcewlchs=true requires a single lap2d kernel");
+    end
+    t = lower(kern.type);
+    if m ~= 1 || n ~= 1
+        error("chunkermat: opts.forcewlchs=true requires a single scalar (opdims=[1 1]) lap kernel");
+    end
+    if ~ismember(t, lap_types)
+        error("chunkermat: opts.forcewlchs=true: lap kernel type %s not supported", kern.type);
+    end
+    coef = wlchs_extract_scalar(kern, t, fam);
+    layout{1,1} = struct('type', t, 'coef', coef, 'family', fam);
+elseif isstruct(fw)
+    if ~isfield(fw, 'layout')
+        error("chunkermat: opts.forcewlchs struct needs field 'layout'");
+    end
+    fam_default = 'laplace';
+    if isfield(fw, 'family') && ~isempty(fw.family)
+        fam_default = lower(fw.family);
+    end
+    if ~strcmp(fam_default, 'laplace')
+        error("chunkermat: opts.forcewlchs.family must be 'laplace'");
+    end
+    L = fw.layout;
+    if ~iscell(L) || size(L,1) ~= m || size(L,2) ~= n
+        error("chunkermat: opts.forcewlchs.layout must be %dx%d cell", m, n);
+    end
+    for r = 1:m
+        for c = 1:n
+            entry = L{r,c};
+            if isempty(entry); continue; end
+            if iscell(entry)
+                t = entry{1}; a = entry{2};
+            elseif isstruct(entry)
+                t = entry.type;
+                a = entry.coef;
+            else
+                error("chunkermat: opts.forcewlchs.layout{%d,%d} bad form", r, c);
+            end
+            if strcmpi(t, 'zero'); continue; end
+            if ~ismember(lower(t), lap_types)
+                error("chunkermat: forcewlchs (laplace): layout entry type %s not supported", t);
+            end
+            layout{r,c} = struct('type', lower(t), 'coef', a, 'family', 'laplace');
+        end
+    end
+else
+    error("chunkermat: opts.forcewlchs has unsupported type");
+end
+
+% For each non-empty (r,c) in layout, OVERWRITE self and adjacent block
+% entries with smooth-GL + wLCHS-delta (replacing the inadequate generic
+% GGQ values that the buildmat already wrote).
+ngl = chnkr.k;
+% U_src (per-panel inverse Vandermonde for wlchs) is kernel-INDEPENDENT,
+% so build it once across the layout iteration. Cells fill lazily as
+% lap2d_*_correction touch them.
+U_src_cell = cell(1, chnkr.nch);
+for r = 1:m
+    for c = 1:n
+        spec = layout{r,c};
+        if isempty(spec); continue; end
+
+        % --- Self-panel correction ---
+        if wlchs_has_self_correction(spec.type, spec.family)
+            [delta_self_a, U_src_cell] = wlchs_self_correction_dispatch( ...
+                spec, chnkr, spec.type, U_src_cell);
+            self_coef_a = spec.coef;
+            for ich = 1:chnkr.nch
+                ji = (1:ngl).' + (ich-1)*ngl;
+                rows_blk = (ji - 1) * m + r;
+                cols_blk = (ji.' - 1) * n + c;
+                d_blk = self_coef_a * full(delta_self_a(ji, ji));
+                if nonsmoothonly
+                    sysmat(rows_blk, cols_blk) = d_blk;
+                else
+                    Kb = wlchs_kernel_eval(spec, spec.type, ...
+                        chnkr.r(:,:,ich), chnkr.n(:,:,ich), ...
+                        chnkr.r(:,:,ich), chnkr.n(:,:,ich));
+                    awzp = chnkr.wts(:, ich).';
+                    M_smooth = spec.coef * (Kb .* awzp);
+                    M_smooth(1:ngl+1:end) = 0;
+                    sysmat(rows_blk, cols_blk) = M_smooth + d_blk;
+                end
+            end
+        end
+
+        % --- Adjacent-panel correction ---
+        [delta_a, U_src_cell] = wlchs_adj_correction_dispatch( ...
+            spec, chnkr, spec.type, U_src_cell);
+        adj_coef_a = spec.coef;
+        for ich = 1:chnkr.nch
+            for io = 1:2
+                jch = chnkr.adj(io, ich);
+                if jch <= 0; continue; end
+                ji    = (1:ngl).' + (ich-1)*ngl;
+                jcols = (jch-1)*ngl + (1:ngl);
+                rows_blk = (ji - 1) * m + r;
+                cols_blk = (jcols - 1) * n + c;
+                d_blk = adj_coef_a * full(delta_a(ji, jcols));
+                if nonsmoothonly
+                    sysmat(rows_blk, cols_blk) = d_blk;
+                else
+                    Kb = wlchs_kernel_eval(spec, spec.type, ...
+                        chnkr.r(:,:,jch), chnkr.n(:,:,jch), ...
+                        chnkr.r(:,:,ich), chnkr.n(:,:,ich));
+                    awzp = chnkr.wts(:, jch).';
+                    M_smooth = spec.coef * (Kb .* awzp);
+                    sysmat(rows_blk, cols_blk) = M_smooth + d_blk;
+                end
+            end
+        end
+    end
+end
+end
+
+function fam = wlchs_kernel_family(kern)
+% Returns 'laplace' or '' if the kernel is unsupported by the wLCHS path.
+fam = '';
+if ~isa(kern, 'kernel'), return; end
+if strcmpi(kern.name, 'zeros'), return; end
+if strcmpi(kern.name, 'laplace'), fam = 'laplace'; return; end
+end
+
+function tf = wlchs_has_self_correction(type, family)
+% Laplace: S, D, S', D' all have nontrivial self corrections.
+if nargin < 2 || isempty(family), family = 'laplace'; end
+switch lower(family)
+    case 'laplace'
+        tf = ismember(lower(type), {'s','single','d','double','sp','sprime','dp','dprime'});
+    otherwise
+        tf = false;
+end
+end
+
+function [delta, U_src_cell] = wlchs_self_correction_dispatch(spec, chnkr, type, U_src_cell)
+switch lower(spec.family)
+    case 'laplace'
+        [delta, U_src_cell] = chnk.kernsplit.lap2d_self_correction(chnkr, type, U_src_cell);
+    otherwise
+        error('wlchs_self_correction_dispatch: unsupported family %s', spec.family);
+end
+end
+
+function [delta, U_src_cell] = wlchs_adj_correction_dispatch(spec, chnkr, type, U_src_cell)
+switch lower(spec.family)
+    case 'laplace'
+        [delta, U_src_cell] = chnk.kernsplit.lap2d_adj_correction(chnkr, type, U_src_cell);
+    otherwise
+        error('wlchs_adj_correction_dispatch: unsupported family %s', spec.family);
+end
+end
+
+function K = wlchs_kernel_eval(spec, type, src_r, src_n, tgt_r, tgt_n, varargin)
+% Evaluate the bare kernel of given family/type at (src, tgt) GL nodes.
+si.r = src_r; si.n = src_n;
+ti.r = tgt_r; ti.n = tgt_n;
+switch lower(spec.family)
+    case 'laplace'
+        switch lower(type)
+            case {'s','single'},  K = chnk.lap2d.kern(si, ti, 's');
+            case {'d','double'},  K = chnk.lap2d.kern(si, ti, 'd');
+            case {'sp','sprime'}, K = chnk.lap2d.kern(si, ti, 'sprime');
+            case {'dp','dprime'}, K = chnk.lap2d.kern(si, ti, 'dprime');
+            otherwise
+                error('wlchs_kernel_eval: lap type %s not supported', type);
+        end
+    otherwise
+        error('wlchs_kernel_eval: unsupported family %s', spec.family);
+end
+end
+
+function coef = wlchs_extract_scalar(kern, t, family)
+% Probe the kern eval at a known src/tgt pair, divide by analytic value.
+% Result is the scalar prefactor on top of the bare kernel (=1 for plain
+% kernel('lap',type); !=1 for scalar-multiplied kernels). For Laplace S
+% the bare value at r=1 is 0 (log 1 = 0), so we probe at r=2 instead.
+if nargin < 3 || isempty(family), family = 'laplace'; end
+src_probe = struct('r',[0;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
+tgt_probe = struct('r',[2;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
+val = kern.eval(src_probe, tgt_probe);
+switch lower(family)
+    case 'laplace'
+        switch lower(t)
+            case {'s','single'},  base = chnk.lap2d.kern(src_probe, tgt_probe, 's');
+            case {'d','double'},  base = chnk.lap2d.kern(src_probe, tgt_probe, 'd');
+            case {'sp','sprime'}, base = chnk.lap2d.kern(src_probe, tgt_probe, 'sprime');
+            case {'dp','dprime'}, base = chnk.lap2d.kern(src_probe, tgt_probe, 'dprime');
+            otherwise
+                error('wlchs_extract_scalar: lap type %s not supported', t);
+        end
+        coef = val / base;
+    otherwise
+        error('wlchs_extract_scalar: unsupported family %s', family);
+end
 end
