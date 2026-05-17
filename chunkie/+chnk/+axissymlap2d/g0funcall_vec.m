@@ -5,53 +5,137 @@ function [gval, gdz, gdr, gdrp, gdrpr, gdzz, gdrz, gdrpz] = g0funcall_vec(r, rp,
 %
 %     gfunc(n) = pi*rp * \int_0^{2\pi} 1/|x - x'| e^(-i n t) dt
 %
-% it is assumed that x = (x,0,z) otherwise the integral above should pick up a
-% phase factor out front of exp(i*n*phi), where phi is the azimuthal coordinate
-% of x in cylindrical coordinates.
+% Modes 0 through maxm are returned, with gval(1) = mode 0 and
+% gval(maxm+1) = mode maxm.
 %
-% The extra factor of rp (and maybe pi?) out front makes subsequent interfacing
-% with RCIP slightly easier. Modes 0 through maxm are returned, with gval(1) =
-% mode 0 and gval(maxm+1) = mode maxm. The function is even, so g_{-n} = g_n.
-%
-% The above scaling should be consistent with what is in
-% chnk.axissymlap2d.gfunc, which is for merely the zero-mode
-% 
 
-    r = reshape(r,[1,size(r,1),size(r,2)]);
+    r  = reshape(r, [1,size(r,1),size(r,2)]);
     rp = reshape(rp,[1,size(rp,1),size(rp,2)]);
     dr = reshape(dr,[1,size(dr,1),size(dr,2)]);
-    z = reshape(z,[1,size(z,1),size(z,2)]);
+    z  = reshape(z, [1,size(z,1),size(z,2)]);
     zp = reshape(zp,[1,size(zp,1),size(zp,2)]);
     dz = reshape(dz,[1,size(dz,1),size(dz,2)]);
 
-    t = (dz.^2+dr.^2)./(2.*r.*rp);
-    chi = t+1;
+    % we handle r=0 and rp=0 cases separetly 
+    src_on_axis = (rp == 0);
+    targ_on_axis = (r == 0) & (rp ~= 0);
+
+    r_safe = r;
+    rp_safe = rp;
+    
+    % dummy values whos results will be overwritten
+    r_safe(r_safe == 0) = 1;
+    rp_safe(rp_safe == 0) = 1;
+    
+    % case: rp != 0 and r != 0
+    t = (dz.^2 + dr.^2)./(2.*r_safe.*rp_safe);
+    chi = t + 1;
 
     [qm, qmd, qmdd] = chnk.axissymlap2d.qleg_half_miller_vec(t,m);
-    
-    gval = 2*pi*sqrt(rp./r).*qm;
-    gdz  = 2*pi*sqrt(rp./r).*qmd ...
-          ./(rp.*r).*dz;
-    
-    rfac = -r/2.*qm+(-(1+t).*r+rp).*qmd;
-    gdrp  = 2*pi*sqrt(rp./r)./(rp.*r) ...
-            .*rfac;
-    
-    rfac = -rp/2.*qm+(-(1+t).*rp+r).*qmd;
-    gdr  = 2*pi*sqrt(rp./r)./(rp.*r) ...
-           .*rfac;
 
-    rfac = 1./(rp.*r).*qmd + (dz./(rp.*r)).^2.*qmdd;
-    gdzz = 2*pi*sqrt(rp./r).*rfac;
+    prefac = 2*pi*sqrt(rp_safe./r_safe);
+
+    gval = prefac.*qm;
+
+    gdz  = prefac.*qmd ...
+          ./(rp_safe.*r_safe).*dz;
+
+    rfac = -r_safe/2.*qm + (-(1+t).*r_safe + rp_safe).*qmd;
+    gdrp = prefac./(rp_safe.*r_safe).*rfac;
+
+    rfac = -rp_safe/2.*qm + (-(1+t).*rp_safe + r_safe).*qmd;
+    gdr  = prefac./(rp_safe.*r_safe).*rfac;
+
+    rfac = 1./(rp_safe.*r_safe).*qmd ...
+        + (dz./(rp_safe.*r_safe)).^2.*qmdd;
+    gdzz = prefac.*rfac;
+
+    rfac = -3./(2*r_safe.^2.*rp_safe).*qmd ...
+        + (-chi./(r_safe.^2.*rp_safe) + 1./(r_safe.*rp_safe.^2)).*qmdd;
+    gdrz = prefac.*dz.*rfac;
+
+    rfac = -3./(2*rp_safe.^2.*r_safe).*qmd ...
+        + (-chi./(rp_safe.^2.*r_safe) + 1./(rp_safe.*r_safe.^2)).*qmdd;
+    gdrpz = prefac.*dz.*rfac;
+
+    rfac = 1./(4*r_safe.*rp_safe).*qm ...
+        + (2*chi./(rp_safe.*r_safe) ...
+        - 3./(2*r_safe.^2) ...
+        - 3./(2*rp_safe.^2)).*qmd ...
+        + (-chi./r_safe + 1./rp_safe).*(-chi./rp_safe + 1./r_safe).*qmdd;
+    gdrpr = prefac.*rfac;
+
+    % case: rp = 0
+    if any(src_on_axis(:))
+        gval(:,:,src_on_axis) = 0;
+        gdz(:,:,src_on_axis) = 0;
+        gdr(:,:,src_on_axis) = 0;
+        gdrp(:,:,src_on_axis) = 0;
+        gdrpr(:,:,src_on_axis) = 0;
+        gdzz(:,:,src_on_axis) = 0;
+        gdrz(:,:,src_on_axis) = 0;
+        gdrpz(:,:,src_on_axis) = 0;
+    end
     
-    rfac = -3./(2*r.^2.*rp).*qmd + (-chi./(r.^2.*rp) + 1./(r.*rp.^2)).*qmdd;
-    gdrz = 2*pi*sqrt(rp./r).*dz.*rfac;
+    % case: r = 0
+    if any(targ_on_axis(:))
+        gval(:,targ_on_axis) = 0;
+        gdz(:,targ_on_axis) = 0;
+        gdr(:,targ_on_axis) = 0;
+        gdrp(:,targ_on_axis) = 0;
+        gdrpr(:,targ_on_axis) = 0;
+        gdzz(:,targ_on_axis) = 0;
+        gdrz(:,targ_on_axis) = 0;
+        gdrpz(:,targ_on_axis) = 0;
 
-    rfac = -3./(2*rp.^2.*r).*qmd + (-chi./(rp.^2.*r) + 1./(rp.*r.^2)).*qmdd;
-    gdrpz = 2*pi*sqrt(rp./r).*dz.*rfac;
+        rp0 = rp(targ_on_axis);
+        dz0 = dz(targ_on_axis);
 
-    rfac = 1./(4*r.*rp).*qm ...
-        + (2*chi./(rp.*r) - 3./(2*r.^2) - 3./(2*rp.^2)).*qmd ...
-        + (-chi./r+1./rp).*(-chi./rp + 1./r).*qmdd;
-    gdrpr = 2*pi*sqrt(rp./r).*rfac;
+        tmp = gval(1,:,:);
+        tmp(targ_on_axis) = 2*pi^2*rp0 ...
+            ./ sqrt(rp0.^2 + dz0.^2);
+        gval(1,:,:) = tmp;
+
+        tmp = gdz(1,:,:);
+        tmp(targ_on_axis) = -2*pi^2*rp0.*dz0 ...
+            ./ sqrt(rp0.^2 + dz0.^2).^3;
+        gdz(1,:,:) = tmp;
+
+        tmp = gdrp(1,:,:);
+        tmp(targ_on_axis) = -2*pi^2*rp0.^2 ...
+            ./ sqrt(rp0.^2 + dz0.^2).^3;
+        gdrp(1,:,:) = tmp;
+
+        tmp = gdzz(1,:,:);
+        tmp(targ_on_axis) = 2*pi^2*rp0.* ( ...
+                -1 ./ sqrt(rp0.^2 + dz0.^2).^3 ...
+                + 3*dz0.^2 ...
+                ./ sqrt(rp0.^2 + dz0.^2).^5 ...
+            );
+        gdzz(1,:,:) = tmp;
+
+        tmp = gdrpz(1,:,:);
+        tmp(targ_on_axis) = 6*pi^2*rp0.^2.*dz0 ...
+            ./ sqrt(rp0.^2 + dz0.^2).^5;
+        gdrpz(1,:,:) = tmp;
+
+        if m >= 1
+            tmp = gdr(2,:,:);
+            tmp(targ_on_axis) = pi^2*rp0.^2 ...
+                ./ sqrt(rp0.^2 + dz0.^2).^3;
+            gdr(2,:,:) = tmp;
+
+            tmp = gdrz(2,:,:);
+            tmp(targ_on_axis) = -3*pi^2*rp0.^2.*dz0 ...
+                ./ sqrt(rp0.^2 + dz0.^2).^5;
+            gdrz(2,:,:) = tmp;
+
+            tmp = gdrpr(2,:,:);
+            tmp(targ_on_axis) = pi^2*( ...
+                    rp0 ./ sqrt(rp0.^2 + dz0.^2).^3 ...
+                    - 3*rp0.^3 ./ sqrt(rp0.^2 + dz0.^2).^5 ...
+                );
+            gdrpr(2,:,:) = tmp;
+        end
+    end
 end

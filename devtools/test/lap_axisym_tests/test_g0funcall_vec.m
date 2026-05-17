@@ -3,9 +3,9 @@
 % verify that the modeal Green's functions for Laplace are working properly
 %
 
-h = 0.5;
+h = 0.3;
 
-r = 1.0;
+r = 0.0;
 rp = r + h;
 dr = -h; % r - r'
 
