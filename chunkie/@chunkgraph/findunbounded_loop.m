@@ -1,21 +1,16 @@
-function [rgn] = findunbounded(cgrph,rgn)
-%FINDUNBOUNDED after having computed all the regions, rgn, of a 
-% chunkgraph, cgrph, findunbounded identifies an unbounded region and 
-% moves it to the start of the rgn cell array.
-% NOTE: this routine is designed for finding the complement of 
-% simply-connected regions. For non-simply connected, two rgn arrays 
-% should be built for each component and findunbounded should be called 
-% on both separately. The two can then be merged manually.
+function [loops_in,loops_out] = findunbounded_loop(cgrph,loops)
+%FINDUNBOUNDED after having computed all the loops, loops, of a 
+% chunkgraph, cgrph, findunbounded identifies `exterior' loops (loop_out) 
+% and `interior' loops (loop_in).
 %
-% Syntax: [rgn] = findunbounded(cgrph,rgn);
+% Syntax: [rgn] = findunbounded_loop(cgrph,rgn);
 %
 % Input:
 %   cgrph  - chunkgraph object
-%   rgn    - the rgn cell array containing edge indices of each region
+%   loops  - the loop cell array containing edge indices of each loop
 %
 % Output:
-%   rgn    - the same cell array as rgn but with the unbounded region 
-%            in the first entry.
+%   loop_in, loop_out.
 %  
 %
 %
@@ -24,11 +19,13 @@ function [rgn] = findunbounded(cgrph,rgn)
 
     iunbound = 1;
     
-    for ii=1:numel(rgn)
+    inds_out = [];
+
+    for ii=1:numel(loops)
         
         
         
-        edges = rgn{ii}{1};
+        edges = loops{ii};
         theta = 0;
         rends = zeros([4,numel(edges)]);
         tends = zeros([4,numel(edges)]);
@@ -84,12 +81,12 @@ function [rgn] = findunbounded(cgrph,rgn)
         
         tot_ang = angsum + theta;
         if (tot_ang>pi)
-            ii
-            iunbound = ii;
+            inds_out = [inds_out,ii];
         end
         
     end
-    
-    rgn([1,iunbound]) = rgn([iunbound,1]);
+    loops_out = loops(inds_out);
+    loops_in  = loops;
+    loops_in(inds_out) = [];
 end
 
