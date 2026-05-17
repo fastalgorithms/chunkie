@@ -8,10 +8,24 @@
 % %
 % 
 
+%housekeeping: 
+clear all; close all; clc; 
+
+verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25]; 
+edges = [4 3 2; 3 2 1]; 
+merge_idx = {[1 4]}; 
+cg0 = chunkgraph_per(verts,edges,merge_idx); 
+cg = stack_layers([cg0 + [0;-1],cg0,cg0 + [0;1]]); 
+
+figure
+plot(cg)
+
+%interior pts: 
 
 
-% end
 
+figure
+plot_regions(cg)
 
 verts = [[0;0],[0;1],[1;0]];
 
@@ -41,14 +55,16 @@ edgesendverts = [];
 fchnks = cell(0);
 for i = 1:length(cgrphs)
     verts = [verts,cgrphs(i).verts];
-    edgesendverts = [edgesendverts, cgrphs(i).edgesendverts+nverts];
+    if class(cgrphs(i)) == "chunkgraph_per"
+        edgesendverts = [edgesendverts, cgrphs(i).edgesendverts_free+nverts];
+    else
+        edgesendverts = [edgesendverts, cgrphs(i).edgesendverts+nverts];
+    end
     nverts = nverts + size(cgrphs(i).verts,2);
     for j = 1:size(cgrphs(i).echnks,2)
         fchnks{end+1} = cgrphs(i).echnks(j);
     end
 end
 cgrph = chunkgraph(verts,edgesendverts,fchnks);
-
-
 
 end

@@ -25,6 +25,7 @@ classdef chunkgraph_per < chunkgraph
 
    properties
         vstruc_free
+        edgesendverts_free
         merge_idx
         vert_per
    end
@@ -39,6 +40,7 @@ classdef chunkgraph_per < chunkgraph
         function obj = build_vstruc(obj,merge_idx)
             obj.merge_idx = merge_idx; 
             obj.vstruc_free = obj.vstruc; 
+            obj.edgesendverts_free = obj.edgesendverts; 
             vstruc = obj.vstruc; 
             N_base_v = numel(vstruc); 
             N_merge = numel(merge_idx); 
