@@ -242,7 +242,7 @@ function quasiperiodicTest2()
 
 % problem parameters
 d = 8;
-kappa = .05+.1i;
+kappa = .05-.1i;
 
 % setup geometry
 nch = 2^3;
@@ -251,26 +251,75 @@ cparams = []; cparams.ta = -d/2; cparams.tb = d/2;
 chnkr = chunkerfuncuni(@(t) sin_func(t,d,A),nch,cparams);
 chnkr = reverse(chnkr);
 
+% chnkr = chunkerfunc(@starfish);
+
 % setup system
 skern = kernel('lq','s',kappa,d);
-dkern = kernel('lq','d',kappa,d);
+spkern = kernel('lq','sp',kappa,d);
 
-sysmat = chunkermat(chnkr,dkern);
-sysmat = sysmat + .5*eye(size(sysmat,2));
+sysmat = chunkermat(chnkr,spkern);
+sysmat = sysmat - .5*eye(size(sysmat,2));
 
 % solve
 src = struct("r",[3*d/4;-1.5]);
 
-rhs = skern.eval(src,chnkr);
+rhs = spkern.eval(src,chnkr);
 
 soln = sysmat\rhs;
 
 % check analytic solution
 targ = [10*d/3;2];
 utrue = skern.eval(src,struct("r",targ));
-u = chunkerkerneval(chnkr,dkern,soln,targ);
+u = chunkerkerneval(chnkr,skern,soln,targ);
 
 assert(abs(u-utrue) < 1e-10)
+
+% % ploting
+% Lplot = d/1.5;
+% nplot = 50;
+% xts = linspace(-Lplot,Lplot,nplot); yts=xts+Lplot/2;
+% [X,Y] = meshgrid(xts,yts);
+% targ = [X(:).';Y(:).'];
+% 
+% % targ = [2+0*yts;yts];
+% ntarg = size(targ,2);
+% tic;
+% yc = sin_func(X(:),d,A); yc = yc(2,:);
+% iup = Y(:).'>yc;
+% % iup = ~chunkerinterior(chnkr,targ);
+% toc
+% targup = targ(:,iup.');
+% 
+% tic;
+% uin = NaN*zeros(ntarg,1)+NaN*1i;
+% src.n = [0;1];
+% uin(iup) = skern.eval(src,struct("r",targup));
+% uscat = NaN*zeros(ntarg,1)+NaN*1i;
+% opts = []; opts.forcesmooth = false; opts.eps = 1e-6;
+% uscat(iup) = chunkerkerneval(chnkr,skern,soln,targup,opts);
+% toc
+% %
+% utot = uin-uscat;
+% maxu = max(abs(uin));
+% figure(2);clf
+% subplot(1,3,1)
+% h = pcolor(X,Y,reshape(imag(uin),nplot,[])); set(h,'edgecolor','none')
+% title('$u_{\rm{true}}$','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar; clim([-maxu,maxu])
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+% 
+% subplot(1,3,2)
+% h= pcolor(X,Y,reshape(imag(uscat),nplot,[])); set(h,'edgecolor','none')
+% title('$u$','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar; clim([-maxu,maxu])
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+% 
+% subplot(1,3,3)
+% h = pcolor(X,Y,reshape(log10(abs(utot)),nplot,[])); set(h,'edgecolor','none')
+% title('$\log_{10} $ error','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar; 
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+
 
 end
 

@@ -87,6 +87,11 @@ if isfield(opts,'axissym')
     axissym = opts.axissym;
 end
 
+periodic = false;
+if isfield(opts,'periodic')
+    periodic = opts.periodic;
+end
+
 if axissym
     nch = chnkr.nch;
     istart = nch+1;
