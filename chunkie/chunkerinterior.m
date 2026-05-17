@@ -146,7 +146,7 @@ if isfield(opts,'periodic')
 end
 
 
-if periodic || class(chnkobj) == "chunkergraph_per"
+if periodic || class(chnkobj) == "chunkgraph_per"
     if ~isfield(opts,'d')
         error("Missing opts.d (period) for periodic geometry")
     end

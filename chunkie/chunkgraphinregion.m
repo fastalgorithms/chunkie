@@ -76,6 +76,16 @@ else
     return
 end
 
+if class(cg) == "chunkgraph_per"
+    N_merge = numel(cg.merge_idx); 
+    dv = zeros(1,N_merge); 
+    for it = 1:N_merge
+        midx = cg.merge_idx{it}(1:2); 
+        verts = cg.verts(:,midx); 
+        dv(it) = sqrt((verts(1,1)-verts(1,2))^2 + (verts(2,1)-verts(2,2))^2);
+    end
+end
+
 nr = numel(cg.regions);
 for ir = 1:nr
     ncomp = numel(cg.regions{ir});
@@ -100,6 +110,8 @@ for ir = 1:nr
                 end
             end
         end
+
+
         intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts),npts,1);
     end
 
