@@ -32,7 +32,7 @@ classdef chunkgraph_per < chunkgraph
     methods
 
         function obj = chunkgraph_per(verts, edgesendverts, merge_idx, varargin)
-            obj = obj@chunkgraph(verts, edgesendverts, varargin(:)); 
+            obj = obj@chunkgraph(verts, edgesendverts, varargin{:}); 
             obj = build_vstruc(obj,merge_idx); 
         end
 

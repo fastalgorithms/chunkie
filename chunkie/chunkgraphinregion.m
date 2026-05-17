@@ -41,8 +41,8 @@ if nargin < 3
 end
 
 % Assign appropriate object to chnkr
-msg = "chunkgraphinregion: input 1 must be chunkgraph";
-assert(class(cg) == "chunkgraph",msg);
+msg = "chunkgraphinregion: input 1 must be chunkgraph or chunkgraph_per";
+assert((class(cg) == "chunkgraph") || (class(cg) == "chunkgraph_per"),msg);
 
 % Figure out size of ids array based on ptsobj
 if isa(ptsobj, "cell")
@@ -115,20 +115,25 @@ for ir = 1:nr
                 end
             end
             if class(cg) == "chunkgraph_per"
-                per_eid = cg.vert_per(cg.edgesendverts(:,eid));
+                per_eid = cg.vert_per(cg.edgesendverts(:,abs(eid)));
                 per_eid = per_eid(~isnan(per_eid));
                 
                 assert(norm(per_eid - mean(per_eid),inf)< 1e-10, 'unequal periods of verts in a single loop ')
-               if isnan(period_ic)
+               if isnan(period_ic) && ~isempty(per_eid)
                    period_ic = per_eid(1);
                else
-                   norm(norm(per_eid - period_ic,inf)< 1e-10, 'unequal periods of verts in a single loop ')
+                   assert(norm(per_eid - period_ic,inf)< 1e-10, 'unequal periods of verts in a single loop ')
                end
             end
         end
 
+        opts_ic = opts; 
+        if ~isnan(period_ic)
+            opts_ic.d = period_ic; 
+            opts_ic.periodic = true; 
+        end
         
-        intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts),npts,1);
+        intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts_ic),npts,1);
 
         opts_ic = opts;
         if period_ic < inf
