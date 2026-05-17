@@ -19,6 +19,9 @@ function [in] = chunkerinterior(chnkobj,ptsobj,opts)
 %       opts.fmm = boolean, use FMM 
 %       opts.flam = boolean, use FLAM routines
 %       opts.axissym = boolean, chunker is axissymmetric
+%       opts.periodic = boolean, chunker period of a periodic geoemetry
+%       opts.d = boolean, period of infinite periodic geometry
+%
 %  Note on the default behavior: 
 %    by default it tries to use the fmm if it exists, if it doesn't
 %    then unless explicitly set to false, it tries to use flam
@@ -87,6 +90,7 @@ if isfield(opts,'axissym')
     axissym = opts.axissym;
 end
 
+
 if axissym
     nch = chnkr.nch;
     istart = nch+1;
@@ -109,7 +113,6 @@ if axissym
     chnkr.adj(2,chnkr.nch) = 1;
 end
 
-
 usefmm_final = false;
 useflam_final = false;
 
@@ -124,7 +127,6 @@ else
    useflam_final = useflam;
 end
 
-
 eps_local = 1e-3;
 rho = 1.6;
 npoly = chnkr.k;
@@ -133,48 +135,72 @@ nlegnew = max(nlegnew,chnkr.k);
 
 [chnkr2] = upsample(chnkr,nlegnew);
 
-
-icont = false;
-if usefmm_final
-   try
-       wchnkr = chnkr2.wts;
-       dens1_fmm = ones(chnkr2.k*chnkr2.nch,1).*wchnkr(:);
-       pgt = 1;
-       vals1 = chnk.lap2d.fmm(eps_local,chnkr2,pts,'d',dens1_fmm,pgt);
-   catch
-       fprintf('using fmm failed due to incompatible mex, try regenrating mex\n');
-       useflam_final = useflam;
-       icont = true;
-   end
+%periodic case:
+periodic = false;
+if isfield(opts,'periodic')
+    periodic = opts.periodic; 
 end
 
-if ~usefmm_final || icont
-    kernd = kernel('lap','d');
-    dens1 = ones(chnkr2.k,chnkr2.nch);
-    
 
-    opdims = [1 1];
-
-    if useflam_final
-        xflam1 = chnkr.r(:,:);
-        matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr2,kernd,opdims);
-        [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
-
-        pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr2,kernd,opdims,pr,ptau,pw,pin);
-        F = ifmm(matfun,pts,xflam1,200,1e-6,pxyfun);
-        vals1 = ifmm_mv(F,dens1(:),matfun);
-    else
-        optskerneval = []; optskerneval.usesmooth = 1;
-        vals1 = chunkerkerneval(chnkr2,kernd,dens1,pts,optskerneval);
+if periodic || class(chnkobj) == "chunkergraph_per"
+    if ~isfield(opts,'d')
+        error("Missing opts.d (period) for periodic geometry")
     end
+    kap = 1e-16*(1 - 1i); 
+    kernd = kernel('lq','d',kap,opts.d); 
+    targs = []; targs.r = pts; 
+    D = kernd.eval(chnkobj,targs)*diag(chnkobj.wts(:)); 
+    vals1 = D*ones(size(D,2),1); 
+    in = real(vals1)<-0.25; 
+else
+    
+    icont = false;
+    if usefmm_final
+       try
+           wchnkr = chnkr2.wts;
+           dens1_fmm = ones(chnkr2.k*chnkr2.nch,1).*wchnkr(:);
+           pgt = 1;
+           vals1 = chnk.lap2d.fmm(eps_local,chnkr2,pts,'d',dens1_fmm,pgt);
+       catch
+           fprintf('using fmm failed due to incompatible mex, try regenrating mex\n');
+           useflam_final = useflam;
+           icont = true;
+       end
+    end
+    
+    if ~usefmm_final || icont
+        kernd = kernel('lap','d');
+        dens1 = ones(chnkr2.k,chnkr2.nch);
+        
+    
+        opdims = [1 1];
+    
+        if useflam_final
+            xflam1 = chnkr.r(:,:);
+            matfun = @(i,j) chnk.flam.kernbyindexr(i,j,pts,chnkr2,kernd,opdims);
+            [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts();
+    
+            pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
+                ctr,chnkr2,kernd,opdims,pr,ptau,pw,pin);
+            F = ifmm(matfun,pts,xflam1,200,1e-6,pxyfun);
+            vals1 = ifmm_mv(F,dens1(:),matfun);
+        else
+            optskerneval = []; optskerneval.usesmooth = 1;
+            vals1 = chunkerkerneval(chnkr2,kernd,dens1,pts,optskerneval);
+        end
+    end
+    in = abs(vals1+1) < abs(vals1);
 end
-in = abs(vals1+1) < abs(vals1);
+
 
 % for points where the integral might be inaccurate:
 % find close boundary point and check normal direction
-
-iffy = min(abs(vals1+1),abs(vals1)) > 1e-2;
+if periodic || class(chnkobj) == "chunkergraph_per"
+    vals1 = 2*vals1; 
+    iffy = abs(round(vals1) - vals1) > 1e-2; 
+else
+    iffy = min(abs(vals1+1),abs(vals1)) > 1e-2;
+end
 
 ipt = find(iffy(:));
 pts_iffy = pts(:,iffy);
