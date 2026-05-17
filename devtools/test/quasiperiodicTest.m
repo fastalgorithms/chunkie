@@ -1,5 +1,6 @@
 quasiperiodicTest0();
 quasiperiodicTest1();
+quasiperiodicTest2();
 
 function quasiperiodicTest0()
 % test the representation
@@ -233,6 +234,43 @@ title('$\log_{10} $ error','Interpreter','latex'); set(gca,'fontsize',14)
 colorbar; 
 hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
 
+
+end
+
+function quasiperiodicTest2()
+% test an integral equation for the quasiperiodic Laplace problem
+
+% problem parameters
+d = 8;
+kappa = .05+.1i;
+
+% setup geometry
+nch = 2^3;
+A = .2;
+cparams = []; cparams.ta = -d/2; cparams.tb = d/2;
+chnkr = chunkerfuncuni(@(t) sin_func(t,d,A),nch,cparams);
+chnkr = reverse(chnkr);
+
+% setup system
+skern = kernel('lq','s',kappa,d);
+dkern = kernel('lq','d',kappa,d);
+
+sysmat = chunkermat(chnkr,dkern);
+sysmat = sysmat + .5*eye(size(sysmat,2));
+
+% solve
+src = struct("r",[3*d/4;-1.5]);
+
+rhs = skern.eval(src,chnkr);
+
+soln = sysmat\rhs;
+
+% check analytic solution
+targ = [10*d/3;2];
+utrue = skern.eval(src,struct("r",targ));
+u = chunkerkerneval(chnkr,dkern,soln,targ);
+
+assert(abs(u-utrue) < 1e-10)
 
 end
 

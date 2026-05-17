@@ -23,7 +23,7 @@ for i = 1:nkappa
     sn(i,:) = sn(i,:)./n./d.^n;
 end
 sn = sn / 2 / pi ;
-s0 = quasi_dual_sum(0,d/2,0,kappa,d)- chnk.lap2dquas.green([0;0],[0;d/2],kappa,d,0,sn,l,1);
+s0 = chnk.lap2dquas.quasi_dual_sum(0,d/2,0,kappa,d)- chnk.lap2dquas.green([0;0],[0;d/2],kappa,d,0,sn,l,1);
 
 
 

@@ -64,7 +64,7 @@ if nargin >= 5
     end
 end
 
-ns = (1:N).';
+ns = (1:N);
 [s0,sn] = chnk.lap2dquas.latticecoefs(ns,d,kappa,l+1);
 
 quas_param = [];
