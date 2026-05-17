@@ -77,6 +77,23 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %                    adaptive quadrature for near touching panels on
 %                    different chunkers within rcip
 %           opts.eps = (1e-14) tolerance for adaptive quadrature
+%           opts.srhs_eval = function handle ([]), enables the singular-RHS
+%                    RCIP recursion (Helsing & Karlsson 2022, vector form).
+%                    Signature:
+%                       b_ib = srhs_eval(chnkrlocal_global, vert0, ...
+%                                        edge_indices, level, ndim)
+%                    where chnkrlocal_global is a 1xnedge array of chunkers
+%                    (in global coordinates) describing the type-b 6-panel
+%                    local mesh at recursion level i, vert0 is the corner
+%                    vertex coordinate, edge_indices(i) is the cgrph edge
+%                    index that chnkrlocal_global(i) belongs to. Must return
+%                    a vector of length 3*k*nedge*ndim with the RHS function
+%                    evaluated at each GL node (ordered consistently with
+%                    the level-i local system matrix). The resulting
+%                    r_f^star vector is stored per corner in
+%                    rcipsav{ivert}.r_f_star and is used by
+%                    chnk.rcip.srhs_modify_rhs to correct the bare rhs
+%                    vector at corner-star indices.
 %           opts.forcewlchs = kernel-split self/adjacent-panel correction
 %                    for Helmholtz / Laplace S, D, S', D' kernels (and
 %                    Helmholtz combined 'c' = c1*D + c2*S, 'sc' = c1*S'
@@ -568,7 +585,8 @@ end
 
 
 if(icgrph && isrcip)
-    [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k);
+    k_rcip = chnkrs(1).k;
+    [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k_rcip);
     nch_all = horzcat(chnkobj.echnks.nch);
     npt_all = horzcat(chnkobj.echnks.npt);
     [~,nv] = size(chnkobj.verts);
