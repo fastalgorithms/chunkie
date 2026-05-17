@@ -86,14 +86,19 @@ if class(cg) == "chunkgraph_per"
     end
 end
 
+
 nr = numel(cg.regions);
 for ir = 1:nr
     ncomp = numel(cg.regions{ir});
     intmp = zeros(npts,1);
+
+    
     for ic = 1:ncomp
         edgelist = cg.regions{ir}{ic};
         nedge = numel(edgelist);
         chnkrs(nedge) = chunker(p,t,w);
+
+        period_ic = NaN;
         for ie = 1:nedge
             eid = edgelist(ie);
             if eid > 0
@@ -109,10 +114,25 @@ for ir = 1:nr
                     chnkrs(ie) = cg.echnks(-eid);
                 end
             end
+            if class(cg) == "chunkgraph_per"
+                per_eid = cg.vert_per(cg.edgesendverts(:,eid));
+                per_eid = per_eid(~isnan(per_eid));
+                
+                assert(norm(per_eid - mean(per_eid),inf)< 1e-10, 'unequal periods of verts in a single loop ')
+               if isnan(period_ic)
+                   period_ic = per_eid(1);
+               else
+                   norm(norm(per_eid - period_ic,inf)< 1e-10, 'unequal periods of verts in a single loop ')
+               end
+            end
         end
 
+        opts_ic = opts;
+        if period_ic < inf
+            opts_ic.d = period_ic;
+        end
 
-        intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts),npts,1);
+        intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts_ic),npts,1);
     end
 
     intmp = intmp > 0;
