@@ -27,6 +27,15 @@ classdef kernel
 %         ('axissymhdiff', 'axissymhelmdiff', 'axissymhelm_diff') 
 %      'quasiperiodic helmholtz'                    's', 'd', 'sp', 'dp', 'c'
 %         ('helmquas', 'hq')                        'cp'
+%      'quasiperiodic laplace'                      's', 'd', 'sp', 'st'
+%         ('lapquas', 'lq')                         'hilb', 'hilbprime', 'dp'
+%      'quasiperiodic flexural wave'                's', 'd', 'sp',
+%         ('flexquas', 'fq')                        'clamped_plate_bcs',
+%                                                   'clamped_plate', ...
+%                                                   'free_plate_bcs',
+%                                                   'free_plate', ...
+%                                                   'supported_plate_bcs',
+%                                                   'supported_plate', ...
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.
@@ -119,7 +128,11 @@ classdef kernel
                            'axissymhelmdiff', 'axissymhelm_diff'}
                       obj = kernel.axissymhelm2ddiff(varargin{:});   
                   case {'quasiperiodic helmholtz', 'helmquas', 'hq'}
-                      obj = kernel.helm2dquas(varargin{:});   
+                      obj = kernel.helm2dquas(varargin{:});
+                  case {'quasiperiodic laplace', 'lapquas', 'lq'}
+                      obj = kernel.lap2dquas(varargin{:});
+                  case {'quasiperiodic flexural wave', 'flexquas', 'fq'}
+                      obj = kernel.flex2dquas(varargin{:});
                   otherwise
                       error('Kernel ''%s'' not found.', kern);
               end
@@ -167,6 +180,8 @@ classdef kernel
         obj = axissymhelm2d(varargin);
         obj = axissymhelm2ddiff(varargin);
         obj = helm2dquas(varargin);
+        obj = lap2dquas(varargin);
+        obj = flex2dquas(varargin);
         obj = zeros(varargin);
         obj = nans(varargin);
 
