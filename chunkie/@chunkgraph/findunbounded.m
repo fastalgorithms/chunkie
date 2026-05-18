@@ -84,7 +84,6 @@ function [rgn] = findunbounded(cgrph,rgn)
         
         tot_ang = angsum + theta;
         if (tot_ang>pi)
-            ii
             iunbound = ii;
         end
         
