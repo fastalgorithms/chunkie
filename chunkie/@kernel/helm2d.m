@@ -118,6 +118,20 @@ switch lower(type)
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'cprime', sigma, coefs);
         obj.sing = 'hs';
 
+    case {'sc', 'spcombined'}
+        % "S' + S combined": c_sp * S' + c_s * S, with coefs = [c_sp, c_s].
+        % Used for impedance BIE on a Neumann/sound-hard boundary (e.g.
+        % photonics K_imp = 2*S' + 2*eta*S on cap edges).
+        if ( nargin < 3 )
+            warning('Missing combined coefficients. Defaulting to [1,1i].');
+            coefs = [1,1i];
+        end
+        obj.type = 'sc';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'sc', coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'sc', sigma, coefs);
+        obj.sing = 'log';
+
     case {'all', 'trans_sys', 'tsys'}
         if ( nargin < 3 )
             warning('Missing transmission coefficients. Defaulting to [1,1;1,1].');

@@ -202,6 +202,17 @@ case {'c_diff', 'combined_diff'}
   submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
   submat = coef(1)*submatd + coef(2)*submats;
 
+% S' + S combined: coef(1)*S' + coef(2)*S
+case {'sc', 'spcombined'}
+  targnorm = targinfo.n(:,:);
+  coef = ones(2,1);
+  if(nargin == 5); coef = varargin{1}; end
+  [submats,grad] = chnk.helm2d.green(zk,src,targ);
+  nx = repmat((targnorm(1,:)).',1,ns);
+  ny = repmat((targnorm(2,:)).',1,ns);
+  submatsp = grad(:,:,1).*nx + grad(:,:,2).*ny;
+  submat = coef(1)*submatsp + coef(2)*submats;
+
 % normal derivative of combined field
 case {'cp', 'cprime'}
   coef = ones(2,1);

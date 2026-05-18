@@ -68,6 +68,10 @@ switch lower(type)
         srcuse.charges = coefs(2)*sigma(:).';
         srcuse.dipstr  = coefs(1)*sigma(:).';
         srcuse.dipvec  = srcinfo.n(1:2,:);
+    case {'sc'}
+        % c_sp*S' + c_s*S — single FMM call with charges=sigma; combine the
+        % potential and the (target-normal-dotted) gradient at the end.
+        srcuse.charges = sigma(:).';
 end
 
 if ( isstruct(targinfo) )
@@ -79,7 +83,7 @@ end
 pg = 0;
 pgt = min(nargout, 2);
 switch lower(type)
-    case {'sprime', 'dprime', 'cprime','sp','dp','cp'}
+    case {'sprime', 'dprime', 'cprime','sp','dp','cp','sc'}
         pgt = max(pgt, 2);
 end
 U = hfmm2d(eps, zk, srcuse, pg, targuse, pgt);
@@ -96,6 +100,17 @@ if ( nargout > 0 )
             end
             varargout{1} = ( U.gradtarg(1,:).*targinfo.n(1,:) + ...
                              U.gradtarg(2,:).*targinfo.n(2,:) ).';
+        case {'sc'}
+            % c_sp*S' + c_s*S
+            if ( ~isfield(targinfo, 'n') )
+                error('CHUNKIE:helm2d:fmm:normals', ...
+                    'Targets require normal info when evaluating Helmholtz kernel ''sc''.');
+            end
+            coefs = varargin{1};
+            spval = ( U.gradtarg(1,:).*targinfo.n(1,:) + ...
+                      U.gradtarg(2,:).*targinfo.n(2,:) ).';
+            sval  = U.pottarg.';
+            varargout{1} = coefs(1)*spval + coefs(2)*sval;
         otherwise
             error('CHUNKIE:helm2d:fmm:pot', ...
                 'Potentials not supported for Helmholtz kernel ''%s''.', type);
