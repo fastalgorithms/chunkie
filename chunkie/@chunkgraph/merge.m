@@ -2,10 +2,9 @@ function cgrph = merge(cgrphs)
 % merge an array of chunkgraph objects into a single chunkgraph
 %
 % after accumulating all verts and edgesendverts, any pair of vertices
-% within 1e-14 (relative to largest vertex norm) are identified, and
-% edgesendverts is updated so all references point to one canonical vertex
-% per coincident group. the full vertex list is passed to the constructor
-% so that edge snapping works correctly.
+% within 1e-14 (relative to largest vertex norm) are identified,
+% edgesendverts is remapped to canonical vertices, and duplicate vertices
+% are removed before calling the constructor.
 
 % accumulate verts, edgesendverts, and edge chunkers
 nverts = 0;
@@ -43,8 +42,12 @@ for i = 1:nverts
     end
 end
 
-% remap edgesendverts to canonical vertices; keep full vertex list
-edgesendverts = vmap(edgesendverts);
+% compact: keep only canonical vertices, re-index, and remap edgesendverts
+kept = unique(vmap, 'stable');
+reindex = zeros(1, nverts);
+reindex(kept) = 1:numel(kept);
+verts = verts(:, kept);
+edgesendverts = reindex(vmap(edgesendverts));
 
 cgrph = chunkgraph(verts, edgesendverts, fchnks);
 

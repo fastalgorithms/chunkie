@@ -1,22 +1,19 @@
 function errs = chunk_fun_error(chnkr, fval)
 %CHUNK_FUN_ERROR estimate resolution of a function on each chunk
 %
-% For each chunk, converts the function values at the k Legendre nodes to
-% Legendre series coefficients, and returns the maximum absolute value of
-% the last two coefficients as a proxy for the truncation error.
+% For each chunk, returns the maximum absolute value of the last two
+% Legendre coefficients as a proxy for the truncation error.
 %
 % Syntax: errs = chunk_fun_error(chnkr, fval)
 %
 % Input:
 %   chnkr  - chunker object
-%   fval   - function values at the chunker nodes, in any of these forms:
-%              nfuns x (k*nch), nfuns x k x nch, or a vector of length
-%              nfuns*k*nch (nfuns is inferred; must divide k*nch evenly)
+%   fval   - array of function values at the chunker nodes with nfuns *
+%            npts elements
 %
 % Output:
 %   errs   - nfuns x nch array; errs(j,i) is the estimated error of
-%            function j on chunk i (max abs value of last two Legendre
-%            series coefficients)
+%            function j on chunk i
 %
 % see also CHUNKER.REFINE
 
