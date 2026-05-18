@@ -27,8 +27,12 @@ function chnkr = refine(chnkr,opts)
 %       opts.nover = oversample boundary nover times (0)
 %       opts.maxiter_lvlr = number of iterations allowed when attempting
 %                           level restriction (1000)
-%       opts.stype - type of split ('a'), 'a' arclength split, 
+%       opts.stype - type of split ('a'), 'a' arclength split,
 %               't' parameter space split.
+%       opts.targfun = function handle returning nfuns x npts values to be
+%                   resolved on the chunker ([])
+%       opts.targtol = tolerance for targfun resolution (1e-12)
+%       opts.targreflevel = max refinement iterations to resolve targfun (20)
 %
 % Output:
 %   chnkr - modified chunker object
@@ -52,6 +56,9 @@ maxchunklen = Inf;
 nover = 0;
 splitchunks = [];
 stype = 'a';
+targfun = [];
+targtol = 1e-12;
+targreflevel = 20;
 
 maxiter_lvlr=1000;
 maxiter_maxlen=1000;
@@ -65,6 +72,9 @@ if isfield(opts,'nchmax'); nchmax = opts.nchmax; end
 if isfield(opts,'nover'); nover= opts.nover; end
 if isfield(opts,'splitchunks'); splitchunks = opts.splitchunks; end
 if isfield(opts,'stype'); stype = opts.stype; end
+if isfield(opts,'targfun'); targfun = opts.targfun; end
+if isfield(opts,'targtol'); targtol = opts.targtol; end
+if isfield(opts,'targreflevel'); targreflevel = opts.targreflevel; end
 
 
 nch = chnkr.nch;
@@ -259,6 +269,36 @@ for ijk = 1:nover
 
     end
 
+end
+
+% targfun refinement: split until all chunks are resolved or level limit hit
+
+if ~isempty(targfun)
+    for ijk = 1:targreflevel
+
+        fval = targfun(chnkr);
+        errs = chunk_fun_error(chnkr, fval);
+        badchunks = find(any(errs > targtol, 1));
+
+        if isempty(badchunks)
+            break;
+        end
+
+        for i = 1:length(badchunks)
+            ii = badchunks(i);
+            if (chnkr.nch + 1 > nchmax)
+                error('too many chunks')
+            end
+            chnkr = split(chnkr,ii,[],x,w,u,stype);
+            nch = chnkr.nch;
+            if (nch > length(chunklens))
+                chunklens = resizechunklens(chunklens,nchmax);
+            end
+            chunklens(ii) = sum(chnkr.wts(:,ii));
+            chunklens(nch) = sum(chnkr.wts(:,nch));
+        end
+
+    end
 end
 
 chnkr.n = normals(chnkr);

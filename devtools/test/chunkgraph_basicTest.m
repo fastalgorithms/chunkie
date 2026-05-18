@@ -163,7 +163,20 @@ nchs2 = [cg.echnks.nch];
 
 assert(all(2*nchs1 == nchs2))
 
-%% 
+% targfun refinement: use the same Helmholtz kernel function
+kern = @(s,t) chnk.helm2d.kern(0.5,s,t,'sgrad');
+src = []; src.r = cg.echnks(1).r(:,16) + 0.01 * cg.echnks(1).n(:,16);
+targfun = @(t) kern(src,t);
+refopts = []; refopts.targfun = targfun; refopts.targtol = 1e-10; refopts.lvlr = 'n';
+nchs1 = [cg.echnks.nch];
+cg2 = refine(cg, refopts);
+assert(sum([cg2.echnks.nch]) > sum(nchs1));
+
+% verify all chunks on all edges are resolved
+errs = chunk_fun_error(cg2, targfun(cg2));
+assert(all(errs(:) < 1e-10));
+
+%%
 
 verts = exp(1i*2*pi*(0:4)/5);
 verts = [real(verts);imag(verts)];
