@@ -131,6 +131,9 @@ cg = cg.reflect(pi/2);
 targs(1,:) = -targs(1,:);
 
 ids = chunkgraphinregion(cg,targs);
+
+
+idstrue = polygonids(cg,targs(1,:),targs(2,:));
 assert(nnz(ids(:)-idstrue(:)) == 0)
 
 % nested triangles
@@ -149,6 +152,7 @@ ids = chunkgraphinregion(cg,targs);
 idstrue = polygonids(cg,xx,yy);
 
 assert(nnz(ids(:)-idstrue(:)) == 0)
+
 
 %% build a chunkgraph and refine 
 

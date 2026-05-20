@@ -32,110 +32,99 @@ function [regions] = findregions(obj_in)
     obj.v2emat = build_v2emat(obj);
     obj.vstruc = procverts(obj);
 
-    g = graph(obj.edgesendverts(1,:),obj.edgesendverts(2,:));
-    ccomp = conncomp(g);
-    
-    chnkcomp = {};
-    regions = {};
-    ictr = 0;
-    for i=1:max(ccomp)
-        inds = find(ccomp==i);
-        chnkcomp{i} = inds;
-        [region_comp] = findregions_verts(obj,inds);
-        if isempty(region_comp)
-            continue
+    [loops] = findloops_verts(obj);
+    [li,lo] = findunbounded_loop(obj,loops);
+
+    %%%%
+    %%%%        .   .   .   check which lo loops are in li
+    %%%%
+
+    l_out_in = cell(1,numel(li));
+    l_out_ifin = ones(numel(lo),1);
+
+    for ii=1:numel(li)
+        li_a = li{ii};
+        ilist = [];
+        for jj=1:numel(lo)
+            lo_b = lo{jj};
+            [inc] = loopinside(obj,li_a,lo_b);
+            if (inc)
+                ilist = [ilist,jj];
+                l_out_ifin(jj) = 0;
+            end
         end
-        [region_comp] = findunbounded(obj,region_comp);
-        ictr = ictr+1;
-        regions{ictr} = region_comp;
+        l_out_in{ii} = ilist;
+        %%%        imin = min(ilist);
     end
-    
-    gmat = zeros(numel(regions), numel(regions));
-    
-    for ii=1:numel(regions)
-       rgna = regions{ii};
-       ilist = [];
-       for jj=1:numel(regions)
-           if (ii ~=jj)
-                rgnb = regions{jj};
-                [inc] = regioninside(obj,rgnb,rgna);
+
+    inclusion_rels = [];
+
+    l_out_in_old = l_out_in;
+
+    for ii=1:numel(lo)
+        lo_a = lo{ii};
+        for jj=1:numel(lo)
+            if (ii ~=jj)
+                lo_b = lo{jj};
+                [inc] = loopinside(obj,lo_a,lo_b);
                 if (inc)
-                    ilist = [ilist,jj];
-                end
-           end
-           gmat(ii,ilist) = 1;
-           gmat(ilist,ii) = 1;
-       end
-       imin = min(ilist);   
-    end    
-    
-    ccomp_reg = conncomp(graph(gmat));
-    [s,inds] = sort(ccomp_reg);
-    regions = regions(inds);
-    
-    for ii = 1:numel(s)
-        si = s(ii);
-        for jj=1:(numel(s)-1)
-            sj = s(jj);
-            if (si == sj)
-                rgna = regions{jj};
-                rgnb = regions{jj+1};
-                [inc] = regioninside(obj,rgna,rgnb);
-                if (inc)
-                    regions([jj,jj+1])= regions([jj+1,jj]);
+                    inclusion_rels = [inclusion_rels, [ii;jj]];
                 end
             end
-        end    
+        end
+        %%%        imin = min(ilist);
     end
 
-    
-    rgns = regions;
-    rgnso= {};
-    
-    for ii=1:max(s)
-        inds = find(s==ii);
-        rgnout = rgns{inds(1)};
-        for jj=2:numel(inds)
-            indj = inds(jj);
-            [rgnout] = mergeregions(obj,rgnout,rgns{indj});
+    for ii=1:numel(l_out_in)
+        ilist = l_out_in{ii};
+        dels = zeros(size(ilist));
+        for kk=1:size(inclusion_rels,2)
+            i_up = inclusion_rels(1,kk);
+            i_dw = inclusion_rels(2,kk);
+            iind_up = find(ilist == i_up);
+            if (numel(iind_up) ~= 0)
+                iind_dw = find(ilist == i_dw);
+                if (numel(iind_dw)~=0)
+                    dels(iind_dw) = dels(iind_dw) + 1;
+                end
+            end
         end
-        rgnso{ii} = rgnout;
-    end    
-    
-    regions = rgnso;
-    rgns = regions;
-    rgnout = rgns{1};
-    if (numel(rgns)>1)
-        rgn2 = rgns{2};
-        [rgnout] = mergeregions(obj,rgnout,rgn2);
-        for ii=3:numel(rgns)
-            rgn2 = rgns{ii};
-            [rgnout] = mergeregions(obj,rgnout,rgn2);
-        end
+        inds = find(dels);
+        ilist(inds) = [];
+        l_out_in{ii} = ilist;
     end
-    
-    regions = rgnout;
 
+
+
+    regions = {};
+    for ii = 1:numel(li)
+        rg = [li(ii),lo(l_out_in{ii})];
+        regions{ii+1} = rg(:).';
+    end
+
+    inds_unbound = find(l_out_ifin);
+    regions{1} = lo(inds_unbound);
 
 end
 
 
-function [regions] = findregions_verts(obj, iverts)
+function [loops] = findloops_verts(obj, iverts)
 %FINDREGIONS_VERTS a relatively crude method for determining the regions of 
 % a chunkgraph associated with the subset of its vertices stored in iverts.
 % NOTE: if iverts is not provided then all vertices will be considered. The
 % Matlab routine conncomp can be used to provide subsets of vertices which 
 % will define meaningful subregions.
 %
-% Syntax: [regions] = findregions_verts(obj, iverts);
+% Syntax: [regions] = findloops_verts(obj, iverts);
 %
 % Input:
 %   obj              - a chunkgraph object
-%   iverts(optional) - the indices of the subset of vertices for which regions 
+%   iverts(optional) - the indices of the subset of vertices for which
+%   loops
 %              are to be found.
 %
 % Output:
-%   regions - a cell array of length nregions (the number of regions 
+%   regions - a cell array of length nloops (the number of loops
 %             found). Each region is specified by a vector of 
 %             indices of edges which traverse the boundary.
 
@@ -159,8 +148,8 @@ else
     edges = [1:nedge,-(1:nedge)];
 end    
 
-regions = {};
-nregions = 0;
+loops = {};
+nloops = 0;
 
 % Regions are obtained by picking an edge (including orientation) and 
 % constructing a path by choosing the next edge (counterclockwise) at 
@@ -209,13 +198,12 @@ while (numel(edges)>0)
         end  
     end  
     
-    nregions = nregions + 1;
+    nloops = nloops + 1;
     rcurr = {};
-    rcurr{1} = ecycle;
-    regions{nregions} = rcurr;
+    rcurr = ecycle;
+    loops{nloops} = rcurr;
     
     
 end
 
 end
-

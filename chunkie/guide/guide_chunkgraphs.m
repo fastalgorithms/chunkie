@@ -9,9 +9,11 @@
 % START POLYGON
 % chunk up random polygon
 
-load('random_verts.mat','verts');
+rng(123)
+t = sort(2*pi*rand(9,1));
+verts = starfish(t,5,0.3);
 [~, nv] = size(verts);
-edgesendverts = [1:nv; circshift(1:nv,1)];
+edgesendverts = [1:nv; circshift(1:nv,-1)];
 cgrph1 = chunkgraph(verts, edgesendverts);
 
 % plot curve, nodes, and normals

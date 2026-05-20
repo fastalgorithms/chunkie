@@ -56,7 +56,7 @@ deminus = [deminus,cgrph.echnks(ieminus(i)).d(:,1,1)];
 end
 
 % compute the corresponding angles and sort them
-ds = [deplus,deminus];
+ds = real([deplus,deminus]);
 angs = atan2(ds(2,:),ds(1,:));
 [angs,isrtededges] = sort(angs);
 

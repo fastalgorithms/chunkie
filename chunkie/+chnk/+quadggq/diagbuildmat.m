@@ -72,6 +72,7 @@ if corrections
     srcinfo.d = ds;
     srcinfo.d2 = d2s;
     srcinfo.n = ns;
+    srcinfo.data = dd;
 
     targinfo.r = rs; targinfo.d = ds; targinfo.d2 = d2s; targinfo.n = ns;
     targinfo.data = dd;
