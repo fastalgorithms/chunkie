@@ -304,7 +304,7 @@ classdef chunkgraph
                         end
 
                         vs = chunkends(chnkr,[1,chnkr.nch]);
-                        vs = real(vs(:, [1,4]));
+                        vs = vs(:, [1,4]);
 
                     else
                         msg = "CHUNKGRAPH:CONSTRUCTOR: invalid edge descriptor." + ...
@@ -312,6 +312,8 @@ classdef chunkgraph
                               " function handle, or a chunker.";
                         warning(msg);
                     end
+
+                    vs = real(vs);
                     chnkr = sort(chnkr);
 
                     if ~isnan(i1) && ~isnan(i2)

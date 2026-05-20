@@ -36,7 +36,7 @@ rends = chunkends(chnkr,[1,chnkr.nch]);
 verts = rends(:,[1,4]);
 fchnk{1} = chnkr;
 cgrph = chunkgraph(real(verts),[1;2],fchnk);
-
+cgrph2 = chunkgraph(real(verts),[1;2],f,cparams); % used to fail
 
 ddiff = kernel('helmdiff', 'd', zks);
 sdiff = (-1)*kernel('helmdiff', 's', zks);
