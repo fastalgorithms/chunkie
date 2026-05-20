@@ -460,6 +460,7 @@ classdef chunkgraph
         obj = mtimes(A,obj)        
         obj = rotate(obj,theta,r0,r1)
         obj = reflect(obj,theta,r0,r1)   
+        err = chunk_fun_error(obj,fval)
     end
 
     methods(Static)
