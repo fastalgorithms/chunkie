@@ -50,8 +50,17 @@ saveas(figure(1),"demo_concentric_domain.png")
 %% Build system
 nreg = length(cgrph.regions);
 
-% assign region wavenumbers
-ks = [zks(1),repmat(zks(2),1,4),repmat(zks(3),1,2),repmat(zks(4),1,2),zks(5)];
+% get region ids of interest programmatically, unbounded is always 1
+ids = chunkgraphinregion(cgrph,[0 0.35 -0.35 0.5 -0.5 0.5 0.5 -0.5 -0.5; ...
+                                0 0      0    0    0  0.6 -0.6 0.6  -0.6]);
+
+% assign region wavenumbers 
+ks = zeros(nreg,1);
+ks(1) = zks(1);
+ks(ids(1)) = zks(5);
+ks(ids(2:3)) = zks(4);
+ks(ids(4:5)) = zks(3);
+ks(ids(6:end)) = zks(2);
 
 % jump condition coefficients
 coefs = ones(1,nreg);
