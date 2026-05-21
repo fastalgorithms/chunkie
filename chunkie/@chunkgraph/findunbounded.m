@@ -63,7 +63,7 @@ function [rgn] = findunbounded(cgrph,rgn)
             end
         end
         
-        tends = [tends,tends(:,1)];
+        tends = real([tends,tends(:,1)]);
         
         angsum = 0;
         for jj=1:numel(edges)
