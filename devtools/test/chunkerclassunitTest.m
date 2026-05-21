@@ -1,4 +1,5 @@
 chunkerclassunitTest0();
+chunkerclassunitTest1();
 
 
 function chunkerclassunitTest0()
@@ -79,6 +80,29 @@ catch
     caught = true;
 end
 assert(caught);
+
+end
+
+
+function chunkerclassunitTest1()
+% test chunk_fun_error input shapes
+
+chnkr = chunkerfunc(@starfish);
+
+kern = @(s,t) chnk.helm2d.kern(0.5,s,t,'sgrad');
+src = []; src.r = chnkr.r(:,1) + 0.1 * chnkr.n(:,1);
+fun = @(t) kern(src,t);
+
+% nfuns x k*nch input
+fval = fun(chnkr);
+errs = chunk_fun_error(chnkr, fval);
+assert(size(errs,1) == 2);
+assert(size(errs,2) == chnkr.nch);
+
+% nfuns x k x nch input
+fval3 = reshape(fval, 2, chnkr.k, chnkr.nch);
+errs3 = chunk_fun_error(chnkr, fval3);
+assert(norm(errs3(:)-errs(:)) == 0);
 
 end
 

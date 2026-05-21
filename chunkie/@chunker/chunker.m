@@ -380,6 +380,7 @@ classdef chunker
         obj = rotate(obj,theta,r0,r1)
         obj = reflect(obj,theta,r0,r1)
         du = arclengthder(obj,u)
+        err = chunk_fun_error(obj,fval)
     end
     methods(Static)
         obj = chunkerfunc(fcurve,varargin)
