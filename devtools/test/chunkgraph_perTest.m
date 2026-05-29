@@ -11,14 +11,10 @@
 %housekeeping: 
 clear all; close all; clc; 
 
-%filepath: 
-addpath(genpath('../../../../chunkie'))
-
 verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25]; 
 edges = [4 3 2; 3 2 1]; 
 merge_idx = {[1 4]}; 
 cg0 = chunkgraph_per(verts,edges,merge_idx); 
-cg = cg0; 
 cg = stack_layers([cg0 + [0;-1],cg0],merge_idx); 
 
 figure

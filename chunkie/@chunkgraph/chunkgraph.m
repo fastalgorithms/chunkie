@@ -312,6 +312,8 @@ classdef chunkgraph
                               " function handle, or a chunker.";
                         warning(msg);
                     end
+
+                    vs = real(vs);
                     chnkr = sort(chnkr);
 
                     if ~isnan(i1) && ~isnan(i2)
@@ -460,6 +462,7 @@ classdef chunkgraph
         obj = mtimes(A,obj)        
         obj = rotate(obj,theta,r0,r1)
         obj = reflect(obj,theta,r0,r1)   
+        err = chunk_fun_error(obj,fval)
     end
 
     methods(Static)

@@ -29,6 +29,10 @@ function cg = refine(cg,opts)
 %       opts.nover = oversample boundary nover times (0)
 %       opts.maxiter_lvlr = number of iterations allowed when attempting
 %                           level restriction (1000)
+%       opts.targfun = function handle returning nfuns x npts values to be
+%                   resolved on each edge ([])
+%       opts.targtol = tolerance for targfun resolution (1e-12)
+%       opts.targreflevel = max refinement iterations to resolve targfun (20)
 %
 % Output:
 %   cg - refined chunker, edges are sorted and balanced again

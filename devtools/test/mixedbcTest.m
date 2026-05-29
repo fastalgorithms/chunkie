@@ -97,8 +97,11 @@ targets = zeros(2,length(xxtarg(:)));
 targets(1,:) = xxtarg(:); targets(2,:) = yytarg(:);
 
 ids= chunkgraphinregion(cgrph,{xtarg,ytarg});
-in = ids == 2;
-in2 = ids == 3;
+id_knownpts = chunkgraphinregion(cgrph,[0 0.75;0 0]);
+id_innermost = id_knownpts(1);
+id_middle = id_knownpts(2);
+in = ids == id_middle;
+in2 = ids == id_innermost;
 
 fprintf('%5.2e s : time to find points in domain\n',t1)
 
@@ -118,9 +121,9 @@ t1 = toc(start);
 
 nedge = length(cgrph.echnks); nregion = length(cgrph.regions);
 kernsplot(nregion,nedge) = kernel();
-kernsplot([1,3],:) = kernel.nans();
-kernsplot(2,edir) = -2*kernel('helm','d',zk);
-kernsplot(2,eneu) = 2*kernel('helm','s',zk);
+kernsplot(:,:) = kernel.nans();
+kernsplot(id_middle,edir) = -2*kernel('helm','d',zk);
+kernsplot(id_middle,eneu) = 2*kernel('helm','s',zk);
 
 uscat_new = chunkerkerneval(cgrph,kernsplot,sol1,targets(:,in));
 assert(norm(uscat_new-uscat) < 1e-10)
@@ -248,10 +251,10 @@ fprintf('%5.2e s : time for kernel eval (for plotting)\n',t1)
 kernsplotdt(length(cgrph.regions),length(cgrph.echnks)) = kernel();
 kernsplotdt(1,edir) = kernel.nans(1,1);
 kernsplotdt(1,eneu) = kernel.nans(1,2);
-kernsplotdt(2,edir) = -2*kernel('helm','d',ks(1));
-kernsplotdt(3,edir) = kernel.zeros();
-kernsplotdt(2,eneu) = kernel(@(s,t) chnk.helm2d.kern(ks(1),s,t,'trans_rep',trepcf));
-kernsplotdt(3,eneu) = kernel(@(s,t) chnk.helm2d.kern(ks(2),s,t,'trans_rep',trepcf));
+kernsplotdt(id_middle,edir) = -2*kernel('helm','d',ks(1));
+kernsplotdt(id_innermost,edir) = kernel.zeros();
+kernsplotdt(id_middle,eneu) = kernel(@(s,t) chnk.helm2d.kern(ks(1),s,t,'trans_rep',trepcf));
+kernsplotdt(id_innermost,eneu) = kernel(@(s,t) chnk.helm2d.kern(ks(2),s,t,'trans_rep',trepcf));
 
 uscat_new = chunkerkerneval(cgrph,kernsplotdt,sol1, ...
     targets); 

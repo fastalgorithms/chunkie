@@ -91,27 +91,44 @@ nr = numel(cg.regions);
 for ir = 1:nr
     ncomp = numel(cg.regions{ir});
     intmp = zeros(npts,1);
+<<<<<<< HEAD
 
+=======
+    
+    ntot = 0;
+    for ic = 1:ncomp
+            edgelist = cg.regions{ir}{ic};
+        nedge = numel(edgelist);
+        ntot = ntot + nedge;
+    end
+    ieout = 0;
+    chnkrs(ntot) = chunker(p,t,w);
+>>>>>>> upstream/master
     
     for ic = 1:ncomp
         edgelist = cg.regions{ir}{ic};
         nedge = numel(edgelist);
+<<<<<<< HEAD
         chnkrs(nedge) = chunker(p,t,w);
 
         period_ic = NaN;
+=======
+
+>>>>>>> upstream/master
         for ie = 1:nedge
+            ieout = ieout + 1;
             eid = edgelist(ie);
             if eid > 0
                 if ir == 1
-                    chnkrs(ie) = cg.echnks(eid);
+                    chnkrs(ieout) = cg.echnks(eid);
                 else
-                    chnkrs(ie) = reverse(cg.echnks(eid));
+                    chnkrs(ieout) = reverse(cg.echnks(eid));
                 end
             else
                 if ir == 1
-                    chnkrs(ie) = reverse(cg.echnks(-eid));
+                    chnkrs(ieout) = reverse(cg.echnks(-eid));
                 else
-                    chnkrs(ie) = cg.echnks(-eid);
+                    chnkrs(ieout) = cg.echnks(-eid);
                 end
             end
             if class(cg) == "chunkgraph_per"
@@ -126,6 +143,7 @@ for ir = 1:nr
                end
             end
         end
+<<<<<<< HEAD
 
         opts_ic = opts; 
         if ~isnan(period_ic)
@@ -142,7 +160,11 @@ for ir = 1:nr
 
         intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts_ic),npts,1);
 
+=======
+        
+>>>>>>> upstream/master
     end
+    intmp = reshape(chunkerinterior(merge(chnkrs(1:ntot)),ptsobj,opts),npts,1);
 
     intmp = intmp > 0;
     if ir == 1

@@ -1,21 +1,16 @@
-function [rgn] = findunbounded(cgrph,rgn)
-%FINDUNBOUNDED after having computed all the regions, rgn, of a 
-% chunkgraph, cgrph, findunbounded identifies an unbounded region and 
-% moves it to the start of the rgn cell array.
-% NOTE: this routine is designed for finding the complement of 
-% simply-connected regions. For non-simply connected, two rgn arrays 
-% should be built for each component and findunbounded should be called 
-% on both separately. The two can then be merged manually.
+function [loops_in,loops_out] = findunbounded_loop(cgrph,loops)
+%FINDUNBOUNDED after having computed all the loops, loops, of a 
+% chunkgraph, cgrph, findunbounded identifies `exterior' loops (loop_out) 
+% and `interior' loops (loop_in).
 %
-% Syntax: [rgn] = findunbounded(cgrph,rgn);
+% Syntax: [rgn] = findunbounded_loop(cgrph,rgn);
 %
 % Input:
 %   cgrph  - chunkgraph object
-%   rgn    - the rgn cell array containing edge indices of each region
+%   loops  - the loop cell array containing edge indices of each loop
 %
 % Output:
-%   rgn    - the same cell array as rgn but with the unbounded region 
-%            in the first entry.
+%   loop_in, loop_out.
 %  
 %
 %
@@ -24,11 +19,13 @@ function [rgn] = findunbounded(cgrph,rgn)
 
     iunbound = 1;
     
-    for ii=1:numel(rgn)
+    inds_out = [];
+
+    for ii=1:numel(loops)
         
         
         
-        edges = rgn{ii}{1};
+        edges = loops{ii};
         theta = 0;
         rends = zeros([4,numel(edges)]);
         tends = zeros([4,numel(edges)]);
@@ -36,10 +33,10 @@ function [rgn] = findunbounded(cgrph,rgn)
         for jj =1:numel(edges)
             echnk = cgrph.echnks(abs(edges(jj)));     
             [allrends,alltends] = chunkends(echnk);
-            ts1 = real(alltends(:,1,:));
-            ts2 = real(alltends(:,2,:));
-            angs1 = atan2(ts1(2,:),ts1(1,:));
-            angs2 = atan2(ts2(2,:),ts2(1,:));
+            ts1 = alltends(:,1,:);
+            ts2 = alltends(:,2,:);
+            angs1 = atan2(real(ts1(2,:)),real(ts1(1,:)));
+            angs2 = atan2(real(ts2(2,:)),real(ts2(1,:)));
             angdiffs = angs2-angs1;
             angdiffs(angdiffs>pi) = angdiffs(angdiffs>pi)-2*pi;
             angdiffs(angdiffs<-pi) = angdiffs(angdiffs<-pi)+2*pi;
@@ -63,14 +60,14 @@ function [rgn] = findunbounded(cgrph,rgn)
             end
         end
         
-        tends = real([tends,tends(:,1)]);
+        tends = [tends,tends(:,1)];
         
         angsum = 0;
         for jj=1:numel(edges)
             tv1 = tends(3:4,jj);
             tv2 = tends(1:2,jj+1);
-            ang1 = atan2(tv1(2),tv1(1));
-            ang2 = atan2(tv2(2),tv2(1));
+            ang1 = atan2(real(tv1(2)),real(tv1(1)));
+            ang2 = atan2(real(tv2(2)),real(tv2(1)));
             angdiff = ang2-ang1;
             if (angdiff < -pi)
                 angdiff = angdiff + 2*pi;
@@ -84,11 +81,12 @@ function [rgn] = findunbounded(cgrph,rgn)
         
         tot_ang = angsum + theta;
         if (tot_ang>pi)
-            iunbound = ii;
+            inds_out = [inds_out,ii];
         end
         
     end
-    
-    rgn([1,iunbound]) = rgn([iunbound,1]);
+    loops_out = loops(inds_out);
+    loops_in  = loops;
+    loops_in(inds_out) = [];
 end
 

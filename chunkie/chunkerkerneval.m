@@ -162,6 +162,14 @@ else
     error("CHUNKERKERNEVAL: input 4 is not a supported type");
 end
 
+if ~isreal(chnkobj.r) && (opts_use.accel || opts_use.forcefmm)
+    warning('fmm not supported for complex chunkers')
+end
+
+if ~isreal(targinfo.r) && (opts_use.accel || opts_use.forcefmm || opts_use.flam)
+    warning('accel not supported for complex targets')
+end
+
 if icgrph && mk > 1
     ids = chunkgraphinregion(chnkobj,targinfo.r);
 else
@@ -282,7 +290,9 @@ end
 
 if opts_use.forcepquad
     optsflag = []; optsflag.fac = opts_use.fac;
-    flag = flagnear(chnkr0,targinfo.r,optsflag);
+    chnkrflag = chunkerpoints(struct('r',real(chnkr0.r), ... 
+        'd',real(chnkr0.d),'d2',real(chnkr0.d2)));
+    flag = flagnear(chnkrflag,targinfo.r,optsflag);
     fints(irow0) = fints(irow0) + chnk.chunkerkerneval_smooth(chnkr0,kern0,opdims0,dens0,targinfo0, ...
         flag,opts_use);
 
@@ -301,7 +311,9 @@ end
 
 rho = 1.8;
 optsflag = [];  optsflag.rho = rho;
-flag = flagnear_rectangle(chnkr0,targinfo0.r,optsflag);
+chnkrflag = chunkerpoints(struct('r',real(chnkr0.r), ...
+    'd',real(chnkr0.d),'d2',real(chnkr0.d2)));
+flag = flagnear_rectangle(chnkrflag,targinfo0.r,optsflag);
 
 npoly = chnkr0.k*2;
 nlegnew = chnk.ellipse_oversample(rho,npoly,opts_use.eps);
