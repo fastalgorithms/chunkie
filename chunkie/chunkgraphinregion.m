@@ -6,7 +6,10 @@ function [ids] = chunkgraphinregion(cg,ptsobj,opts)
 %         ids = chunkerinterior(cg,{x,y},opts) % meshgrid version
 %
 % Input:
-%   cg - chunkgraph object describing geometry
+%   cg - chunkgraph object describing geometry. May also be a
+%       chunkgraph_per (a periodic subclass of chunkgraph), in which case
+%       the per-region interior tests are performed with the appropriate
+%       period (see notes on periodicity below).
 %   ptsobj - object describing the target points, can be specified as
 %       * (cg.echnks(1).dim,:) array of points to test
 %       * {x,y} - length 2 cell array. the points checked then have the
@@ -23,6 +26,15 @@ function [ids] = chunkgraphinregion(cg,ptsobj,opts)
 %    by default it tries to use the fmm if it exists, if it doesn't
 %    then unless explicitly set to false, it tries to use flam
 %
+%  Note on periodicity (chunkgraph_per only):
+%    For a chunkgraph_per, the boundary of a region need not be a closed
+%    curve in the plane: it may close only up to a periodic shift. For each
+%    region whose bounding edges touch merged (periodic) vertices, the
+%    common period is read off from cg.vert_per and passed to
+%    chunkerinterior as opts.periodic/opts.d, which then uses the
+%    quasi-periodic interior test. Regions with no periodic vertices fall
+%    back to the standard (non-periodic) test.
+%
 % Output:
 %   ids - integer array, pts(:,i) is in region ids(i)
 %
@@ -32,7 +44,7 @@ function [ids] = chunkgraphinregion(cg,ptsobj,opts)
 %   pts = 2*randn(2,100);
 %   ids = chunkgraphinregion(cg,pts);
 %
-% see also CHUNKGRAPH, CHUNKERINTERIOR
+% see also CHUNKGRAPH, CHUNKGRAPH_PER, CHUNKERINTERIOR
 
 % author: Travis Askham (askhamwhat@gmail.com)
 
@@ -40,9 +52,14 @@ if nargin < 3
     opts = [];
 end
 
-% Assign appropriate object to chnkr
-msg = "chunkgraphinregion: input 1 must be chunkgraph or chunkgraph_per";
-assert((class(cg) == "chunkgraph") || (class(cg) == "chunkgraph_per"),msg);
+% Assign appropriate object to chnkr.
+% NB: use isa(...) rather than class(...)=="chunkgraph" so that subclasses
+% (e.g. chunkgraph_per) are accepted as well.
+msg = "chunkgraphinregion: input 1 must be a chunkgraph (or a subclass)";
+assert(isa(cg,"chunkgraph"),msg);
+
+% periodic geometry? (chunkgraph_per carries per-vertex period info)
+isper = isa(cg,"chunkgraph_per");
 
 % Figure out size of ids array based on ptsobj
 if isa(ptsobj, "cell")
@@ -76,17 +93,6 @@ else
     return
 end
 
-if class(cg) == "chunkgraph_per"
-    N_merge = numel(cg.merge_idx); 
-    dv = zeros(1,N_merge); 
-    for it = 1:N_merge
-        midx = cg.merge_idx{it}(1:2); 
-        verts = cg.verts(:,midx); 
-        dv(it) = sqrt((verts(1,1)-verts(1,2))^2 + (verts(2,1)-verts(2,2))^2);
-    end
-end
-
-
 nr = numel(cg.regions);
 for ir = 1:nr
     ncomp = numel(cg.regions{ir});
@@ -98,15 +104,26 @@ for ir = 1:nr
         nedge = numel(edgelist);
         ntot = ntot + nedge;
     end
+
+    % Empty region: skip. A periodic chunkgraph_per may have no unbounded
+    % exterior loop, so findregions leaves cg.regions{1} = {} (ntot == 0).
+    % There is nothing to test, and chnkrs(0) below would be an illegal
+    % index. For ir == 1 this also means we do NOT apply the usual
+    % "everything outside the outer boundary is region 1" default, which is
+    % the correct behavior when no unbounded region exists.
+    if ntot == 0
+        continue
+    end
+
     ieout = 0;
     chnkrs(ntot) = chunker(p,t,w);
-    
+
+    % common period for this region (NaN until a periodic vertex is seen)
+    period_ir = nan;
+
     for ic = 1:ncomp
         edgelist = cg.regions{ir}{ic};
         nedge = numel(edgelist);
-        chnkrs(nedge) = chunker(p,t,w);
-
-        period_ic = NaN;
 
         for ie = 1:nedge
             ieout = ieout + 1;
@@ -124,36 +141,37 @@ for ir = 1:nr
                     chnkrs(ieout) = cg.echnks(-eid);
                 end
             end
-            if class(cg) == "chunkgraph_per"
+
+            % accumulate / check the region's period from the vertices
+            % this edge connects (only merged vertices have a finite period)
+            if isper
                 per_eid = cg.vert_per(cg.edgesendverts(:,abs(eid)));
                 per_eid = per_eid(~isnan(per_eid));
-                
-                assert(norm(per_eid - mean(per_eid),inf)< 1e-10, 'unequal periods of verts in a single loop ')
-               if isnan(period_ic) && ~isempty(per_eid)
-                   period_ic = per_eid(1);
-               else
-                   assert(norm(per_eid - period_ic,inf)< 1e-10, 'unequal periods of verts in a single loop ')
-               end
+                if ~isempty(per_eid)
+                    assert(norm(per_eid - per_eid(1),inf) < 1e-10, ...
+                        'chunkgraphinregion: unequal vertex periods on a single edge');
+                    if isnan(period_ir)
+                        period_ir = per_eid(1);
+                    else
+                        assert(abs(per_eid(1) - period_ir) < 1e-10, ...
+                            'chunkgraphinregion: unequal periods within a single region');
+                    end
+                end
             end
         end
-
-        opts_ic = opts; 
-        if ~isnan(period_ic)
-            opts_ic.d = period_ic; 
-            opts_ic.periodic = true; 
-        end
         
-        intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts_ic),npts,1);
-
-        opts_ic = opts;
-        if period_ic < inf
-            opts_ic.d = period_ic;
-        end
-
-        intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts_ic),npts,1);
-
     end
-    intmp = reshape(chunkerinterior(merge(chnkrs(1:ntot)),ptsobj,opts),npts,1);
+
+    % build the options for this region's interior test, switching on the
+    % periodic interior test when the region has a finite period
+    opts_ir = opts;
+    if isper && ~isnan(period_ir)
+        if ~isstruct(opts_ir); opts_ir = struct(); end
+        opts_ir.periodic = true;
+        opts_ir.d = period_ir;
+    end
+
+    intmp = reshape(chunkerinterior(merge(chnkrs(1:ntot)),ptsobj,opts_ir),npts,1);
 
     intmp = intmp > 0;
     if ir == 1

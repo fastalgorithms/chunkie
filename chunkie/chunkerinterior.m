@@ -195,7 +195,7 @@ end
 
 % for points where the integral might be inaccurate:
 % find close boundary point and check normal direction
-if periodic || class(chnkobj) == "chunkergraph_per"
+if periodic || class(chnkobj) == "chunkgraph_per"
     vals1 = 2*vals1; 
     iffy = abs(round(vals1) - vals1) > 1e-2; 
 else
