@@ -60,7 +60,9 @@ verts = [];
 edgesendverts = [];
 fchnks = cell(0);
 verts_per = []; 
-merge_idx = repmat(merge_idx,1,numel(cgrphs)); 
+if nargin > 1
+    merge_idx = repmat(merge_idx,1,numel(cgrphs)); 
+end
 for i = 1:length(cgrphs)
     verts = [verts,cgrphs(i).verts];
     if class(cgrphs(i)) == "chunkgraph_per"

@@ -91,9 +91,6 @@ nr = numel(cg.regions);
 for ir = 1:nr
     ncomp = numel(cg.regions{ir});
     intmp = zeros(npts,1);
-<<<<<<< HEAD
-
-=======
     
     ntot = 0;
     for ic = 1:ncomp
@@ -103,18 +100,14 @@ for ir = 1:nr
     end
     ieout = 0;
     chnkrs(ntot) = chunker(p,t,w);
->>>>>>> upstream/master
     
     for ic = 1:ncomp
         edgelist = cg.regions{ir}{ic};
         nedge = numel(edgelist);
-<<<<<<< HEAD
         chnkrs(nedge) = chunker(p,t,w);
 
         period_ic = NaN;
-=======
 
->>>>>>> upstream/master
         for ie = 1:nedge
             ieout = ieout + 1;
             eid = edgelist(ie);
@@ -143,7 +136,6 @@ for ir = 1:nr
                end
             end
         end
-<<<<<<< HEAD
 
         opts_ic = opts; 
         if ~isnan(period_ic)
@@ -160,9 +152,6 @@ for ir = 1:nr
 
         intmp = intmp + reshape(chunkerinterior(merge(chnkrs(1:nedge)),ptsobj,opts_ic),npts,1);
 
-=======
-        
->>>>>>> upstream/master
     end
     intmp = reshape(chunkerinterior(merge(chnkrs(1:ntot)),ptsobj,opts),npts,1);
 
