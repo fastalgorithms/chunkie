@@ -3,18 +3,19 @@
 % using the complex scaling/coordinate complexification method
 %
 % Demonstrates complex chunkgraphs
+% Handles region detection with the complexification method
 
 %% Problem setup
 zk = 4;
 
 % complexification parameters
 eps = 1E-16;
-width = 3; slope = 1;
+width = 3; slope = 4;
 t0 =-6; t1 = 6;
 f = @(t) chnk.curves.complex_interface(t, width, slope, t0, t1);
 
 % build geometry, two infinite rays and a triangular perturbation
-xrad = -log(eps)/abs(real(zk)) + max([abs(t0),abs(t1)]);
+xrad = -log(eps)/abs(real(zk))/slope + max([abs(t0),abs(t1)]);
 endverts = real(f([-xrad;xrad]));
 R = [cos(pi/4),-sin(pi/4);sin(pi/4),cos(pi/4)];
 endverts(:,2) = R * endverts(:,2);
