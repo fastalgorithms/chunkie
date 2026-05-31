@@ -162,7 +162,7 @@ else
     error("CHUNKERKERNEVAL: input 4 is not a supported type");
 end
 
-chnkrtot = merge(chnkobj);
+chnkrtot = merge(chnkr);
 if ~isreal(chnkrtot.r) && (opts_use.accel || opts_use.forcefmm)
     warning('fmm not supported for complex chunkers')
 end

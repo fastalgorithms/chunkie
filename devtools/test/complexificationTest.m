@@ -17,11 +17,11 @@ zk1 = zks(1);
 zk2 = zks(2);
 
 a = 3;
-b = 1/a/2;
+b = 1;
 t0 =-5;
 t1 = 5;
 
-f = @(t) flat_interface(t, a, b, t0, t1);
+f = @(t) chnk.curves.complex_interface(t, a, b, t0, t1);
 nch = 50;
 xrad = -log(eps)/abs(real(zk1)) + max([abs(t0),abs(t1)]);
 xmin = -xrad;
@@ -80,24 +80,3 @@ uex = sk1.eval(s, targ);
 assert(norm(uex - pot) < 1e-12); 
 
 end
-
-
-function [f,fd,fdd] = flat_interface(t, a, b, t0, t1)
-    
-    phi   = @(t,u,v,z) u*(t-z).*erfc(u*(t-z))*v - exp(-u^2*(t-z).^2)/sqrt(pi)*v;
-    phid  = @(t,u,v,z) u*erfc(u*(t-z))*v;
-    phidd = @(t,u,v,z) -u*u*exp(-u^2*(t-z).^2)*2*v/sqrt(pi);
-    f = zeros([2,size(t)]);
-    fd = zeros([2,size(t)]);
-    fdd = zeros([2,size(t)]);
-    
-    f(1,:) = t + 1i*(phi(t,a,b,t0) - phi(t,-a,b,t1)); 
-    fd(1,:)= 1 + 1i*(phid(t,a,b,t0) - phid(t,-a,b,t1));
-    fdd(1,:) = 1i*(phidd(t,a,b,t0) - phidd(t,-a,b,t1));
-    
-    f(2,:) = 0;
-    fd(2,:) = 0;
-    fdd(2,:) = 0;
-        
-end
-
