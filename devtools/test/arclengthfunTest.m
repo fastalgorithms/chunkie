@@ -1,11 +1,13 @@
+arclengthfunTest0();
+
+
+function arclengthfunTest0()
 %ARCLENGTHFUNTEST tests the arclengthfun routine for computing distance
 % along length of curve
 % 
 
-clearvars; close all;
 seed = 8675309;
 rng(seed);
-addpaths_loc();
 
 % geometry parameters and construction
 
@@ -34,3 +36,8 @@ chnkrtotal = merge(chnkrs);
 
 assert(norm(s(:,1:nchs(1)) - ts) < 1e-12);
 assert(norm(s(:,nchs(1)+1:end) - rfac*ts) < 1e-12);
+
+
+end
+
+

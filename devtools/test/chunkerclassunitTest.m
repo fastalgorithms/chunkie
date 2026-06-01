@@ -1,9 +1,13 @@
+chunkerclassunitTest0();
+chunkerclassunitTest1();
+
+
+function chunkerclassunitTest0()
 %chunkerclassunitTest
 %
 % setting up some tests for methods of the chunker class
 %
 
-addpaths_loc();
 % adversarial constructor tests
 isuccess = 0;
 try
@@ -49,3 +53,57 @@ if (i2 > 0)
 assert(chnkr.adj(1,i2) == j)
 end
 end
+
+% test transforms 
+v = [1;2];
+com1 = chnkr.r(:,:)*chnkr.wts(:)/sum(chnkr.wts(:));
+chnkr2 = v + chnkr;
+com2 = chnkr2.r(:,:)*chnkr2.wts(:)/sum(chnkr2.wts(:));
+assert(norm(v-(com2-com1))/norm(v) < 1e-14)
+chnkr2 = chnkr + v; % add on either side
+com2 = chnkr2.r(:,:)*chnkr2.wts(:)/sum(chnkr2.wts(:));
+assert(norm(v-(com2-com1))/norm(v) < 1e-14)
+
+A = [1 2; 2 3]; 
+chnkr2 = A*chnkr;
+assert(abs(area(chnkr2) - det(A)*area(chnkr))/abs(area(chnkr)) < 1e-14);
+s = 2; 
+chnkr2 = s*chnkr;
+assert(abs(area(chnkr2) - s^2*area(chnkr))/abs(area(chnkr)) < 1e-14);
+chnkr2 = chnkr*s; % scale on either side 
+assert(abs(area(chnkr2) - s^2*area(chnkr))/abs(area(chnkr)) < 1e-14);
+
+caught = false;
+try
+    chnkr2 = chnkr*A; % only transform by matrix on left
+catch
+    caught = true;
+end
+assert(caught);
+
+end
+
+
+function chunkerclassunitTest1()
+% test chunk_fun_error input shapes
+
+chnkr = chunkerfunc(@starfish);
+
+kern = @(s,t) chnk.helm2d.kern(0.5,s,t,'sgrad');
+src = []; src.r = chnkr.r(:,1) + 0.1 * chnkr.n(:,1);
+fun = @(t) kern(src,t);
+
+% nfuns x k*nch input
+fval = fun(chnkr);
+errs = chunk_fun_error(chnkr, fval);
+assert(size(errs,1) == 2);
+assert(size(errs,2) == chnkr.nch);
+
+% nfuns x k x nch input
+fval3 = reshape(fval, 2, chnkr.k, chnkr.nch);
+errs3 = chunk_fun_error(chnkr, fval3);
+assert(norm(errs3(:)-errs(:)) == 0);
+
+end
+
+

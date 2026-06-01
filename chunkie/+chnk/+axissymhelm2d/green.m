@@ -32,6 +32,13 @@ if isempty(asym_tables)
     asym_tables = chnk.axissymhelm2d.load_asym_tables();
 end
 
+persistent asym_tables_sub   
+if isempty(asym_tables_sub)
+    asym_tables_sub = chnk.axissymhelm2d.load_asym_tables_sub();
+end
+
+htables = asym_tables;
+
 [~, ns] = size(src);
 [~, nt] = size(targ);
 
@@ -45,11 +52,18 @@ if abs(zr) < eps
     ifun = 2;
 end
 
-if ifdiff
+if (ifdiff == 1)
     if abs(zi) > eps
         error('AXISSYMHELM2D.green: Difference of greens function only supported for real wave numbers\n');
     end
     ifun = 3;
+end
+if (ifdiff == 2)
+    if abs(zi) > eps
+        error('AXISSYMHELM2D.green: Difference of greens function only supported for real wave numbers\n');
+    end
+    htables = asym_tables_sub;
+    ifun = 5;
 end
 
 over2pi = 1/2/pi;
@@ -61,7 +75,7 @@ dz = repmat(src(2,:),nt,1)-repmat(targ(2,:).',1,ns);
 r  = (rt + origin(1))*kabs;
 dz = dz*kabs;
 dr = (rs-rt)*kabs;
-dout = chnk.axissymhelm2d.helm_axi_all(r, dr, dz, asym_tables,ifun);
+dout = chnk.axissymhelm2d.helm_axi_all(r, dr, dz, htables,ifun);
 int = dout.int;
 intdz = dout.intdz;
 intdq = dout.intdq;

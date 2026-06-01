@@ -6,7 +6,7 @@ function ctrs = centroids(chnkr)
 k = chnkr.k;
 nch = chnkr.nch;
 dim = chnkr.dim;
-[~,w] = lege.exps(k);
+w = chnkr.wstor;
 ww = repmat( (w(:)).',dim,1);
 wall = reshape(ww(:)*ones(1,nch),dim,k,nch);
 

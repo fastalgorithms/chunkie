@@ -30,6 +30,8 @@ function obj = elast2d(type, lam, mu)
 %
 % See also CHNK.ELAST2D.KERN
 
+% author : Dan Fortunato, Travis Askham, Manas Rachh
+
 if ( nargin < 1 )
     error('Missing elasticity kernel type.');
 end

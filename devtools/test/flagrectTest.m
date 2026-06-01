@@ -1,9 +1,12 @@
+flagrectTest0();
+
+
+function flagrectTest0()
 %flagrectTest
 %
 % tests the flagging routine based on rectangles
 %
 
-addpaths_loc();
 ngrid = 100;
 chnkr = chunkerfunc(@(t) starfish(t));
 chnkr = refine(chnkr);
@@ -34,6 +37,11 @@ assert(nnz(sp-sp2) == 0);
 %scatter(ells(1,:),ells(2,:),'rx')
 %scatter(rects(1,:),rects(2,:),'mx')
 
+
+
+
+
+end
 
 
 function rects = bounding_rects(convreg)

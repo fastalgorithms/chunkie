@@ -1,15 +1,14 @@
 function f = times(f,g)
 % .* Pointwise multiplication for kernel class
 %
-% Currently only supported for scalars, if g is a scalar
+% Currently only supported for scalars, if g is a numeric scalar
 % then f.*g or g.*f returns a kernel class object where each
-% of the function handles - eval, and fmm are multiplied by 
-% g
+% of the function handles - eval, and fmm are multiplied by g
 
 if (~isa(f,'kernel'))
     f = times(g,f);
     return
-elseif (isscalar(g))
+elseif (isnumeric(g) && isscalar(g))
     if(isa(f.eval, 'function_handle'))        
         f.eval = @(varargin) g*f.eval(varargin{:});
     else
@@ -31,13 +30,13 @@ elseif (isscalar(g))
     if or(f.isnan,isnan(g))
         f = kernel.nans(f.opdims(1),f.opdims(2));
     end
-    if ~f.isnan && (g==0) || f.iszero && ~isnan(g)
+    if ~f.isnan && g==0 || f.iszero && ~isnan(g)
         f = kernel.zeros(f.opdims(1),f.opdims(2));
     end
     
 else
     error('KERNEL:times:invalid', ...
-       'F or G must be scalar and the other a kernel class object');
+       'F or G must be constant and the other a kernel class object');
 end
 end
 

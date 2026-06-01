@@ -1,13 +1,16 @@
-clearvars; close all;
+chunkermat_axissymhelm_transmissionTest0();
+
+
+function chunkermat_axissymhelm_transmissionTest0()
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 zk = 5.1;
 
-% type = 'cgrph';
-type = 'chnkr-torus';
+type = 'chnkr-star';
+% type = 'chnkr-torus';
+%type = 'cgrph';
 
 pref = [];
 pref.k = 16;
@@ -19,6 +22,8 @@ maxchunklen = 1.0;
 
 [chnkr, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen);
 wts = chnkr.wts; wts = wts(:);
+sources(1,:) = abs(sources(1,:));
+targets(1,:) = abs(targets(1,:));
 
 l2scale = false;
 fprintf('Done building geometry\n');
@@ -219,6 +224,11 @@ fprintf('%5.2e s : time for rskelf_sv \n',t1)
 err = norm(sol-sol2,'fro')/norm(sol,'fro');
 
 fprintf('difference between fast-direct and iterative %5.2e\n',err)
+
+
+
+
+end
 
 
 function [chnkobj, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen)

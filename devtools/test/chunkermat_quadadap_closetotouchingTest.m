@@ -1,3 +1,7 @@
+chunkermat_quadadap_closetotouchingTest0();
+
+
+function chunkermat_quadadap_closetotouchingTest0()
 %CHUNKERMAT_QUADADAP_CLOSETOTOUCHINGTEST
 %
 % - set up two discs which are nearly touching
@@ -6,8 +10,6 @@
 % - compare accuracy using the adaptive routine to do nearby panel
 %   evaluation vs smooth rule for everything but self and neighbors
 
-clearvars; close all;
-addpaths_loc();
 iseed = 8675309;
 rng(iseed);
 
@@ -72,20 +74,23 @@ utarg = kernmatstarg*strengths;
 % use adaptive routine to build matrix (self done by ggq, nbor by adaptive)
 
 eta = 1;
-fkern = @(s,t) chnk.lap2d.kern(s,t,'C',[1,eta]);
+fkern = kernel('laplace','c',[1,eta]);
 
 type = 'log';
 opts = []; opts.robust = true;
+opts.adaptive_correction = true;
 opdims = [1 1];
 start = tic;
-mata = chnk.quadadap.buildmat(chnkr,fkern,opdims,type,opts);
+mata = chunkermat(chnkr,fkern,opts);
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix (adaptive)\n',t1)
+opts.adaptive_correction = false;
 start = tic; mato = chunkermat(chnkr,fkern);
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix (original GGQ)\n',t1)
 start = tic; 
 opts.forcepquad = true; targs_bd = [chnkr.r(1,:);chnkr.r(2,:)];
+opts.side = 'e';
 matho = chunkerkernevalmat(chnkr,fkern,targs_bd,opts); 
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix (Helsing-Ojala)\n',t1)
@@ -153,3 +158,8 @@ fprintf('relative l_inf/l_1 error %5.2e (Helsing-Ojala)\n',relerr2);
 % figure(2)
 % plot3(chnkr,1)
 % 
+
+
+end
+
+

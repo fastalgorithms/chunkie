@@ -4,7 +4,6 @@
 % It shows the most common methods for building and working with chunkers.
 %
 
-addpaths_loc();
 rng(1234);
 
 %%%%%%%%%%%%% circle
@@ -84,14 +83,21 @@ saveas(figure(4),"guide_chunkers_barbell.png");
 % make a copy of the random mode domain
 chnkr5 = chnkr2;
 
-% rotate it using move 
+% rotate it using rotate method
 theta = pi/4; 
-chnkr5 = chnkr5.move([],[],theta);
+chnkr5 = chnkr5.rotate(theta);
 
-% make a copy of the circle domain and shift it 
+% reflect it across y axis using reflect
+chnkr5 = chnkr5.reflect(pi/2);
+% reverse orientation to get inward normals again (reflect changes
+% orientation)
+chnkr5 = chnkr5.reverse();
+
+% make a copy of the circle domain, transform and shift it 
 chnkr6 = chnkr1;
-r1 = [-0.3;0.4];
-chnkr6 = chnkr6.move([],r1);
+A = 0.5*[2 -1; 1 1]; % positive determinant, so doesn't change orientation
+r1 = [-1;0.5];
+chnkr6 = r1 + A*chnkr6;
 % reverse the orientation
 chnkr6 = chnkr6.reverse();
 
@@ -126,3 +132,52 @@ axis equal tight
 
 saveas(figure(6),"guide_chunkers_interior.png");
 
+%%
+% START CHUNKERFIT
+
+% Sample a smooth curve at random points
+rng(0)
+n = 20;
+tt = sort(2*pi*rand(n,1));
+r = chnk.curves.bymode(tt, [2 0.5 0.2 0.7]);
+
+% can pass cparams and pref structures, as in
+% chunkerfunc, via the opts structure
+% asking for splitting can be more efficient, dependent on
+% desired tolerance
+
+% first asking for lower precision from chunkerfunc
+opts = [];
+opts.ifclosed = true;
+opts.cparams = [];
+opts.cparams.eps = 1e-3;
+opts.pref = [];
+opts.pref.k = 16;
+chnkr = chunkerfit(r, opts);
+
+% automatically creates a chunker between each node
+opts.splitatpoints = true;
+chnkrsp = chunkerfit(r, opts);
+
+% then asking for more precision from chunkerfunc
+opts.cparams.eps = 1e-9;
+opts.splitatpoints = false;
+chnkr2 = chunkerfit(r, opts);
+
+% automatically creates a chunker between each node
+opts.splitatpoints = true;
+chnkrsp2 = chunkerfit(r, opts);
+
+figure(7)
+clf
+tiledlayout(2,2,"TileSpacing","compact");
+nexttile; plot(chnkr,'k-x'); title(sprintf("nch = %d, eps=1e-3",chnkr.nch));
+hold on; plot(r(1,:),r(2,:),'bd');
+nexttile; plot(chnkrsp,'k-x'); title(sprintf("nch = %d, eps=1e-3\n (splitting)",chnkrsp.nch));
+hold on; plot(r(1,:),r(2,:),'bd');
+nexttile; plot(chnkr2,'k-x'); title(sprintf("nch = %d, eps=1e-9",chnkr2.nch));
+hold on; plot(r(1,:),r(2,:),'bd');
+nexttile; plot(chnkrsp2,'k-x'); title(sprintf("nch = %d, eps=1e-9\n (splitting)",chnkrsp2.nch));
+hold on; plot(r(1,:),r(2,:),'bd');
+% END CHUNKERFIT
+saveas(figure(7),"guide_chunkers_chunkerfit.png");

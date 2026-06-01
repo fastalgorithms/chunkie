@@ -1,8 +1,10 @@
-clearvars; close all;
+axissymkernel_sphereTest0();
+
+
+function axissymkernel_sphereTest0()
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 zk = 40.1;
 
@@ -65,6 +67,11 @@ potex = zfac*ubdry;
 err1 = sqrt(sum(abs(pot - potex).^2.*wts(:)));
 fprintf('error in layer pot on sphere=%d\n', err1);
 
+
+
+
+
+end
 
 
 function [chnkobj, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen)

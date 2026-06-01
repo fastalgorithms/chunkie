@@ -1,6 +1,8 @@
+axissymkernTest0();
 
-clearvars; close all;
-addpaths_loc();
+
+function axissymkernTest0()
+
 cparams = [];
 cparams.eps = 1.0e-4;
 pref = []; 
@@ -10,6 +12,7 @@ amp = 0.25;
 cparams.maxchunklen = 0.5;
 cparams.ta = -pi/2;
 cparams.tb = pi/2;
+cparams.ifclosed = false;
 
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
@@ -75,7 +78,7 @@ start = tic; submat = chnk.axissymhelm2d.kern(zk, srcinfo, targinfo, origin_new,
 submat = K.shifted_eval(srcinfo, targinfo, origin_new);
 t1 = toc(start);
 
-fprintf('First call to axissymhelm2d.kern time%d\n',t1);
+fprintf('First call to axissymhelm2d.kern time: %d\n',t1);
 
 
 srcinfo.r(1,:) = srcinfo.r(1,:) + origin_new(1);
@@ -95,6 +98,11 @@ fprintf('ratios shifted kernel= %d\n', max(abs(v(1:end)./submat(1:end)-1)));
 
 
 
+
+
+
+
+end
 
 
 function [v] = get_exact_kernels(zk, srcinfo, targinfo, type)

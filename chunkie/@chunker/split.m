@@ -14,11 +14,14 @@ function chnkr = split(chnkr,ich,opts,x,w,u,stype)
 %   opts - options structure
 %       opts.thresh = threshold for newton (1e-10)
 %       opts.nitermax = maximum iters for newton (1000)
+%       opts.frac - fraction of length in first panel (1/2) 
+%           default evenly splits panels
 %   x - precomputed Legendre nodes of order chnkr.k
 %   w - precomputed Legendre weights
 %   u - precomputed vals at legendre nodes -> coeffs matrix
 %   stype - type of split ('a'), 'a' arclength split, 
 %               't' parameter space split.
+%   
 %
 % Output:
 %   chnkr - modified chunker object
@@ -54,6 +57,10 @@ end
 if isfield(opts,'nitermax')
     nitermax = opts.nitermax;
 end
+frac = 1/2.0;
+if isfield(opts,'frac')
+    frac = opts.frac;
+end
 
 nch = chnkr.nch;
 
@@ -61,7 +68,8 @@ if nargin < 6
     [x, w, u, ~] = lege.exps(chnkr.k);
 end
 
-t1 = 0;
+
+t1 = 2*frac - 1;
 
 if strcmpi(stype1,'a')
 %  first construct dsdt
@@ -73,9 +81,9 @@ rltot = dot(dsdt,w);
 cdsdt = u*dsdt;
 
 t1=0;
-rlhalf=rltot/2;
+rlhalf=rltot * frac;
 
-% use Newton to find t such that length(-1,t) = length(t,1) = rl/2
+% use Newton to find t such that length(-1,t) = length(t,1) = rl * frac
 
 ifdone = 0;
 for ijk = 1:nitermax

@@ -1,13 +1,15 @@
+flamutilitiesTest0();
+
+
+function flamutilitiesTest0()
 
 %FLAMUTILITIESTEST
 %
 % test the FLAM matrix builder and do a basic solve
 
-clearvars; close all;
 iseed = 8675309;
 rng(iseed);
 
-addpaths_loc();
 
 nverts = 3; 
 verts = exp(1i*2*pi*(0:(nverts-1))/nverts);
@@ -157,6 +159,14 @@ pxyfun = @(x,slf,nbr,l,ctr) chnk.flam.proxyfun(slf,nbr,l,ctr,cgrph, ...
 start = tic; F2 = rskelf(matfun,xflam,200,tol,[]); t1 = toc(start);
 F = chunkerflam(cgrph,kernd,1.0);
 
+
+flam_opts = []; 
+
+opts_nsmth = []; opts_nsmth.nonsmoothonly = 1;
+flam_opts.sp_nonsmooth = chunkermat(cgrph,kernd,opts_nsmth);
+
+F3 = chunkerflam(cgrph,kernd,1.0,flam_opts);
+
 rhs = ubdry; rhs = rhs(:);
 start = tic; sol = gmres(sys,rhs,[],1e-14,100); t1 = toc(start);
 
@@ -165,17 +175,21 @@ fprintf('%5.2e s : time for dense gmres\n',t1)
 rhs = ubdry; rhs = rhs(:);
 start = tic; sol2 = rskelf_sv(F,rhs); t1 = toc(start);
 start = tic; sol3 = rskelf_sv(F2,rhs); t1 = toc(start);
+start = tic; sol4 = rskelf_sv(F3,rhs); t1 = toc(start);
 
 fprintf('%5.2e s : time for rskelf_sv \n',t1)
 
 err = norm(sol-sol3,'fro')/norm(sol,'fro');
 err2 = norm(sol2-sol3,'fro')/norm(sol,'fro');
+err3 = norm(sol4-sol3,'fro')/norm(sol,'fro');
 
 fprintf('difference between fast-direct and iterative %5.2e\n',err)
 fprintf('difference between fast-direct and flam utils %5.2e\n',err2)
+fprintf('difference between fast-direct and flam utils with precomp correcton %5.2e\n',err3)
 
  assert(err < 1e-10);
  assert(err2 < 1e-10);
+ assert(err3 < 1e-10);
 
 % evaluate at targets and compare
 
@@ -199,6 +213,11 @@ relerr2 = norm(utarg-Dsol,'inf')/dot(abs(sol(:)),wcgrph(:));
 fprintf('relative frobenius error %5.2e\n',relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n',relerr2);
 
+
+
+
+
+end
 
 
 function [r,d,d2] = sinearc(t,amp,frq)

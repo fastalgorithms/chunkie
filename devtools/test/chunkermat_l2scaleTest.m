@@ -1,4 +1,7 @@
-clearvars; close all;
+chunkermat_l2scaleTest0();
+
+
+function chunkermat_l2scaleTest0()
 
 zk0 = 2.0; % exterior
 zk1 = 3.0; % interior
@@ -123,5 +126,10 @@ err1 = norm(x-x2);
 err2 = norm(A-Ac);
 fprintf('error in matrix norm=%d\n',err2)
 fprintf('error in density=%d\n',err1);
+
+
+
+
+end
 
 

@@ -42,9 +42,9 @@ for ii=2:numel(regions)
             if (enum<0)
                rchnk = fliplr(rchnk); 
             end    
-            rs = [rs,rchnk];
+            rs = [rs, rchnk];
         end  
-        plyrgn = polyshape(rs.','Simplify',false);
+        plyrgn = polyshape(rs.', 'Simplify', false);
 
     for jj=2:numel(regions{ii})
 
@@ -60,8 +60,8 @@ for ii=2:numel(regions)
             rs = [rs,rchnk];
         end
         
-        plyrgnsub = polyshape(rs','Simplify',false);
-        plyrgn = subtract(plyrgn,plyrgnsub);
+        plyrgnsub = polyshape(rs', 'Simplify', false);
+        plyrgn = subtract(plyrgn, plyrgnsub);
         end  
         
     end    
@@ -76,10 +76,10 @@ end
 plot(obj,'k-');
 
 if iflabel > 1
-    rmin = min(obj.r(:,:),[],2);
-    diam = max(obj.r(:,:)-rmin,[],2);
+    rmin = min(obj.r(:,:), [], 2);
+    diam = max(obj.r(:,:)-rmin, [], 2);
     rmin = rmin-0.1*diam;
-    text(rmin(1),rmin(2),'region 1');
+    text(rmin(1), rmin(2), 'region 1');
 
     nedge = length(obj.echnks);
     for j = 1:nedge

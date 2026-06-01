@@ -1,3 +1,7 @@
+chunkerfuncTest0();
+
+
+function chunkerfuncTest0()
 
 %CHUNKERFUNCTEST
 %
@@ -5,8 +9,6 @@
 
 %
 
-clearvars; close all;
-addpaths_loc();
 cparams = [];
 cparams.eps = 1.0e-4;
 pref = []; 
@@ -112,3 +114,8 @@ assert(isempty(warnmsg));
 % hold on
 % quiver(chnkr)
 % axis equal
+
+
+end
+
+

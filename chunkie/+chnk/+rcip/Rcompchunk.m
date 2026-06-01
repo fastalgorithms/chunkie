@@ -1,4 +1,4 @@
-function [R,rcipsav]=Rcompchunk(chnkr,iedgechunks,fkern,ndim, ...
+function [R,rcipsav]=Rcompchunk(chnkr,iedgechunks,fkern,ndim,vert0, ...
     Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,...
     sbclmat,sbcrmat,lvmat,rvmat,u,opts)
 %CHNK.RCIP.Rcompchunk carry out the forward recursion for computing
@@ -44,28 +44,27 @@ rcipsav.circS = circS;
 rcipsav.ilist = ilist;
 rcipsav.nsub = nsub;
 
-if (nargin < 15 || isempty(sbclmat) || isempty(sbcrmat) || ...
+if (nargin < 16 || isempty(sbclmat) || isempty(sbcrmat) || ...
         isempty(lvmat) || isempty(rvmat) || isempty(u))
     [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k); 
 end
 
-if nargin < 20
+if nargin < 21
     opts = [];
 end
 
-savedeep = false;
-if isfield(opts,'savedeep')
-    savedeep = opts.savedeep;
+savedepth = 10;
+if isfield(opts,'rcip_savedepth')
+    savedepth = opts.rcip_savedepth;
 end
+savedepth = max(savedepth,0);
+savedepth = min(savedepth,nsub);
 
-rcipsav.savedeep = savedeep;
+rcipsav.savedepth = savedepth;
 
-if savedeep
-    rcipsav.R = cell(nsub+1,1);
-    rcipsav.MAT = cell(nsub,1);
-    rcipsav.chnkrlocals = cell(nsub,1);
-end
-
+rcipsav.R = cell(nsub+1,1);
+rcipsav.MAT = cell(nsub,1);
+rcipsav.chnkrlocals = cell(nsub,1);
 
 % grab only those kernels relevant to this vertex
 
@@ -166,7 +165,7 @@ if(size(fkern)==1)
     fkernlocal = fkern;
     if isa(fkern, 'kernel')
         if isa(fkern.shifted_eval, 'function_handle')
-            fkernlocal.eval = @(s,t) fkern.shifted_eval(s, t, ctr(:,1));
+            fkernlocal.eval = @(s,t) fkern.shifted_eval(s, t, vert0);
         end
     end
 else
@@ -179,7 +178,7 @@ else
             if isa(fkern(ici,icj), 'kernel')
                 if isa(fkern(ici,icj).shifted_eval, 'function_handle')
                     fkernlocal(i,j).eval = ...
-                      @(s,t) fkern(ici,icj).shifted_eval(s,t,ctr(:,i));
+                      @(s,t) fkern(ici,icj).shifted_eval(s,t,vert0);
                 end
             end
         end
@@ -260,12 +259,15 @@ for level=1:nsub
     if level==1    %  Dumb and lazy initializer for R, for now
   %R=eye(nR); 
         R = inv(MAT(starL,starL));
-        if savedeep
+        if level >= nsub-savedepth+1
             rcipsav.R{1} = R;
         end
     end
+    if savedepth < nsub && level == nsub-savedepth+1
+        rcipsav.R{level} = R;
+    end
     R=chnk.rcip.SchurBana(Pbc,PWbc,MAT,R,starL,circL,starS,circS);   
-    if savedeep
+    if level >= nsub-savedepth+1
         rcipsav.R{level+1} = R;
         rcipsav.MAT{level} = MAT(starL,circL);
         rcipsav.chnkrlocals{level} = merge(chnkrlocal);

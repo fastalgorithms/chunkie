@@ -21,20 +21,22 @@ nf = 0;
 for i = 1:nedges
     j1 = obj.edgesendverts(1,i);
     j2 = obj.edgesendverts(2,i);
-    if j1 == j2
-        nf = nf + 1;
-        ii(nf) = i;
-        jj(nf) = j1;
-        vv(nf) = 2;
-    else
-        nf = nf + 1;
-        ii(nf) = i;
-        jj(nf) = j1;
-        vv(nf) = -1;
-        nf = nf + 1;
-        ii(nf) = i;
-        jj(nf) = j2;
-        vv(nf) = 1;
+    if ~isnan(j1) && ~isnan(j2)
+        if j1 == j2
+            nf = nf + 1;
+            ii(nf) = i;
+            jj(nf) = j1;
+            vv(nf) = 2;
+        else
+            nf = nf + 1;
+            ii(nf) = i;
+            jj(nf) = j1;
+            vv(nf) = -1;
+            nf = nf + 1;
+            ii(nf) = i;
+            jj(nf) = j2;
+            vv(nf) = 1;
+        end
     end
 end
 

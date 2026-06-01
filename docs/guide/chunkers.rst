@@ -20,9 +20,8 @@ class overloads some MATLAB commands, like :matlab:`plot` and
 code below creates a :matlab:`chunker` object for a circle and
 plots the geometry and the normal vectors.
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START CIRCLE
    :end-before: % END CIRCLE
 	  
@@ -52,9 +51,8 @@ plots the geometry and the normal vectors.
 Some utilities are provided that define a family of
 parameterized curves:
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START MORE PARAMS
    :end-before: % END MORE PARAMS
 
@@ -68,11 +66,24 @@ parameterized curves:
 
 |pic1|  |pic2|
 
+For a given set of points, a spline curve can be fit to them and
+discretized as a chunker using `chunkerfit`:
+
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
+   :start-after: % START CHUNKERFIT
+   :end-before: % END CHUNKERFIT
+
+.. image:: ../../chunkie/guide/guide_chunkers_chunkerfit.png
+   :width: 500px
+   :alt: circle chunker
+   :align: center
+
+
 Given a set of vertices, a rounded polygon can be defined:
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START ROUNDED POLY
    :end-before: % END ROUNDED POLY
 
@@ -81,27 +92,33 @@ Given a set of vertices, a rounded polygon can be defined:
    :alt: circle chunker
    :align: center
 
+	   
+
 
 Working with Chunkers
 ----------------------
 
 Instances of :matlab:`chunker` objects can be manipulated in
-several ways. 
-Users are free to update the position and derivative
-fields of :matlab:`chunker` objects, though the software will
-not check whether the user has done this in a consistent
-manner. 
+several ways. Multiplying the object by a matrix and adding a
+vector to the object will update the coordinates (and derivatives
+and normals) accordingly. There are also some built in functions
+for standard operations like rotations and reflections. An important
+operation is the :matlab:`reverse` function, which changes the orientation
+of the curve (normal vectors point to the right from the perspective
+of an observer moving in the positive direction along the curve).
 
 The example below takes the circle and random mode domains
 created above and creates a new domain from them with
 multiple components. The random mode domain is rotated and
-the circle is shifted and its orientation is reversed, so
+reflected, then its orientation is reversed to undo the change
+of orientation induced by the reflection (maintaining outward
+pointing normals). An affine transformation is applied to the
+circle and its orientation is also reversed, so
 that the normal for the combined domain consistently points out
 of the interior. 
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START SHIFT AND REVERSE
    :end-before: % END SHIFT AND REVERSE
 
@@ -114,9 +131,8 @@ It is also possible to find the points on the interior of a
 :matlab:`chunker` object, which is convenient in many plotting
 tasks:
 
-.. include:: ../../chunkie/guide/guide_chunkers.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_chunkers.m
+   :language: matlab
    :start-after: % START INTERIOR
    :end-before: % END INTERIOR
 
@@ -136,9 +152,8 @@ tasks:
 There is more available. The :matlab:`chunker` class documentation
 gives a survey of the available methods:
 
-.. include:: ../../chunkie/@chunker/chunker.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/@chunker/chunker.m
+   :language: matlab
    :start-after: classdef chunker
    :end-before: % author
 

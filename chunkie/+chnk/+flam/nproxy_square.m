@@ -40,60 +40,53 @@ function npxy = nproxy_square(kern, width, opts)
   srcinfo.d2 = randn(2,nsrc);
   srcinfo.n = [-srcinfo.d(2,:);srcinfo.d(1,:)] ./ sqrt(sum(srcinfo.d.^2,1));
 
-  npxy = 16;
+  stmp = [];
+  stmp.r = randn(2,1); stmp.d = randn(2,1); stmp.d2 = randn(2,1);
+  stmp.n = [-stmp.d(2,:);stmp.d(1,:)] ./ sqrt(sum(stmp.d.^2,1));
 
-				% double until you get enough
-  for i = 1:11
-    [pr,ptau] = chnk.flam.proxy_square_pts(npxy);
-    targinfo.r = pr*width;
+  ttmp = [];
+  ttmp.r = randn(2,1); ttmp.d = randn(2,1); ttmp.d2 = randn(2,1);
+  ttmp.n = [-ttmp.d(2,:);ttmp.d(1,:)] ./ sqrt(sum(ttmp.d.^2,1));
+  
+  f = kern(stmp, ttmp);
+  [opdims(1), opdims(2)] = size(f);
+
+  % strengths of random sources
+  sig = randn(opdims(2)*nsrc,1);
+
+  npxy = 64;
+
+  % double until you get enough
+  last_intgrl = NaN;
+  one_more    = true;
+  for i = 0:14
+    [pr,ptau,pw] = chnk.flam.proxy_square_pts(npxy);
+    pwuse =  repmat(pw.', [opdims(1),1]); pwuse = pwuse(:);
+    targinfo.r = width*pr;
     targinfo.d = ptau;
     targinfo.d2 = zeros(2,npxy);
     targinfo.n = [-ptau(2,:);ptau(1,:)] ./ sqrt(sum(ptau.^2,1));
 
-    if npxy > nsrc
-      nsrc = ceil(1.2*npxy);
-      srcinfo = [];
-      srcinfo.r = [-0.5;-0.5]*width + rand(2,nsrc)*width;
-  
-      srcinfo.d = randn(2,nsrc);
-      srcinfo.d2 = randn(2,nsrc);
-      srcinfo.n = [-srcinfo.d(2,:);srcinfo.d(1,:)] ./ sqrt(sum(srcinfo.d.^2,1));
-    end
-
-    mat = proxy_square_mat(kern,srcinfo,targinfo);
-
-    [sk,~] = id(mat,rank_or_tol);
-    
-    if length(sk) < npxy 
-      npxy = floor((length(sk)-1)/4+1.1)*4;
+    % compute integral along proxy surface of potential from random sources
+    % to see if we've resolved the kernel
+    intgrl = pwuse' * kern(srcinfo,targinfo) * sig;
+   
+    % check self convergence
+    err = abs(intgrl - last_intgrl) / abs(intgrl);
+    if err < rank_or_tol || ~one_more
       return;
     end
     npxy = 2*npxy;
-  end
+    last_intgrl = intgrl;
 
-  % npxy is never smaller than nsrc... so no compression is happening... 
-  npxy = -1;
-
-end
-
-function mat = proxy_square_mat(kern,srcinfo,targinfo)
-  
-  if numel(kern) == 1
-    mat = kern(srcinfo,targinfo);
-    return;
-  end
-
-  % kern is a cellmat
-
-  [m,n] = size(kern);
-
-  mat = cell(m,n);
-  
-  for i=1:m
-    for j=1:n
-      mat{i,j} = kern{i,j}(srcinfo,targinfo);
+    % if using very low tolerance like 1e-14, just get to 1e-12 error
+    % and double one more time to avoid mucking around at machine eps
+    if rank_or_tol < 1e-12 && err < 1e-12
+        one_more = false;
     end
   end
 
-  mat = cell2mat(mat);
+  % kernel was not resolved even with 2^14 points, report failure
+  npxy = -1;
+
 end

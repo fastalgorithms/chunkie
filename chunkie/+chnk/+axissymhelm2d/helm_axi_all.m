@@ -5,10 +5,10 @@ function [varargout] = helm_axi_all(rs,drs,dzs,htables,ifun)
 
     int   = zeros(size(alphs));
 
-    iflag_rk = (ifun == 1 || ifun == 4);
+    iflag_rk = (ifun == 1 || ifun == 4 || ifun == 5);
     iflag_ik = (ifun == 2 || ifun == 4);
-    iflag_dk = (ifun == 3 || ifun == 4);
-
+    iflag_dk = (ifun == 3 || ifun == 4 || ifun == 5);
+    
     if (iflag_rk)
     rk = cell(6);
     for ii=1:6
@@ -183,6 +183,10 @@ function [varargout] = helm_axi_all(rs,drs,dzs,htables,ifun)
         varargout{1} = dsik;
     end
     if(ifun==3)
+        [dsdiff] = proc_kerns(rs,drs,dzs,dk);
+        varargout{1} = dsdiff;
+    end
+    if(ifun==5)
         [dsdiff] = proc_kerns(rs,drs,dzs,dk);
         varargout{1} = dsdiff;
     end

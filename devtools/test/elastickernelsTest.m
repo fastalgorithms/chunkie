@@ -1,11 +1,12 @@
+elastickernelsTest0();
+
+
+function elastickernelsTest0()
 %ELASTIC_TEST
 % test the kernel definitions for elasticity
 
-clear all
 iseed = 1234;
 rng(iseed,'twister');
-clc
-%addpaths_loc();
 
 % pde parameters 
 
@@ -116,6 +117,11 @@ utargsol = utargsol + nspace*cfs;
 err_neu = norm(utarg-utargsol)/norm(utarg);
 
 assert(err_neu < 1e-10);
+
+
+
+end
+
 
 function [pde_errs,pdedalt_errs,div_errs,trac_errs,gid_err,daltgrad_errs] = ...
     test_kernels(chnkr,s,targ,lam,mu,f,niter)

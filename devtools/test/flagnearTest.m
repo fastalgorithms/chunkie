@@ -1,3 +1,7 @@
+flagnearTest0();
+
+
+function flagnearTest0()
 
 %FLAGNEARTEST
 %
@@ -5,8 +9,6 @@
 
 %
 
-clearvars; close all;
-addpaths_loc();
 cparams = [];
 cparams.eps = 1.0e-6;
 pref = []; 
@@ -54,3 +56,8 @@ end
 assert(nnz(flag2 ~= flag) == 0)
 
     
+
+
+end
+
+

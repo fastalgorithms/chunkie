@@ -1,3 +1,7 @@
+chunkgrphrcipTest0();
+
+
+function chunkgrphrcipTest0()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   .  .  .  builds a simple pentagonal chunkergraph 
@@ -5,9 +9,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%clear all
 
-addpaths_loc();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -16,7 +18,6 @@ addpaths_loc();
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%clear all
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 a = -1.0;
@@ -63,11 +64,6 @@ end
 % prefs.chsmall = 1d-4;
 [cgrph] = chunkgraph(verts,edge2verts,fchnks);
 
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
-
 
 ncurve = 1;
 
@@ -110,11 +106,6 @@ end
 prefs      = [];
 % prefs.chsmall = 1d-4;
 [cgrph] = chunkgraph(verts,edge2verts,fchnks,prefs);
-
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
-
 
 
 zk = 1.0;
@@ -188,6 +179,11 @@ plot(cgrph,'w-','LineWidth',2);
 caxis([-16,0])
 colorbar
 
+
+
+
+
+end
 
 
 function [r,d,d2] = circulararc(t,cpars)

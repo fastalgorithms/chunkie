@@ -1,5 +1,5 @@
 function f = mtimes(f,g)
-% * Martix multiplication for kernel
+% * Matrix multiplication for kernel
 %
 % Currently only supports scalars
 %

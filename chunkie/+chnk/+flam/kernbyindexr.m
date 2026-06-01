@@ -51,6 +51,10 @@ dj = chnkr.d(:,juni); d2j = chnkr.d2(:,juni);
 nj = chnkr.n(:,juni);
 srcinfo = []; srcinfo.r = rj; srcinfo.d = dj; srcinfo.d2 = d2j;
 srcinfo.n = nj;
+if ~isempty(chnkr.data)
+    srcinfo.data = chnkr.data(:,juni);
+end
+
 % Assign appropriate object to targinfo
 targinfo = [];
 if isa(targobj, "chunker") || isa(targobj, "chunkgraph")
@@ -58,6 +62,9 @@ if isa(targobj, "chunker") || isa(targobj, "chunkgraph")
     targinfo.d = targobj.d(:,iuni);
     targinfo.d2 = targobj.d2(:,iuni);
     targinfo.n = targobj.n(:,iuni);
+    if ~isempty(targobj.data)
+        targinfo.data = targobj.data(:,iuni);
+    end
 elseif isstruct(targobj)
     if isfield(targobj,'d')
         targinfo.d = targobj.d(:,iuni);
@@ -67,6 +74,9 @@ elseif isstruct(targobj)
     end
     if isfield(targobj,'n')
         targinfo.n = targobj.n(:,iuni);
+    end
+    if isfield(targobj,'data') && ~isempty(targobj.data)
+        targinfo.data = targobj.data(:,iuni);
     end
     targinfo.r = targobj.r(:,iuni);
 else

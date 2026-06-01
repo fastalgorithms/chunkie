@@ -5,7 +5,7 @@
 Solving Standard Boundary Value Problems
 =========================================
 
-Chunkie uses the integral equation method to solve PDEs.
+ChunkIE uses the integral equation method to solve PDEs.
 In contrast with finite element methods, where the PDE is
 typically converted to a weak form, the standard approach for
 an integral equation method is to select an integral representation
@@ -26,10 +26,10 @@ value problem
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    \mathcal{L} u &= 0 & \textrm{ in } \Omega \; ,\\
    \mathcal{B} u &= f & \textrm{ on } \Gamma \; ,
-   \end{align*}
+   \end{aligned}
 
 where :math:`\mathcal{L}` is a linear, constant coefficient PDE
 operator and :math:`\mathcal{B}` is a linear trace operator that
@@ -68,7 +68,7 @@ is represented by its values at the nodes of a :matlab:`chunker`
 object. Because :math:`K` is defined in terms of the Green function
 for :math:`\mathcal{L}` it often has mild (or even strong) singularities
 when restricted to :math:`\Gamma`. One of the key features of
-chunkie is that the function :matlab:`layermat` will automatically return
+chunkie is that the function :matlab:`chunkermat` will automatically return
 a Nyström discretization of a layer potential using high-order
 accurate quadrature rules [BGR2010]_.
 
@@ -76,7 +76,7 @@ After solving the discrete system for :math:`\sigma`, the PDE solution,
 :math:`u`, can then be recovered by evaluating the layer potential
 representation at any points of interest. This integral is nearly singular
 for points near the boundary. Chunkie provides the function
-:matlab:`layereval` for doing this accurately, employing adaptive
+:matlab:`chunkerkerneval` for doing this accurately, employing adaptive
 integration when necessary.
 
 
@@ -87,10 +87,10 @@ Consider the Laplace Neumann boundary value problem:
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    \Delta u &= 0 & \textrm{ in } \Omega \; ,\\
    \frac{\partial u}{\partial n} &= f & \textrm{ on } \Gamma \; ,
-   \end{align*}
+   \end{aligned}
 
 where :math:`n` is the outward normal.
 This is a model for the equilibrium heat distribution in a
@@ -133,14 +133,14 @@ results in the equation
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    f(x_0) &= \lim_{x\in \Omega, x\to x_0} n(x_0)\cdot \nabla_x
    \int_\Gamma G_0(x,y) \sigma(y) \, ds(y)  \\
    &= \frac{1}{2} \sigma(x_0) + P.V. \int_\Gamma n(x_0) \cdot \nabla_x G_0(x_0,y)
    \sigma(y) \, ds(y) \\
    &=: \left [\left ( \frac{1}{2} \mathcal{I} + \mathcal{S}' \right ) \sigma
    \right ] (x_0) \; ,
-   \end{align*} 
+   \end{aligned} 
 
 where :math:`P.V.` indicates that the integral should be interpreted
 in the principal value sense, :math:`\mathcal{I}` is the identity operator, and
@@ -183,9 +183,8 @@ Many of the most common kernel types are available in chunkie,
 including the normal derivative of the single layer kernel, which is
 called "sprime". This can be obtained via 
 
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START SPRIME
    :end-before: % END SPRIME
 
@@ -219,9 +218,8 @@ of singularity it has.
 Because these standard kernels are built into chunkie, this PDE
 can be solved with very little coding:
    
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START LAPLACE NEUMANN
    :end-before: % END LAPLACE NEUMANN
 
@@ -231,27 +229,28 @@ can be solved with very little coding:
    :alt: solution of Laplace equation
    :align: center
 		
+.. _helmholtzsimple:
 
 A Helmholtz Scattering Problem
 -------------------------------
 
-In a scattering problem, an incident field $u^{\\textrm{inc}}$ is specified
-in the exterior of an object and a scattered field $u^{\\textrm{scat}}$ is
-determined so that the total field $u = u^{\\textrm{inc}}+u^{\\textrm{scat}}$
+In a scattering problem, an incident field $u^{\textrm{inc}}$ is specified
+in the exterior of an object and a scattered field $u^{\textrm{scat}}$ is
+determined so that the total field $u = u^{\textrm{inc}}+u^{\textrm{scat}}$
 satisfies the PDE and a given boundary condition. It is also required that 
 the scattered field radiates outward from the object. For a sound-soft object
 in acoustic scattering, the total field is zero on the object boundary.
-This results in the following boundary value problem for $u^{\\textrm{scat}}$
+This results in the following boundary value problem for $u^{\textrm{scat}}$
 in the exterior of the object:
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    (\Delta + k^2) u^{\textrm{scat}} &= 0 & \textrm{ in } \mathbb{R}^2 \setminus \Omega \; , \\
    u^{\textrm{scat}} &= -u^{\textrm{inc}} & \textrm{ on } \Gamma \; , \\
    \sqrt{|x|} \left( \frac{x}{|x|} \cdot \nabla u^{\textrm{scat}} - ik u^{\textrm{scat}} \right )
    &\to 0 & \textrm{ as } |x|\to \infty \; ,
-   \end{align*}
+   \end{aligned}
 
 The Green function for the Helmholtz equation is
 
@@ -264,10 +263,10 @@ single and double layer potential operators
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    [S\sigma](x) &:= \int_\Gamma G_k(x,y) \sigma(y) ds(y)  \\
    [D\sigma](x) &:= \int_\Gamma n(y)\cdot \nabla_y G_k(x,y) \sigma(y) ds(y) 
-   \end{align*}
+   \end{aligned}
    
 A robust choice for the layer potential representation for this problem is
 a *combined field* layer potential, which is a linear combination
@@ -282,10 +281,10 @@ results in the equation
 
 .. math::
 
-   \begin{align*}
+   \begin{aligned}
    -u^{\textrm{inc}}(x_0) &= \lim_{x\in \mathbb{R}^2\setminus \Omega, x\to x_0} [(D-ik S)\sigma](x)  \\
    &= \frac{1}{2} \sigma(x_0) + [ (\mathcal{D} -ik \mathcal{S})\sigma ](x_0)
-   \end{align*}
+   \end{aligned}
 
 where we have used the exterior jump condition for the double layer potential.
 As above, the integrals in the operators restricted to the boundary must sometimes
@@ -296,9 +295,8 @@ The above is a second kind integral equation and is invertible.
 As before, this is relatively straightforward to implement in :matlab:`chunkie`
 using the built-in kernels:
 
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START BASIC SCATTERING
    :end-before: % END BASIC SCATTERING
 
@@ -341,9 +339,8 @@ In that case, the equation
    \right ] (x_0) \; ,
 
    
-.. include:: ../../chunkie/guide/guide_simplebvps.m
-   :literal:
-   :code: matlab
+.. literalinclude:: ../../chunkie/guide/guide_simplebvps.m
+   :language: matlab
    :start-after: % START STOKES VELOCITY PROBLEM
    :end-before: % END STOKES VELOCITY PROBLEM
 

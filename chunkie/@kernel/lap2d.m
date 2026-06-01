@@ -23,6 +23,28 @@ function obj = lap2d(type, coefs)
 %   coefs(1)*KERNEL.LAP2D('d') + coefs(2)*KERNEL.LAP2D('s'). If no
 %   value of coefs is specified the default is coefs = [1 1]  
 %
+%   KERNEL.LAP2D('cp', coefs) or KERNEL.LAP2D('cprime', coefs) constructs
+%   the normal derivative of the combined-layer Laplace kernel with
+%   parameter coefs
+%
+%   KERNEL.LAP2D('cg', coefs) or KERNEL.LAP2D('cgrad', coefs) constructs
+%   the gradient of the combined-layer Laplace kernel with parameter coefs
+%   
+%   KERNEL.LAP2D('sint') or KERNEL.LAP2D('s int') constructs the volume
+%   integral of the single layer Laplace kernel
+%
+%   KERNEL.LAP2D('sintt') or KERNEL.LAP2D('s int trans') constructs the transpose of the 
+%   volume integral of the single layer Laplace kernel
+%   
+%   KERNEL.LAP2D('dint') or KERNEL.LAP2D('d int') constructs the volume
+%   integral of the double layer Laplace kernel
+%
+%   KERNEL.LAP2D('cint', coefs) or KERNEL.LAP2D('c int', coefs) constructs the volume
+%   integral of the combined-layer Laplace kernel with parameter coefs, 
+%   i.e. (coef(1)*  KERNEL.LAP2D('dint') + coef(2)* KERNEL.LAP2D('sint')). If no
+%   value of coefs is specified the default is coefs = [1 1] 
+%   
+%
 % See also CHNK.LAP2D.KERN.
 
 % author: Dan Fortunato
@@ -42,12 +64,20 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 's');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 's', sigma);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0]};
+        obj.splitinfo.action = {'r'};
+        obj.splitinfo.functions = @(s,t) lap2d_s_split(s,t);
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'd');
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'd', sigma);
         obj.sing = 'smooth';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 -1 0]};
+        obj.splitinfo.action = {'r'};
+        obj.splitinfo.functions = @(s,t) lap2d_d_split(s,t);
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
@@ -91,6 +121,61 @@ switch lower(type)
         obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'c', coefs);
         obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'c', sigma, coefs);
         obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[1 0 0 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r'};
+        obj.splitinfo.functions = @(s,t) lap2d_c_split(s,t,coefs);
+
+    case {'cp', 'cprime'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cp';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cprime', coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'cprime', sigma, coefs);
+        obj.sing = 'hs';
+
+    case {'cg', 'cgrad'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cg';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cgrad',coefs);
+        obj.fmm = @(eps,s,t,sigma) chnk.lap2d.fmm(eps, s, t, 'cgrad', sigma,coefs);
+        obj.sing = 'hs';
+        obj.opdims = [2,1];
+
+    case {'sint', 's int'}
+        obj.type = 'sint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sint');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'sintt', 's int trans'}
+        obj.type = 'sint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'sintt');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'dint', 'd int'}
+        obj.type = 'dint';
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'dint');
+        obj.sing = 'log';
+        obj.opdims = [1,1];
+
+    case {'cint', 'c int'}
+        if ( nargin < 2 )
+            warning('Missing combined layer parameter coefs. Defaulting to [1 1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'cint';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.lap2d.kern(s, t, 'cint',coefs);
+        obj.sing = 'log';
+        obj.opdims = [1,1];
 
     otherwise
         error('Unknown Laplace kernel type ''%s''.', type);
@@ -103,3 +188,20 @@ if icheck ~=3
 end
 
 end
+
+function f = lap2d_s_split(s,t)
+f = cell(1,1);
+f{1} = ones(size(t.r,2),size(s.r,2));
+end
+
+function f = lap2d_d_split(s,t)
+f = cell(1,1);
+f{1} = ones(size(t.r,2),size(s.r,2));
+end
+
+function f = lap2d_c_split(s,t,coefs)
+f = cell(2,1);
+f{1} = coefs(2)*ones(size(t.r,2),size(s.r,2));
+f{2} = coefs(1)*ones(size(t.r,2),size(s.r,2));
+end
+

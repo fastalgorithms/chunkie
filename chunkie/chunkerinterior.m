@@ -124,25 +124,14 @@ else
    useflam_final = useflam;
 end
 
-% use bernstein ellipses and rectangles to flag problematic points
-%
 
 eps_local = 1e-3;
-
-rho = 1.2;
-optsflag = [];  optsflag.rho = rho; optsflag.occ = 5;
-if grid
-    flag = flagnear_rectangle_grid(chnkr,x,y,optsflag);
-else
-    flag = flagnear_rectangle(chnkr,pts,optsflag);
-end
-
+rho = 1.6;
 npoly = chnkr.k;
 nlegnew = chnk.ellipse_oversample(rho,npoly,eps_local);
 nlegnew = max(nlegnew,chnkr.k);
 
 [chnkr2] = upsample(chnkr,nlegnew);
-
 
 
 icont = false;
@@ -185,14 +174,23 @@ in = abs(vals1+1) < abs(vals1);
 % for points where the integral might be inaccurate:
 % find close boundary point and check normal direction
 
+iffy = min(abs(vals1+1),abs(vals1)) > 1e-2;
 
-nnzpt = sum(flag~=0,2);
-ipt = find(nnzpt);
+ipt = find(iffy(:));
+pts_iffy = pts(:,iffy);
 
-npts = numel(pts)/2;
-distmins = inf(npts,1);
-dss = zeros(2,npts);
-rss = zeros(2,npts);
+optsflag = [];  optsflag.rho = rho; optsflag.occ = 5;
+flag = flagnear_rectangle(chnkr,pts_iffy,opts);
+flag2 = flagnear_rectangle(chnkr,chnkr.r(:,:),opts);
+flag2 = ((flag2.'*kron(speye(chnkr.nch),ones(chnkr.k,1))) > 1).';
+
+flag = (flag2*flag.').';
+
+npts_iffy = numel(pts_iffy)/2;
+assert(npts_iffy == length(ipt));
+distmins = inf(npts_iffy,1);
+dss = zeros(2,npts_iffy);
+rss = zeros(2,npts_iffy);
 
 k = chnkr.k;
 [t,~,u] = lege.exps(k);
@@ -204,7 +202,8 @@ for i = 1:chnkr.nch
     dval = chnkr.d(:,:,i);
     nval = chnkr.n(:,:,i);
     [ji] = find(flag(:,i));
-    ptsi = pts(:,ji);
+
+    ptsi = pts_iffy(:,ji);
     nptsi = size(ptsi,2);
     dist2all = reshape(sum( abs(reshape(ptsi,2,1,nptsi) ...
                     - reshape(rval,2,k,1)).^2, 1),k,nptsi);
@@ -223,9 +222,9 @@ for i = 1:chnkr.nch
     diffs = rval(:,ipti)-ptsi;
     dots = sum(ptsn.*diffs,1);
     
-    jsus = abs(dots) < 2e-1*sqrt(dist2all);
+    jsus = abs(dots) < 0.9*sqrt(dist2all);
     jii = ji(jsus);
-    [~,rs,ds,~,dist2s] = chnk.chunk_nearparam(rval,pts(:,jii),[],t,u);
+    [~,rs,ds,~,dist2s] = chnk.chunk_nearparam(rval,pts_iffy(:,jii),[],t,u);
     for j = 1:length(jii)
         jj = jii(j);
         if dist2s(j) < distmins(jj)
@@ -237,6 +236,8 @@ for i = 1:chnkr.nch
 end
 
 for i = 1:length(ipt)
-    jj = ipt(i);
-    in(jj) = (rss(:,jj)-pts(:,jj)).'*[dss(2,jj);-dss(1,jj)] > 0;
+    if distmins(i) < inf
+        jj = ipt(i);
+        in(jj) = (rss(:,i)-pts_iffy(:,i)).'*[dss(2,i);-dss(1,i)] > 0;
+    end
 end

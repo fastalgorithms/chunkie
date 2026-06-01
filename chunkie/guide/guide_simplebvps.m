@@ -96,7 +96,7 @@ plot(chnkr,'k')
 saveas(figure(1),"guide_simplebvps_basicscattering.png")
 
 %%
-% START STOKES VELOCITY
+% START STOKES VELOCITY PROBLEM
 % get a chunker discretization of a peanut-shaped domain
 modes = [2.5,0,0,1];
 ctr = [0;0];

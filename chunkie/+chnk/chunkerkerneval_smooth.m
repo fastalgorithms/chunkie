@@ -62,7 +62,7 @@ diam = max(diamsrc, diamtarg);
 % these are automatically ignored by the fmm and 
 % in chunkermat corrections
 if ~(strcmpi(imethod,'fmm') && isempty(flag))
-    flagslf = chnk.flagself(targinfo.r, chnkr.r, 1e-14*diam);
+    flagslf = chnk.flagself(real(targinfo.r), real(chnkr.r), 1e-14*diam);
     if isempty(flagslf)
         selfzero = sparse(opdims(1)*size(targinfo.r(:,:),2), ...
             opdims(2)*chnkr.npt);
@@ -94,6 +94,9 @@ if strcmpi(imethod,'direct')
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
             srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
+            if ~isempty(chnkr.data)
+                srcinfo.data = chnkr.data(:,:,i);
+            end
             kernmat = kerneval(srcinfo,targinfo);
 
             selfzeroch = selfzero(:, opdims(2)*k*(i-1) + (1:opdims(2)*k));
@@ -115,6 +118,9 @@ if strcmpi(imethod,'direct')
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
             srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
+            if ~isempty(chnkr.data)
+                srcinfo.data = chnkr.data(:,:,i);
+            end
             kernmat = kerneval(srcinfo,targinfo);
 
             rowkill = find(flag(:,i)); 
@@ -135,9 +141,11 @@ else
     wts = wts(:);
     
     if strcmpi(imethod,'flam')
-        xflam1 = chnkr.r(:,:);
+        xflam1 = real(chnkr.r(:,:));
         xflam1 = repmat(xflam1,opdims(2),1);
         xflam1 = reshape(xflam1,chnkr.dim,numel(xflam1)/chnkr.dim);
+
+        ifproxy = true;
 
         targinfo_flam = [];
         targinfo_flam.r = repelem(targinfo.r(:,:),1,opdims(1));
@@ -153,7 +161,11 @@ else
             targinfo_flam.n = repelem(targinfo.n(:,:),1,opdims(1));
         end
 
-% TODO: Pull through data?
+        if isfield(targinfo, 'data') && ~isempty(targinfo.data)
+            warning('CHNK.CHUNKERKERNEVAL_SMOOTH: chunker object had point data, not using proxy');
+            targinfo_flam.data = repelem(targinfo.data(:,:),1,opdims(1));
+            ifproxy = false;
+        end
 
         matfun = @(i,j) chnk.flam.kernbyindexr(i, j, targinfo_flam, ...,
                            chnkr, kerneval, opdims, selfzero);
@@ -163,22 +175,35 @@ else
         tmax = max(targinfo.r(:,:),[],2); tmin = min(targinfo.r(:,:),[],2);
         wmax = max(abs(tmax-tmin));
         width = max(width,wmax/3);  
-        npxy = chnk.flam.nproxy_square(kerneval,width);
-        [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
+        verb = false; % TODO: make this an option to chunkerkerneval?
+        if ifproxy
+            npxy = chnk.flam.nproxy_square(kerneval,width);
+            [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
 
-        pxyfun = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
-            ctr,chnkr,kerneval,opdims,pr,ptau,pw,pin);
-
-        optsifmm=[]; optsifmm.Tmax=Inf;
+            optsnpxy = []; optsnpxy.rank_or_tol = opts.eps;
+            pxyfun = @(lvl) proxyfunrbylevel(width,lvl,optsnpxy, ...
+              chnkr,kerneval,opdims,verb && opts.proxybylevel);
+            if ~opts.proxybylevel
+            % if not using proxy-by-level, always use pxyfunr from level 1
+              pxyfun = pxyfun(1);
+            end
+        else
+            pxyfun = [];
+	end
+        optsifmm=[]; 
+        optsifmm.Tmax=Inf; 
+        optsifmm.proxybylevel = opts.proxybylevel;
+        optsifmm.verb = verb;
         F = ifmm(matfun,targinfo_flam.r,xflam1,200,1e-14,pxyfun,optsifmm);
         fints = ifmm_mv(F,dens(:),matfun);
+        fints = fints(:);
     else
         wts2 = repmat(wts(:).', opdims(2), 1);
         sigma = wts2(:).*dens(:);
         fints = kern.fmm(1e-14, chnkr, targinfo, sigma);
+        fints = fints(:);
     end
     % delete interactions in flag array (possibly unstable approach)
-    
     
     if ~isempty(flag)
         for i = 1:nch
@@ -190,7 +215,9 @@ else
             srcinfo = []; srcinfo.r = chnkr.r(:,:,i); 
             srcinfo.n = chnkr.n(:,:,i);
             srcinfo.d = chnkr.d(:,:,i); srcinfo.d2 = chnkr.d2(:,:,i);
-
+            if ~isempty(chnkr.data)
+                srcinfo.data = chnkr.data(:,:,i);
+            end
             delsmooth = find(flag(:,i)); 
             delsmoothrow = (opdims(1)*(delsmooth(:)-1)).' + (1:opdims(1)).';
             delsmoothrow = delsmoothrow(:);
@@ -210,6 +237,10 @@ else
                 targinfo_use.n = targinfo.n(:,delsmooth);
             end
 
+            if isfield(targinfo,'data') && ~isempty(targinfo.data)
+                targinfo_use.data = targinfo.data(:,delsmooth);
+            end
+            
             kernmat = kerneval(srcinfo,targinfo_use);
 
             selfzeroch = selfzero(:, opdims(2)*k*(i-1) + (1:opdims(2)*k));
@@ -222,4 +253,17 @@ else
     end    
 end
 % sum(fints)
+end
+
+function pxyfunrlvl = proxyfunrbylevel(width,lvl,optsnpxy, ...
+    chnkr,kern,opdims,verb ...
+    )
+    npxy = chnk.flam.nproxy_square(kern,width/2^(lvl-1),optsnpxy);
+    [pr,ptau,pw,pin] = chnk.flam.proxy_square_pts(npxy);
+
+    if verb; fprintf('%3d | npxy = %i\n', lvl, npxy); end
+
+    % return the FLAM-style pxyfunr corresponding to lvl
+    pxyfunrlvl = @(rc,rx,cx,slf,nbr,l,ctr) chnk.flam.proxyfunr(rc,rx,slf,nbr,l, ...
+        ctr,chnkr,kern,opdims,pr,ptau,pw,pin);
 end

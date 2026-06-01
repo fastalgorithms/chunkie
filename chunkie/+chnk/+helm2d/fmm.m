@@ -46,7 +46,7 @@ function varargout = fmm(eps, zk, srcinfo, targinfo, type, sigma, varargin)
 %
 % Optional Output:
 %   pot - potential/neumann data corresponding to the kernel at the target locations
-%   grad  - gradient at target locations
+%   grad - gradient at target locations
 %   hess - hessian at target locations
 
 if ( nargout == 0 )
@@ -97,7 +97,7 @@ if ( nargout > 0 )
             varargout{1} = ( U.gradtarg(1,:).*targinfo.n(1,:) + ...
                              U.gradtarg(2,:).*targinfo.n(2,:) ).';
         otherwise
-            error('CHUNKIE:lap2d:fmm:pot', ...
+            error('CHUNKIE:helm2d:fmm:pot', ...
                 'Potentials not supported for Helmholtz kernel ''%s''.', type);
     end
 end

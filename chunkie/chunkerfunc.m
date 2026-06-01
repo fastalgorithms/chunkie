@@ -23,8 +23,8 @@ function [chnkr,ab] = chunkerfunc(fcurve,cparams,pref)
 %                 parameter space (should be in [ta,tb])
 %       cparams.ifclosed = flag determining if the curve
 %           is to be interpreted as a closed curve (true)
-%       cparams.chsmall = max size of end intervals if
-%           ifclosed == 0 (Inf)
+%       cparams.chsmall = max size of each end interval if
+%           ifclosed == 0 ([Inf, Inf])
 %       cparams.nover = oversample resolved curve nover
 %           times (0)
 %       cparams.eps = tolerance to resolve coordinates and arclength 
@@ -89,6 +89,9 @@ end
 if isfield(cparams,'chsmall')
     chsmall = cparams.chsmall;
 end	 
+if isscalar(chsmall)
+    chsmall = chsmall*ones(1,2);
+end
 if isfield(cparams,'nover')
     nover = cparams.nover;
 end	 
@@ -155,7 +158,7 @@ else
     tsplits = [ta;tb];
 end
    
-tsplits = sort(unique(tsplits),'ascend');
+tsplits = sort(uniquetol(tsplits,eps),'ascend');
 lab = length(tsplits);
 if (lab-1 > nchmax)
     error(['CHUNKERFUNC: nchmax exceeded in chunkerfunc on initial splits.\n ',...
@@ -183,15 +186,22 @@ end
 nchnew=nch;
 
 maxiter_res=nchmax-nch;
+if isfield(cparams,'ifrefine')
+    ifrefine = cparams.ifrefine;
+    if ~ifrefine
+        maxiter_res = 0;
+    end
+end
+
+xmin =  Inf;
+xmax = -Inf;
+ymin =  Inf;
+ymax = -Inf;
 
 rad_curr = 0;
 for ijk = 1:maxiter_res
 
 %       loop through all existing chunks, if resolved store, if not split
-    xmin =  Inf;
-    xmax = -Inf;
-    ymin =  Inf;
-    ymax = -Inf;
     
     ifdone=1;
     for ich=1:nchnew
@@ -224,7 +234,7 @@ for ijk = 1:maxiter_res
             
             resol_speed_test = err1>eps;
             if nout < 2
-                resol_speed_test = err1>eps*k;
+                resol_speed_test = err1*(b-a) > eps*k;
             end
             
             xmax = max(xmax,max(r(1,:)));
@@ -257,10 +267,12 @@ for ijk = 1:maxiter_res
 
      %       . . . mark as processed and resolved if less than eps
 
+                
+
             if (resol_speed_test || resol_curve_test  || ... 
                    total_curve_test || rlself > maxchunklen || ...
-                    and(or(adjs(1,ich) <= 0, adjs(2,ich) <= 0), ...
-                rlself > chsmall))
+                    or(and(adjs(1,ich) <= 0, rlself > chsmall(1)), ...
+                    and(adjs(2,ich) <= 0,rlself > chsmall(2))))
               %       . . . if here, not resolved
               %       divide - first update the adjacency list
                 if (nch +1 > nchmax)
@@ -602,4 +614,3 @@ function [len] = chunklength(fcurve,a,b,xs,ws,nout,dermat)
     dsdt = sqrt(sum(abs(out{2}).^2,1));
     len = dot(dsdt,ws)*(b-a)/2;
  end
-

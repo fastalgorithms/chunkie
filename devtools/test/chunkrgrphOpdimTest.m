@@ -1,5 +1,7 @@
-clear all
-addpaths_loc();
+chunkrgrphOpdimTest0();
+
+
+function chunkrgrphOpdimTest0()
 
 verts = [-3 1; 3 1; 3 5; -3 5; 
          -3 -5; 3 -5; 3 -1; -3 -1].';
@@ -20,15 +22,6 @@ fchnks = {}; % this by default gives me straight lines
 
 prefs = struct('maxchunklen',0.5);
 [cgrph] = chunkgraph(verts, edge2verts, fchnks, prefs);
-
-% figure(1); clf; hold on; axis equal; axis off;
-% plot(cgrph);
-% quiver(cgrph);
-% hold off;
-
-vstruc = procverts(cgrph);
-rgns = findregions(cgrph);
-cgrph = balance(cgrph);
 
 % kerns
 
@@ -60,3 +53,7 @@ end
 
 opts = struct('nonsmoothonly',false, 'rcip',true);
 [sysmat] = chunkermat(cgrph, fkerns, opts);
+
+end
+
+
