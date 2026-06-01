@@ -62,19 +62,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
             iffwd = 0;
         end
         
-    end
-
-    %disp(['inside g0mall, x = ' num2str(x)])
-    %if (iffwd == 0)
-    %    disp(['running backward recursion']);
-    %end
-    
-    %if (iffwd == 1)
-    %    disp(['running backward recursion']);
-    %end
-    
-    %return
-    
+    end    
     
 
     gvals = zeros(maxm+1,1);
@@ -176,7 +164,6 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     f = 1;
     dernext = 0;
     der = 1;
-
 
     % run the downward recurrence
     for j = 1:(nterms-maxm+1)
