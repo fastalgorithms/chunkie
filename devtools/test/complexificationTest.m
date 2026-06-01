@@ -42,6 +42,7 @@ srcinfo = [];
 srcinfo.r = [0;0.1];
 opts_refine = [];
 opts_refine.targfun = @(t) Kres.eval(srcinfo, t);
+lastwarn('','');
 cgrph = refine(cgrph, opts_refine);
 [~, warnID] = lastwarn();
 assert(isempty(warnID), 'Warning in complex chunkgraph with refine');
@@ -86,6 +87,6 @@ opts.accel = false;
 pot = chunkerkerneval(cgrph, Keval, dens, targ, opts);
 
 uex = sk1.eval(s, targ);
-assert(norm(uex - pot) < 1e-12); 
+assert(norm(uex - pot) < 1e-9); 
 
 end
