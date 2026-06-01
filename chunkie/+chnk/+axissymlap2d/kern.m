@@ -12,7 +12,7 @@ function submat = kern(srcinfo, targinfo, origin, type)
 % Here the first and second components correspond to the r and z
 % coordinates respectively. 
 %
-% Kernels based on G(x,y) = \int_{0}^{\pi} 1/(d(t)) \, dt \, 
+% Kernels based on G(x,y) = \frac{1}{4\pi}\int_{0}^{\pi} 1/(d(t)) \, dt \, 
 % where d(t) = \sqrt(r^2 + r'^2 - 2rr' \cos(t) + (z-z')^2) with
 % x = (r,z), and y = (r',z')
 %

@@ -1,4 +1,7 @@
 function [q1] = qeval1_far(x)
+%
+% TODO: fix vector evaluation
+%
 
         coefs = ...
        [0.55536036726979578088E0,                    

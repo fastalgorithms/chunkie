@@ -1,4 +1,7 @@
 function [q1] = qeval1_near(t)
+%
+% TODO: fix vector evaluation
+%
 
         coefs = ...
             [-0.2671320486001367265d0,

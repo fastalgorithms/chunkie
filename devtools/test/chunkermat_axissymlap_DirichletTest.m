@@ -6,7 +6,7 @@ rng(iseed);
 
 type = 'chnkr-star';
 type = 'chnkr-torus';
- type = 'cgrph';
+% type = 'cgrph';
 %type = 'cgrph-sphere';
 
 % irep = 'rpcomb';
@@ -74,7 +74,7 @@ end
 D      = kernel('axissymlaplace','d');
 S      = kernel('axissymlaplace','s');
 
-K = 1/(2*pi^2)*D;
+K = 2*D;
 Keval = K;
 
 opts = [];
@@ -83,7 +83,7 @@ opts.rcip = false;
 opts.nsub_or_tol = 40;
 npts = chnkr.npt;
 nsys = K.opdims(1)*npts;
-tic, A = chunkermat(chnkr, K, opts) + eye(nsys); toc
+tic, A = chunkermat(chnkr, K, opts) - eye(nsys); toc
 
 srcinfo  = []; srcinfo.r = sources; 
 targinfo = []; targinfo.r = chnkr.r(:,:); targinfo.n = chnkr.n(:,:);

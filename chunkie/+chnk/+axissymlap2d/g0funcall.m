@@ -4,13 +4,13 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
 % chnk.axissymlap2d.g0funcall evaluates a collection of axisymmetric Laplace
 % Green's functions, defined by the expression:
 %
-%     gfunc(n) = pi*rp * \int_0^{2\pi} 1/|x - x'| e^(-i n t) dt
+%     gfunc(n) = \frac{rp}{4\pi} * \int_0^{2\pi} 1/|x - x'| e^(-i n t) dt
 %
 % it is assumed that x = (x,0,z) otherwise the integral above should pick up a
 % phase factor out front of exp(i*n*phi), where phi is the azimuthal coordinate
 % of x in cylindrical coordinates.
 %
-% The extra factor of rp (and maybe pi?) out front makes subsequent interfacing
+% The extra factor of rp out front makes subsequent interfacing
 % with RCIP slightly easier. Modes 0 through maxm are returned, with gval(1) =
 % mode 0 and gval(maxm+1) = mode maxm. The function is even, so g_{-n} = g_n.
 %
@@ -19,12 +19,9 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
 % 
     
     twopi = 2*pi;
-    fourpi = 4*pi;
     done = 1.0;
-    ima = 1i;
 
     r0 = rp;
-    z0 = zp;
     rzero = sqrt(r*r + r0*r0 + dz*dz);
     alpha = 2*r*r0/rzero^2;
     x = 1/alpha;
@@ -33,7 +30,6 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     dxdr = (r^2 - r0^2 - (dz)^2)/2/r0/r^2;
     dxdz = 2*(dz)/2/r/r0;
     dxdr0 = (r0^2 - r^2 - (dz)^2)/2/r/r0^2;
-    dxdz0 = -dxdz;
   
     %!
     %! if xminus is very small, use the forward recurrence
@@ -64,25 +60,11 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
         
     end
 
-    %disp(['inside g0mall, x = ' num2str(x)])
-    %if (iffwd == 0)
-    %    disp(['running backward recursion']);
-    %end
-    
-    %if (iffwd == 1)
-    %    disp(['running backward recursion']);
-    %end
-    
-    %return
-    
-    
-
     gvals = zeros(maxm+1,1);
     gdzs = zeros(maxm+1,1);
     gdrs = zeros(maxm+1,1);
     gdrps = zeros(maxm+1,1);
     
-
     if (iffwd == 1)
 
         [q0, q1, dq0] = chnk.axissymlap2d.qleg_half(xminus);
@@ -90,8 +72,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
         
         half = done/2;
     
-        %fac = done/sqrt(r*r0)/4/pi^2;
-        fac = 2*pi*sqrt(rp/r);
+        fac = sqrt(rp/r)/twopi;
         gvals(1) = fac*q0;
         gvals(2) = fac*q1;
 
@@ -110,10 +91,6 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
         gdrps(1) = fac*(dq0*dxdr0 - q0/2/r0);
         gdrps(2) = fac*(dq1*dxdr0 - q1/2/r0);
 
-        % don't compute the zp derivatives, just minus the z derivatives
-        %grad0s(2,0) = dq0*dxdz0
-        %grad0s(2,1) = dq1*dxdz0
-
         % run upward recursion for the Q's to calculate them things
         for i = 1:(maxm-1)
             gvals(i+2) = (2*i*x*gvals(i+1) - (i-half)*gvals(i))/(i+half);
@@ -127,8 +104,6 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
 
         return
     end
-
-
 
     
     %!
@@ -163,11 +138,9 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
         der = dernext;
     end
 
-    
     %!
     %! now start at nterms and recurse down to maxm
     %!
-
     if (nterms < 10)
         nterms = 10;
     end
@@ -176,7 +149,6 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     f = 1;
     dernext = 0;
     der = 1;
-
 
     % run the downward recurrence
     for j = 1:(nterms-maxm+1)
@@ -208,16 +180,15 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     % !
     [q0, q1, dq0] = chnk.axissymlap2d.qleg_half(xminus);
     dq1 = (-q0 + x*q1)/2/(x+1)/xminus;
-    % call axi_q2lege01(x, xminus, q0, q1, dq0, dq1)
 
-    ratio = q0/gvals(1)*2*pi*sqrt(rp/r);
+    ratio = q0/gvals(1)*sqrt(rp/r)/twopi;
     
     for i = 1:(maxm+1)
         gvals(i) = gvals(i)*ratio;
     end
 
-    ders(1) = dq0*2*pi*sqrt(rp/r);
-    ders(2) = dq1*2*pi*sqrt(rp/r);
+    ders(1) = dq0*sqrt(rp/r)/twopi;
+    ders(2) = dq1*sqrt(rp/r)/twopi;
     for i = 2:maxm
        ders(i+1) = -(i-.5d0)*(gvals(i) - x*gvals(i+1))/(1+x)/xminus;
     end
@@ -225,28 +196,8 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
     %
     % and scale the gradients properly everyone...
     %
-    
-    %fac = 1/sqrt(r*r0)/4/pi^2
-
     gdzs = ders*dxdz;
     gdrs = ders*dxdr - gvals/2/r;
     gdrps = ders*dxdr0 - gvals/2/r0;
-
-    
-    %for i = 1:(maxm+1)
-    %   grads(1,i) = (ders(i)*dxdr - vals(i)/2/r)*fac
-    % grads(2,i) = ders(i)*dxdz*fac
-    %gdrs(i) = ders(i)*dxdr - gvals(i)/2/r;
-        %gdzs(i) = ders(i)*dxdz;
-    %   grad0s(1,i) = (ders(i)*dxdr0 - vals(i)/2/r0)*fac
-    %   grad0s(2,i) = ders(i)*dxdz0*fac
-    %    gvals(i) = gvals(i)*fac;
-    %   vals(-i) = vals(i)
-    %   grads(1,-i) = grads(1,i)
-    %   grads(2,-i) = grads(2,i)
-    %   grad0s(1,-i) = grad0s(1,i)
-    %   grad0s(2,-i) = grad0s(2,i)
-    %end
-
 
 end
