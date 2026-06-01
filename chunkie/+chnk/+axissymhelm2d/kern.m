@@ -299,6 +299,56 @@ case {'neu_rpcomb'}
   submat(1:3:end, 3:3:end) = c2*spikmat;
   submat(2:3:end, 1:3:end) = -sikmat;
   submat(3:3:end, 1:3:end) = -spikmat;
+
+case{'spp','sprimeprime'}
+  targnorm = targinfo.n(:,:);
+  [~,~,hess] = chnk.axissymhelm2d.green(zk, src, targ, origin);
+  nxtarg = repmat((targnorm(1,:)).',1,ns);
+  nytarg = repmat((targnorm(2,:)).',1,ns);
+  submat = hess(:,:,1).*nxtarg.*nxtarg + 2*hess(:,:,5).*nytarg.*nxtarg ...
+                                        + hess(:,:,3).*nytarg.*nytarg;
+
+  fker = @(x, s, t, rnt) fsprimeprime(x, zk, s, t, rnt, origin);
+    for j=1:ns
+        for i=1:nt
+            rt = targ(1,i) + origin(1);
+            dr = (src(1,j) - targ(1,i));
+            dz = (src(2,j) - targ(2,i));
+            r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
+            alph = (dr^2+dz^2)/r0^2;
+            if alph > 2e-4 && alph < 0.2
+                [x0, w0] = get_grid(zk, rt, dr, dz);
+                fvals = fker(x0, src(:, j), targ(:,i), targnorm(:,i));
+                submat(i,j) = 2*w0.'*fvals;
+            end
+        end
+    end
+
+case {'q','quad','quadruple','quadrupole'} % q := spp'
+  srcnorm = srcinfo.n(:,:);
+  [~,~,hess] = chnk.axissymhelm2d.green(zk, src, targ, origin);
+  nxsrc = repmat(srcnorm(1,:),nt,1);
+  nysrc = repmat(srcnorm(2,:),nt,1);
+  submat = hess(:,:,2).*nxsrc.*nxsrc - 2*hess(:,:,6).*nysrc.*nxsrc ... 
+                                      + hess(:,:,3).*nysrc.*nysrc;
+
+  fker = @(x, s, t, rns) fqlp(x, zk, s, t, rns, origin);
+    for j=1:ns
+        for i=1:nt
+            rt = targ(1,i) + origin(1);
+            dr = (src(1,j) - targ(1,i));
+            dz = (src(2,j) - targ(2,i));
+            r0   = sqrt(rt^2+(rt+dr)^2+dz^2);
+            alph = (dr^2+dz^2)/r0^2;
+            if alph > 2e-4 && alph < 0.2
+                [x0, w0] = get_grid(zk, rt, dr, dz);
+                fvals = fker(x0, src(:, j), targ(:,i), srcnorm(:,i));
+                submat(i,j) = 2*w0.'*fvals;
+            end
+        end
+    end
+
+  
 otherwise
     error('Unknown axissymmetric Helmholtz kernel type ''%s''.', type); 
 end
@@ -355,6 +405,36 @@ function f = fdprime (x, zk, s, t, rns, rnt, o)
     r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sxhalf2);
     f = -(rnsnt.*(1j*zk.*r-1)./r.^3 + ...
            rndt.*rnds.*(-zk^2.*r.^2 - 3*1j*zk.*r + 3)./r.^5).*exp(1j*zk*r)/4/pi.*(rs + o(1));
+end
+
+function f = fqlp (x, zk, s, t, rns, o)
+    rs = s(1); zs = s(2);
+    rt = t(1); zt = t(2);
+
+    sxhalf = sin(x/2);
+    sxhalf2 = sxhalf.*sxhalf;
+    cx = 1-2*sxhalf2;
+    
+    rnds = ((rt + o(1)).*cx  - (rs + o(1))).*rns(1) + (zt - zs).*rns(2);
+    
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sxhalf2);
+    f = ((1j*zk.*r-1)./r.^3 + ...
+           rnds.^2.*(-zk.*r.^2 - 3*1j*zk.*r + 3)./r.^5).*exp(1j*zk*r)/4/pi.*(rs+o(1));
+end
+
+function f = fsprimeprime (x, zk, s, t, rnt, o)
+    rs = s(1); zs = s(2);
+    rt = t(1); zt = t(2);
+
+    sxhalf = sin(x/2);
+    sxhalf2 = sxhalf.*sxhalf;
+    cx = 1-2*sxhalf2;
+    
+    rndt = ((rt + o(1)) - (rs + o(1)).*cx).*rnt(1) + (zt - zs).*rnt(2);
+
+    r = sqrt((rs-rt).^2 + (zs-zt).^2 + 4*(rs+o(1)).*(rt+o(1)).*sxhalf2);
+    f = ((1j*zk.*r-1)./r.^3 + ...
+           rndt.^2.*(-zk.*r.^2 - 3*1j*zk.*r + 3)./r.^5).*exp(1j*zk*r)/4/pi.*(rs+o(1));
 end
 
 function [fkp, fik, fikp, fkdiff] = get_neu_kers(zk, cx, sxhalf2, s, t, rns, rnt, o)
