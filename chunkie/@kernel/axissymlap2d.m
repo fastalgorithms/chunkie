@@ -1,5 +1,23 @@
 function obj = axissymlap2d(type, m)
 %KERNEL.AXISSYMLAP2D   Construct the axissymmetric Laplace kernel.
+%   KERNEL.AXISSYMLAP2D('s', m) or KERNEL.AXISSYMLAP2D('single', m) 
+%   constructs the axissymmetric single-layer Laplace kernel for the
+%   mth Fourier mode (m >= 0)
+%
+%   KERNEL.AXISSYMLAP2D('d', m) or KERNEL.AXISSYMLAP2D('double', m) 
+%   constructs the axissymmetric double-layer Laplace kernel for the 
+%   mth Fourier mode (m >= 0)
+%
+%   KERNEL.AXISSYMLAP2D('sp', m) or KERNEL.AXISSYMLAP2D('sprime', m) 
+%   constructs the normal derivative of the axissymmetric single-layer 
+%   Laplace kernel for the mth Fourier mode (m >= 0)
+%
+%   KERNEL.AXISSYMLAP2D('dp', m) or KERNEL.AXISSYMLAP2D('dprime', m) 
+%   constructs the normal derivative of the axissymmetric double-layer 
+%   Laplace kernel for the mth Fourier mode (m >= 0)
+%
+% if m is not provided, it defaults to m=0.
+%
 % See also CHNK.AXISSYMHELM2D.KERN.
 
 if ( nargin < 1 )
