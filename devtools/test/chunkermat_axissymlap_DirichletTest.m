@@ -13,9 +13,6 @@ type = 'chnkr-torus';
 type = 'cgrph';
 %type = 'cgrph-sphere';
 
-% irep = 'rpcomb';
-irep = 'sk';
-
 pref = [];
 pref.k = 16;
 ns = 100;
@@ -25,15 +22,11 @@ nt = 200;
 
 maxchunklen = 0.5;
 
-[chnkr, sources,targets] = get_geometry(type, pref, ns, nt, maxchunklen);
 [chnkr, targets, sources] = get_geometry(type, pref, nt, ns, maxchunklen);
-wts = chnkr.wts; wts = wts(:);
-
 
 %targets = [0.4,0.3;-0.2,0.2];
 %sources = [0.01;1.4];
 
-l2scale = false;
 fprintf('Done building geometry\n');
 
 % source strengths
@@ -56,24 +49,6 @@ axis equal
 
 end
 
-
-% For solving exterior the Neumann boundary value problem, we use the
-% following integral equation
-%
-% u = \beta(S_{k} + i \alpha D_{k} S_{ik}) \sigma
-%
-% with \beta = -1.0/(0.5 + 1i*0.25*alpha)
-% 
-% On imposing the boundary conditions, we get the following integral 
-% equation
-%
-%  du/dn = I + \beta S_{k}'[\sigma] + 
-%          i\beta \alpha(D'_{k} - D'_{ik})(S_{ik}[\sigma]) + 
-%          i\beta \alpha(S_{ik}')^2 [\sigma];
-% 
-% Setting -S_{ik}[\sigma] + \tau = 0, and - S_{ik}'[\sigma] + \mu=0, 
-% we have the following system of integral equations
-
 % Set up kernels
 D      = kernel('axissymlaplace','d');
 S      = kernel('axissymlaplace','s');
@@ -82,7 +57,6 @@ K = -1/(2*pi^2)*D;
 Keval = K;
 
 opts = [];
-%opts.l2scale = l2scale;
 opts.rcip = true;
 opts.nsub_or_tol = 40;
 npts = chnkr.npt;
@@ -139,154 +113,6 @@ fprintf('relative l_inf/l_1 error %5.2e\n', relerr2);
 
 assert(relerr < 1e-10)
 assert(relerr2 < 1e-10)
-
-return
-
-
-
-
-
-if strcmpi(irep,'rpcomb')
-    Sik    = kernel('axissymhelm', 's', 1i*zk);
-    Sikp   = kernel('axissymhelm', 'sprime', 1i*zk);
-    Dkdiff = kernel('axissymhelmdiff', 'dprime', [zk 1i*zk]);
-    alpha = 1;
-    c1 = -1/(0.5 + 1i*alpha*0.25);
-    c2 = -1i*alpha/(0.5 + 1i*alpha*0.25);
-    c3 = -1;
-    K = [ c1*Skp  c2*Dkdiff c2*Sikp ;
-       c3*Sik  Z        Z        ;
-       c3*Sikp Z        Z        ];
-    K = kernel(K);
-    Keval = c1*kernel([Sk 1i*alpha*Dk Z]);
-else
-    K = -2*Skp;
-    Keval = -2*Sk;
-end
-
-% Set up boundary data
-
-srcinfo  = []; srcinfo.r = sources; 
-targinfo = []; targinfo.r = chnkr.r(:,:); targinfo.n = chnkr.n(:,:);
-kernmats = Skp.eval(srcinfo, targinfo);
-ubdry = kernmats*strengths;
-
-% rvals = chnkr.r(1,:);
-% ubdry = ubdry.*rvals(:);
-
-npts = chnkr.npt;
-nsys = K.opdims(1)*npts;
-rhs = zeros(nsys, 1);
-
-
-if(l2scale)
-    rhs(1:K.opdims(1):end) = ubdry.*sqrt(wts);
-else
-    rhs(1:K.opdims(1):end) = ubdry;
-end
-
-% Form matrix
-opts = [];
-opts.l2scale = l2scale;
-opts.rcip = true;
-opts.nsub_or_tol = 20;
-tic, A = chunkermat(chnkr, K, opts) + eye(nsys); toc
-start = tic;
-sol = gmres(A, rhs, [], 1e-14, 200);
-t1 = toc(start);
-
-% Compute exact solution
-srcinfo  = []; srcinfo.r  = sources;
-targinfo = []; targinfo.r = targets;
-kernmatstarg = Sk.eval(srcinfo, targinfo);
-utarg = kernmatstarg*strengths;
-
-% Compute solution using chunkerkerneval
-% evaluate at targets and compare
-
-opts.forcesmooth = false;
-opts.verb = false;
-opts.quadkgparams = {'RelTol', 1e-8, 'AbsTol', 1.0e-8};
-
-if(l2scale)
-    wts_rep = repmat(wts(:).', K.opdims(1),1);
-    wts_rep = wts_rep(:);
-    sol = sol./sqrt(wts_rep);
-end
-
-if isa(chnkr, 'chunkgraph')
-    % Collapse cgrph into chnkrtotal
-    chnkrs = chnkr.echnks;
-    chnkrtotal = merge(chnkrs);
-else
-    chnkrtotal = chnkr;
-end
-
-
-
-start = tic;
-Dsol = chunkerkerneval(chnkrtotal, Keval, sol, targets, opts);
-t2 = toc(start);
-fprintf('%5.2e s : time to eval at targs (slow, adaptive routine)\n', t2)
-
-
-wchnkr = chnkrtotal.wts;
-wchnkr = repmat(wchnkr(:).', K.opdims(1), 1);
-relerr  = norm(utarg-Dsol) / (sqrt(chnkrtotal.nch)*norm(utarg));
-relerr2 = norm(utarg-Dsol, 'inf') / dot(abs(sol(:)), wchnkr(:));
-fprintf('relative frobenius error %5.2e\n', relerr);
-fprintf('relative l_inf/l_1 error %5.2e\n', relerr2);
-
-return
-
-
-
-
-% Test fast direct solver interfaces
-
-% build sparse tridiag part
-
-opts.nonsmoothonly = true;
-opts.rcip = true;
-start = tic; spmat = chunkermat(chnkr, K, opts); t1 = toc(start);
-fprintf('%5.2e s : time to build tridiag\n',t1)
-
-
-spmat = spmat + speye(nsys);
-
-% test matrix entry evaluator
-start = tic; 
-opdims = K.opdims;
-sys2 = chnk.flam.kernbyindex(1:nsys, 1:nsys, chnkr, K, opdims, ...
-    spmat, l2scale);
-
-
-t1 = toc(start);
-
-fprintf('%5.2e s : time for mat entry eval on whole mat\n',t1)
-
-err2 = norm(sys2-A,'fro')/norm(A,'fro');
-fprintf('%5.2e   : fro error of build \n',err2);
-
-% test fast direct solver
-opts.ifproxy = false;
-F = chunkerflam(chnkr,K,1.0,opts);
-
-start = tic; sol2 = rskelf_sv(F,rhs); t1 = toc(start);
-
-if(l2scale)
-    wts_rep = repmat(wts(:).', K.opdims(1),1);
-    wts_rep = wts_rep(:);
-    sol2 = sol2./sqrt(wts_rep);
-end
-
-
-fprintf('%5.2e s : time for rskelf_sv \n',t1)
-
-err = norm(sol-sol2,'fro')/norm(sol,'fro');
-
-fprintf('difference between fast-direct and iterative %5.2e\n',err)
-
 
 end
 
