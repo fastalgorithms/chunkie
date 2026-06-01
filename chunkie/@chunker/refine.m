@@ -289,7 +289,11 @@ if ~isempty(targfun)
             if (chnkr.nch + 1 > nchmax)
                 error('too many chunks')
             end
-            chnkr = split(chnkr,ii,[],x,w,u,stype);
+            if max(abs(imag(chnkr.r(:,:,ii))), [], 'all') > 1e-16
+                chnkr = split(chnkr,ii,[],x,w,u,'t');
+            else
+                chnkr = split(chnkr,ii,[],x,w,u,stype);
+            end
             nch = chnkr.nch;
             if (nch > length(chunklens))
                 chunklens = resizechunklens(chunklens,nchmax);

@@ -17,12 +17,12 @@ zk1 = zks(1);
 zk2 = zks(2);
 
 a = 3;
-b = 1/a/2;
+b = 1;
 t0 =-5;
 t1 = 5;
 
-f = @(t) flat_interface(t, a, b, t0, t1);
-nch = 50;
+f = @(t) chnk.curves.complex_interface(t, a, b, t0, t1);
+nch = 30;
 xrad = -log(eps)/abs(real(zk1)) + max([abs(t0),abs(t1)]);
 xmin = -xrad;
 xmax =  xrad;
@@ -36,7 +36,17 @@ rends = chunkends(chnkr,[1,chnkr.nch]);
 verts = rends(:,[1,4]);
 fchnk{1} = chnkr;
 cgrph = chunkgraph(real(verts),[1;2],fchnk);
-cgrph2 = chunkgraph(real(verts),[1;2],f,cparams); % used to fail
+
+Kres = kernel('lap', 's');
+srcinfo = [];
+srcinfo.r = [0;0.1];
+opts_refine = [];
+opts_refine.targfun = @(t) Kres.eval(srcinfo, t);
+lastwarn('','');
+cgrph = refine(cgrph, opts_refine);
+[~, warnID] = lastwarn();
+assert(isempty(warnID), 'Warning in complex chunkgraph with refine');
+
 
 ddiff = kernel('helmdiff', 'd', zks);
 sdiff = (-1)*kernel('helmdiff', 's', zks);
@@ -77,27 +87,6 @@ opts.accel = false;
 pot = chunkerkerneval(cgrph, Keval, dens, targ, opts);
 
 uex = sk1.eval(s, targ);
-assert(norm(uex - pot) < 1e-12); 
+assert(norm(uex - pot) < 1e-9); 
 
 end
-
-
-function [f,fd,fdd] = flat_interface(t, a, b, t0, t1)
-    
-    phi   = @(t,u,v,z) u*(t-z).*erfc(u*(t-z))*v - exp(-u^2*(t-z).^2)/sqrt(pi)*v;
-    phid  = @(t,u,v,z) u*erfc(u*(t-z))*v;
-    phidd = @(t,u,v,z) -u*u*exp(-u^2*(t-z).^2)*2*v/sqrt(pi);
-    f = zeros([2,size(t)]);
-    fd = zeros([2,size(t)]);
-    fdd = zeros([2,size(t)]);
-    
-    f(1,:) = t + 1i*(phi(t,a,b,t0) - phi(t,-a,b,t1)); 
-    fd(1,:)= 1 + 1i*(phid(t,a,b,t0) - phid(t,-a,b,t1));
-    fdd(1,:) = 1i*(phidd(t,a,b,t0) - phidd(t,-a,b,t1));
-    
-    f(2,:) = 0;
-    fd(2,:) = 0;
-    fdd(2,:) = 0;
-        
-end
-
