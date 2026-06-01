@@ -22,7 +22,7 @@ t0 =-5;
 t1 = 5;
 
 f = @(t) chnk.curves.complex_interface(t, a, b, t0, t1);
-nch = 50;
+nch = 30;
 xrad = -log(eps)/abs(real(zk1)) + max([abs(t0),abs(t1)]);
 xmin = -xrad;
 xmax =  xrad;
@@ -36,7 +36,16 @@ rends = chunkends(chnkr,[1,chnkr.nch]);
 verts = rends(:,[1,4]);
 fchnk{1} = chnkr;
 cgrph = chunkgraph(real(verts),[1;2],fchnk);
-cgrph2 = chunkgraph(real(verts),[1;2],f,cparams); % used to fail
+
+Kres = kernel('lap', 's');
+srcinfo = [];
+srcinfo.r = [0;0.1];
+opts_refine = [];
+opts_refine.targfun = @(t) Kres.eval(srcinfo, t);
+cgrph = refine(cgrph, opts_refine);
+[~, warnID] = lastwarn();
+assert(isempty(warnID), 'Warning in complex chunkgraph with refine');
+
 
 ddiff = kernel('helmdiff', 'd', zks);
 sdiff = (-1)*kernel('helmdiff', 's', zks);
