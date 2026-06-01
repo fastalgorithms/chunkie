@@ -1,4 +1,7 @@
 
+g0funcall_vecTest0()
+
+function g0funcall_vecTest0()
 %
 % verify that the modeal Green's functions for Laplace are working properly
 %
@@ -94,5 +97,13 @@ disp(['gdrz error = ' num2str(norm(gdrz-exact_gdrz))]);
 disp(['gdrpz error = ' num2str(norm(gdrpz-exact_gdrpz))]);
 disp(['gdrpr error = ' num2str(norm(gdrpr-exact_gdrpr))]);
 
+assert(norm(gval-exact) < 1e-12)
+assert(max(gdz-exact_gdz) < 1e-6)
+assert(max(gdr-exact_gdr) < 1e-6)
+assert(max(gdrp-exact_gdrp) < 1e-6)
+assert(max(gdzz-exact_gdzz) < 1e-4)
+assert(max(gdrz-exact_gdrz) < 1e-4)
+assert(max(gdrpz-exact_gdrpz) < 1e-4)
+assert(max(gdrpr-exact_gdrpr) < 1e-4)
 
-
+end

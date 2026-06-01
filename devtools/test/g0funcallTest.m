@@ -1,5 +1,7 @@
 
+g0funcallTest0();
 
+function g0funcallTest0()
 %
 % verify that the modeal Green's functions for Laplace are working properly
 %
@@ -92,3 +94,10 @@ errors_gdr = abs(gdrs-exact_gdr)
 disp(' ')
 disp('errors in all modes for d/drp')
 errors_gdrp = abs(gdrps-exact_gdrp)
+
+assert(max(errors) < 1e-12)
+assert(max(errors_gdz) < 1e-7)
+assert(max(errors_gdr) < 1e-8)
+assert(max(errors_gdrp) < 1e-7)
+
+end
