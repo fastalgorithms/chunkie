@@ -54,6 +54,11 @@ targ = targinfo.r;
 [~, ns] = size(src);
 [~, nt] = size(targ);
 
+if m == 0
+    submat = chnk.axissymlap2d.kern(srcinfo,targinfo,origin,type);
+    return
+end
+
 if strcmpi(type, 'd')
     srcnorm = srcinfo.n;
     [~, grad] = chnk.axissymlap2d.green_modal(src, targ, origin, m);

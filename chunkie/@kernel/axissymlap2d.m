@@ -5,6 +5,9 @@ function obj = axissymlap2d(type, m)
 if ( nargin < 1 )
     error('Missing Laplace kernel type.');
 end
+if ( nargin < 2 )
+    m = 0;
+end
 
 obj = kernel();
 obj.name = 'axissymlaplace';

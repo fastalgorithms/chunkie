@@ -1,4 +1,8 @@
-%clearvars; close all;
+
+chunkermat_axissymlap_DirichletTest0();
+
+function chunkermat_axissymlap_DirichletTest0()
+
 iseed = 8675309;
 rng(iseed);
 
@@ -6,7 +10,7 @@ rng(iseed);
 
 type = 'chnkr-star';
 type = 'chnkr-torus';
- type = 'cgrph';
+type = 'cgrph';
 %type = 'cgrph-sphere';
 
 % irep = 'rpcomb';
@@ -18,7 +22,7 @@ ns = 100;
 nt = 200;
 %ns = 1;
 %nt = 1;
-ppw = 10;   % points per wavelength;
+
 maxchunklen = 0.5;
 
 [chnkr, sources,targets] = get_geometry(type, pref, ns, nt, maxchunklen);
@@ -39,7 +43,7 @@ strengths = randn(ns, 1);
 
 % Plot everything
 
-if (true)
+if (false)
 figure(1)
 clf
 hold off
@@ -74,12 +78,12 @@ end
 D      = kernel('axissymlaplace','d');
 S      = kernel('axissymlaplace','s');
 
-K = 1/(2*pi^2)*D;
+K = -1/(2*pi^2)*D;
 Keval = K;
 
 opts = [];
 %opts.l2scale = l2scale;
-opts.rcip = false;
+opts.rcip = true;
 opts.nsub_or_tol = 40;
 npts = chnkr.npt;
 nsys = K.opdims(1)*npts;
@@ -133,7 +137,8 @@ relerr2 = norm(utarg-Dsol, 'inf') / dot(abs(sol(:)), wchnkr(:));
 fprintf('relative frobenius error %5.2e\n', relerr);
 fprintf('relative l_inf/l_1 error %5.2e\n', relerr2);
 
-
+assert(relerr < 1e-10)
+assert(relerr2 < 1e-10)
 
 return
 
@@ -282,6 +287,8 @@ err = norm(sol-sol2,'fro')/norm(sol,'fro');
 
 fprintf('difference between fast-direct and iterative %5.2e\n',err)
 
+
+end
 
 function [chnkobj, sources, targets] = get_geometry(type, pref, ns, nt, maxchunklen)
 
