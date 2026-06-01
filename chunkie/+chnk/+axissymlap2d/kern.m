@@ -74,21 +74,8 @@ if strcmpi(type, 'sprime')
 end
 
 if strcmpi(type, 's')
-    submat = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
-end
-
-if strcmpi(type, 'dprime')
-    targnorm = targinfo.n;
-    srcnorm = srcinfo.n;
-    nxt = repmat((targnorm(1,:)).',1,ns);
-    nyt = repmat((targnorm(2,:)).',1,ns);
-    nxs = repmat(srcnorm(1,:), nt, 1);
-    nys = repmat(srcnorm(2,:), nt, 1);
+    submat = chnk.axissymlap2d.green(src, targ, origin);
     
-    % hess = d_{rr'}, d_{zz'}, d_{rz'}, d_{r'z}
-    [~, ~, hess] = chnk.axissymlap2d.green_0th_mode(src, targ, origin);
-    submat = (hess(:,:,1).*nxt.*nxs + hess(:,:,3).*nys.*nxt ...
-        + hess(:,:,4).*nxs.*nyt + hess(:,:,2).*nyt.*nys);
 end
 
-end
+
