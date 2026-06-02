@@ -38,48 +38,50 @@ hhh = 0.0001;
 % compare with the recurrence relation code. Note: The "exact" derivatives are
 % estimated using finite difference, so it is expected that the error is O(h^2)
 
+fac = rp;
+
 for m = 1:(maxm+1)
     dint = chnk.axissymlap2d.gkm_brute(r, rp, z, zp, zk, m-1, nq);
-    exact(m) = dint*4*pi*pi*rp;
+    exact(m) = dint*fac;
 
     % calculate z derivative using finite differences
     dint2 = chnk.axissymlap2d.gkm_brute(r, rp, z+hhh, zp, zk, m-1, nq);
     dint1 = chnk.axissymlap2d.gkm_brute(r, rp, z-hhh, zp, zk, m-1, nq);
-    exact_gdz(m) = (dint2-dint1)/(2*hhh)*4*pi*pi*rp;
+    exact_gdz(m) = (dint2-dint1)/(2*hhh)*fac;
     
     % gdzz
-    exact_gdzz(m) = (dint2 - 2*dint + dint1)/(hhh^2)*4*pi*pi*rp;
+    exact_gdzz(m) = (dint2 - 2*dint + dint1)/(hhh^2)*fac;
 
     % calculate r derivative using finite differences
     dint2 = chnk.axissymlap2d.gkm_brute(r+hhh, rp, z, zp, zk, m-1, nq);
     dint1 = chnk.axissymlap2d.gkm_brute(r-hhh, rp, z, zp, zk, m-1, nq);
-    exact_gdr(m) = (dint2-dint1)/(2*hhh)*4*pi*pi*rp;
+    exact_gdr(m) = (dint2-dint1)/(2*hhh)*fac;
 
     % calculate rp derivative using finite differences
     dint2 = chnk.axissymlap2d.gkm_brute(r, rp+hhh, z, zp, zk, m-1, nq);
     dint1 = chnk.axissymlap2d.gkm_brute(r, rp-hhh, z, zp, zk, m-1, nq);
-    exact_gdrp(m) = (dint2-dint1)/(2*hhh)*4*pi*pi*rp;
+    exact_gdrp(m) = (dint2-dint1)/(2*hhh)*fac;
     
     % gdrz
     dpp = chnk.axissymlap2d.gkm_brute(r+hhh, rp, z+hhh, zp, zk, m-1, nq);  % +r, +z
     dpm = chnk.axissymlap2d.gkm_brute(r+hhh, rp, z-hhh, zp, zk, m-1, nq);  % +r, -z
     dmp = chnk.axissymlap2d.gkm_brute(r-hhh, rp, z+hhh, zp, zk, m-1, nq);  % -r, +z
     dmm = chnk.axissymlap2d.gkm_brute(r-hhh, rp, z-hhh, zp, zk, m-1, nq);  % -r, -z
-    exact_gdrz(m) = (dpp - dpm - dmp + dmm) / (4 * hhh^2)*4*pi*pi*rp;
+    exact_gdrz(m) = (dpp - dpm - dmp + dmm) / (4 * hhh^2)*fac;
 
     % gdrpz
     dpp = chnk.axissymlap2d.gkm_brute(r, rp+hhh, z+hhh, zp, zk, m-1, nq);  % +r, +z
     dpm = chnk.axissymlap2d.gkm_brute(r, rp+hhh, z-hhh, zp, zk, m-1, nq);  % +r, -z
     dmp = chnk.axissymlap2d.gkm_brute(r, rp-hhh, z+hhh, zp, zk, m-1, nq);  % -r, +z
     dmm = chnk.axissymlap2d.gkm_brute(r, rp-hhh, z-hhh, zp, zk, m-1, nq);  % -r, -z
-    exact_gdrpz(m) = (dpp - dpm - dmp + dmm) / (4 * hhh^2)*4*pi*pi*rp;
+    exact_gdrpz(m) = (dpp - dpm - dmp + dmm) / (4 * hhh^2)*fac;
 
     %gdrpr
     dpp = chnk.axissymlap2d.gkm_brute(r+hhh, rp+hhh, z, zp, zk, m-1, nq);  % +r, +z
     dpm = chnk.axissymlap2d.gkm_brute(r+hhh, rp-hhh, z, zp, zk, m-1, nq);  % +r, -z
     dmp = chnk.axissymlap2d.gkm_brute(r-hhh, rp+hhh, z, zp, zk, m-1, nq);  % -r, +z
     dmm = chnk.axissymlap2d.gkm_brute(r-hhh, rp-hhh, z, zp, zk, m-1, nq);  % -r, -z
-    exact_gdrpr(m) = (dpp - dpm - dmp + dmm) / (4 * hhh^2)*4*pi*pi*rp;
+    exact_gdrpr(m) = (dpp - dpm - dmp + dmm) / (4 * hhh^2)*fac;
 end
 
 
