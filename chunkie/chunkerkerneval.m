@@ -48,9 +48,14 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %           false, a hybrid algorithm is used, where the smooth rule is 
 %           applied for targets separated by opts.fac*length of chunk from
 %           a given chunk and adaptive integration is used otherwise
-%       opts.fac = the factor times the chunk length used to decide 
+%       opts.fac = the factor times the chunk length used to decide
 %               between adaptive/smooth rule
 %       opts.eps = tolerance for adaptive integration
+%       opts.forcewlchs - if = true, use kernel-split (Helsing-style)
+%               panel quadrature for close evaluation. Supports Laplace
+%               (s/d/sp) scalar kernels -- kern must be a single kernel
+%               object. Delivers 10+ digits of accuracy at close
+%               off-curve targets. (false)
 %
 % output:
 %   fints - opdims(1) x nt array of integral values where opdims is the 
@@ -137,6 +142,87 @@ if isfield(opts,'accel'); opts_use.accel = opts.accel; end
 if isfield(opts,'fac'); opts_use.fac = opts.fac; end
 if isfield(opts,'eps'); opts_use.eps = opts.eps; end
 if isfield(opts,'proxybylevel'); opts_use.proxybylevel = opts.proxybylevel; end
+
+% Kernel-split (Helsing-style) panel quadrature for accurate close
+% evaluation of Laplace S, D, S' layer potentials.
+fw_raw = [];
+if isfield(opts,'forcewlchs') && ~isempty(opts.forcewlchs)
+    fw_raw = opts.forcewlchs;
+end
+if (islogical(fw_raw) || isnumeric(fw_raw)) && isscalar(fw_raw)
+    use_wlchs = logical(fw_raw);
+else
+    use_wlchs = false;
+end
+
+if use_wlchs
+    % Single scalar kernel (laplace, opdims=[1 1]).
+    if size(kern,1) ~= 1 || size(kern,2) ~= 1 || ~isa(kern,'kernel')
+        error("CHUNKERKERNEVAL: forcewlchs=true requires a single kernel object");
+    end
+    is_lap = strcmpi(kern.name, 'laplace');
+    if ~is_lap
+        error("CHUNKERKERNEVAL: forcewlchs supports Laplace kernels");
+    end
+    if ~ismember(lower(kern.type), {'s','single','d','double','sp','sprime'})
+        error("CHUNKERKERNEVAL: forcewlchs currently supports only s/d/sp layers");
+    end
+    wlchs_type   = kern.type;
+    wlchs_family = kern.name;
+
+    src_probe = struct('r',[0;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
+    tgt_probe = struct('r',[1;0],'n',[1;0],'d',[1;0],'d2',[0;0]);
+    if strcmpi(wlchs_type,'s') || strcmpi(wlchs_type,'single')
+        tgt_probe.r = [2;0];
+        val_probe = kern.eval(src_probe, tgt_probe);
+        base_probe = -log(2)/(2*pi);
+    else
+        val_probe = kern.eval(src_probe, tgt_probe);
+        base_probe = 1/(2*pi);
+    end
+    wlchs_coef = val_probe / base_probe;
+
+    % Non-rcipsav path: dispatch directly to kernsplit on the (possibly
+    % merged) chunker. Targets pass through as raw point coords or struct
+    % with .r and .n when normals are needed (sp).
+    if length(chnkr) > 1
+        chnkr_use = merge(chnkr);
+    else
+        chnkr_use = chnkr;
+    end
+    targ_pts = local_target_points(targobj);
+    needs_tgt_normals = any(strcmpi(wlchs_type, {'sp','sprime'}));
+    targ_n = [];
+    if needs_tgt_normals
+        targ_n = local_target_normals(targobj);
+        if isempty(targ_n)
+            error(['CHUNKERKERNEVAL: forcewlchs with sp kernel ' ...
+                   'requires target normals; pass targobj as a struct with .n']);
+        end
+    end
+    hpe_opts = struct();
+    if isfield(opts,'forcefmm') && opts.forcefmm
+        hpe_opts.forcefmm = true;
+    end
+    if needs_tgt_normals
+        targ_for_eval = struct('r', targ_pts, 'n', targ_n);
+    else
+        targ_for_eval = targ_pts;
+    end
+    switch lower(wlchs_family)
+        case 'laplace'
+            fints = wlchs_coef * chnk.kernsplit.lap2d_panel_eval(chnkr_use, ...
+                wlchs_type, dens, targ_for_eval, [], hpe_opts);
+        otherwise
+            error('CHUNKERKERNEVAL: forcewlchs family %s not supported', wlchs_family);
+    end
+    if icgrph && size(kern,1) > 1
+        ids = chunkgraphinregion(chnkobj, targ_pts);
+    else
+        ids = ones(size(targ_pts,2),1);
+    end
+    return
+end
 
 % Assign appropriate object to targinfo
 targinfo = [];
@@ -517,10 +603,39 @@ else % do only those flagged
         indji = (ji-1)*opdims(1);
         ind = (indji(:)).' + (1:opdims(1)).';
         ind = ind(:);
-        fints(ind) = fints(ind) + fints1;        
+        fints(ind) = fints(ind) + fints1;
 
     end
-    
+
 end
 
+end
+
+
+function r = local_target_points(targobj)
+%LOCAL_TARGET_POINTS  pull the dim x nt point array from any of the
+% supported targobj forms (chunker, chunkgraph, struct with .r, raw array).
+if isa(targobj,'chunker') || isa(targobj,'chunkgraph')
+    r = targobj.r(:,:);
+elseif isstruct(targobj) && isfield(targobj,'r')
+    r = targobj.r(:,:);
+elseif isnumeric(targobj)
+    r = targobj;
+else
+    error('CHUNKERKERNEVAL: unsupported targobj type');
+end
+end
+
+
+function n = local_target_normals(targobj)
+%LOCAL_TARGET_NORMALS  pull a dim x nt target-normal array if the target
+% representation carries one; return [] otherwise. Used for forcewlchs
+% with normal-derivative kernels (sp).
+if isa(targobj,'chunker') || isa(targobj,'chunkgraph')
+    n = targobj.n(:,:);
+elseif isstruct(targobj) && isfield(targobj,'n') && ~isempty(targobj.n)
+    n = targobj.n(:,:);
+else
+    n = [];
+end
 end
