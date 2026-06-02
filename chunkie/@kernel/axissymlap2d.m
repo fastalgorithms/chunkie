@@ -1,31 +1,30 @@
-function obj = axissymlap2d(type)
-%KERNEL.AXISSYMHELM2D   Construct the axissymmetric Helmholtz kernel.
-%   KERNEL.AXISSYMHELM2D('s', ZK) or KERNEL.AXISSYMHELM2D('single', ZK) 
-%   constructs the axissymmetric single-layer Helmholtz kernel with 
-%   wavenumber ZK.
+function obj = axissymlap2d(type, m)
+%KERNEL.AXISSYMLAP2D   Construct the axissymmetric Laplace kernel.
+%   KERNEL.AXISSYMLAP2D('s', m) or KERNEL.AXISSYMLAP2D('single', m) 
+%   constructs the axissymmetric single-layer Laplace kernel for the
+%   mth Fourier mode (m >= 0)
 %
-%   KERNEL.AXISSYMHELM2D('d', ZK) or KERNEL.AXISSYMHELM2D('double', ZK) 
-%   constructs the axissymmetric double-layer Helmholtz kernel with 
-%   wavenumber ZK.
+%   KERNEL.AXISSYMLAP2D('d', m) or KERNEL.AXISSYMLAP2D('double', m) 
+%   constructs the axissymmetric double-layer Laplace kernel for the 
+%   mth Fourier mode (m >= 0)
 %
-%   KERNEL.AXISSYMHELM2D('sp', ZK) or KERNEL.AXISSYMHELM2D('sprime', ZK) 
+%   KERNEL.AXISSYMLAP2D('sp', m) or KERNEL.AXISSYMLAP2D('sprime', m) 
 %   constructs the normal derivative of the axissymmetric single-layer 
-%   Helmholtz kernel with wavenumber ZK.
+%   Laplace kernel for the mth Fourier mode (m >= 0)
 %
-%   KERNEL.AXISSYMHELM2D('c', ZK, COEFS) or 
-%   KERNEL.AXISSYMHELM2D('combined', ZK, COEFS)
-%   constructs the combined-layer axissymmetric Helmholtz kernel with 
-%   wavenumber ZK and parameter COEFS, 
-%   i.e., COEFS(1)*KERNEL.AXISSYMHELM2D('d', ZK) + 
-%         COEFS(2)*KERNEL.AXISSYMHELM2D('s', ZK).
+%   KERNEL.AXISSYMLAP2D('dp', m) or KERNEL.AXISSYMLAP2D('dprime', m) 
+%   constructs the normal derivative of the axissymmetric double-layer 
+%   Laplace kernel for the mth Fourier mode (m >= 0)
 %
-% NOTES: The axissymetric kernels are currently supported only for purely
-% real or purely imaginary wave numbers
+% if m is not provided, it defaults to m=0.
 %
 % See also CHNK.AXISSYMHELM2D.KERN.
 
 if ( nargin < 1 )
     error('Missing Laplace kernel type.');
+end
+if ( nargin < 2 )
+    m = 0;
 end
 
 obj = kernel();
@@ -36,24 +35,31 @@ switch lower(type)
 
     case {'s', 'single'}
         obj.type = 's';
-        obj.eval = @(s,t) chnk.axissymlap2d.kern(s, t, [0,0], 's');
-        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern(s, t, o, 's');
+        obj.eval = @(s,t) chnk.axissymlap2d.kern_modal(s, t, [0,0], 's',m);
+        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern_modal(s, t, o, 's',m);
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'d', 'double'}
         obj.type = 'd';
-        obj.eval = @(s,t) chnk.axissymlap2d.kern(s, t, [0,0], 'd');
-        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern(s, t, o, 'd');
+        obj.eval = @(s,t) chnk.axissymlap2d.kern_modal(s, t, [0,0], 'd',m);
+        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern_modal(s, t, o, 'd',m);
         obj.fmm = [];
-        obj.sing = 'log';
+        obj.sing = 'smooth';
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
-        obj.eval = @(s,t) chnk.axissymlap2d.kern(s, t, [0,0], 'sprime');
-        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern(s, t, o, 'sprime');
+        obj.eval = @(s,t) chnk.axissymlap2d.kern_modal(s, t, [0,0], 'sprime',m);
+        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern_modal(s, t, o, 'sprime',m);
         obj.fmm = [];
         obj.sing = 'log';
+
+    case {'dp', 'dprime'}
+        obj.type = 'dp';
+        obj.eval = @(s,t) chnk.axissymlap2d.kern_modal(s, t, [0,0], 'dprime',m);
+        obj.shifted_eval = @(s,t,o) chnk.axissymlap2d.kern_modal(s, t, o, 'dprime',m);
+        obj.fmm = [];
+        obj.sing = 'hs';
 
     otherwise
         error('Unknown axissym Laplace kernel type ''%s''.', type);

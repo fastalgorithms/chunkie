@@ -57,8 +57,7 @@ function [gvals, gdzs, gdrs, gdrps] = g0funcall(r, rp, dr, z, zp, dz, maxm)
         if ((x >= 1.00000005d0) && (maxm > 12307))
             iffwd = 0;
         end
-        
-    end
+    end    
 
     gvals = zeros(maxm+1,1);
     gdzs = zeros(maxm+1,1);
