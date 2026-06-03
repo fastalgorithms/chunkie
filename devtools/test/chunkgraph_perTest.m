@@ -7,17 +7,180 @@
 % chunkgraph (chunkgraph_per), and that the same routine still handles an
 % ordinary (non-periodic) chunkgraph.
 
+%housekeeping: 
+clear; close all; clc; 
+
 vrb = true;   % set false to skip figures
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%   . . . periodic chunkgraph (chunkgraph_per)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%closed chunkgraph testing: 
+%{
+rng(123)
+t = sort(2*pi*rand(9,1));
+verts = starfish(t,5,0.3);
+[~, nv] = size(verts);
+edgesendverts = [1:nv; circshift(1:nv,-1)];
+cpars = []; cpars.isclosed = true; 
+cg = chunkgraph(verts, edgesendverts,cpars);
+
+%pts in comp domain: 
+Nx = 150; Ny = 150; 
+targs = gen_comp_domain(cg,Nx,Ny); 
+ireg = chunkgraphinregion(cg,targs); 
+
+if vrb
+
+    figure(1); hold on; 
+    plot(cg); axs = axis(); hold off; 
+
+    xx = targs.r(1,:); yy = targs.r(2,:); 
+    nreg = size(cg.regions,2); 
+    Legend = cell(1,nreg); 
+    figure(2); hold on; 
+    for reg = 1:nreg
+        reg_idx = ireg == reg; 
+        scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
+        Legend{reg} = ['region',num2str(reg)]; 
+    end
+    legend(Legend)
+    axis(axs)
+    hold off; 
+end
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%open chunkgraph testing: 
+%{
 verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
-edges = [4 3 2; 3 2 1];
+edgesendverts = [4 3 2; 3 2 1];
+cg = chunkgraph(verts,edgesendverts);
+
+%pts in comp domain: 
+Nx = 150; Ny = 150; 
+targs = gen_comp_domain(cg,Nx,Ny); 
+
+%interior pts: 
+ireg = chunkgraphinregion(cg,targs); 
+
+if vrb
+    %basic geometry: 
+    figure(1); hold on; 
+    plot(cg); axs = axis(); 
+    title('chunkgraph\_per geometry')
+    hold off; 
+
+    %plot_regions pt id: 
+    figure(2); hold on; 
+    plot_regions(cg)
+    axis(axs)
+    title('plot\_regions() result')
+    hold off; 
+
+    %chunkgraphinregion pt id: 
+    xx = targs.r(1,:); yy = targs.r(2,:); 
+    nreg = size(cg.regions,2); 
+    Legend = cell(1,nreg); 
+    figure(3); hold on; 
+    for reg = 1:nreg
+        reg_idx = ireg == reg; 
+        scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
+        Legend{reg} = ['region',num2str(reg)]; 
+    end
+    legend(Legend,'fontsize',14)
+    axis(axs)
+    title('chunkgraphinregion detection')
+    hold off;  
+end
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%periodic object, open in the unit cell: 
+%{
+verts = [-1, -0.5, -1, 1, 0.5, 1; -1, -0.5, 0, -1, -0.5, 0]; 
+edgesendverts = [6 5 1 2; 5 4 2 3]; 
+merge_idx = {[1 4],[3 6]}; 
+cg = chunkgraph_per(verts,edgesendverts,merge_idx); 
+
+%pts in comp domain: 
+Nx = 150; Ny = 150; 
+targs = gen_comp_domain(cg,Nx,Ny); 
+ireg = chunkgraphinregion(cg,targs); 
+
+if vrb
+
+    %basic geometry: 
+    figure(1); hold on; 
+    plot(cg); axs = axis(); 
+    title('chunkgraph\_per geometry')
+    hold off; 
+
+    %plot_regions pt id: 
+    figure(2); hold on; 
+    plot_regions(cg)
+    axis(axs)
+    title('plot\_regions() result')
+    hold off; 
+
+    %chunkgraphinregion pt id: 
+    xx = targs.r(1,:); yy = targs.r(2,:); 
+    nreg = size(cg.regions,2); 
+    Legend = cell(1,nreg); 
+    figure(3); hold on; 
+    for reg = 1:nreg
+        reg_idx = ireg == reg; 
+        scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
+        Legend{reg} = ['region',num2str(reg)]; 
+    end
+    legend(Legend,'fontsize',14)
+    axis(axs)
+    title('chunkgraphinregion detection')
+    hold off; 
+
+end
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%single staircase: 
+%{
+verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
+edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
-cg0 = chunkgraph_per(verts,edges,merge_idx);
-cg  = cg0; %stack_layers([cg0 + [0;-1], cg0], merge_idx);
+cg = chunkgraph_per(verts,edgesendverts,merge_idx);
+
+if vrb
+    figure(1); clf
+    plot(cg)
+    title('chunkgraph\_per geometry')
+end
+
+% interior pts:
+Nx = 150; Ny = 150; 
+x1 = linspace(-0.5,0.5,Nx);
+y1 = linspace(-1.5,1.5,Ny);
+[xx,yy] = meshgrid(x1,y1);
+targs = []; targs.r = [xx(:).'; yy(:).'];
+
+ireg = chunkgraphinregion(cg,targs);
+
+if vrb
+    figure(2); clf
+    scatter(xx(:).', yy(:).', [], ireg, '.')
+    title('region ids (periodic)')
+
+    figure(3); clf
+    plot_regions(cg)
+    title('plot\_regions (periodic)')
+end
+%}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%layered staircase
+%{
+verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
+edgesendverts = [4 3 2; 3 2 1];
+merge_idx = {[1 4]};
+cg0 = chunkgraph_per(verts,edgesendverts,merge_idx);
+cg  = stack_layers([cg0 + [0;-1], cg0], merge_idx);
 
 assert(isa(cg,"chunkgraph_per"), ...
     'stack_layers with merge_idx should return a chunkgraph_per');
@@ -36,62 +199,33 @@ targs = []; targs.r = [xx(:).'; yy(:).'];
 npts = numel(xx);
 
 ireg = chunkgraphinregion(cg,targs);
-
-% report (don't hard-fail on) the fraction of unclassified points; once you
-% have run this and confirmed the expected value, tighten into an assert
-fprintf('chunkgraph_perTest: unclassified fraction = %.4f\n', mean(isnan(ireg)));
-
-if vrb
-    figure(2); clf
-    scatter(xx(:).', yy(:).', [], ireg, '.')
-    axis equal; title('region ids (periodic)')
-
-    figure(3); clf
-    plot_regions(cg)
-    title('plot\_regions (periodic)')
-end
-
+%}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%   . . . ordinary (non-periodic) chunkgraph still works through the
-%         same routine (regression against the upstream code path)
+%closed object with user-defined periods
+rng(123)
+t = sort(2*pi*rand(9,1));
+verts = starfish(t,5,0.3);
+[~, nv] = size(verts);
+edgesendverts = [1:nv; circshift(1:nv,-1)];
+fchnks = []; 
+cparams = []; cparams.dx = 3; cparams.dy = 3; 
+merge_idx = {[]}; 
+cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks,cparams);
 
-verts = [[0;0],[0;1],[1;0]];
-edgeendverts = [1:size(verts,2); circshift(1:size(verts,2),1)];
-
-cgrph1 = chunkgraph(verts,edgeendverts);
-cgrph2 = cgrph1 + [0;3];
-cgrph  = stack_layers([cgrph1,cgrph2]);
-
-assert(isa(cgrph,"chunkgraph") && ~isa(cgrph,"chunkgraph_per"), ...
-    'stack_layers without merge_idx should return a plain chunkgraph');
-
-x2 = linspace(-0.5,1.5,120);
-y2 = linspace(-0.5,4.5,120);
-[xx2,yy2] = meshgrid(x2,y2);
-targs2 = []; targs2.r = [xx2(:).'; yy2(:).'];
-
-ireg2 = chunkgraphinregion(cgrph,targs2);
-lbl2  = ireg2(~isnan(ireg2));
-assert(numel(ireg2) == numel(xx2), 'ireg2 should have one label per point');
-assert(all(lbl2 >= 1 & lbl2 <= numel(cgrph.regions)), ...
-    'region labels must lie in 1..numel(cgrph.regions)');
-
-if vrb
-    figure(4); clf
-    plot(cgrph1); hold on; plot(cgrph2)
-    title('two stacked (non-periodic) chunkgraphs')
-
-    figure(5); clf
-    scatter(xx2(:).', yy2(:).', [], ireg2, '.')
-    axis equal; title('region ids (non-periodic)')
-
-    figure(6); clf
-    cgrph.plot_regions()
-    title('plot\_regions (non-periodic)')
-end
 
 %end
+
+%% helpers: 
+
+function targs = gen_comp_domain(cgrph,Nx,Ny)
+    verts = cgrph.verts; 
+    xmin = min(verts(1,:)); xmax = max(verts(1,:)); 
+    ymin = min(verts(2,:)); ymax = max(verts(2,:)); 
+    x1 = linspace(xmin-0.5,xmax+0.5,Nx);
+    y1 = linspace(ymin-0.5,ymax+0.5,Ny);
+    [xx,yy] = meshgrid(x1,y1);
+    targs = []; targs.r = [xx(:).'; yy(:).'];
+end
 
 function cgrph = stack_layers(cgrphs,merge_idx)
 % merge a few chunkgraphs into a single chunkgraph

@@ -41,8 +41,8 @@ if nargin < 3
 end
 
 % Assign appropriate object to chnkr
-msg = "chunkgraphinregion: input 1 must be chunkgraph";
-assert(class(cg) == "chunkgraph",msg);
+msg = "chunkgraphinregion: input 1 must be chunkgraph or chunkgraph_per";
+assert((class(cg) == "chunkgraph") || (class(cg) == "chunkgraph_per"),msg);
 
 % Figure out size of ids array based on ptsobj
 if isa(ptsobj, "cell")
@@ -88,6 +88,9 @@ for ir = 1:nr
         ntot = ntot + nedge;
     end
     ieout = 0;
+    if ntot == 0 %PATCH... CONSIDER FIXING LATER
+        continue
+    end
     chnkrs(ntot) = chunker(p,t,w);
     
     for ic = 1:ncomp

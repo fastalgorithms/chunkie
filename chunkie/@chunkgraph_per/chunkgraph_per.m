@@ -9,7 +9,7 @@ classdef chunkgraph_per < chunkgraph
 % -vstruc_free: original unmerged vstruc from chunkgraph
 % -merge_idx: cell array, each cell containing vec of vertices to be merged
 % -vert_per: vec housing periods associated with each vertex (each belonging to
-% a periodic region). For vertices not being merged, vert_per(it) = NaN.
+% a periodic region). For vertices not being merged, vert_per(vert) = NaN.
 %
 % methods: 
 % obj = chunkgraph_per(verts, edgesendverts, merge_idx, varargin)
@@ -28,24 +28,71 @@ classdef chunkgraph_per < chunkgraph
         edgesendverts_free
         merge_idx
         vert_per
+        dx
+        dy
    end
     methods
 
         function obj = chunkgraph_per(verts, edgesendverts, merge_idx, varargin)
+
             obj = obj@chunkgraph(verts, edgesendverts, varargin{:}); 
-            obj = build_vstruc(obj,merge_idx); 
+            obj = calc_per(obj,merge_idx,varargin{:}); 
+            if ~isempty(merge_idx{1})
+                obj = build_vstruc(obj,merge_idx); 
+            else
+                obj.vstruc_free = obj.vstruc; 
+                obj.edgesendverts_free = obj.edgesendverts; 
+                obj.vert_per = nan(1,length(obj.verts(1,:))); 
+            end
         end
 
-        %note: multiple vert merging not supported
+        function obj = calc_per(obj,merge_idx,varargin)
+         
+            if ~isempty(varargin{2})
+                cparams = varargin{2}; 
+            else
+                cparams = []; 
+            end
+            if ~isempty(merge_idx{1})
+                nmerge = size(merge_idx,2); 
+                dx = []; dy = []; 
+                for m = 1:nmerge
+                    vm = merge_idx{m}; 
+                    v = obj.verts(:,vm); 
+                    dxmat = abs(v(1,:)'-v(1,:)); 
+                    dymat = abs(v(2,:)'-v(2,:));
+                    dx = [dx;unique(nonzeros(dxmat))]; 
+                    dy = [dy;unique(nonzeros(dymat))]; 
+                end
+                dx = unique(dx); dy = unique(dy); 
+                if (numel(dx)>1) || (numel(dy)>1)
+                    error('Periodicity of object is not consistent.')
+                end
+                obj.dx = dx; obj.dy = dy; 
+
+            elseif isfield(cparams,'dx') && isfield(cparams,'dy')
+                   obj.dx = cparams.dx; obj.dy = cparams.dy; 
+            elseif isfield(cparams,'dx')
+                obj.dx = cparams.dx; obj.dy = []; 
+            elseif isfield(cparams,'dy')
+                obj.dx = []; obj.dy = cparams.dy; 
+            else
+                error('Please provide merge_idx or period of closed geometry')
+            end
+
+
+        end
+
         function obj = build_vstruc(obj,merge_idx)
-            obj.merge_idx = merge_idx; 
             obj.vstruc_free = obj.vstruc; 
-            obj.edgesendverts_free = obj.edgesendverts; 
+            obj.edgesendverts_free = obj.edgesendverts;
+            vper = nan(numel(obj.verts(1,:)),1); 
+
+            obj.merge_idx = merge_idx; 
             vstruc = obj.vstruc; 
             N_base_v = numel(vstruc); 
             N_merge = numel(merge_idx); 
             idx_skip = 1:N_base_v; 
-            vper = nan(numel(obj.verts(1,:)),1); 
              for i_merge = 1:N_merge
                         Nv_merge = numel(merge_idx{i_merge});
 
@@ -71,8 +118,10 @@ classdef chunkgraph_per < chunkgraph
 
              obj.vert_per = vper; 
              obj.vstruc = v_use;
-   
+            
              obj.v2emat = build_v2emat(obj); 
+             obj0 = obj; obj0.vstruc = obj.vstruc_free; 
+             obj0.edgesendverts = obj.edgesendverts_free; 
              obj.regions = findregions(obj); 
              obj = balance(obj); 
         end
