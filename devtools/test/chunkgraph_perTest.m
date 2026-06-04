@@ -244,7 +244,7 @@ verts = [0.5,0,0.5;2,2.5,3];
 [~, nv] = size(verts);
 edgesendverts = [1:nv; circshift(1:nv,-1)];
 cpars = []; cpars.dx = 1; cpars.dy = 1; 
-merge_idx = {}; 
+merge_idx = {[]}; %ENABLE merge_idx = {} for closed objects
 cg0 = chunkgraph_per(verts,edgesendverts,merge_idx,[],cpars); 
 
 

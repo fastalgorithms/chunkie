@@ -10,7 +10,11 @@ nverts = 0;
 verts = [];
 edgesendverts = [];
 fchnks = cell(0);
+merge_idx_per = {}; 
 for i = 1:length(cgrphs)
+    if ~isempty(cgrphs(i).merge_idx{1})
+      merge_idx_per = [merge_idx_per,cellfun(@(x)x+nverts,cgrphs(i).merge_idx,'UniformOutput',false)];
+    end
     verts = [verts, cgrphs(i).verts];
     edgesendverts = [edgesendverts, cgrphs(i).edgesendverts + nverts];
     nverts = nverts + size(cgrphs(i).verts, 2);
@@ -22,7 +26,7 @@ end
 % find coincident vertex pairs within relative tolerance
 tol = 1e-14 * max(vecnorm(verts));
 nverts = size(verts, 2);
-merge_idx = {};
+%merge_idx = {};
 merged = false(1, nverts);
 for i = 1:nverts
     if merged(i)
@@ -44,6 +48,6 @@ for i = 1:nverts
     end
 end
 
-cgrph = chunkgraph_per(verts, edgesendverts, merge_idx, fchnks);
+cgrph = chunkgraph_per(verts, edgesendverts, merge_idx_per, fchnks);
 
 end

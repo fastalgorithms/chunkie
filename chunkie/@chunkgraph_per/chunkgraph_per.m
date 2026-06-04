@@ -34,10 +34,10 @@ classdef chunkgraph_per < chunkgraph
     methods
 
         function obj = chunkgraph_per(verts, edgesendverts, merge_idx, varargin)
-
             obj = obj@chunkgraph(verts, edgesendverts, varargin{:}); 
             obj = calc_per(obj,merge_idx,varargin{:}); 
-            if ~isempty(merge_idx)
+            obj.merge_idx = merge_idx; 
+            if ~isempty(merge_idx{1})
                 obj = build_vstruc(obj,merge_idx); 
             else
                 obj.vstruc_free = obj.vstruc; 
@@ -55,7 +55,7 @@ classdef chunkgraph_per < chunkgraph
             else
                 cparams = []; 
             end
-            if ~isempty(merge_idx)
+            if ~isempty(merge_idx{1})
                 nmerge = size(merge_idx,2); 
                 dx = []; dy = []; 
                 for m = 1:nmerge
@@ -90,7 +90,6 @@ classdef chunkgraph_per < chunkgraph
             obj.edgesendverts_free = obj.edgesendverts;
             vper = nan(numel(obj.verts(1,:)),1); 
 
-            obj.merge_idx = merge_idx; 
             vstruc = obj.vstruc; 
             N_base_v = numel(vstruc); 
             N_merge = numel(merge_idx); 
