@@ -45,14 +45,22 @@ function [regions] = findregions(obj_in)
     % runs) falls through to the standard logic. [single or layered curves]
     if isa(obj_in,'chunkgraph_per') && (~isempty(obj.dx) || ~isempty(obj.dy))
         nl = numel(loops);
-        isunb = false(1,nl);   % unbounded periodic curve (a/e)
-        isclt = false(1,nl);   % closed under tiling (b)
+        isunb    = false(1,nl);   % unbounded periodic curve (a/e)
+        isclt    = false(1,nl);   % closed under tiling (b)
+        isclosed = false(1,nl);   % genuinely closed object (periodic copies)
         for il = 1:nl
             if norm(loop_displacement(obj,loops{il})) > 1e-10
                 isunb(il) = true;
             elseif loop_max_jump(obj,loops{il}) > 1e-6
                 isclt(il) = true;
+            else
+                isclosed(il) = true;
             end
+        end
+        if any(isunb) && (any(isclt) || any(isclosed))
+            % composite: unbounded curves together with closed cells/objects
+            regions = findregions_per_composite(obj,loops,isunb,isclt,isclosed);
+            return
         end
         if any(isunb)
             regions = findregions_per_unbounded(obj,loops,isunb);
@@ -62,7 +70,7 @@ function [regions] = findregions(obj_in)
             regions = findregions_per_closed(obj,loops,isclt);
             return
         end
-        % no periodic loop found: fall through to the standard logic
+        % no (handled) periodic loop: fall through to the standard logic
     end
 
     [li,lo] = findunbounded_loop(obj,loops);
@@ -355,4 +363,60 @@ function regions = findregions_per_closed(obj,loops,isclt)
         extcomps{k}  = -fliplr(cells{k});  % exterior sees reversed boundary
     end
     regions{1} = extcomps;                 % connected exterior
+end
+
+
+function regions = findregions_per_composite(obj,loops,isunb,isclt,isclosed)
+%FINDREGIONS_PER_COMPOSITE regions for an object combining unbounded curves
+% with closed cells/objects (case (f), flat -- no nesting). The unbounded
+% curves give the layered "background" regions (1..L+1, top to bottom); each
+% closed sub-object's interior is appended as a further region (L+2,...),
+% ordered top to bottom. Closed sub-objects are assumed to sit within a
+% single background region.
+%
+% NOTE: backgrounds are stored without subtracting the closed objects as
+% holes; chunkgraphinregion labels composites directly, so the holes are not
+% needed for labeling (they matter for plot_regions, which is handled
+% separately).
+
+    % background regions from the unbounded curves
+    if any(isunb)
+        bg = findregions_per_unbounded(obj,loops,isunb);
+    else
+        bg = {{}};    % no unbounded curves: a single exterior background
+    end
+    L1 = numel(bg);
+
+    % distinct closed sub-objects (closed-under-tiling cells + closed loops)
+    isclosedany = isclt | isclosed;
+    iclosed = find(isclosedany);
+    cells = {}; keys = {};
+    for t = 1:numel(iclosed)
+        e   = loops{iclosed(t)};
+        key = sort(abs(e));
+        isnew = true;
+        for g = 1:numel(keys)
+            if isequal(keys{g},key); isnew = false; break; end
+        end
+        if isnew; keys{end+1} = key; cells{end+1} = e; end
+    end
+
+    % orient each CCW (outward normal) and order top to bottom
+    mys = zeros(1,numel(cells));
+    for k = 1:numel(cells)
+        poly = cell_polygon(obj,cells{k});
+        x = poly(1,:); y = poly(2,:);
+        A = 0.5*sum(x.*y([2:end 1]) - x([2:end 1]).*y);
+        if A < 0
+            cells{k} = -fliplr(cells{k});
+        end
+        mys(k) = mean(poly(2,:));
+    end
+    [~,o] = sort(mys,'descend');
+    cells = cells(o);
+
+    regions = bg;
+    for j = 1:numel(cells)
+        regions{L1+j} = {cells{j}};
+    end
 end

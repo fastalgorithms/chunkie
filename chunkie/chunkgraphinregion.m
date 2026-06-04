@@ -66,7 +66,10 @@ ids = nan(npts,1);
 % labeled by the periodic interior test rather than the closed-loop logic
 % below. [stage 1: single open curve -> region 1 above, region 2 below]
 if isa(cg,"chunkgraph_per")
-    if cgper_region_is_unbounded(cg)
+    if cgper_is_composite(cg)
+        ids = chunkgraphinregion_composite(cg,ptsobj,opts,npts);
+        return
+    elseif cgper_region_is_unbounded(cg)
         ids = chunkgraphinregion_per(cg,ptsobj,opts,npts);
         return
     elseif cgper_region_is_closed_tiling(cg)
@@ -308,4 +311,152 @@ function ids = chunkgraphinregion_per_closed(cg,ptsobj,opts,npts)
         inb = reshape(chunkerinterior(chnkr,ptsobj,optsk),npts,1) > 0;
         ids(inb) = k+1;
     end
+end
+
+
+function tf = cgper_is_composite(cg)
+%CGPER_IS_COMPOSITE true if the regions contain both an unbounded boundary
+% (net displacement ~= 0) and a closed boundary (net displacement ~= 0),
+% i.e. unbounded curves coexisting with closed cells/objects (case (f)).
+    has_unb = false; has_closed = false;
+    for ir = 1:numel(cg.regions)
+        comp = cg.regions{ir};
+        if ~iscell(comp); continue; end
+        for c = 1:numel(comp)
+            e = comp{c};
+            if isempty(e); continue; end
+            if norm(loop_displacement(cg,e)) > 1e-10
+                has_unb = true;
+            else
+                has_closed = true;
+            end
+        end
+    end
+    tf = has_unb && has_closed;
+end
+
+
+function ids = chunkgraphinregion_composite(cg,ptsobj,opts,npts)
+%CHUNKGRAPHINREGION_COMPOSITE label points for a composite of unbounded
+% curves and closed sub-objects (flat, no nesting). The unbounded curves
+% set the layered background index B = 1 + (# curves the point is below),
+% top to bottom; a point inside the j-th closed sub-object instead gets
+% region (L+1)+j. [composite]
+    if isempty(opts)
+        optsint = struct();
+    else
+        optsint = opts;
+    end
+
+    [curves, closed] = cgper_collect_loops(cg);
+    nlayer = numel(curves);
+
+    % layered background index
+    countbelow = zeros(npts,1);
+    for kk = 1:nlayer
+        below = cgper_below_indicator(cg,curves{kk},ptsobj,optsint,npts);
+        countbelow = countbelow + double(below);
+    end
+    ids = 1 + countbelow;
+
+    % closed sub-object interiors override the background
+    for jj = 1:numel(closed)
+        inb = cgper_inside_indicator(cg,closed{jj},ptsobj,optsint,npts);
+        ids(inb) = (nlayer+1) + jj;
+    end
+end
+
+
+function [curves, closed] = cgper_collect_loops(cg)
+%CGPER_COLLECT_LOOPS gather the distinct boundary loops from the regions and
+% split them into unbounded curves (oriented normal-up, ordered top to
+% bottom) and closed sub-objects (oriented CCW, ordered top to bottom). The
+% ordering matches findregions_per_composite so region indices agree.
+    loops = {}; keys = {};
+    for ir = 1:numel(cg.regions)
+        comp = cg.regions{ir};
+        if ~iscell(comp); continue; end
+        for c = 1:numel(comp)
+            e = comp{c};
+            if isempty(e); continue; end
+            key = sort(abs(e));
+            isnew = true;
+            for g = 1:numel(keys)
+                if isequal(keys{g},key); isnew = false; break; end
+            end
+            if isnew; keys{end+1} = key; loops{end+1} = e; end
+        end
+    end
+
+    curves = {}; cmy = [];
+    closed = {}; smy = [];
+    for i = 1:numel(loops)
+        e = loops{i};
+        if norm(loop_displacement(cg,e)) > 1e-10
+            if loop_normal_y(cg,e) < 0; e = -fliplr(e); end
+            curves{end+1} = e; cmy(end+1) = cgper_mean_y(cg,e);
+        else
+            poly = cell_polygon(cg,e);
+            x = poly(1,:); y = poly(2,:);
+            A = 0.5*sum(x.*y([2:end 1]) - x([2:end 1]).*y);
+            if A < 0; e = -fliplr(e); end
+            closed{end+1} = e; smy(end+1) = cgper_mean_y(cg,e);
+        end
+    end
+    [~,oc] = sort(cmy,'descend'); curves = curves(oc);
+    [~,os] = sort(smy,'descend'); closed = closed(os);
+end
+
+
+function below = cgper_below_indicator(cg,edgelist,ptsobj,opts,npts)
+%CGPER_BELOW_INDICATOR logical: each point is below the (normal-up) curve.
+    chnkr = cgper_build_chunker(cg,edgelist);
+    dnet = loop_displacement(cg,edgelist);
+    optsk = opts; optsk.periodic = true;
+    if abs(dnet(1)) >= abs(dnet(2))
+        optsk.d = cg.dx; vertical = true;
+    else
+        optsk.d = cg.dy; vertical = false;
+    end
+    inb = reshape(chunkerinterior(chnkr,ptsobj,optsk),npts,1) > 0;
+    rr = chnkr.r(:,:);
+    if vertical
+        span = max(rr(2,:)) - min(rr(2,:)) + optsk.d;
+        probe = []; probe.r = [mean(rr(1,:)); min(rr(2,:)) - 10*span];
+    else
+        span = max(rr(1,:)) - min(rr(1,:)) + optsk.d;
+        probe = []; probe.r = [min(rr(1,:)) - 10*span; mean(rr(2,:))];
+    end
+    inprobe = chunkerinterior(chnkr,probe,optsk) > 0;
+    if inprobe
+        below = inb;
+    else
+        below = ~inb;
+    end
+end
+
+
+function inside = cgper_inside_indicator(cg,edgelist,ptsobj,opts,npts)
+%CGPER_INSIDE_INDICATOR logical: each point is inside the (CCW-oriented)
+% closed sub-object (inside any tiled copy, via the periodic interior test).
+    chnkr = cgper_build_chunker(cg,edgelist);
+    optsk = opts; optsk.periodic = true;
+    if ~isempty(cg.dx)
+        optsk.d = cg.dx;
+    else
+        optsk.d = cg.dy;
+    end
+    inside = reshape(chunkerinterior(chnkr,ptsobj,optsk),npts,1) > 0;
+end
+
+
+function y = cgper_mean_y(cg,edgelist)
+%CGPER_MEAN_Y mean y-coordinate of the points making up an edge list.
+    s = 0; cnt = 0;
+    for jj = 1:numel(edgelist)
+        rr = cg.echnks(abs(edgelist(jj))).r(:,:);
+        s = s + sum(rr(2,:));
+        cnt = cnt + size(rr,2);
+    end
+    y = s/cnt;
 end
