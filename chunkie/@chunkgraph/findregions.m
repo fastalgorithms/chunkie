@@ -33,6 +33,29 @@ function [regions] = findregions(obj_in)
     obj.vstruc = procverts(obj);
 
     [loops] = findloops_verts(obj);
+
+    % --- periodic geometries -------------------------------------------
+    % Curves that are unbounded under the periodic identification (e.g. a
+    % staircase unit cell) are handled separately from genuinely closed
+    % loops. A loop's net displacement -- the sum of its edge end-minus-
+    % start vectors traversed in order -- is zero for a closed loop and a
+    % nonzero lattice vector (+/-dx,0)/(0,+/-dy) for a curve that only
+    % closes through periodicity. The branch is gated on dx/dy being set so
+    % the early findregions call during base construction (before calc_per
+    % runs) falls through to the standard logic. [stage 1: single curve]
+    if isa(obj_in,'chunkgraph_per') && (~isempty(obj.dx) || ~isempty(obj.dy))
+        nl = numel(loops);
+        isunb = false(1,nl);
+        for il = 1:nl
+            isunb(il) = norm(loop_displacement(obj,loops{il})) > 1e-10;
+        end
+        if any(isunb)
+            regions = findregions_per_unbounded(obj,loops,isunb);
+            return
+        end
+        % no unbounded loop found: fall through to the standard logic
+    end
+
     [li,lo] = findunbounded_loop(obj,loops);
 
     %%%%
@@ -206,4 +229,66 @@ while (numel(edges)>0)
     
 end
 
+end
+
+
+function d = loop_displacement(obj,edges)
+%LOOP_DISPLACEMENT net displacement around a loop, computed from the edge
+% chunker endpoints. ~0 for a closed loop; a lattice vector for a curve
+% that only closes through the periodic identification.
+    d = [0;0];
+    for jj = 1:numel(edges)
+        e = edges(jj);
+        ech = obj.echnks(abs(e));
+        [r1,~] = chunkends(ech,1);
+        [r2,~] = chunkends(ech,ech.nch);
+        rstart = r1(:,1);
+        rend   = r2(:,2);
+        if e > 0
+            d = d + (rend - rstart);
+        else
+            d = d + (rstart - rend);
+        end
+    end
+end
+
+
+function ny = mean_normal_y(obj,edges)
+%MEAN_NORMAL_Y average y-component of the (orientation-adjusted) normal
+% along the edges of a loop. Used to orient region 1 so its normal points
+% "up" (toward the upper half-space).
+    s = 0; cnt = 0;
+    for jj = 1:numel(edges)
+        e = edges(jj);
+        nn = obj.echnks(abs(e)).n(:,:);
+        nyj = nn(2,:);
+        if e < 0
+            nyj = -nyj;
+        end
+        s = s + sum(nyj);
+        cnt = cnt + numel(nyj);
+    end
+    ny = s/cnt;
+end
+
+
+function regions = findregions_per_unbounded(obj,loops,isunb)
+%FINDREGIONS_PER_UNBOUNDED build regions for a single open periodic curve
+% that splits the plane into an upper (region 1) and lower (region 2)
+% half-space. findloops_verts returns each curve in both orientations, so
+% we take one representative and emit the two opposite orientations as the
+% two regions (region 1 oriented so its normal points up).
+    iunb = find(isunb);
+    if numel(iunb) > 2
+        warning(['findregions: multiple unbounded periodic curves found; ' ...
+            'only a single curve is handled at this stage (layered media ' ...
+            'and composites are later stages).']);
+    end
+    ecycle = loops{iunb(1)};
+    if mean_normal_y(obj,ecycle) < 0
+        ecycle = -fliplr(ecycle);     % flip so the normal points up
+    end
+    regions = cell(1,2);
+    regions{1} = {ecycle};            % upper half-space
+    regions{2} = {-fliplr(ecycle)};   % lower half-space
 end

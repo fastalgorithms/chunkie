@@ -143,36 +143,44 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %single staircase: 
-%{
+%
 verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
 edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
 cg = chunkgraph_per(verts,edgesendverts,merge_idx);
 
-if vrb
-    figure(1); clf
-    plot(cg)
-    title('chunkgraph\_per geometry')
-end
-
-% interior pts:
+%pts in comp domain: 
 Nx = 150; Ny = 150; 
-x1 = linspace(-0.5,0.5,Nx);
-y1 = linspace(-1.5,1.5,Ny);
-[xx,yy] = meshgrid(x1,y1);
-targs = []; targs.r = [xx(:).'; yy(:).'];
+targs = gen_comp_domain(cg,Nx,Ny); 
+ireg = chunkgraphinregion(cg,targs); 
 
-ireg = chunkgraphinregion(cg,targs);
+%basic geometry: 
+figure(1); hold on; 
+plot(cg); 
+axs = axis(); 
+title('chunkgraph\_per geometry')
+hold off; 
 
-if vrb
-    figure(2); clf
-    scatter(xx(:).', yy(:).', [], ireg, '.')
-    title('region ids (periodic)')
-
-    figure(3); clf
-    plot_regions(cg)
-    title('plot\_regions (periodic)')
+%chunkgraphinregion verification: 
+xx = targs.r(1,:); yy = targs.r(2,:); 
+nreg = size(cg.regions,2); 
+Legend = cell(1,nreg); 
+figure(2); hold on; 
+for reg = 1:nreg
+    reg_idx = ireg == reg; 
+    scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
+    Legend{reg} = ['region',num2str(reg)]; 
 end
+legend(Legend)
+axis(axs)
+title('chunkgraphinregion')
+hold off; 
+
+%plot_regions verification: 
+figure(3); hold on; 
+plot_regions(cg)
+title('plot\_regions')
+
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %layered staircase

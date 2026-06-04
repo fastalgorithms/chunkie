@@ -141,10 +141,29 @@ if isfield(opts,'periodic')
     periodic = opts.periodic; 
 end
 
+% resolve the period (opts.d) from the object or from opts.dx/opts.dy if it
+% was not given explicitly. The 'lq' double-layer kernel uses a single
+% scalar period along the periodic axis; an unbounded periodic curve is
+% periodic in exactly one direction.
+if ~isfield(opts,'d') || isempty(opts.d)
+    if class(chnkobj) == "chunkgraph_per"
+        if ~isempty(chnkobj.dx)
+            opts.d = chnkobj.dx; periodic = true;
+        elseif ~isempty(chnkobj.dy)
+            opts.d = chnkobj.dy; periodic = true;
+        end
+    elseif isfield(opts,'dx') && ~isempty(opts.dx)
+        opts.d = opts.dx; periodic = true;
+    elseif isfield(opts,'dy') && ~isempty(opts.dy)
+        opts.d = opts.dy; periodic = true;
+    end
+end
+
 
 if periodic || class(chnkobj) == "chunkgraph_per"
-    if ~isfield(opts,'d')
-        error("Missing opts.d (period) for periodic geometry")
+    if ~isfield(opts,'d') || isempty(opts.d)
+        error(['Missing period for periodic geometry: supply opts.d, ' ...
+            'opts.dx/opts.dy, or a chunkgraph_per with dx/dy set'])
     end
     kap = 1e-16*(1 - 1i); 
     kernd = kernel('lq','d',kap,opts.d); 
