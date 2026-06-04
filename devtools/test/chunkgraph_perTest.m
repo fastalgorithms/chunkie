@@ -15,7 +15,7 @@ vrb = true;   % set false to skip figures
 addpath(genpath('../../../chunkie')) % DELETE LATER
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%closed starfish:  
+%closed chunkgraph:  
 %{
 rng(123)
 t = sort(2*pi*rand(9,1));
@@ -58,9 +58,8 @@ figure(3); hold on;
 plot_regions(cg)
 title('plot\_regions')
 %}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%open object: 
+%open chunkgraph: 
 %{
 verts = [0, -0.25, -0.25, 0; 0, 0, 1, 1];
 nv = size(verts,2); 
@@ -101,7 +100,6 @@ figure(3); hold on;
 plot_regions(cg)
 title('plot\_regions')
 %}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %periodic object, open in the unit cell: 
 %{

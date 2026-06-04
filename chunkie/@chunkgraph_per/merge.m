@@ -1,53 +1,87 @@
 function cgrph = merge(cgrphs)
-% merge an array of chunkgraph_per objects into a single chunkgraph_per
+%MERGE Merge an array of chunkgraph_per objects into one chunkgraph_per.
 %
-% after accumulating all verts and edgesendverts, any pair of vertices
-% within 1e-14 (relative to largest vertex norm) are identified and
-% passed as merge_idx to the chunkgraph_per constructor
+% This preserves existing periodic vertex identifications from each input
+% chunkgraph_per and also identifies coincident vertices between different
+% input graphs.
 
-% accumulate verts, edgesendverts, and edge chunkers
+% accumulate verts, free edge endpoints, edge chunkers, and periodic merges
 nverts = 0;
 verts = [];
 edgesendverts = [];
 fchnks = cell(0);
-merge_idx_per = {}; 
+merge_idx = {};
+
 for i = 1:length(cgrphs)
-    if ~isempty(cgrphs(i).merge_idx{1})
-      merge_idx_per = [merge_idx_per,cellfun(@(x)x+nverts,cgrphs(i).merge_idx,'UniformOutput',false)];
-    end
+
+    % Accumulate vertices.
     verts = [verts, cgrphs(i).verts];
-    edgesendverts = [edgesendverts, cgrphs(i).edgesendverts + nverts];
-    nverts = nverts + size(cgrphs(i).verts, 2);
+
+    % For chunkgraph_per inputs, use the unmerged/free edge endpoints.
+    % The constructor will re-apply all periodic identifications.
+    if isa(cgrphs(i), 'chunkgraph_per') && ~isempty(cgrphs(i).edgesendverts_free)
+        edgesendverts = [edgesendverts, cgrphs(i).edgesendverts_free + nverts];
+    else
+        edgesendverts = [edgesendverts, cgrphs(i).edgesendverts + nverts];
+    end
+
+    % Preserve periodic merge groups already present in each object.
+    if isa(cgrphs(i), 'chunkgraph_per') && ...
+            ~isempty(cgrphs(i).merge_idx) && ...
+            ~isempty(cgrphs(i).merge_idx{1})
+        merge_idx = [merge_idx, ...
+            cellfun(@(x) x + nverts, cgrphs(i).merge_idx, ...
+            'UniformOutput', false)];
+    end
+
+    % Accumulate edge chunkers.
     for j = 1:size(cgrphs(i).echnks, 2)
         fchnks{end+1} = cgrphs(i).echnks(j);
     end
+
+    nverts = nverts + size(cgrphs(i).verts, 2);
 end
 
-% find coincident vertex pairs within relative tolerance
-tol = 1e-14 * max(vecnorm(verts));
+% Find additional coincident vertices between/among the accumulated graphs.
+% These are ordinary geometric coincidences, not periodic translations.
+if ~isempty(verts)
+    tol = 1e-14 * max(1, max(vecnorm(verts)));
+else
+    tol = 0;
+end
+
 nverts = size(verts, 2);
-%merge_idx = {};
-merged = false(1, nverts);
+used = false(1, nverts);
+
 for i = 1:nverts
-    if merged(i)
+    if used(i)
         continue
     end
+
     group = i;
     for j = i+1:nverts
-        if merged(j)
+        if used(j)
             continue
         end
+
         if norm(verts(:,i) - verts(:,j)) < tol
             group = [group, j];
-            merged(j) = true;
+            used(j) = true;
         end
     end
+
     if numel(group) > 1
-        merged(i) = true;
+        used(group) = true;
         merge_idx{end+1} = group;
     end
 end
 
-cgrph = chunkgraph_per(verts, edgesendverts, merge_idx_per, fchnks);
+% Constructor expects a nonempty cell array whose first cell can be empty
+% when there are no periodic/coincident merges.
+if isempty(merge_idx)
+    merge_idx = {[]};
+end
+
+cgrph = chunkgraph_per(verts, edgesendverts, merge_idx, fchnks);
 
 end
