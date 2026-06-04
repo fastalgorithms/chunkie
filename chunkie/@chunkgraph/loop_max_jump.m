@@ -2,10 +2,7 @@ function m = loop_max_jump(obj,edges)
 %LOOP_MAX_JUMP largest gap between the end of one edge and the start of the
 % next around a loop (with wraparound). ~0 for a geometrically continuous
 % loop; ~a period for a loop that closes through periodic identification
-% (period jumps). Combined with LOOP_DISPLACEMENT this classifies periodic
-% loops: nonzero net displacement -> unbounded curve (a); zero net
-% displacement but nonzero max jump -> closed under tiling (b); zero of
-% both -> a genuinely closed/open loop.
+% (period jumps). 
 %
 % Syntax: m = loop_max_jump(obj,edges)
 
