@@ -12,6 +12,7 @@ clear; close all; clc;
 
 vrb = true;   % set false to skip figures
 
+addpath(genpath('../../../chunkie')) % DELETE LATER
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %closed chunkgraph testing: 
@@ -202,6 +203,7 @@ ireg = chunkgraphinregion(cg,targs);
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %closed object with user-defined periods
+%{
 rng(123)
 t = sort(2*pi*rand(9,1));
 verts = starfish(t,5,0.3);
@@ -211,6 +213,14 @@ fchnks = [];
 cparams = []; cparams.dx = 3; cparams.dy = 3; 
 merge_idx = {[]}; 
 cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks,cparams);
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%composite object: 
+verts = [-0.5,-0.5,0,0,-0.5, -0.25, 0.25, 0.5; 0.5,1,1,0.5,-0.25,0,-0.5,-0.25]; 
+edgesendverts = [1:4,8:-1:6;circshift(1:4,-1),7:-1:5]; 
+merge_idx = {[5 8]}; 
+cg = chunkgraph_per(verts,edgesendverts,merge_idx); 
 
 
 %end
