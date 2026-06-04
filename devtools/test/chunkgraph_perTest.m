@@ -240,13 +240,10 @@ cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks,cparams);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %composite object: 
 %
-rng(123)
-t = sort(2*pi*rand(9,1));
-verts = starfish(t,5,0.3);
-verts(2,:) = verts(2,:) + 2; 
+verts = [0.5,0,0.5;2,2.5,3]; 
 [~, nv] = size(verts);
 edgesendverts = [1:nv; circshift(1:nv,-1)];
-cpars = []; cpars.dx = 3; cpars.dy = 3; 
+cpars = []; cpars.dx = 1; cpars.dy = 1; 
 merge_idx = {}; 
 cg0 = chunkgraph_per(verts,edgesendverts,merge_idx,[],cpars); 
 
