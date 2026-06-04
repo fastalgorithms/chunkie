@@ -13,96 +13,29 @@ clear; close all; clc;
 vrb = true;   % set false to skip figures
 
 addpath(genpath('../../../chunkie')) % DELETE LATER
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%closed chunkgraph:  
+%testing chunkgraph logic: 
 %{
-rng(123)
-t = sort(2*pi*rand(9,1));
-verts = starfish(t,5,0.3);
-[~, nv] = size(verts);
-edgesendverts = [1:nv; circshift(1:nv,-1)];
-cpars = []; cpars.dx = 3; cpars.dy = 3; 
-merge_idx = {[]}; 
-cg = chunkgraph_per(verts, edgesendverts, merge_idx,[],cpars);
+verts = [0,-0.5,0;0,0.5,1]; 
+edgesendverts = [1:3;circshift(1:3,-1)]; 
+cg = chunkgraph(verts,edgesendverts); 
 
-%pts in comp domain: 
+figure; 
+plot(cg)
+
+figure; plot_regions(cg); 
+
+% Generate points in the computational domain
 Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraphinregion(cg,targs); 
-
-%basic geometry: 
-figure(1); hold on; 
-plot(cg); 
-axs = axis(); 
-title('chunkgraph\_per geometry')
-hold off; 
-
-%chunkgraphinregion verification: 
+targs = gen_comp_domain(cg, Nx, Ny); 
+ireg = chunkgraphinregion(cg, targs);
 xx = targs.r(1,:); yy = targs.r(2,:); 
-nreg = size(cg.regions,2); 
-Legend = cell(1,nreg); 
-figure(2); hold on; 
-for reg = 1:nreg
-    reg_idx = ireg == reg; 
-    scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
-    Legend{reg} = ['region',num2str(reg)]; 
-end
-legend(Legend)
-axis(axs)
-title('chunkgraphinregion')
-hold off; 
-
-%plot_regions verification: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
+figure; scatter(xx,yy,[],ireg,'.')
 %}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%open chunkgraph: 
-%{
-verts = [0, -0.25, -0.25, 0; 0, 0, 1, 1];
-nv = size(verts,2); 
-edgesendverts = [1:3; 2:4];
-merge_idx = {[]}; 
-cpars = []; cpars.dx = 3; cpars.dy = 3; 
-cg = chunkgraph_per(verts,edgesendverts,merge_idx,[],cpars);
 
-%pts in comp domain: 
-Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraphinregion(cg,targs); 
-
-%basic geometry: 
-figure(1); hold on; 
-plot(cg); 
-axs = axis(); 
-title('chunkgraph\_per geometry')
-hold off; 
-
-%chunkgraphinregion verification: 
-xx = targs.r(1,:); yy = targs.r(2,:); 
-nreg = size(cg.regions,2); 
-Legend = cell(1,nreg); 
-figure(2); hold on; 
-for reg = 1:nreg
-    reg_idx = ireg == reg; 
-    scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
-    Legend{reg} = ['region',num2str(reg)]; 
-end
-legend(Legend)
-axis(axs)
-title('chunkgraphinregion')
-hold off; 
-
-%plot_regions verification: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
-%}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %periodic object, open in the unit cell: 
-%{
+%
 verts = [-1, -0.5, -1, 1, 0.5, 1; -1, -0.5, 0, -1, -0.5, 0]; 
 edgesendverts = [6 5 1 2; 5 4 2 3]; 
 merge_idx = {[1 4],[3 6]}; 
@@ -237,7 +170,7 @@ cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks,cparams);
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %composite object: 
-%
+%{
 verts = [0.5,0,0.5;2,2.5,3]; 
 [~, nv] = size(verts);
 edgesendverts = [1:nv; circshift(1:nv,-1)];
