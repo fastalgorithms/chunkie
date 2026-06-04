@@ -34,20 +34,12 @@ function [regions] = findregions(obj_in)
 
     [loops] = findloops_verts(obj);
 
-    % --- periodic geometries -------------------------------------------
-    % Curves that are unbounded under the periodic identification (e.g. a
-    % staircase unit cell) are handled separately from genuinely closed
-    % loops. A loop's net displacement -- the sum of its edge end-minus-
-    % start vectors traversed in order -- is zero for a closed loop and a
-    % nonzero lattice vector (+/-dx,0)/(0,+/-dy) for a curve that only
-    % closes through periodicity. The branch is gated on dx/dy being set so
-    % the early findregions call during base construction (before calc_per
-    % runs) falls through to the standard logic. [single or layered curves]
+    % periodic geometries: 
     if isa(obj_in,'chunkgraph_per') && (~isempty(obj.dx) || ~isempty(obj.dy))
         nl = numel(loops);
-        isunb    = false(1,nl);   % unbounded periodic curve (a/e)
-        isclt    = false(1,nl);   % closed under tiling (b)
-        isclosed = false(1,nl);   % genuinely closed object (periodic copies)
+        isunb    = false(1,nl);   %unbounded periodic curve 
+        isclt    = false(1,nl);   %closed by vertex identification
+        isclosed = false(1,nl);   %closed object
         for il = 1:nl
             if norm(loop_displacement(obj,loops{il})) > 1e-10
                 isunb(il) = true;
@@ -70,7 +62,6 @@ function [regions] = findregions(obj_in)
             regions = findregions_per_closed(obj,loops,isclt);
             return
         end
-        % no (handled) periodic loop: fall through to the standard logic
     end
 
     [li,lo] = findunbounded_loop(obj,loops);

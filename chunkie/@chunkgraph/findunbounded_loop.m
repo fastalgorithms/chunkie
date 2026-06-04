@@ -6,7 +6,7 @@ function [loops_in,loops_out] = findunbounded_loop(cgrph,loops)
 % Syntax: [rgn] = findunbounded_loop(cgrph,rgn);
 %
 % Input:
-%   cgrph  - chunkgraph object
+%   cgrph  - chunkgraph or chunkgraph_per object
 %   loops  - the loop cell array containing edge indices of each loop
 %
 % Output:

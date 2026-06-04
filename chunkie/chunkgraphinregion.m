@@ -62,9 +62,7 @@ end
 
 ids = nan(npts,1);
 
-% periodic, unbounded geometries (e.g. a single open staircase cell) are
-% labeled by the periodic interior test rather than the closed-loop logic
-% below. [stage 1: single open curve -> region 1 above, region 2 below]
+% periodic geometries: 
 if isa(cg,"chunkgraph_per")
     if cgper_is_composite(cg)
         ids = chunkgraphinregion_composite(cg,ptsobj,opts,npts);
@@ -106,9 +104,6 @@ for ir = 1:nr
         ntot = ntot + nedge;
     end
     ieout = 0;
-    if ntot == 0 %PATCH... CONSIDER FIXING LATER
-        continue
-    end
     chnkrs(ntot) = chunker(p,t,w);
     
     for ic = 1:ncomp
