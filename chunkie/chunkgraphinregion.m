@@ -140,8 +140,8 @@ end
 function tf = cgper_region_is_unbounded(cg)
 %CGPER_REGION_IS_UNBOUNDED true if region 1's boundary is an unbounded
 % periodic curve (nonzero net displacement around the loop). Distinguishes
-% the open-staircase case from closed periodic geometries, which still go
-% through the standard closed-loop logic.
+% the open-staircase / layered case from closed periodic geometries, which
+% still go through the standard closed-loop logic.
     tf = false;
     if isempty(cg.regions) || isempty(cg.regions{1})
         return
@@ -154,42 +154,36 @@ function tf = cgper_region_is_unbounded(cg)
     if isempty(edgelist)
         return
     end
-    tf = norm(cgper_net_disp(cg,edgelist)) > 1e-10;
+    tf = norm(loop_displacement(cg,edgelist)) > 1e-10;
 end
 
 
-function dnet = cgper_net_disp(cg,edgelist)
-%CGPER_NET_DISP net displacement around a boundary edge list, from the edge
-% chunker endpoints. (Mirrors loop_displacement in findregions; factor into
-% a shared method when stages (b)/(f) land.)
-    dnet = [0;0];
-    for ie = 1:numel(edgelist)
-        eid = edgelist(ie);
-        ech = cg.echnks(abs(eid));
-        [r1,~] = chunkends(ech,1);
-        [r2,~] = chunkends(ech,ech.nch);
-        if eid > 0
-            dnet = dnet + (r2(:,2) - r1(:,1));
-        else
-            dnet = dnet + (r1(:,1) - r2(:,2));
+function curves = cgper_ordered_curves(cg)
+%CGPER_ORDERED_CURVES recover the interface curves, ordered top to bottom,
+% from the regions built by findregions. Region k (k=1..N) stores curve_k
+% as its normal-up (mean normal y > 0) component.
+    nreg = numel(cg.regions);
+    ncurve = nreg - 1;
+    curves = cell(1,ncurve);
+    for k = 1:ncurve
+        comp = cg.regions{k};
+        pick = comp{1};
+        if numel(comp) > 1
+            for c = 1:numel(comp)
+                if loop_normal_y(cg,comp{c}) > 0
+                    pick = comp{c};
+                    break
+                end
+            end
         end
+        curves{k} = pick;
     end
 end
 
 
-function ids = chunkgraphinregion_per(cg,ptsobj,opts,npts)
-%CHUNKGRAPHINREGION_PER label points for a single open periodic curve.
-% Region 1 is the upper half-space, region 2 the lower. [stage 1]
-    ids = nan(npts,1);
-
-    if isempty(opts)
-        optsint = struct();
-    else
-        optsint = opts;
-    end
-
-    % reconstruct the unit-cell curve from region 1's boundary edges
-    edgelist = cg.regions{1}{1};
+function chnkr = cgper_build_chunker(cg,edgelist)
+%CGPER_BUILD_CHUNKER merge the edge chunkers of an edge list into one
+% chunker, reversing edges with negative index.
     nedge = numel(edgelist);
     k = cg.echnks(1).k;
     t = cg.echnks(1).tstor;
@@ -205,38 +199,60 @@ function ids = chunkgraphinregion_per(cg,ptsobj,opts,npts)
         end
     end
     chnkr = merge(chnkrs(1:nedge));
+end
 
-    % which axis is periodic? -> sets the period and the unbounded direction
-    dnet = cgper_net_disp(cg,edgelist);
-    optsint.periodic = true;
-    if abs(dnet(1)) >= abs(dnet(2))
-        optsint.d = cg.dx;     % x-periodic -> unbounded in y (above/below)
-        vertical = true;
+
+function ids = chunkgraphinregion_per(cg,ptsobj,opts,npts)
+%CHUNKGRAPHINREGION_PER label points for one or more stacked open periodic
+% curves. With N curves ordered top to bottom, a point's region is
+%   region = 1 + (number of curves the point lies below),
+% so region 1 is above everything and region N+1 below everything. [stage 2]
+    if isempty(opts)
+        optsint = struct();
     else
-        optsint.d = cg.dy;     % y-periodic -> unbounded in x (deferred)
-        vertical = false;
+        optsint = opts;
     end
 
-    % split the targets with the periodic interior test
-    inb = reshape(chunkerinterior(chnkr,ptsobj,optsint),npts,1) > 0;
+    curves = cgper_ordered_curves(cg);
+    ncurve = numel(curves);
 
-    % orient labels by probing a point on the region-1 (upper) side. This
-    % keeps the labeling independent of edge orientation / the lq sign.
-    rr = chnkr.r(:,:);
-    if vertical
-        span = max(rr(2,:)) - min(rr(2,:)) + optsint.d;
-        probe = []; probe.r = [mean(rr(1,:)); max(rr(2,:)) + 10*span];
-    else
-        span = max(rr(1,:)) - min(rr(1,:)) + optsint.d;
-        probe = []; probe.r = [max(rr(1,:)) + 10*span; mean(rr(2,:))];
-    end
-    inprobe = chunkerinterior(chnkr,probe,optsint) > 0;
+    countbelow = zeros(npts,1);
+    for kk = 1:ncurve
+        edgelist = curves{kk};
+        chnkr = cgper_build_chunker(cg,edgelist);
 
-    if inprobe
-        ids(inb)  = 1;
-        ids(~inb) = 2;
-    else
-        ids(~inb) = 1;
-        ids(inb)  = 2;
+        dnet = loop_displacement(cg,edgelist);
+        optsk = optsint;
+        optsk.periodic = true;
+        if abs(dnet(1)) >= abs(dnet(2))
+            optsk.d = cg.dx;     % x-periodic -> unbounded in y (above/below)
+            vertical = true;
+        else
+            optsk.d = cg.dy;     % y-periodic -> unbounded in x (deferred)
+            vertical = false;
+        end
+
+        inb = reshape(chunkerinterior(chnkr,ptsobj,optsk),npts,1) > 0;
+
+        % orient: probe a point clearly below this curve so "below" maps to
+        % the right logical value regardless of edge orientation / lq sign.
+        rr = chnkr.r(:,:);
+        if vertical
+            span = max(rr(2,:)) - min(rr(2,:)) + optsk.d;
+            probe = []; probe.r = [mean(rr(1,:)); min(rr(2,:)) - 10*span];
+        else
+            span = max(rr(1,:)) - min(rr(1,:)) + optsk.d;
+            probe = []; probe.r = [min(rr(1,:)) - 10*span; mean(rr(2,:))];
+        end
+        inprobe = chunkerinterior(chnkr,probe,optsk) > 0;
+
+        if inprobe
+            below = inb;
+        else
+            below = ~inb;
+        end
+        countbelow = countbelow + double(below);
     end
+
+    ids = 1 + countbelow;
 end

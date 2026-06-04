@@ -42,7 +42,7 @@ function [regions] = findregions(obj_in)
     % nonzero lattice vector (+/-dx,0)/(0,+/-dy) for a curve that only
     % closes through periodicity. The branch is gated on dx/dy being set so
     % the early findregions call during base construction (before calc_per
-    % runs) falls through to the standard logic. [stage 1: single curve]
+    % runs) falls through to the standard logic. [single or layered curves]
     if isa(obj_in,'chunkgraph_per') && (~isempty(obj.dx) || ~isempty(obj.dy))
         nl = numel(loops);
         isunb = false(1,nl);
@@ -232,63 +232,74 @@ end
 end
 
 
-function d = loop_displacement(obj,edges)
-%LOOP_DISPLACEMENT net displacement around a loop, computed from the edge
-% chunker endpoints. ~0 for a closed loop; a lattice vector for a curve
-% that only closes through the periodic identification.
-    d = [0;0];
-    for jj = 1:numel(edges)
-        e = edges(jj);
-        ech = obj.echnks(abs(e));
-        [r1,~] = chunkends(ech,1);
-        [r2,~] = chunkends(ech,ech.nch);
-        rstart = r1(:,1);
-        rend   = r2(:,2);
-        if e > 0
-            d = d + (rend - rstart);
-        else
-            d = d + (rstart - rend);
+function regions = findregions_per_unbounded(obj,loops,isunb)
+%FINDREGIONS_PER_UNBOUNDED build regions for one or more open periodic
+% curves stacked vertically (layered media). With N curves there are N+1
+% regions, numbered top to bottom: region 1 is the upper half-space, region
+% N+1 the lower, and region k (2..N) the strip between curves k-1 and k.
+%
+% findloops_verts returns each curve in both orientations, so the flagged
+% loops are first grouped into distinct curves (by their edge set), each
+% oriented so its normal points up, then sorted top to bottom by mean y.
+%
+% Region representation (each interface curve oriented normal-up):
+%   region 1     = { curve_1 }
+%   region k     = { -fliplr(curve_{k-1}), curve_k }   (k = 2..N)
+%   region N+1   = { -fliplr(curve_N) }
+% so that find_edge_regions sees curve_k's normal side as region k (above)
+% and its anti-normal side as region k+1 (below).
+
+    iunb = find(isunb);
+
+    % group flagged loops into distinct curves by their (unsigned) edge set
+    curves = {};
+    keys   = {};
+    for t = 1:numel(iunb)
+        e   = loops{iunb(t)};
+        key = sort(abs(e));
+        isnew = true;
+        for g = 1:numel(keys)
+            if isequal(keys{g},key)
+                isnew = false; break
+            end
+        end
+        if isnew
+            keys{end+1}   = key;
+            curves{end+1} = e;
         end
     end
+    ncurve = numel(curves);
+
+    % orient each curve normal-up and record its mean y
+    meany = zeros(1,ncurve);
+    for c = 1:ncurve
+        if loop_normal_y(obj,curves{c}) < 0
+            curves{c} = -fliplr(curves{c});
+        end
+        meany(c) = curve_mean_y(obj,curves{c});
+    end
+
+    % order top -> bottom (largest mean y first)
+    [~,ord] = sort(meany,'descend');
+    curves  = curves(ord);
+
+    % assemble the N+1 regions
+    regions = cell(1,ncurve+1);
+    regions{1} = {curves{1}};
+    for k = 2:ncurve
+        regions{k} = {-fliplr(curves{k-1}), curves{k}};
+    end
+    regions{ncurve+1} = {-fliplr(curves{ncurve})};
 end
 
 
-function ny = mean_normal_y(obj,edges)
-%MEAN_NORMAL_Y average y-component of the (orientation-adjusted) normal
-% along the edges of a loop. Used to orient region 1 so its normal points
-% "up" (toward the upper half-space).
+function y = curve_mean_y(obj,edges)
+%CURVE_MEAN_Y mean y-coordinate of the points making up an edge list.
     s = 0; cnt = 0;
     for jj = 1:numel(edges)
-        e = edges(jj);
-        nn = obj.echnks(abs(e)).n(:,:);
-        nyj = nn(2,:);
-        if e < 0
-            nyj = -nyj;
-        end
-        s = s + sum(nyj);
-        cnt = cnt + numel(nyj);
+        rr = obj.echnks(abs(edges(jj))).r(:,:);
+        s = s + sum(rr(2,:));
+        cnt = cnt + size(rr,2);
     end
-    ny = s/cnt;
-end
-
-
-function regions = findregions_per_unbounded(obj,loops,isunb)
-%FINDREGIONS_PER_UNBOUNDED build regions for a single open periodic curve
-% that splits the plane into an upper (region 1) and lower (region 2)
-% half-space. findloops_verts returns each curve in both orientations, so
-% we take one representative and emit the two opposite orientations as the
-% two regions (region 1 oriented so its normal points up).
-    iunb = find(isunb);
-    if numel(iunb) > 2
-        warning(['findregions: multiple unbounded periodic curves found; ' ...
-            'only a single curve is handled at this stage (layered media ' ...
-            'and composites are later stages).']);
-    end
-    ecycle = loops{iunb(1)};
-    if mean_normal_y(obj,ecycle) < 0
-        ecycle = -fliplr(ecycle);     % flip so the normal points up
-    end
-    regions = cell(1,2);
-    regions{1} = {ecycle};            % upper half-space
-    regions{2} = {-fliplr(ecycle)};   % lower half-space
+    y = s/cnt;
 end

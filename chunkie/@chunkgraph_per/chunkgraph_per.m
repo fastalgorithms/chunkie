@@ -48,8 +48,10 @@ classdef chunkgraph_per < chunkgraph
 
         function obj = calc_per(obj,merge_idx,varargin)
          
-            if ~isempty(varargin) && ~isempty(varargin{2})
-                cparams = varargin{2}; 
+            if ~isempty(varargin)
+                if length(varargin)>1
+                    cparams = varargin{2}; 
+                end
             else
                 cparams = []; 
             end

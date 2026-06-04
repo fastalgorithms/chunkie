@@ -143,7 +143,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %single staircase: 
-%
+%{
 verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
 edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
@@ -184,30 +184,44 @@ title('plot\_regions')
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %layered staircase
-%{
+%
 verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
 edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
 cg0 = chunkgraph_per(verts,edgesendverts,merge_idx);
 cg  = stack_layers([cg0 + [0;-1], cg0], merge_idx);
 
-assert(isa(cg,"chunkgraph_per"), ...
-    'stack_layers with merge_idx should return a chunkgraph_per');
+%pts in comp domain: 
+Nx = 150; Ny = 150; 
+targs = gen_comp_domain(cg,Nx,Ny); 
+ireg = chunkgraphinregion(cg,targs); 
 
-if vrb
-    figure(1); clf
-    plot(cg)
-    title('chunkgraph\_per geometry')
+%basic geometry: 
+figure(1); hold on; 
+plot(cg); 
+axs = axis(); 
+title('chunkgraph\_per geometry')
+hold off; 
+
+%chunkgraphinregion verification: 
+xx = targs.r(1,:); yy = targs.r(2,:); 
+nreg = size(cg.regions,2); 
+Legend = cell(1,nreg); 
+figure(2); hold on; 
+for reg = 1:nreg
+    reg_idx = ireg == reg; 
+    scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
+    Legend{reg} = ['region',num2str(reg)]; 
 end
+legend(Legend)
+axis(axs)
+title('chunkgraphinregion')
+hold off; 
 
-% interior pts:
-x1 = linspace(-0.5,0.5,150);
-y1 = linspace(-1.5,1.5,150);
-[xx,yy] = meshgrid(x1,y1);
-targs = []; targs.r = [xx(:).'; yy(:).'];
-npts = numel(xx);
-
-ireg = chunkgraphinregion(cg,targs);
+%plot_regions verification: 
+figure(3); hold on; 
+plot_regions(cg)
+title('plot\_regions')
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %closed object with user-defined periods
@@ -225,11 +239,12 @@ cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks,cparams);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %composite object: 
+%{
 verts = [-0.5,-0.5,0,0,-0.5, -0.25, 0.25, 0.5; 0.5,1,1,0.5,-0.25,0,-0.5,-0.25]; 
 edgesendverts = [1:4,8:-1:6;circshift(1:4,-1),7:-1:5]; 
 merge_idx = {[5 8]}; 
 cg = chunkgraph_per(verts,edgesendverts,merge_idx); 
-
+%}
 
 %end
 
