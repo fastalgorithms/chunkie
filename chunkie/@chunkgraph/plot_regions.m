@@ -53,6 +53,13 @@ for ii=2:numel(regions)
             plot(plyrgn);
             hold on
             continue
+        elseif isa(obj,'chunkgraph_per') && per_region_is_closed_tiling(obj,regions{ii})
+            % cell closed under tiling: fill the unwrapped diamond polygon
+            % rather than closing the open unit-cell arcs across the period.
+            plyrgn = per_closed_poly(obj,regions{ii});
+            plot(plyrgn);
+            hold on
+            continue
         end
         plyrgn = polyshape(rs.', 'Simplify', false);
 
@@ -229,4 +236,70 @@ function y = curve_mean_y(obj,edges)
         cnt = cnt + size(rr,2);
     end
     y = s/cnt;
+end
+
+
+function tf = per_region_is_closed_tiling(obj,comps)
+%PER_REGION_IS_CLOSED_TILING true if any component closes only through
+% periodic identification (period jumps, zero net displacement).
+    tf = false;
+    if ~iscell(comps)
+        return
+    end
+    for c = 1:numel(comps)
+        e = comps{c};
+        if ~isempty(e) && norm(loop_displacement(obj,e)) < 1e-10 ...
+                && loop_max_jump(obj,e) > 1e-6
+            tf = true; return
+        end
+    end
+end
+
+
+function ply = per_closed_poly(obj,comps)
+%PER_CLOSED_POLY the closed-under-tiling cell(s) of a region, shown over a
+% single unit cell. A complete cell straddles a period boundary, so the
+% diamond is built (and a couple of period-translates added) and then
+% clipped to the geometry's one-period extent, leaving the partial cells
+% that fall within the unit cell (matching chunkgraphinregion over one cell).
+    P = per_period_vec(obj);
+    K = 2;
+    ply = polyshape();
+    for c = 1:numel(comps)
+        e = comps{c};
+        if ~isempty(e) && norm(loop_displacement(obj,e)) < 1e-10 ...
+                && loop_max_jump(obj,e) > 1e-6
+            base = cell_polygon(obj,e);
+            for k = -K:K
+                ply = union(ply, polyshape((base + k*P).', 'Simplify', false));
+            end
+        end
+    end
+
+    % clip to one unit cell (the geometry's extent along the periodic axis)
+    rr = obj.r(:,:);
+    xspan = max(rr(1,:)) - min(rr(1,:));
+    yspan = max(rr(2,:)) - min(rr(2,:));
+    pad = 10*max(xspan,yspan);
+    if abs(P(1)) >= abs(P(2))    % x-periodic: clip to one period in x
+        xlo = min(rr(1,:)); xhi = max(rr(1,:));
+        ylo = min(rr(2,:))-pad; yhi = max(rr(2,:))+pad;
+    else                          % y-periodic: clip to one period in y
+        xlo = min(rr(1,:))-pad; xhi = max(rr(1,:))+pad;
+        ylo = min(rr(2,:)); yhi = max(rr(2,:));
+    end
+    cellrect = polyshape([xlo xhi xhi xlo],[ylo ylo yhi yhi]);
+    ply = intersect(ply,cellrect);
+end
+
+
+function P = per_period_vec(obj)
+%PER_PERIOD_VEC the (single-axis) period translation vector.
+    if ~isempty(obj.dx)
+        P = [obj.dx; 0];
+    elseif ~isempty(obj.dy)
+        P = [0; obj.dy];
+    else
+        P = [0; 0];
+    end
 end

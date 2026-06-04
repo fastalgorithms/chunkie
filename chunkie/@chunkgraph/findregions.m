@@ -45,15 +45,24 @@ function [regions] = findregions(obj_in)
     % runs) falls through to the standard logic. [single or layered curves]
     if isa(obj_in,'chunkgraph_per') && (~isempty(obj.dx) || ~isempty(obj.dy))
         nl = numel(loops);
-        isunb = false(1,nl);
+        isunb = false(1,nl);   % unbounded periodic curve (a/e)
+        isclt = false(1,nl);   % closed under tiling (b)
         for il = 1:nl
-            isunb(il) = norm(loop_displacement(obj,loops{il})) > 1e-10;
+            if norm(loop_displacement(obj,loops{il})) > 1e-10
+                isunb(il) = true;
+            elseif loop_max_jump(obj,loops{il}) > 1e-6
+                isclt(il) = true;
+            end
         end
         if any(isunb)
             regions = findregions_per_unbounded(obj,loops,isunb);
             return
         end
-        % no unbounded loop found: fall through to the standard logic
+        if any(isclt)
+            regions = findregions_per_closed(obj,loops,isclt);
+            return
+        end
+        % no periodic loop found: fall through to the standard logic
     end
 
     [li,lo] = findunbounded_loop(obj,loops);
@@ -302,4 +311,48 @@ function y = curve_mean_y(obj,edges)
         cnt = cnt + size(rr,2);
     end
     y = s/cnt;
+end
+
+function regions = findregions_per_closed(obj,loops,isclt)
+%FINDREGIONS_PER_CLOSED regions for periodic cells that are closed under
+% tiling (e.g. the diamonds of case (b)). Region 1 is the connected
+% exterior; region k+1 is the interior of the k-th distinct cell.
+%
+% Each cell is oriented so its (rightward) normal points outward -- the
+% orientation for which the periodic interior test marks the enclosed
+% region (consistent with the open-curve convention). The exterior region
+% stores the reversed boundaries so find_edge_regions sees the outward
+% (normal) side as region 1 and the interior as region k+1.
+    iclt = find(isclt);
+
+    % group flagged loops into distinct cells by their (unsigned) edge set
+    cells = {}; keys = {};
+    for t = 1:numel(iclt)
+        e   = loops{iclt(t)};
+        key = sort(abs(e));
+        isnew = true;
+        for g = 1:numel(keys)
+            if isequal(keys{g},key); isnew = false; break; end
+        end
+        if isnew; keys{end+1} = key; cells{end+1} = e; end
+    end
+    ncell = numel(cells);
+
+    % orient each cell CCW (outward normal)
+    for k = 1:ncell
+        poly = cell_polygon(obj,cells{k});
+        x = poly(1,:); y = poly(2,:);
+        A = 0.5*sum(x.*y([2:end 1]) - x([2:end 1]).*y);
+        if A < 0
+            cells{k} = -fliplr(cells{k});
+        end
+    end
+
+    regions = cell(1,ncell+1);
+    extcomps = cell(1,ncell);
+    for k = 1:ncell
+        regions{k+1} = {cells{k}};         % interior of cell k
+        extcomps{k}  = -fliplr(cells{k});  % exterior sees reversed boundary
+    end
+    regions{1} = extcomps;                 % connected exterior
 end

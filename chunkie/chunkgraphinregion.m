@@ -65,9 +65,16 @@ ids = nan(npts,1);
 % periodic, unbounded geometries (e.g. a single open staircase cell) are
 % labeled by the periodic interior test rather than the closed-loop logic
 % below. [stage 1: single open curve -> region 1 above, region 2 below]
-if isa(cg,"chunkgraph_per") && cgper_region_is_unbounded(cg)
-    ids = chunkgraphinregion_per(cg,ptsobj,opts,npts);
-    return
+if isa(cg,"chunkgraph_per")
+    if cgper_region_is_unbounded(cg)
+        ids = chunkgraphinregion_per(cg,ptsobj,opts,npts);
+        return
+    elseif cgper_region_is_closed_tiling(cg)
+        ids = chunkgraphinregion_per_closed(cg,ptsobj,opts,npts);
+        return
+    end
+    % otherwise (closed/open, non-tiling periodic) fall through to the
+    % standard closed-loop logic below
 end
 
 % loop over regions and use chunkerinterior to label
@@ -255,4 +262,50 @@ function ids = chunkgraphinregion_per(cg,ptsobj,opts,npts)
     end
 
     ids = 1 + countbelow;
+end
+
+
+function tf = cgper_region_is_closed_tiling(cg)
+%CGPER_REGION_IS_CLOSED_TILING true if some region boundary closes only
+% through periodic identification (period jumps present) with zero net
+% displacement -- the case (b) "diamonds".
+    tf = false;
+    for ir = 1:numel(cg.regions)
+        comp = cg.regions{ir};
+        if ~iscell(comp); continue; end
+        for c = 1:numel(comp)
+            e = comp{c};
+            if ~isempty(e) && norm(loop_displacement(cg,e)) < 1e-10 ...
+                    && loop_max_jump(cg,e) > 1e-6
+                tf = true; return
+            end
+        end
+    end
+end
+
+
+function ids = chunkgraphinregion_per_closed(cg,ptsobj,opts,npts)
+%CHUNKGRAPHINREGION_PER_CLOSED label points for periodic cells closed under
+% tiling: region 1 is outside all cells, region k+1 is inside the k-th
+% cell. Cells are disjoint, so a point is interior to at most one. [stage b]
+    ids = ones(npts,1);
+    if isempty(opts)
+        optsint = struct();
+    else
+        optsint = opts;
+    end
+    ncell = numel(cg.regions) - 1;
+    for k = 1:ncell
+        edgelist = cg.regions{k+1}{1};
+        chnkr = cgper_build_chunker(cg,edgelist);
+        optsk = optsint;
+        optsk.periodic = true;
+        if ~isempty(cg.dx)
+            optsk.d = cg.dx;
+        else
+            optsk.d = cg.dy;
+        end
+        inb = reshape(chunkerinterior(chnkr,ptsobj,optsk),npts,1) > 0;
+        ids(inb) = k+1;
+    end
 end
