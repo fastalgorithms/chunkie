@@ -1,5 +1,5 @@
 function [ids] = chunkgraph_perinregion(cg,ptsobj,opts)
-%CHUNKGRAPHINREGION_PER returns region labels for a chunkgraph_per object.
+%CHUNKGRAPH_PERINREGION returns region labels for a chunkgraph_per object.
 %
 % Syntax: ids = chunkgraphinregion_per(cg,pts,opts)
 %         ids = chunkgraphinregion_per(cg,{x,y},opts) % meshgrid version
@@ -24,14 +24,8 @@ function [ids] = chunkgraph_perinregion(cg,ptsobj,opts)
 %   background/layer regions = 1, ..., numel(curves)+1
 %   closed-cell interiors    = numel(curves)+2, ...
 %
-% Special cases are degenerate:
-%   pure layered geometry:      closed is empty
-%   pure closed tiling/object:  curves is empty
-%   composite geometry:         both lists are nonempty
-%
 % see also CHUNKGRAPHINREGION, CHUNKERINTERIOR
-
-% periodic extension / cleanup: Jonathan Shaw
+% authors: Jeremy Hoskins, Jonathan Shaw
 
 if nargin < 3
     opts = [];
@@ -39,9 +33,6 @@ end
 
 msg = "chunkgraphinregion_per: input 1 must be chunkgraph_per";
 assert(class(cg) == "chunkgraph_per",msg);
-
-msg = "chunkgraphinregion_per: chunkgraph_per input has no period vector";
-assert(cgper_has_period(cg),msg);
 
 npts = get_npts(ptsobj);
 
@@ -92,21 +83,9 @@ else
 end
 end
 
-
-function tf = cgper_has_period(cg)
-%CGPER_HAS_PERIOD true if a chunkgraph_per has at least one period vector.
-tf = (~isempty(cg.dx)) || (~isempty(cg.dy));
-end
-
-
 function [curves, closed] = cgper_collect_loops(cg)
 %CGPER_COLLECT_LOOPS gather the distinct boundary loops from cg.regions and
 % split them into unbounded periodic curves and closed cells/objects.
-%
-% Unbounded curves are oriented normal-up and ordered top to bottom. Closed
-% loops are oriented counter-clockwise according to cell_polygon and ordered
-% top to bottom. This ordering matches the region numbering used by
-% findregions_per.
 
 loops = {};
 keys = {};
@@ -174,7 +153,6 @@ curves = curves(oc);
 [~,os] = sort(smy,'descend');
 closed = closed(os);
 end
-
 
 function below = cgper_below_indicator(cg,edgelist,ptsobj,opts,npts)
 %CGPER_BELOW_INDICATOR logical array: point is below the normal-up curve.

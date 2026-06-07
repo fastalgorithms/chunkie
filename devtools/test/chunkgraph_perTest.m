@@ -32,19 +32,14 @@ ireg = chunkgraphinregion(cg, targs);
 xx = targs.r(1,:); yy = targs.r(2,:); 
 figure; scatter(xx,yy,[],ireg,'.')
 %}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %periodic object, open in the unit cell: 
-%
+%{
 verts = [-1, -0.5, -1, 1, 0.5, 1; -1, -0.5, 0, -1, -0.5, 0]; 
 edgesendverts = [6 5 1 2; 5 4 2 3]; 
 merge_idx = {[1 4],[3 6]}; 
 cg = chunkgraph_per(verts,edgesendverts,merge_idx); 
 
-%pts in comp domain: 
-Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraphinregion(cg,targs); 
 
 %basic geometry: 
 figure(1); hold on; 
@@ -53,7 +48,16 @@ axs = axis();
 title('chunkgraph\_per geometry')
 hold off; 
 
-%chunkgraphinregion verification: 
+%plot_regions verification: 
+figure(3); hold on; 
+plot_regions(cg)
+title('plot\_regions')
+
+%chunkgraphinregion:
+Nx = 150; Ny = 150; 
+targs = gen_comp_domain(cg,Nx,Ny); 
+ireg = chunkgraph_perinregion(cg,targs); 
+ 
 xx = targs.r(1,:); yy = targs.r(2,:); 
 nreg = size(cg.regions,2); 
 Legend = cell(1,nreg); 
@@ -68,10 +72,6 @@ axis(axs)
 title('chunkgraphinregion')
 hold off; 
 
-%plot_regions verification: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %single staircase: 
@@ -80,6 +80,18 @@ verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
 edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
 cg = chunkgraph_per(verts,edgesendverts,merge_idx);
+
+%basic geometry: 
+figure(1); hold on; 
+plot(cg); 
+axs = axis(); 
+title('chunkgraph\_per geometry')
+hold off; 
+
+%plot_regions: 
+figure(3); hold on; 
+plot_regions(cg)
+title('plot\_regions')
 
 %pts in comp domain: 
 Nx = 150; Ny = 150; 
@@ -123,17 +135,23 @@ merge_idx = {[1 4]};
 cg0 = chunkgraph_per(verts,edgesendverts,merge_idx);
 cg  = stack_layers([cg0 + [0;-1], cg0, cg0 + [0;1]], merge_idx);
 
-%pts in comp domain: 
-Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraphinregion(cg,targs); 
-
 %basic geometry: 
 figure(1); hold on; 
 plot(cg); 
 axs = axis(); 
 title('chunkgraph\_per geometry')
 hold off; 
+
+%plot_regions verification: 
+figure(3); hold on; 
+plot_regions(cg)
+title('plot\_regions')
+
+%pts in comp domain: 
+Nx = 150; Ny = 150; 
+targs = gen_comp_domain(cg,Nx,Ny); 
+ireg = chunkgraphinregion(cg,targs); 
+
 
 %chunkgraphinregion verification: 
 xx = targs.r(1,:); yy = targs.r(2,:); 
@@ -150,10 +168,6 @@ axis(axs)
 title('chunkgraphinregion')
 hold off; 
 
-%plot_regions verification: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %closed object with user-defined periods
@@ -170,22 +184,42 @@ cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks,cparams);
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %composite object: 
-%{
-verts = [0.5,0,0.5;2,2.5,3]; 
+%
+
+%closed object: 
+verts = [0.4,-0.1,0.4;2,2.5,3]; 
 [~, nv] = size(verts);
 edgesendverts = [1:nv; circshift(1:nv,-1)];
-cpars = []; cpars.dx = 1; cpars.dy = 1; 
-merge_idx = {[]}; %ENABLE merge_idx = {} for closed objects
-cg0 = chunkgraph_per(verts,edgesendverts,merge_idx,[],cpars); 
+fcurve = @(t) chnk.curves.fsine(t,0.1,2*pi,0); 
+cpars = []; cpars.dx = 1; cpars.dy = []; % dx, dy periodicities must be consistent with later geometries
+merge_idx = []; 
+cg1 = chunkgraph_per(verts,edgesendverts,merge_idx,fcurve,cpars); 
 
+%object closed under tiling: 
+verts = [-0.5, -0.25, -0.5, 0.5, 0.25, 0.5; -4, -3.5, -3, -4, -3.5, -3]; 
+edgesendverts = [6 5 1 2; 5 4 2 3]; 
+merge_idx = {[1 4],[3 6]}; 
+cg2 = chunkgraph_per(verts,edgesendverts,merge_idx); 
 
+%open periodic boundary: 
 verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
 edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
-cg1 = chunkgraph_per(verts,edgesendverts,merge_idx);
-cg1  = stack_layers([cg1 + [0;-1], cg1, cg1 + [0;1]], merge_idx);
+cg3 = chunkgraph_per(verts,edgesendverts,merge_idx);
+cg3  = stack_layers([cg3 + [0;-1], cg3, cg3 + [0;1], cg3 + [0;4]], merge_idx);
 
-cg = merge([cg0,cg1]); 
+cg = merge([cg1,cg2,cg3]); 
+
+%basic geometry: 
+figure(1); hold on; 
+plot(cg); 
+title('chunkgraph\_per geometry')
+hold off; 
+
+%plot_regions: 
+figure(3); hold on; 
+plot_regions(cg)
+title('plot\_regions')
 
 %pts in comp domain: 
 Nx = 150; Ny = 150; 

@@ -1,14 +1,13 @@
 function poly = cell_polygon(obj,edges)
 %CELL_POLYGON contiguous closed polygon traced by a periodic cell that is
-% closed under tiling (e.g. the diamond of case (b)). The period jumps
-% between consecutive edges are removed by shifting each edge so it starts
-% where the previous one ended, yielding a single closed polygon. Only
-% meaningful for loops with ~zero net displacement.
+% closed under tiling. The period jumps
 %
 % Syntax: poly = cell_polygon(obj,edges)
 %
 % Output:
 %   poly - 2 x M array of polygon vertices
+
+% author: Jonathan Shaw
 
     poly = []; prevend = [];
     for jj = 1:numel(edges)

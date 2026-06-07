@@ -4,6 +4,8 @@ function cgrph = merge(cgrphs)
 % This preserves existing periodic vertex identifications from each input
 % chunkgraph_per and also identifies coincident vertices between different
 % input graphs.
+%
+% authors: Tristan Goodwill, Jonathan Shaw
 
 % accumulate verts, free edge endpoints, edge chunkers, and periodic merges
 nverts = 0;

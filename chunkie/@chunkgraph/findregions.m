@@ -32,7 +32,6 @@ end
 obj.verts = verts_new;
 obj.v2emat = build_v2emat(obj);
 obj.vstruc = procverts(obj);
-
 [loops] = findloops_verts(obj);
 [li,lo] = findunbounded_loop(obj,loops);
 

@@ -5,6 +5,8 @@ function m = loop_max_jump(obj,edges)
 % (period jumps). 
 %
 % Syntax: m = loop_max_jump(obj,edges)
+%
+% author: Jonathan Shaw
 
     ne = numel(edges);
     if ne == 0

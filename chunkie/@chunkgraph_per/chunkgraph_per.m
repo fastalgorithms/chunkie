@@ -27,7 +27,7 @@ classdef chunkgraph_per < chunkgraph
         vstruc_free
         edgesendverts_free
         merge_idx
-        vert_per
+        vert_per %NOT CURRENTLY USED
         dx
         dy
    end
@@ -37,12 +37,12 @@ classdef chunkgraph_per < chunkgraph
             obj = obj@chunkgraph(verts, edgesendverts, varargin{:}); 
             obj = calc_per(obj,merge_idx,varargin{:}); 
             obj.merge_idx = merge_idx; 
-            if ~isempty(merge_idx{1})
+            if ~isempty(merge_idx)
                 obj = build_vstruc(obj,merge_idx); 
             else
                 obj.vstruc_free = obj.vstruc; 
                 obj.edgesendverts_free = obj.edgesendverts; 
-                obj.vert_per = nan(1,length(obj.verts(1,:))); 
+                obj.vert_per = nan(2,length(obj.verts(1,:))); 
             end
         end
 
@@ -55,7 +55,7 @@ classdef chunkgraph_per < chunkgraph
             else
                 cparams = []; 
             end
-            if ~isempty(merge_idx{1})
+            if ~isempty(merge_idx)
                 nmerge = size(merge_idx,2); 
                 dx = []; dy = []; 
                 for m = 1:nmerge
@@ -121,8 +121,6 @@ classdef chunkgraph_per < chunkgraph
              obj.vstruc = v_use;
             
              obj.v2emat = build_v2emat(obj); 
-             obj0 = obj; obj0.vstruc = obj.vstruc_free; 
-             obj0.edgesendverts = obj.edgesendverts_free; 
              obj.regions = findregions(obj); 
              obj = balance(obj); 
         end

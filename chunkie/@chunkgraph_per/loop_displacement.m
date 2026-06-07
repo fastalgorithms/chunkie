@@ -1,8 +1,7 @@
 function d = loop_displacement(obj,edges)
 %LOOP_DISPLACEMENT net displacement around a loop, using edge chunker
 % endpoints. ~0 for a closed loop; a nonzero lattice vector
-% (+/-dx,0)/(0,+/-dy) for a curve that only closes through the periodic
-% identification
+% (+/-dx,0)/(0,+/-dy) for an infinite periodic curve
 %
 % Syntax: d = loop_displacement(obj,edges)
 %
@@ -12,6 +11,7 @@ function d = loop_displacement(obj,edges)
 %
 % Output:
 %   d - 2x1 net displacement vector
+% author: Jonathan Shaw
 
     d = [0;0];
     for jj = 1:numel(edges)

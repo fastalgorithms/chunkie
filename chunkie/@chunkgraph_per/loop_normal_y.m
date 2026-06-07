@@ -6,11 +6,13 @@ function ny = loop_normal_y(obj,edges)
 % Syntax: ny = loop_normal_y(obj,edges)
 %
 % Input:
-%   obj   - a chunkgraph object
+%   obj   - a chunkgraph_per object
 %   edges - signed edge-index list
 %
 % Output:
 %   ny - mean y-component of the (orientation-adjusted) normal
+%
+% author: Jonathan Shaw
 
     s = 0; cnt = 0;
     for jj = 1:numel(edges)

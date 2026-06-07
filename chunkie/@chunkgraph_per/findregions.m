@@ -1,7 +1,7 @@
 function [regions] = findregions(obj_in)
-%FINDREGIONS_PER determines the regions of a singly-periodic chunkgraph_per.
+%FINDREGIONS in @chunkgraph_per determines the regions of chunkgraph_per object.
 %
-% Syntax: [regions] = findregions_per(obj_in);
+% Syntax: [regions] = findregions(obj_in);
 %
 % Input:
 %   obj_in - a chunkgraph_per object
@@ -10,14 +10,15 @@ function [regions] = findregions(obj_in)
 %   regions - a cell array of length nregions. Each region is specified by
 %             a cell array of signed edge lists which traverse its boundary.
 %
-% Periodic geometries are represented in one canonical form:
-%   layered background curves + zero or more closed cells/objects.
-% Pure layered, pure closed tiling/object, and composite geometries are
-% obtained by allowing either list to be empty.
+% Periodic geometries are represented as
+%   layered background curves + closed objects.
+
+%authors: Jeremy Hoskins, Jonathan Shaw 
 
 msg = "findregions_per: input must be a chunkgraph_per";
 assert(isa(obj_in,'chunkgraph_per'),msg);
 
+%regions for open components: 
 obj = obj_in;
 
 [~, c] = find(isnan(obj.edgesendverts));
@@ -39,47 +40,41 @@ obj.vstruc = procverts(obj);
 
 [loops] = findloops_verts(obj);
 
-regions = findregions_per_from_loops(obj,loops);
+regions = make_per_reg(obj,loops);
 
 end
 
+function reg = make_per_reg(obj,loops)
+%MAKE_PER_REG periodic region construction
 
-function regions = findregions_per_from_loops(obj,loops)
-%FINDREGIONS_PER_FROM_LOOPS canonical periodic region construction.
+[curves,cells] = classify_reg(obj,loops);
 
-[curves,cells] = cgper_collect_region_primitives(obj,loops);
+reg = make_reg(curves,cells);
 
-regions = cgper_build_background_regions(curves,cells);
-
-nbg = numel(regions);
+nbg = numel(reg);
 for j = 1:numel(cells)
-    regions{nbg+j} = {cells{j}};
+    reg{nbg+j} = {cells{j}};
 end
 end
 
-
-function [curves,cells] = cgper_collect_region_primitives(obj,loops)
-%CGPER_COLLECT_REGION_PRIMITIVES split unique periodic loops into
+function [curves,cells] = classify_reg(obj,loops)
+%CLASSIFY_REG split unique periodic loops into
 % unbounded curves and closed cells/objects.
-%
-% Unbounded curves have nonzero net period displacement and are oriented
-% normal-up. Closed cells/objects have zero net displacement and are oriented
-% counter-clockwise using cell_polygon. Both lists are ordered top to bottom
-% so region numbering is stable.
 
-loops_unique = cgper_unique_loops(loops);
+loops_unique = get_unique_loops(loops);
 
 curves = {};
 cmy = [];
 
 cells = {};
 smy = [];
+dtol = 1e-10; 
 
 for k = 1:numel(loops_unique)
     e = loops_unique{k};
     dnet = loop_displacement(obj,e);
 
-    if norm(dnet) > 1e-10
+    if norm(dnet) > dtol
         if loop_normal_y(obj,e) < 0
             e = -fliplr(e);
         end
@@ -90,7 +85,7 @@ for k = 1:numel(loops_unique)
         poly = cell_polygon(obj,e);
         x = poly(1,:);
         y = poly(2,:);
-        A = 0.5*sum(x.*y([2:end 1]) - x([2:end 1]).*y);
+        A = 0.5*sum(x.*y([2:end 1]) - x([2:end 1]).*y); %signed area
 
         if A < 0
             e = -fliplr(e);
@@ -108,9 +103,8 @@ curves = curves(oc);
 cells = cells(os);
 end
 
-
-function loops_unique = cgper_unique_loops(loops)
-%CGPER_UNIQUE_LOOPS remove the duplicate reverse orientation of each loop.
+function loops_unique = get_unique_loops(loops)
+%GET_UNIQUE_LOOPS remove the duplicate reverse orientation of each loop.
 
 loops_unique = {};
 keys = {};
@@ -138,15 +132,11 @@ for k = 1:numel(loops)
 end
 end
 
-
-function regions = cgper_build_background_regions(curves,cells)
-%CGPER_BUILD_BACKGROUND_REGIONS build the layered background regions.
+function regions = make_reg(curves,cells)
+%MAKE_REG build the layered background regions.
 %
 % If there are no unbounded curves, the background is the exterior of all
-% closed cells. In that pure-closed case, include the reversed cell
-% boundaries in region 1, preserving edge-side bookkeeping. If unbounded
-% curves exist, background regions are determined only by the unbounded
-% curves, and closed-cell interiors are appended as separate regions.
+% closed cells. 
 
 ncurve = numel(curves);
 
@@ -170,7 +160,6 @@ end
 regions{ncurve+1} = {-fliplr(curves{ncurve})};
 end
 
-
 function y = curve_mean_y(obj,edges)
 %CURVE_MEAN_Y mean y-coordinate of the points making up an edge list.
 
@@ -185,7 +174,6 @@ end
 
 y = s/cnt;
 end
-
 
 function [loops] = findloops_verts(obj, iverts)
 %FINDLOOPS_VERTS a relatively crude method for determining the loops of a
