@@ -47,26 +47,26 @@ end
 function reg = make_per_reg(obj,loops)
 %MAKE_PER_REG periodic region construction
 
-[curves,cells] = classify_reg(obj,loops);
+[unbnd,bnd] = classify_loops(obj,loops);
 
-reg = make_reg(curves,cells);
+reg = make_reg(unbnd,bnd);
 
 nbg = numel(reg);
-for j = 1:numel(cells)
-    reg{nbg+j} = {cells{j}};
+for j = 1:numel(bnd)
+    reg{nbg+j} = {bnd{j}};
 end
 end
 
-function [curves,cells] = classify_reg(obj,loops)
+function [unbnd,bnd] = classify_loops(obj,loops)
 %CLASSIFY_REG split unique periodic loops into
-% unbounded curves and closed cells/objects.
+% unbounded curves and bounded+closed objects.
 
 loops_unique = get_unique_loops(loops);
 
-curves = {};
+unbnd = {};
 cmy = [];
 
-cells = {};
+bnd = {};
 smy = [];
 dtol = 1e-10; 
 
@@ -79,8 +79,8 @@ for k = 1:numel(loops_unique)
             e = -fliplr(e);
         end
 
-        curves{end+1} = e;
-        cmy(end+1) = curve_mean_y(obj,e);
+        unbnd{end+1} = e;
+        cmy(end+1) = loop_mean_y(obj,e);
     else
         poly = cell_polygon(obj,e);
         x = poly(1,:);
@@ -91,16 +91,16 @@ for k = 1:numel(loops_unique)
             e = -fliplr(e);
         end
 
-        cells{end+1} = e;
+        bnd{end+1} = e;
         smy(end+1) = mean(poly(2,:));
     end
 end
 
 [~,oc] = sort(cmy,'descend');
-curves = curves(oc);
+unbnd = unbnd(oc);
 
 [~,os] = sort(smy,'descend');
-cells = cells(os);
+bnd = bnd(os);
 end
 
 function loops_unique = get_unique_loops(loops)
@@ -132,47 +132,32 @@ for k = 1:numel(loops)
 end
 end
 
-function regions = make_reg(curves,cells)
+function regions = make_reg(unbnd,bnd)
 %MAKE_REG build the layered background regions.
 %
 % If there are no unbounded curves, the background is the exterior of all
-% closed cells. 
+% closed objects. 
 
-ncurve = numel(curves);
+nunbnd = numel(unbnd);
 
-if ncurve == 0
-    extcomps = cell(1,numel(cells));
-    for j = 1:numel(cells)
-        extcomps{j} = -fliplr(cells{j});
+if nunbnd == 0
+    extcomps = cell(1,numel(bnd));
+    for j = 1:numel(bnd)
+        extcomps{j} = -fliplr(bnd{j});
     end
     regions = {extcomps};
     return
 end
 
-regions = cell(1,ncurve+1);
+regions = cell(1,nunbnd+1);
 
-regions{1} = {curves{1}};
+regions{1} = {unbnd{1}};
 
-for k = 2:ncurve
-    regions{k} = {-fliplr(curves{k-1}), curves{k}};
+for k = 2:nunbnd
+    regions{k} = {-fliplr(unbnd{k-1}), unbnd{k}};
 end
 
-regions{ncurve+1} = {-fliplr(curves{ncurve})};
-end
-
-function y = curve_mean_y(obj,edges)
-%CURVE_MEAN_Y mean y-coordinate of the points making up an edge list.
-
-s = 0;
-cnt = 0;
-
-for jj = 1:numel(edges)
-    rr = obj.echnks(abs(edges(jj))).r(:,:);
-    s = s + sum(rr(2,:));
-    cnt = cnt + size(rr,2);
-end
-
-y = s/cnt;
+regions{nunbnd+1} = {-fliplr(unbnd{nunbnd})};
 end
 
 function [loops] = findloops_verts(obj, iverts)

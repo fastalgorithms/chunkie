@@ -212,47 +212,39 @@ cg = merge([cg1,cg2,cg3]);
 
 %basic geometry: 
 figure(1); hold on; 
+
+subplot(1,3,1); hold on; 
 plot(cg); 
+axs = axis; 
 title('chunkgraph\_per geometry')
 hold off; 
 
 %plot_regions: 
-figure(3); hold on; 
+subplot(1,3,2); hold on; 
 plot_regions(cg)
 title('plot\_regions')
 
-%pts in comp domain: 
-Nx = 150; Ny = 150; 
+%chunkgraph_perinregion: 
+Nx = 200; Ny = 200; 
 targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraphinregion(cg,targs); 
-
-%basic geometry: 
-figure(1); hold on; 
-plot(cg); 
-axs = axis(); 
-title('chunkgraph\_per geometry')
-hold off; 
-
-%chunkgraphinregion verification: 
+ireg = chunkgraph_perinregion(cg,targs); 
 xx = targs.r(1,:); yy = targs.r(2,:); 
 nreg = size(cg.regions,2); 
 Legend = cell(1,nreg); 
-figure(2); hold on; 
+subplot(1,3,3); hold on; 
 for reg = 1:nreg
     reg_idx = ireg == reg; 
     scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
     Legend{reg} = ['region',num2str(reg)]; 
 end
-legend(Legend)
+leg = legend(Legend); leg.AutoUpdate = 'off'; 
 axis(axs)
-title('chunkgraphinregion')
+plot(cg)
+title('chunkgraph\_perinregion')
 hold off; 
 
-%plot_regions verification: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
-%}
+sgtitle('region detection')
+hold off; 
 
 %end
 

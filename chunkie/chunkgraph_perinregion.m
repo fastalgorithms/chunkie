@@ -1,4 +1,4 @@
-function [ids] = chunkgraph_perinregion(cg,ptsobj,opts)
+function [ids] = chunkgraph_perinregion(obj,ptsobj,opts)
 %CHUNKGRAPH_PERINREGION returns region labels for a chunkgraph_per object.
 %
 % Syntax: ids = chunkgraphinregion_per(cg,pts,opts)
@@ -22,46 +22,39 @@ function [ids] = chunkgraph_perinregion(cg,ptsobj,opts)
 %
 % Periodic region model:
 %   background/layer regions = 1, ..., numel(curves)+1
-%   closed-cell interiors    = numel(curves)+2, ...
+%   closed-object interiors    = numel(curves)+2, ...
 %
 % see also CHUNKGRAPHINREGION, CHUNKERINTERIOR
 % authors: Jeremy Hoskins, Jonathan Shaw
 
 if nargin < 3
-    opts = [];
+    opts = []; 
 end
 
 msg = "chunkgraphinregion_per: input 1 must be chunkgraph_per";
-assert(class(cg) == "chunkgraph_per",msg);
+assert(class(obj) == "chunkgraph_per",msg);
 
 npts = get_npts(ptsobj);
 
-if isempty(opts)
-    optsint = struct();
-else
-    optsint = opts;
-end
+[unbnd, bnd] = classify_loops(obj); %id loops as unbounded curves or closed+bounded objects
+nlayer = numel(unbnd);
+opts.periodic = true; 
+opts.dx = obj.dx; opts.dy = obj.dy; 
 
-[curves, closed] = cgper_collect_loops(cg);
-nlayer = numel(curves);
-
-% Layered background index.
-countbelow = zeros(npts,1);
+%region syntax: increase region # in downward direction for layered media:
+ids = ones(npts,1);
 for kk = 1:nlayer
-    below = cgper_below_indicator(cg,curves{kk},ptsobj,optsint,npts);
-    countbelow = countbelow + double(below);
+    iidx = get_per_int(obj,unbnd{kk},ptsobj,opts,npts);
+    ids = ids + iidx;
 end
 
-ids = 1 + countbelow;
-
-% Closed sub-object interiors override the background/layer labels.
-for jj = 1:numel(closed)
-    inside = cgper_inside_indicator(cg,closed{jj},ptsobj,optsint,npts);
+%closed object interiors override the background/layer labels:
+for jj = 1:numel(bnd)
+    inside = get_per_int(obj,bnd{jj},ptsobj,opts,npts);
     ids(inside) = (nlayer+1) + jj;
 end
 
 end
-
 
 function npts = get_npts(ptsobj)
 %GET_NPTS number of target points represented by ptsobj.
@@ -83,9 +76,9 @@ else
 end
 end
 
-function [curves, closed] = cgper_collect_loops(cg)
-%CGPER_COLLECT_LOOPS gather the distinct boundary loops from cg.regions and
-% split them into unbounded periodic curves and closed cells/objects.
+function [unbnd, bnd] = classify_loops(cg)
+%CLASSIFY_LOOPS gather the distinct boundary loops from cg.regions and
+% split them into unbounded periodic curves and bounded+closed objects.
 
 loops = {};
 keys = {};
@@ -118,9 +111,9 @@ for ir = 1:numel(cg.regions)
     end
 end
 
-curves = {};
+unbnd = {};
 cmy = [];
-closed = {};
+bnd = {};
 smy = [];
 
 for i = 1:numel(loops)
@@ -130,8 +123,8 @@ for i = 1:numel(loops)
         if loop_normal_y(cg,e) < 0
             e = -fliplr(e);
         end
-        curves{end+1} = e;
-        cmy(end+1) = cgper_mean_y(cg,e);
+        unbnd{end+1} = e;
+        cmy(end+1) = loop_mean_y(cg,e);
     else
         poly = cell_polygon(cg,e);
         x = poly(1,:);
@@ -142,78 +135,26 @@ for i = 1:numel(loops)
             e = -fliplr(e);
         end
 
-        closed{end+1} = e;
-        smy(end+1) = cgper_mean_y(cg,e);
+        bnd{end+1} = e;
+        smy(end+1) = loop_mean_y(cg,e);
     end
 end
 
 [~,oc] = sort(cmy,'descend');
-curves = curves(oc);
+unbnd = unbnd(oc);
 
 [~,os] = sort(smy,'descend');
-closed = closed(os);
+bnd = bnd(os);
 end
 
-function below = cgper_below_indicator(cg,edgelist,ptsobj,opts,npts)
-%CGPER_BELOW_INDICATOR logical array: point is below the normal-up curve.
-
-chnkr = cgper_build_chunker(cg,edgelist);
-dnet = loop_displacement(cg,edgelist);
-
-optsk = opts;
-optsk.periodic = true;
-
-if abs(dnet(1)) >= abs(dnet(2))
-    optsk.d = cg.dx;     % x-periodic -> unbounded in y
-    vertical = true;
-else
-    optsk.d = cg.dy;     % y-periodic -> unbounded in x
-    vertical = false;
+function iidx = get_per_int(cg,edgelist,ptsobj,opts,npts)
+%get_per_int logical array: iidx = 1 if pts in ptsobj are in interior
+chnkr = make_chunker(cg,edgelist);
+iidx = reshape(chunkerinterior(chnkr,ptsobj,opts),npts,1) > 0;
 end
 
-inb = reshape(chunkerinterior(chnkr,ptsobj,optsk),npts,1) > 0;
-
-% Orient the boolean side test by probing a point clearly below the curve.
-rr = chnkr.r(:,:);
-if vertical
-    span = max(rr(2,:)) - min(rr(2,:)) + optsk.d;
-    probe = [];
-    probe.r = [mean(rr(1,:)); min(rr(2,:)) - 10*span];
-else
-    span = max(rr(1,:)) - min(rr(1,:)) + optsk.d;
-    probe = [];
-    probe.r = [min(rr(1,:)) - 10*span; mean(rr(2,:))];
-end
-
-inprobe = chunkerinterior(chnkr,probe,optsk) > 0;
-
-if inprobe
-    below = inb;
-else
-    below = ~inb;
-end
-end
-
-
-function inside = cgper_inside_indicator(cg,edgelist,ptsobj,opts,npts)
-%CGPER_INSIDE_INDICATOR logical array: point is inside a closed cell/object.
-
-chnkr = cgper_build_chunker(cg,edgelist);
-
-optsk = opts;
-optsk.periodic = true;
-if ~isempty(cg.dx)
-    optsk.d = cg.dx;
-else
-    optsk.d = cg.dy;
-end
-
-inside = reshape(chunkerinterior(chnkr,ptsobj,optsk),npts,1) > 0;
-end
-
-
-function chnkr = cgper_build_chunker(cg,edgelist)
-%CGPER_BUILD_CHUNKER merge signed edge chunkers into one chunker.
+function chnkr = make_chunker(cg,edgelist)
+%MAKE_CHUNKER merge signed edge chunkers into one chunker.
 
 nedge = numel(edgelist);
 
@@ -235,18 +176,3 @@ end
 chnkr = merge(chnkrs(1:nedge));
 end
 
-
-function y = cgper_mean_y(cg,edgelist)
-%CGPER_MEAN_Y mean y-coordinate of the points making up an edge list.
-
-s = 0;
-cnt = 0;
-
-for jj = 1:numel(edgelist)
-    rr = cg.echnks(abs(edgelist(jj))).r(:,:);
-    s = s + sum(rr(2,:));
-    cnt = cnt + size(rr,2);
-end
-
-y = s/cnt;
-end

@@ -135,7 +135,7 @@ function ply = per_reg_poly(obj,comps)
     for c = 1:numel(comps)
         if ~isempty(comps{c}) && per_edge_unb(obj,comps{c})
             curves{end+1} = comps{c}; 
-            meany(end+1)  = curve_mean_y(obj,comps{c}); 
+            meany(end+1)  = loop_mean_y(obj,comps{c}); 
         end
     end
 
@@ -258,18 +258,6 @@ function rs = curve_points(obj,edges)
         end
         rs = [rs, rchnk]; 
     end
-end
-
-function y = curve_mean_y(obj,edges)
-%CURVE_MEAN_Y mean y-coordinate of the points making up an edge list.
-    s = 0;
-    cnt = 0;
-    for jj = 1:numel(edges)
-        rr = obj.echnks(abs(edges(jj))).r(:,:);
-        s = s + sum(rr(2,:));
-        cnt = cnt + size(rr,2);
-    end
-    y = s/cnt;
 end
 
 function P = per_period_vec(obj)

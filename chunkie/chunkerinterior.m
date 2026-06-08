@@ -141,10 +141,6 @@ if isfield(opts,'periodic')
     periodic = opts.periodic; 
 end
 
-% resolve the period (opts.d) from the object or from opts.dx/opts.dy if it
-% was not given explicitly. The 'lq' double-layer kernel uses a single
-% scalar period along the periodic axis; an unbounded periodic curve is
-% periodic in exactly one direction.
 if ~isfield(opts,'d') || isempty(opts.d)
     if class(chnkobj) == "chunkgraph_per"
         if ~isempty(chnkobj.dx)
