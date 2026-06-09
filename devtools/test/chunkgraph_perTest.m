@@ -191,24 +191,37 @@ verts = [0.4,-0.1,0.4;2,2.5,3];
 [~, nv] = size(verts);
 edgesendverts = [1:nv; circshift(1:nv,-1)];
 fcurve = @(t) chnk.curves.fsine(t,0.1,2*pi,0); 
-cpars = []; cpars.dx = 1; cpars.dy = []; % dx, dy periodicities must be consistent with later geometries
+cpars = []; cpars.dx = []; cpars.dy = []; % dx, dy periodicities must be consistent with later geometries
 merge_idx = []; 
 cg1 = chunkgraph_per(verts,edgesendverts,merge_idx,fcurve,cpars); 
 
-%object closed under tiling: 
+%object closed under x-tiling: 
 verts = [-0.5, -0.25, -0.5, 0.5, 0.25, 0.5; -4, -3.5, -3, -4, -3.5, -3]; 
 edgesendverts = [6 5 1 2; 5 4 2 3]; 
 merge_idx = {[1 4],[3 6]}; 
 cg2 = chunkgraph_per(verts,edgesendverts,merge_idx); 
 
+%object closed under y-tiling: 
+verts = [-0.2,0,0.2,-0.2,0,0.2;-5,-4.8,-5,5,4.8,5]; 
+edgesendverts = [6 5 1 2; 5 4 2 3]; 
+merge_idx = {[1 4],[3 6]}; 
+cg3 = chunkgraph_per(verts,edgesendverts,merge_idx); 
+
+%object closed under xy-tiling: 
+verts = [-0.25,-0.5,-0.5,-0.25,0.25,0.5,0.5,0.25;-5,-4.5,4.5,5,5,4.5,-4.5,-5]; 
+edgesendverts = [8:-2:2;7:-2:1]; 
+merge_idx = {[1 4],[2 7],[3 6],[5 8]}; 
+fcurve = @(t) chnk.curves.fsine(t,0.1,pi,0); 
+cg4 = chunkgraph_per(verts,edgesendverts,merge_idx,fcurve); 
+
 %open periodic boundary: 
 verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
 edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
-cg3 = chunkgraph_per(verts,edgesendverts,merge_idx);
-cg3  = stack_layers([cg3 + [0;-1], cg3, cg3 + [0;1], cg3 + [0;4]], merge_idx);
+cg5 = chunkgraph_per(verts,edgesendverts,merge_idx);
+cg5 = stack_layers([cg5 + [0;-1], cg5, cg5 + [0;1], cg5 + [0;4]], merge_idx);
 
-cg = merge([cg1,cg2,cg3]); 
+cg = merge([cg1,cg2,cg3,cg4,cg5]); 
 
 %basic geometry: 
 figure(1); hold on; 

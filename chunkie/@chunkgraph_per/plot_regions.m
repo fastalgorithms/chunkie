@@ -155,12 +155,17 @@ function ply = per_halfstrip(obj,edgelist,rs)
 %PER_HALFSTRIP polygon covering the half-strip on the normal side of a
 % single periodic curve. Used for the top and bottom layered regions.
     ny = loop_normal_y(obj,edgelist);
-
     xs = rs(1,:);
     ys = rs(2,:);
-    pad = 5*max(max(ys)-min(ys), max(xs)-min(xs));
-    if pad == 0
-        pad = 1;
+
+    ptol = 1e-13; 
+    if obj.dy>ptol
+        pad = 0; 
+    else
+        pad = 5*max(max(ys)-min(ys), max(xs)-min(xs));
+        if pad == 0
+            pad = 1;
+        end
     end
 
     if ny >= 0
@@ -177,18 +182,9 @@ function ply = per_band(obj,e_up,e_lo)
 %PER_BAND polygon for the strip between an upper and a lower curve.
     ru = curve_points(obj,e_up);
     rl = curve_points(obj,e_lo);
-
-    P = per_period_vec(obj);
-    if abs(P(1)) >= abs(P(2))
-        [~,iu] = sort(ru(1,:));
-        [~,il] = sort(rl(1,:));
-    else
-        [~,iu] = sort(ru(2,:));
-        [~,il] = sort(rl(2,:));
-    end
-    ru = ru(:,iu);
-    rl = rl(:,il);
-
+    [~,iu] = sort(ru(1,:));
+    [~,il] = sort(rl(1,:));
+    ru = ru(:,iu); rl = rl(:,il); 
     pts = [ru, fliplr(rl)];
     ply = polyshape(pts.', 'Simplify', false);
 end
@@ -216,25 +212,40 @@ function ply = per_cl_poly(obj,comps)
 %PER_CL_POLY closed-under-tiling cell(s), shown over one unit cell.
 % Complete cells can straddle a period boundary, so period translates are
 % added and clipped to the displayed unit cell.
-    P = per_period_vec(obj);
+    
     ptol = 1e-13; 
-    if (abs(P(2)) < ptol) || (abs(P(1)) < ptol)
-        K = 1; %check 2 additional copies for closure
-    else 
-        K = 3; %check all 6 additional copies for closure
-    end
-    ply = polyshape();
-
-    for c = 1:numel(comps)
-        e = comps{c};
-        if isempty(e)
-            continue
+    dtol = 1e-10; jtol = 1e-6; 
+    ply = polyshape(); 
+    if obj.dx>ptol && obj.dy>ptol
+        for c = 1:numel(comps)
+            e = comps{c}; 
+            if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol
+                base = cell_polygon(obj,e); 
+                for j = -1:1
+                    for k = -1:1 %construct 2 surrounding copies for closure:
+                        ply = union(ply, polyshape((base + [j*obj.dx;k*obj.dy]).', 'Simplify', false));
+                    end
+                end
+            end
         end
-
-        if norm(loop_displacement(obj,e)) < 1e-10 && loop_max_jump(obj,e) > 1e-6
-            base = cell_polygon(obj,e);
-            for k = -K:K %construct 6 surrounding copies for closure
-                ply = union(ply, polyshape((base + k*P).', 'Simplify', false));
+    elseif obj.dx>ptol
+        for c = 1:numel(comps)
+            e = comps{c}; 
+            if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol
+                base = cell_polygon(obj,e); 
+                for j = -1:1 %construct 2 surrounding copies for closure:
+                    ply = union(ply, polyshape((base + [j*obj.dx;0]).', 'Simplify', false));
+                end
+            end
+        end
+    else
+        for c = 1:numel(comps)
+            e = comps{c}; 
+            if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol
+                base = cell_polygon(obj,e); 
+                for k = -1:1 %construct 2 surrounding copies for closure:
+                    ply = union(ply, polyshape((base + [0;k*obj.dy]).', 'Simplify', false));
+                end
             end
         end
     end
@@ -260,13 +271,13 @@ function rs = curve_points(obj,edges)
     end
 end
 
-function P = per_period_vec(obj)
-%PER_PERIOD_VEC the single-axis period translation vector.
-    if ~isempty(obj.dx)
+function P = per_vec(obj)
+%per_vec the single-axis period translation vector.
+    if ~isempty(obj.dx) && ~isempty(obj.dy)
+        P = [obj.dx; obj.dy];
+    elseif isempty(obj.dy)
         P = [obj.dx; 0];
-    elseif ~isempty(obj.dy)
-        P = [0; obj.dy];
     else
-        P = [0; 0];
+        P = [0; obj.dy];
     end
 end
