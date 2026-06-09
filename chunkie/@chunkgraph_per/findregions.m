@@ -44,16 +44,16 @@ regions = make_per_reg(obj,loops);
 
 end
 
-function reg = make_per_reg(obj,loops)
+function regions = make_per_reg(obj,loops)
 %MAKE_PER_REG periodic region construction
 
 [unbnd,bnd] = classify_loops(obj,loops);
 
-reg = make_reg(unbnd,bnd);
+regions = build_reg(unbnd,bnd);
 
-nbg = numel(reg);
+nbg = numel(regions);
 for j = 1:numel(bnd)
-    reg{nbg+j} = {bnd{j}};
+    regions{nbg+j} = {bnd{j}};
 end
 end
 
@@ -132,7 +132,7 @@ for k = 1:numel(loops)
 end
 end
 
-function regions = make_reg(unbnd,bnd)
+function regions = build_reg(unbnd,bnd)
 %MAKE_REG build the layered background regions.
 %
 % If there are no unbounded curves, the background is the exterior of all

@@ -1,6 +1,6 @@
 %chunkgraph_perTest0();
 
-%function chunkgraph_perTest0()
+function chunkgraph_perTest0()
 %chunkgraph_perTest
 %
 % Test that chunkgraphinregion correctly labels regions for a periodic
@@ -9,10 +9,9 @@
 
 %housekeeping: 
 clear; close all; clc; 
-
 vrb = true;   % set false to skip figures
 
-addpath(genpath('../../../chunkie')) % DELETE LATER
+%% geometry tests: 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %testing chunkgraph logic: 
 %{
@@ -238,7 +237,7 @@ plot_regions(cg)
 title('plot\_regions')
 
 %chunkgraph_perinregion: 
-Nx = 200; Ny = 200; 
+Nx = 150; Ny = 150; 
 targs = gen_comp_domain(cg,Nx,Ny); 
 ireg = chunkgraph_perinregion(cg,targs); 
 xx = targs.r(1,:); yy = targs.r(2,:); 
@@ -259,7 +258,7 @@ hold off;
 sgtitle('region detection')
 hold off; 
 
-%end
+end
 
 %% helpers: 
 

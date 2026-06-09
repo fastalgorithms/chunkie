@@ -160,7 +160,11 @@ function ply = per_halfstrip(obj,edgelist,rs)
 
     ptol = 1e-13; 
     if obj.dy>ptol
-        pad = 0; 
+        if ny >= 0
+            pad = max(obj.r(2,:)) - max(ys); 
+        else
+            pad = min(ys) - min(obj.r(2,:)); 
+        end
     else
         pad = 5*max(max(ys)-min(ys), max(xs)-min(xs));
         if pad == 0
@@ -271,13 +275,3 @@ function rs = curve_points(obj,edges)
     end
 end
 
-function P = per_vec(obj)
-%per_vec the single-axis period translation vector.
-    if ~isempty(obj.dx) && ~isempty(obj.dy)
-        P = [obj.dx; obj.dy];
-    elseif isempty(obj.dy)
-        P = [obj.dx; 0];
-    else
-        P = [0; obj.dy];
-    end
-end
