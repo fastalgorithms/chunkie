@@ -1,7 +1,7 @@
 function plot_regions(obj,iflabel)
 %PLOT_REGIONS plots regions of a chunkgraph_per in 2 dimensions. 
 %
-% Syntax: plot_regions_per(cgrph_per)
+% Syntax: plot_regions(cgrph_per,iflabel)
 %
 % Input:
 %   cgrph_per - chunkgraph_per object
@@ -19,7 +19,7 @@ if nargin < 2 || isempty(iflabel)
     iflabel = 2;
 end
 
-msg = "plot_regions_per: input 1 must be chunkgraph_per";
+msg = "plot_regions: input 1 must be chunkgraph_per";
 assert(class(obj) == "chunkgraph_per",msg);
 
 ifhold = ishold();

@@ -16,7 +16,7 @@ function [unbnd, bnd] = classify_loops(obj, loops)
 %   bnd   - cell array of closed objects, each oriented counter-clockwise
 %           (positive signed area), sorted by descending mean y
 %
-% authors: Jeremy Hoskins, Jonathan Shaw
+% author: Jonathan Shaw
 
     dtol = 1e-10;
 
@@ -45,7 +45,7 @@ function [unbnd, bnd] = classify_loops(obj, loops)
                 e = -fliplr(e);
             end
             bnd{end+1} = e;                    
-            smy(end+1) = mean(y); %loop_incell_mean_y(obj,e);
+            smy(end+1) = mean(y); 
         end
     end
 

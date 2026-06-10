@@ -188,7 +188,7 @@ cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks,cparams);
 %closed object: 
 verts = [0.4,-0.1,0.4;2,2.5,3]; 
 [~, nv] = size(verts);
-edgesendverts = [1:nv; circshift(1:nv,-1)];
+edgesendverts = [nv:-1:1; circshift(nv:-1:1,-1)];
 fcurve = @(t) chnk.curves.fsine(t,0.1,2*pi,0); 
 cpars = []; cpars.dx = []; cpars.dy = []; % dx, dy periodicities must be consistent with later geometries
 merge_idx = []; 
@@ -202,13 +202,13 @@ cg2 = chunkgraph_per(verts,edgesendverts,merge_idx);
 
 %object closed under y-tiling: 
 verts = [-0.2,0,0.2,-0.2,0,0.2;-5,-4.8,-5,5,4.8,5]; 
-edgesendverts = [6 5 1 2; 5 4 2 3]; 
+edgesendverts = [3 2 4 5;2 1 5 6]; 
 merge_idx = {[1 4],[3 6]}; 
 cg3 = chunkgraph_per(verts,edgesendverts,merge_idx); 
 
 %object closed under xy-tiling: 
 verts = [-0.25,-0.5,-0.5,-0.25,0.25,0.5,0.5,0.25;-5,-4.5,4.5,5,5,4.5,-4.5,-5]; 
-edgesendverts = [8:-2:2;7:-2:1]; 
+edgesendverts = [7:-2:1;8:-2:2]; 
 merge_idx = {[1 4],[2 7],[3 6],[5 8]}; 
 fcurve = @(t) chnk.curves.fsine(t,0.1,pi,0); 
 cg4 = chunkgraph_per(verts,edgesendverts,merge_idx,fcurve); 

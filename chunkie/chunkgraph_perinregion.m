@@ -35,6 +35,8 @@ msg = "chunkgraphinregion_per: input 1 must be chunkgraph_per";
 assert(class(obj) == "chunkgraph_per",msg);
 
 npts = get_npts(ptsobj);
+
+%plot background regions: 
 loops = region_loops(obj); 
 [unbnd, bnd] = classify_loops(obj,loops); %id loops as unbounded curves or closed+bounded objects
 nlayer = numel(unbnd);
