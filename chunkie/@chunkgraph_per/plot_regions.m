@@ -220,7 +220,7 @@ function ply = per_cl_poly(obj,comps)
     ptol = 1e-13; 
     dtol = 1e-10; jtol = 1e-6; 
     ply = polyshape(); 
-    if obj.dx>ptol && obj.dy>ptol
+    if ~isempty(obj.dx) && ~isempty(obj.dy)
         for c = 1:numel(comps)
             e = comps{c}; 
             if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol

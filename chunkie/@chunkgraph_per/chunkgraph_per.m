@@ -45,6 +45,8 @@ classdef chunkgraph_per < chunkgraph
                 obj.edgesendverts_free = obj.edgesendverts; 
                 obj.vert_per = nan(size(obj.verts)); 
             end
+            obj.regions = findregions(obj); 
+            obj = balance(obj); 
         end
 
         function obj = calc_per(obj,merge_idx,varargin)
@@ -124,8 +126,6 @@ classdef chunkgraph_per < chunkgraph
              v_use = [v_use, vrem]; 
              obj.vstruc = v_use; 
              obj.v2emat = build_v2emat(obj); 
-             obj.regions = findregions(obj); 
-             obj = balance(obj); 
         end
     end
 end

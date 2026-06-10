@@ -10,67 +10,38 @@ function chunkgraph_perTest()
 %housekeeping: 
 clear; close all; clc; 
 vrb = true;   % set false to skip figures
+if vrb
+    %comp domain pts:
+    Nx = 150; 
+    Ny = 150; 
+end
 
 %% geometry tests: 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%testing chunkgraph logic: 
+%object closed under x-tiling: 
 %{
-verts = [0,-0.5,0;0,0.5,1]; 
-edgesendverts = [1:3;circshift(1:3,-1)]; 
-cg = chunkgraph(verts,edgesendverts); 
-
-figure; 
-plot(cg)
-
-figure; plot_regions(cg); 
-
-% Generate points in the computational domain
-Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg, Nx, Ny); 
-ireg = chunkgraphinregion(cg, targs);
-xx = targs.r(1,:); yy = targs.r(2,:); 
-figure; scatter(xx,yy,[],ireg,'.')
-%}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%periodic object, open in the unit cell: 
-%{
-verts = [-1, -0.5, -1, 1, 0.5, 1; -1, -0.5, 0, -1, -0.5, 0]; 
+verts = [-0.5, -0.25, -0.5, 0.5, 0.25, 0.5; -4, -3.5, -3, -4, -3.5, -3]; 
 edgesendverts = [6 5 1 2; 5 4 2 3]; 
 merge_idx = {[1 4],[3 6]}; 
 cg = chunkgraph_per(verts,edgesendverts,merge_idx); 
 
-
-%basic geometry: 
-figure(1); hold on; 
-plot(cg); 
-axs = axis(); 
-title('chunkgraph\_per geometry')
-hold off; 
-
-%plot_regions verification: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
-
-%chunkgraphinregion:
-Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraph_perinregion(cg,targs); 
- 
-xx = targs.r(1,:); yy = targs.r(2,:); 
-nreg = size(cg.regions,2); 
-Legend = cell(1,nreg); 
-figure(2); hold on; 
-for reg = 1:nreg
-    reg_idx = ireg == reg; 
-    scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
-    Legend{reg} = ['region',num2str(reg)]; 
+if vrb
+    plot_geom(cg,Nx,Ny)
 end
-legend(Legend)
-axis(axs)
-title('chunkgraphinregion')
-hold off; 
 
+%}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%object closed under xy-tiling: 
+%{
+verts = [-0.25,-0.5,-0.5,-0.25,0.25,0.5,0.5,0.25;-5,-4.5,4.5,5,5,4.5,-4.5,-5]; 
+edgesendverts = [7:-2:1;8:-2:2]; 
+merge_idx = {[1 4],[2 7],[3 6],[5 8]}; 
+fcurve = @(t) chnk.curves.fsine(t,0.1,pi,0); 
+cg = chunkgraph_per(verts,edgesendverts,merge_idx,fcurve); 
+
+if vrb 
+    plot_geom(cg,Nx,Ny)
+end
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %single staircase: 
@@ -80,49 +51,9 @@ edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
 cg = chunkgraph_per(verts,edgesendverts,merge_idx);
 
-%basic geometry: 
-figure(1); hold on; 
-plot(cg); 
-axs = axis(); 
-title('chunkgraph\_per geometry')
-hold off; 
-
-%plot_regions: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
-
-%pts in comp domain: 
-Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraphinregion(cg,targs); 
-
-%basic geometry: 
-figure(1); hold on; 
-plot(cg); 
-axs = axis(); 
-title('chunkgraph\_per geometry')
-hold off; 
-
-%chunkgraphinregion verification: 
-xx = targs.r(1,:); yy = targs.r(2,:); 
-nreg = size(cg.regions,2); 
-Legend = cell(1,nreg); 
-figure(2); hold on; 
-for reg = 1:nreg
-    reg_idx = ireg == reg; 
-    scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
-    Legend{reg} = ['region',num2str(reg)]; 
+if vrb
+    plot_geom(cg,Nx,Ny)
 end
-legend(Legend)
-axis(axs)
-title('chunkgraphinregion')
-hold off; 
-
-%plot_regions verification: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
 
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -134,38 +65,9 @@ merge_idx = {[1 4]};
 cg0 = chunkgraph_per(verts,edgesendverts,merge_idx);
 cg  = stack_layers([cg0 + [0;-1], cg0, cg0 + [0;1]], merge_idx);
 
-%basic geometry: 
-figure(1); hold on; 
-plot(cg); 
-axs = axis(); 
-title('chunkgraph\_per geometry')
-hold off; 
-
-%plot_regions verification: 
-figure(3); hold on; 
-plot_regions(cg)
-title('plot\_regions')
-
-%pts in comp domain: 
-Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraphinregion(cg,targs); 
-
-
-%chunkgraphinregion verification: 
-xx = targs.r(1,:); yy = targs.r(2,:); 
-nreg = size(cg.regions,2); 
-Legend = cell(1,nreg); 
-figure(2); hold on; 
-for reg = 1:nreg
-    reg_idx = ireg == reg; 
-    scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
-    Legend{reg} = ['region',num2str(reg)]; 
+if vrb
+    plot_geom(cg,Nx,Ny)
 end
-legend(Legend)
-axis(axs)
-title('chunkgraphinregion')
-hold off; 
 
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -178,8 +80,12 @@ verts = starfish(t,5,0.3);
 edgesendverts = [1:nv; circshift(1:nv,-1)];
 fchnks = []; 
 cparams = []; cparams.dx = 3; cparams.dy = 3; 
-merge_idx = {[]}; 
+merge_idx = []; 
 cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks,cparams);
+
+if vrb 
+    plot_geom(cg,Nx,Ny); 
+end
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %composite object: 
@@ -222,41 +128,12 @@ cg5 = stack_layers([cg5 + [0;-1], cg5, cg5 + [0;1], cg5 + [0;4]], merge_idx);
 
 cg = merge([cg1,cg2,cg3,cg4,cg5]); 
 
-%basic geometry: 
-figure(1); hold on; 
-
-subplot(1,3,1); hold on; 
-plot(cg); 
-axs = axis; 
-title('chunkgraph\_per geometry')
-hold off; 
-
-%plot_regions: 
-subplot(1,3,2); hold on; 
-plot_regions(cg)
-title('plot\_regions')
-
-%chunkgraph_perinregion: 
-Nx = 150; Ny = 150; 
-targs = gen_comp_domain(cg,Nx,Ny); 
-ireg = chunkgraph_perinregion(cg,targs); 
-xx = targs.r(1,:); yy = targs.r(2,:); 
-nreg = size(cg.regions,2); 
-Legend = cell(1,nreg); 
-subplot(1,3,3); hold on; 
-for reg = 1:nreg
-    reg_idx = ireg == reg; 
-    scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
-    Legend{reg} = ['region',num2str(reg)]; 
+if vrb 
+    Nx = 150; Ny = 150; 
+    plot_geom(cg,Nx,Ny)
 end
-leg = legend(Legend); leg.AutoUpdate = 'off'; 
-axis(axs)
-plot(cg)
-title('chunkgraph\_perinregion')
-hold off; 
 
-sgtitle('region detection')
-hold off; 
+%}
 
 end
 
@@ -269,5 +146,43 @@ function targs = gen_comp_domain(cgrph,Nx,Ny)
     y1 = linspace(ymin-0.5,ymax+0.5,Ny);
     [xx,yy] = meshgrid(x1,y1);
     targs = []; targs.r = [xx(:).'; yy(:).'];
+end
+
+function plot_geom(cg,Nx,Ny)
+    %basic geometry: 
+    figure; hold on; 
+    
+    subplot(1,3,1); hold on; 
+    plot(cg); 
+    axs = axis; 
+    title('chunkgraph\_per geometry')
+    hold off; 
+    
+    %plot_regions: 
+    subplot(1,3,2); hold on; 
+    plot_regions(cg)
+    title('plot\_regions')
+    
+    %chunkgraph_perinregion: 
+    Nx = 150; Ny = 150; 
+    targs = gen_comp_domain(cg,Nx,Ny); 
+    ireg = chunkgraph_perinregion(cg,targs); 
+    xx = targs.r(1,:); yy = targs.r(2,:); 
+    nreg = size(cg.regions,2); 
+    Legend = cell(1,nreg); 
+    subplot(1,3,3); hold on; 
+    for reg = 1:nreg
+        reg_idx = ireg == reg; 
+        scatter(xx(reg_idx),yy(reg_idx),[],ireg(reg_idx),'.'); 
+        Legend{reg} = ['region',num2str(reg)]; 
+    end
+    leg = legend(Legend); leg.AutoUpdate = 'off'; 
+    axis(axs)
+    plot(cg)
+    title('chunkgraph\_perinregion')
+    hold off; 
+    
+    sgtitle('region detection')
+    hold off; 
 end
 
