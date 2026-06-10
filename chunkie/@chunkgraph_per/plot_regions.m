@@ -81,7 +81,7 @@ if ifhold
 end
 
 end
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ply = cl_poly(obj,comps)
 %CL_PLY polyshape for a bounded ordinary region. The first
 % component is the outer boundary and later components are holes.
@@ -213,8 +213,8 @@ function clut = cl_und_tiling(obj,comps)
 end
 
 function ply = per_cl_poly(obj,comps)
-%PER_CL_POLY closed-under-tiling cell(s), shown over one unit cell.
-% Complete cells can straddle a period boundary, so period translates are
+%PER_CL_POLY closed-under-tiling object(s), shown over one unit cell.
+% Complete objects can straddle a period boundary, so period translates are
 % added and clipped to the displayed unit cell.
     
     ptol = 1e-13; 
@@ -226,7 +226,7 @@ function ply = per_cl_poly(obj,comps)
             if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol
                 base = cell_polygon(obj,e); 
                 for j = -1:1
-                    for k = -1:1 %construct 2 surrounding copies for closure:
+                    for k = -1:1 %construct 8 surrounding copies for closure:
                         ply = union(ply, polyshape((base + [j*obj.dx;k*obj.dy]).', 'Simplify', false));
                     end
                 end

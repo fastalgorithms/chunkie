@@ -39,26 +39,18 @@ obj.v2emat = build_v2emat(obj);
 obj.vstruc = procverts(obj);
 
 [loops] = findloops_verts(obj);
-
-regions = make_per_reg(obj,loops);
-
-end
-
-function regions = make_per_reg(obj,loops)
-%MAKE_PER_REG periodic region construction
-
 [unbnd,bnd] = classify_loops(obj,loops);
-
-regions = build_reg(unbnd,bnd);
+regions = make_bg_regions(unbnd,bnd); 
 
 nbg = numel(regions);
 for j = 1:numel(bnd)
     regions{nbg+j} = {bnd{j}};
 end
-end
 
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [unbnd,bnd] = classify_loops(obj,loops)
-%CLASSIFY_REG split unique periodic loops into
+%CLASSIFY_LOOPS sort unique loops into
 % unbounded curves and bounded+closed objects.
 
 loops_unique = get_unique_loops(loops);
@@ -96,6 +88,7 @@ for k = 1:numel(loops_unique)
     end
 end
 
+%sort by mean y-component:
 [~,oc] = sort(cmy,'descend');
 unbnd = unbnd(oc);
 
@@ -132,8 +125,8 @@ for k = 1:numel(loops)
 end
 end
 
-function regions = build_reg(unbnd,bnd)
-%MAKE_REG build the layered background regions.
+function regions = make_bg_regions(unbnd,bnd)
+%MAKE_BG_REGIONS build the layered background regions.
 %
 % If there are no unbounded curves, the background is the exterior of all
 % closed objects. 

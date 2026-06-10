@@ -232,9 +232,11 @@ title('chunkgraph\_per geometry')
 hold off; 
 
 %plot_regions: 
+%{
 subplot(1,3,2); hold on; 
 plot_regions(cg)
 title('plot\_regions')
+%}
 
 %chunkgraph_perinregion: 
 Nx = 150; Ny = 150; 
@@ -261,7 +263,6 @@ hold off;
 end
 
 %% helpers: 
-
 function targs = gen_comp_domain(cgrph,Nx,Ny)
     verts = cgrph.verts; 
     xmin = min(verts(1,:)); xmax = max(verts(1,:)); 
@@ -272,38 +273,3 @@ function targs = gen_comp_domain(cgrph,Nx,Ny)
     targs = []; targs.r = [xx(:).'; yy(:).'];
 end
 
-function cgrph = stack_layers(cgrphs,merge_idx)
-% merge a few chunkgraphs into a single chunkgraph
-% assumes no vertices in common and no edges cross
-
-nverts = 0;
-verts = [];
-edgesendverts = [];
-fchnks = cell(0);
-verts_per = []; 
-if nargin > 1
-    merge_idx = repmat(merge_idx,1,numel(cgrphs)); 
-end
-for i = 1:length(cgrphs)
-    verts = [verts,cgrphs(i).verts];
-    if class(cgrphs(i)) == "chunkgraph_per"
-        edgesendverts = [edgesendverts, cgrphs(i).edgesendverts_free+nverts];
-        verts_per = [verts_per;cgrphs(i).vert_per]; 
-        merge_idx{i} = merge_idx{i}+nverts; 
-    else
-        edgesendverts = [edgesendverts, cgrphs(i).edgesendverts+nverts];
-    end
-    nverts = nverts + size(cgrphs(i).verts,2);
-    for j = 1:size(cgrphs(i).echnks,2)
-        fchnks{end+1} = cgrphs(i).echnks(j);
-    end
-end
-
-if nargin == 2
-    cgrph = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks); 
-
-else
-    cgrph = chunkgraph(verts,edgesendverts,fchnks);
-end
-
-end

@@ -49,6 +49,8 @@ if class(chnkobj) == "chunker"
    chnkr = chnkobj;
 elseif class(chnkobj) == "chunkgraph"
    chnkr = merge(chnkobj.echnks);
+elseif class(chnkobj) == "chunkgraph_per"
+    chnkr = merge(chnkobj.echnks); 
 else
     msg = "Unsupported object in chunkerinterior";
     error(msg)
@@ -136,33 +138,27 @@ nlegnew = max(nlegnew,chnkr.k);
 [chnkr2] = upsample(chnkr,nlegnew);
 
 %periodic case:
-periodic = false;
+isper = false;
 if isfield(opts,'periodic')
-    periodic = opts.periodic; 
+    isper = opts.periodic; 
+elseif isa(chnkobj,"chunkgraph_per")
+    isper = true; 
 end
 
-if ~isfield(opts,'d') || isempty(opts.d)
-    if class(chnkobj) == "chunkgraph_per"
-        if ~isempty(chnkobj.dx)
-            opts.d = chnkobj.dx; periodic = true;
-        elseif ~isempty(chnkobj.dy)
-            opts.d = chnkobj.dy; periodic = true;
-        end
-    elseif isfield(opts,'dx') && ~isempty(opts.dx)
-        opts.d = opts.dx; periodic = true;
-    elseif isfield(opts,'dy') && ~isempty(opts.dy)
-        opts.d = opts.dy; periodic = true;
+if isper
+    if ~isfield(opts,'dx') && isa(chnkobj,"chunkgraph_per")
+        opts.dx = chnkobj.dx; 
     end
 end
 
+if isper && (~isfield(opts,'dx') || isempty(opts.dx))
+    msg = 'Missing opts.dx or obj.dx periodicity for interior detection.'; 
+    error(msg)
+end
 
-if periodic || class(chnkobj) == "chunkgraph_per"
-    if ~isfield(opts,'d') || isempty(opts.d)
-        error(['Missing period for periodic geometry: supply opts.d, ' ...
-            'opts.dx/opts.dy, or a chunkgraph_per with dx/dy set'])
-    end
+if isper
     kap = 1e-16*(1 - 1i); 
-    kernd = kernel('lq','d',kap,opts.d); 
+    kernd = kernel('lq','d',kap,opts.dx); 
     targs = []; targs.r = pts; 
     D = kernd.eval(chnkobj,targs)*diag(chnkobj.wts(:)); 
     vals1 = D*ones(size(D,2),1); 
@@ -210,7 +206,7 @@ end
 
 % for points where the integral might be inaccurate:
 % find close boundary point and check normal direction
-if periodic || class(chnkobj) == "chunkgraph_per"
+if isper || class(chnkobj) == "chunkgraph_per"
     vals1 = 2*vals1; 
     iffy = abs(round(vals1) - vals1) > 1e-2; 
 else

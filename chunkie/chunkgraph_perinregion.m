@@ -36,26 +36,28 @@ assert(class(obj) == "chunkgraph_per",msg);
 
 npts = get_npts(ptsobj);
 
-[unbnd, bnd] = classify_loops(obj); %id loops as unbounded curves or closed+bounded objects
+[unbnd, bnd] = classify_reg_loops(obj); %id loops as unbounded curves or closed+bounded objects
 nlayer = numel(unbnd);
 opts.periodic = true; 
-opts.dx = obj.dx; opts.dy = obj.dy; 
+opts.dx = obj.dx;
 
 %region syntax: increase region # in downward direction for layered media:
 ids = ones(npts,1);
-for kk = 1:nlayer
-    iidx = get_per_int(obj,unbnd{kk},ptsobj,opts,npts);
+for l = 1:nlayer
+    chnkr = make_chunker(obj,unbnd{l});
+    iidx = reshape(chunkerinterior(chnkr,ptsobj,opts),npts,1) > 0;
     ids = ids + iidx;
 end
 
 %closed object interiors override the background/layer labels:
-for jj = 1:numel(bnd)
-    inside = get_per_int(obj,bnd{jj},ptsobj,opts,npts);
-    ids(inside) = (nlayer+1) + jj;
+for b = 1:numel(bnd)
+    chnkr = make_chunker(obj,bnd{b}); 
+    iidx = reshape(chunkerinterior(chnkr,ptsobj,opts),npts,1) > 0;
+    ids(iidx) = (nlayer+1) + b;
 end
 
 end
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function npts = get_npts(ptsobj)
 %GET_NPTS number of target points represented by ptsobj.
 if isa(ptsobj, "cell")
@@ -76,8 +78,8 @@ else
 end
 end
 
-function [unbnd, bnd] = classify_loops(cg)
-%CLASSIFY_LOOPS gather the distinct boundary loops from cg.regions and
+function [unbnd, bnd] = classify_reg_loops(cg)
+%CLASSIFY_REG_LOOPS gather the distinct boundary loops from cg.regions and
 % split them into unbounded periodic curves and bounded+closed objects.
 
 loops = {};
@@ -145,12 +147,6 @@ unbnd = unbnd(oc);
 
 [~,os] = sort(smy,'descend');
 bnd = bnd(os);
-end
-
-function iidx = get_per_int(cg,edgelist,ptsobj,opts,npts)
-%get_per_int logical array: iidx = 1 if pts in ptsobj are in interior
-chnkr = make_chunker(cg,edgelist);
-iidx = reshape(chunkerinterior(chnkr,ptsobj,opts),npts,1) > 0;
 end
 
 function chnkr = make_chunker(cg,edgelist)

@@ -28,7 +28,7 @@ classdef chunkgraph_per < chunkgraph
         vstruc_free
         edgesendverts_free
         merge_idx
-        vert_per %NOT CURRENTLY USED... probably will use in chunkermateval
+        vert_per %NOT CURRENTLY USED... probably will use in chunkermat
         dx
         dy
    end
