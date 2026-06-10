@@ -232,7 +232,7 @@ title('chunkgraph\_per geometry')
 hold off; 
 
 %plot_regions: 
-%{
+%
 subplot(1,3,2); hold on; 
 plot_regions(cg)
 title('plot\_regions')
