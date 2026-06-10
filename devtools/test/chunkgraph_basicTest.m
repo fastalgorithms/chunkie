@@ -40,6 +40,16 @@ assert(nnz(cgrph1.v2emat-cgrph2.v2emat) == 0);
 
 cgrph1 = balance(cgrph1);
 
+% test mean and ctr on pentagonal chunkgraph
+
+rmean = mean(cgrph1);
+rmean2 = sum(cgrph1.r(:,:).*cgrph1.wts(:).',2)/sum(cgrph1.wts(:));
+assert(norm(rmean-rmean2) < 1e-12,'mean does not match definition');
+
+rctr = ctr(cgrph1);
+rctr2 = (max(cgrph1)+min(cgrph1))/2;
+assert(norm(rctr-rctr2) < 1e-12,'ctr does not match definition');
+
 % a graph with two edges in the old format
 
 verts = [1 0 1; -1 0 1]; edge2verts = [-1 1 0; 0 -1 1];

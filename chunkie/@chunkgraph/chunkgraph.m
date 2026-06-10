@@ -69,6 +69,8 @@ classdef chunkgraph
 %      a meshgrid of points that are close to the chunkgraph
 %   rmin = min(obj) - minimum of coordinate values
 %   rmax = max(obj) - maximum of coordinate values
+%   rmean = mean(obj) - weighted average of coordinate values
+%   rctr = ctr(obj) - average of max(obj) and min(obj)
 %   onesmat = onesmat(obj) - matrix that corresponds to integration of a
 %             density on the chunkgraph
 %   rnormonesmat = normonesmat(obj) - matrix that corresponds to
@@ -445,6 +447,8 @@ classdef chunkgraph
         obj = move(obj, r0, r1, trotat, scale)
         rmin = min(obj)
         rmax = max(obj)
+        rmean = mean(obj)
+        rctr = ctr(obj)
         plot(obj, varargin)
         quiver(obj, varargin)
         plot_regions(obj, iflabel)
