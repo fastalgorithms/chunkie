@@ -35,8 +35,8 @@ msg = "chunkgraphinregion_per: input 1 must be chunkgraph_per";
 assert(class(obj) == "chunkgraph_per",msg);
 
 npts = get_npts(ptsobj);
-
-[unbnd, bnd] = classify_reg_loops(obj); %id loops as unbounded curves or closed+bounded objects
+loops = region_loops(obj); 
+[unbnd, bnd] = classify_loops(obj,loops); %id loops as unbounded curves or closed+bounded objects
 nlayer = numel(unbnd);
 opts.periodic = true; 
 opts.dx = obj.dx;
@@ -78,75 +78,21 @@ else
 end
 end
 
-function [unbnd, bnd] = classify_reg_loops(cg)
-%CLASSIFY_REG_LOOPS gather the distinct boundary loops from cg.regions and
-% split them into unbounded periodic curves and bounded+closed objects.
-
+function loops = region_loops(cg)
+%REGION_LOOPS gather the boundary components stored in cg.regions 
 loops = {};
-keys = {};
-
 for ir = 1:numel(cg.regions)
     comp = cg.regions{ir};
     if ~iscell(comp)
         continue
     end
-
     for ic = 1:numel(comp)
         e = comp{ic};
-        if isempty(e)
-            continue
-        end
-
-        key = sort(abs(e));
-        isnew = true;
-        for g = 1:numel(keys)
-            if isequal(keys{g},key)
-                isnew = false;
-                break
-            end
-        end
-
-        if isnew
-            keys{end+1} = key;
-            loops{end+1} = e;
+        if ~isempty(e)
+            loops{end+1} = e; 
         end
     end
 end
-
-unbnd = {};
-cmy = [];
-bnd = {};
-smy = [];
-
-for i = 1:numel(loops)
-    e = loops{i};
-
-    if norm(loop_displacement(cg,e)) > 1e-10
-        if loop_normal_y(cg,e) < 0
-            e = -fliplr(e);
-        end
-        unbnd{end+1} = e;
-        cmy(end+1) = loop_mean_y(cg,e);
-    else
-        poly = cell_polygon(cg,e);
-        x = poly(1,:);
-        y = poly(2,:);
-        A = 0.5*sum(x.*y([2:end 1]) - x([2:end 1]).*y);
-
-        if A < 0
-            e = -fliplr(e);
-        end
-
-        bnd{end+1} = e;
-        smy(end+1) = loop_mean_y(cg,e);
-    end
-end
-
-[~,oc] = sort(cmy,'descend');
-unbnd = unbnd(oc);
-
-[~,os] = sort(smy,'descend');
-bnd = bnd(os);
 end
 
 function chnkr = make_chunker(cg,edgelist)

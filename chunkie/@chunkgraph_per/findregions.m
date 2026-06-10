@@ -49,6 +49,7 @@ end
 
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%{
 function [unbnd,bnd] = classify_loops(obj,loops)
 %CLASSIFY_LOOPS sort unique loops into
 % unbounded curves and bounded+closed objects.
@@ -84,7 +85,7 @@ for k = 1:numel(loops_unique)
         end
 
         bnd{end+1} = e;
-        smy(end+1) = mean(poly(2,:));
+        smy(end+1) = mean(y);
     end
 end
 
@@ -124,7 +125,7 @@ for k = 1:numel(loops)
     end
 end
 end
-
+%}
 function regions = make_bg_regions(unbnd,bnd)
 %MAKE_BG_REGIONS build the layered background regions.
 %
