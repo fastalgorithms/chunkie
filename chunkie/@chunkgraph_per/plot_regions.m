@@ -27,7 +27,7 @@ ifhold = ishold();
 regions = obj.regions;
 nr = numel(regions);
 legtext = cell(max(1,nr-1),1);
-
+ply_unb = []; ply_bnd = []; 
 for ii = 2:nr
     legtext{ii-1} = "region " + num2str(ii);
 
@@ -37,15 +37,21 @@ for ii = 2:nr
     end
 
     if per_reg_has_unb(obj,comps)
-        plyrgn = per_reg_poly(obj,comps);
+        ply_unb = [ply_unb,per_reg_poly(obj,comps)];
     elseif cl_und_tiling(obj,comps)
-        plyrgn = per_cl_poly(obj,comps);
+        ply_bnd = [ply_bnd,per_cl_poly(obj,comps)];
     else
-        plyrgn = cl_poly(obj,comps);
+        ply_bnd = [ply_bnd,cl_poly(obj,comps)];
     end
 
-    plot(plyrgn);
-    hold on
+end
+nunb = numel(ply_unb); nbnd = numel(ply_bnd); 
+ply_bnd_tot = union(ply_bnd); 
+for r = 1:nunb
+    plot(subtract(ply_unb(r),ply_bnd_tot))
+end
+for r = 1:nbnd
+    plot(ply_bnd(r))
 end
 
 if nr > 1 && iflabel > 0
@@ -274,4 +280,5 @@ function rs = curve_points(obj,edges)
         rs = [rs, rchnk]; 
     end
 end
+
 

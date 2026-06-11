@@ -1,11 +1,12 @@
 %chunkgraph_perTest0();
 
 function chunkgraph_perTest()
-%chunkgraph_perTest
+%chunkgraph_perTest: 
 %
-% Test that chunkgraphinregion correctly labels regions for a periodic
-% chunkgraph (chunkgraph_per), and that the same routine still handles an
-% ordinary (non-periodic) chunkgraph.
+% Objectives: 
+% - test geometry, region detection with plot_regions,
+% chunkgraph_perinregion
+
 
 %housekeeping: 
 clear; close all; clc; 
@@ -185,4 +186,6 @@ function plot_geom(cg,Nx,Ny)
     sgtitle('region detection')
     hold off; 
 end
+
+
 
