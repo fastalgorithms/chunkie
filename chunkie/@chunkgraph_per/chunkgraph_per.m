@@ -65,18 +65,18 @@ classdef chunkgraph_per < chunkgraph
                 for m = 1:nmerge
                     vm = merge_idx{m}; 
                     v = obj.verts(:,vm); 
-                    dxmat = abs(v(1,:)'-v(1,:)); 
-                    dymat = abs(v(2,:)'-v(2,:));
-                    dxm = unique(nonzeros(dxmat)); 
-                    dym = unique(nonzeros(dymat)); 
+                    dxmat = v(1,:)'-v(1,:); 
+                    dymat = v(2,:)'-v(2,:);
+                    dxm = unique(abs(nonzeros(dxmat))); 
+                    dym = unique(abs(nonzeros(dymat))); 
                     if numel(dxm)>1 || numel(dym)>1
                         error('Periodicity of object is not consistent.')
                     end
                     if ~isempty(dxm)
-                        vper(1,vm) = dxm; 
+                        vper(1,vm) = nonzeros(dxmat.'); 
                     end
                     if ~isempty(dym)
-                        vper(2,vm) = dym; 
+                        vper(2,vm) = nonzeros(dymat.'); 
                     end
                     dx = [dx;dxm]; 
                     dy = [dy;dym]; 
@@ -104,28 +104,33 @@ classdef chunkgraph_per < chunkgraph
         function obj = build_vstruc(obj,merge_idx)
             obj.vstruc_free = obj.vstruc; 
             obj.edgesendverts_free = obj.edgesendverts;
-            vstruc = obj.vstruc; 
-            Nbase_v = numel(vstruc); 
-            Nmerge = numel(merge_idx); 
-            idx_skip = 1:Nbase_v; 
-             for m = 1:Nmerge
-                        Nv_merge = numel(merge_idx{m});
-                        vert_merge = []; 
-                        conn_merge = []; 
-                        basevert = merge_idx{m}(1); 
-                        idx = obj.edgesendverts(:) == merge_idx{m};  
-                        for i_vert = 1:Nv_merge
-                            obj.edgesendverts(idx(:,i_vert)) = basevert;
-                            vert_merge = [vert_merge, vstruc{merge_idx{m}(i_vert)}{1}]; 
-                            conn_merge = [conn_merge, vstruc{merge_idx{m}(i_vert)}{2}]; 
-                        end
-                        v_use{m} = [{vert_merge} {conn_merge}]; 
-                        idx_skip = setdiff(idx_skip,merge_idx{m}); 
-             end
-             vrem = vstruc(idx_skip); 
-             v_use = [v_use, vrem]; 
-             obj.vstruc = v_use; 
-             obj.v2emat = build_v2emat(obj); 
+            vstruc = obj.vstruc;
+            for m = 1:numel(merge_idx)
+                vm = merge_idx{m};
+                basevert = vm(1);
+            
+                vert_merge = [];
+                conn_merge = [];
+            
+                for ii = 1:numel(vm)
+                    vcur = vm(ii);
+            
+                    vert_merge = [vert_merge, vstruc{vcur}{1}];
+                    conn_merge = [conn_merge, vstruc{vcur}{2}];
+            
+                    idx = obj.edgesendverts == vcur;
+                    obj.edgesendverts(idx) = basevert;
+                end
+            
+                vstruc{basevert} = {vert_merge, conn_merge};
+            
+                for ii = 2:numel(vm)
+                    vstruc{vm(ii)} = [];
+                end
+            end
+            
+            obj.vstruc = vstruc;
+            obj.v2emat = build_v2emat(obj);
         end
     end
 end

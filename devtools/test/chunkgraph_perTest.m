@@ -1,6 +1,6 @@
 %chunkgraph_perTest0();
 
-function chunkgraph_perTest()
+%function chunkgraph_perTest()
 %chunkgraph_perTest: 
 %
 % Objectives: 
@@ -91,7 +91,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %composite object: 
 %
-
 %closed object: 
 verts = [0.4,-0.1,0.4;2,2.5,3]; 
 [~, nv] = size(verts);
@@ -136,9 +135,149 @@ end
 
 %}
 
+%% chunkermat RCIP: 
+%{
+%QP problem on staircase: 
+%
+verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
+edgesendverts = [4 3 2; 3 2 1];
+merge_idx = {[1 4]};
+cg = chunkgraph_per(verts,edgesendverts,merge_idx);
+
+%src: 
+src = []; src.r = [0;-0.5]; 
+
+%geometry + source plot: 
+figure; hold on; 
+plot(cg); 
+scatter(src.r(1),src.r(2),'ro','filled')
+
+zk = 1.1; 
+kern = kernel('lq','s',zk,cg.dx); 
+opts = []; 
+
+%computational domain: 
+Nx = 200; Ny = 100; 
+nper = 3; nshift = floor(nper/2); 
+cg_comp = cg; 
+dx = [cg.dx;0];
+for s = -1:nshift
+    if s == 0 
+        continue
+    end
+    cg_comp = merge([cg_comp,cg + s*dx]); 
 end
 
-%% helpers: 
+
+ 
+%}
+
+
+%test 1: 
+%{
+opts = [];
+opts.rcip = false;
+A_no_rcip = chunkermat(cg,kern,opts);
+
+opts.rcip = true;
+A_rcip = chunkermat(cg,kern,opts);
+
+fprintf('A_no_rcip size: %d x %d\n',size(A_no_rcip,1),size(A_no_rcip,2));
+fprintf('A_rcip    size: %d x %d\n',size(A_rcip,1),size(A_rcip,2));
+fprintf('relative difference = %.3e\n', ...
+norm(A_rcip - A_no_rcip,'fro')/norm(A_no_rcip,'fro'));
+%}
+
+%test 2: 
+%{
+opts = [];
+opts.rcip = true;
+
+opts.rcip_phase = false;
+[A0,~,rcip0] = chunkermat(cg,kern,opts);
+
+opts.rcip_phase = true;
+[A1,~,rcip1] = chunkermat(cg,kern,opts);
+
+for ivert = 1:numel(rcip1)
+
+    if isempty(rcip1{ivert})
+        continue
+    end
+
+    starind = rcip1{ivert}.starind;
+    pedge = rcip1{ivert}.pedge;
+
+    ngl = cg.echnks(1).k;
+    ndim = 1;  % change if vector-valued kernel
+
+    ph = repelem(pedge(:),2*ngl*ndim);
+
+    B_expected = (ph * (1./ph).') .* A0(starind,starind);
+    B_actual   = A1(starind,starind);
+
+    relerr = norm(B_actual - B_expected,'fro')/norm(B_expected,'fro');
+
+    fprintf('vertex %d phase block relerr = %.3e\n',ivert,relerr);
+end
+%}
+
+%test 3: 
+tol = get_opt(opts,'test_tol',1e-11);
+
+opts.rcip = true;
+opts.corrections = false;
+opts.nonsmoothonly = false;
+
+fprintf('Assembling A = chunkermat(cg,kern,opts) ...\n');
+[A,~,rcipsav] = chunkermat(cg,kern,opts);
+
+rows = [];
+vertex = [];
+relerr = [];
+abserr = [];
+normref = [];
+nedge_list = [];
+
+  % ---- Local oracle comparison for each periodic representative vertex ----
+    for m = 1:numel(cg.merge_idx)
+        vm = cg.merge_idx{m};
+        if isempty(vm), continue; end
+
+        ivert = vm(1);  % representative/base vertex
+        starind = rcipsav{ivert}.starind;
+        Bgot = A(starind,starind);
+
+        [Bref,meta] = local_periodic_rcip_reference_block(cg,kern,kappa,opts,ivert,m);
+
+        this_abs = norm(Bgot - Bref,'fro');
+        this_ref = norm(Bref,'fro');
+        this_rel = this_abs/max(1,this_ref);
+
+        fprintf('vertex %d: nedge=%d, block size=%d, relerr=%.3e, abserr=%.3e\n', ...
+            ivert,meta.nedge,numel(starind),this_rel,this_abs);
+
+        assert(this_rel < tol, ...
+            'Periodic RCIP local block failed at vertex %d: relerr %.3e > %.3e.', ...
+            ivert,this_rel,tol);
+
+        rows = [rows; numel(starind)]; %#ok<AGROW>
+        vertex = [vertex; ivert]; %#ok<AGROW>
+        relerr = [relerr; this_rel]; %#ok<AGROW>
+        abserr = [abserr; this_abs]; %#ok<AGROW>
+        normref = [normref; this_ref]; %#ok<AGROW>
+        nedge_list = [nedge_list; meta.nedge]; %#ok<AGROW>
+    end
+
+    results = table(vertex,nedge_list,rows,relerr,abserr,normref, ...
+        'VariableNames',{'vertex','nedge','block_size','relerr','abserr','normref'});
+
+    fprintf('All periodic RCIP local block tests passed with tol %.3e.\n',tol);
+
+%end
+
+%% helpers:
+
 function targs = gen_comp_domain(cgrph,Nx,Ny)
     verts = cgrph.verts; 
     xmin = min(verts(1,:)); xmax = max(verts(1,:)); 
@@ -187,5 +326,8 @@ function plot_geom(cg,Nx,Ny)
     hold off; 
 end
 
-
+function [kappa,kappa_p] = kappa_curve(t)
+    kappa = t - 1i*sin(t); 
+    kappa_p = 1 - 1i*cos(t); 
+end
 
