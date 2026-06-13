@@ -79,6 +79,12 @@ elseif class(chnkobj) == "chunkgraph"
    nregion = length(chnkobj.regions);
    nedge = length(chnkr);
    icgrph = true;
+elseif class(chnkobj) == "chunkgraph_per"
+    chnkr = chnkobj.echnks;
+    nregion = length(chnkobj.regions);
+    nedge = length(chnkr);
+    icgrph = true; 
+    iper = true; 
 else
     msg = "CHUNKERKERNEVAL: first input is an unsupported object";
     error(msg)
@@ -103,7 +109,6 @@ assert(or(nk == 1,nk == nedge),...
 if nk == 1 && length(chnkr) > 1
     chnkr = merge(chnkr);
 end
-
 
 if nargin < 5
     opts = [];

@@ -90,7 +90,7 @@ end
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %composite object: 
-%
+%{
 %closed object: 
 verts = [0.4,-0.1,0.4;2,2.5,3]; 
 [~, nv] = size(verts);
@@ -136,13 +136,14 @@ end
 %}
 
 %% chunkermat RCIP: 
-%{
+%
 %QP problem on staircase: 
 %
 verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
 edgesendverts = [4 3 2; 3 2 1];
 merge_idx = {[1 4]};
 cg = chunkgraph_per(verts,edgesendverts,merge_idx);
+dx = cg.dx; 
 
 %src: 
 src = []; src.r = [0;-0.5]; 
@@ -152,24 +153,78 @@ figure; hold on;
 plot(cg); 
 scatter(src.r(1),src.r(2),'ro','filled')
 
-zk = 1.1; 
-kern = kernel('lq','s',zk,cg.dx); 
-opts = []; 
-
 %computational domain: 
-Nx = 200; Ny = 100; 
-nper = 3; nshift = floor(nper/2); 
+Nx = 100; Ny = 100; 
+cell_targs = gen_comp_domain(cg,Nx,Ny); 
+nper = 1; nshift = floor(nper/2); 
 cg_comp = cg; 
-dx = [cg.dx;0];
-for s = -1:nshift
+comp_targs = cell_targs; 
+dxv = [dx;0];
+for s = -nshift:nshift
     if s == 0 
         continue
     end
-    cg_comp = merge([cg_comp,cg + s*dx]); 
+    cg_comp = merge([cg_comp,cg + s*dxv]); 
+    comp_targs.r = [comp_targs.r, cell_targs.r + s*dxv]; 
 end
+cell_exti = ~chunkerinterior(cg,cell_targs); 
+comp_exti = repmat(cell_exti,nper,1); 
 
+%{
+figure;
+plot(cg_comp); 
+xc = cell_targs.r(1,:); yc = cell_targs.r(2,:); 
+xcomp = comp_targs.r(1,:); ycomp = comp_targs.r(2,:); 
+hold on; 
+scatter(xcomp(comp_exti),ycomp(comp_exti)); 
+scatter(xc(cell_exti),yc(cell_exti)); 
+%}
 
+%kappa curve: 
+nkap = 60; 
+dt = (2*pi/dx) / nkap; 
+tkap = -pi/dx + dt*(0:nkap-1) ; 
+[kap,kap_p] = kappa_curve(tkap); 
+w = dt; 
+
+%solving QP problem: 
+zk = 2*dx; 
+us_zk_comp = zeros(size(comp_targs.r,2),1); 
+opts = []; opts.forcesmooth = true; 
+parfor k = 1:nkap
+    kernsp = -2*kernel('hq','sp',zk,kap(k),dx);
+    rhs    = -kernsp.eval(src,cg);
+
+    sysmat = eye(cg.npt) + chunkermat(cg,kernsp);
+    sig    = sysmat\rhs;
+
+    kerns = kernel('hq','s',zk,kap(k),dx);
+
+    us_zk_cell = chunkerkerneval(cg,kerns,sig,cell_targs,opts); 
+    us_zk_comp = us_zk_comp + w*kap_p(k) * kron(exp(1i*kap(k)*dx*(-nshift:nshift)),us_zk_cell); 
+end
+us = (dx/(2*pi)) * us_zk_comp; 
+us(~comp_exti) = NaN; 
  
+
+%incident wave: 
+kerns = kernel('h','s',zk); 
+ui = kerns.eval(src,comp_targs); 
+
+%total field: 
+u = ui + us; 
+
+%plotting: 
+plotdata = log10(abs(u)); 
+plotdata(~comp_exti) = NaN; 
+figure; hold on; 
+xplot = reshape(xcomp,[],Nx*nper); 
+yplot = reshape(ycomp,[],Ny*nper); 
+plotdata = reshape(plotdata,size(xplot)); 
+pcolor(xplot,yplot,plotdata)
+shading interp
+colorbar
+
 %}
 
 
@@ -222,58 +277,6 @@ for ivert = 1:numel(rcip1)
 end
 %}
 
-%test 3: 
-tol = get_opt(opts,'test_tol',1e-11);
-
-opts.rcip = true;
-opts.corrections = false;
-opts.nonsmoothonly = false;
-
-fprintf('Assembling A = chunkermat(cg,kern,opts) ...\n');
-[A,~,rcipsav] = chunkermat(cg,kern,opts);
-
-rows = [];
-vertex = [];
-relerr = [];
-abserr = [];
-normref = [];
-nedge_list = [];
-
-  % ---- Local oracle comparison for each periodic representative vertex ----
-    for m = 1:numel(cg.merge_idx)
-        vm = cg.merge_idx{m};
-        if isempty(vm), continue; end
-
-        ivert = vm(1);  % representative/base vertex
-        starind = rcipsav{ivert}.starind;
-        Bgot = A(starind,starind);
-
-        [Bref,meta] = local_periodic_rcip_reference_block(cg,kern,kappa,opts,ivert,m);
-
-        this_abs = norm(Bgot - Bref,'fro');
-        this_ref = norm(Bref,'fro');
-        this_rel = this_abs/max(1,this_ref);
-
-        fprintf('vertex %d: nedge=%d, block size=%d, relerr=%.3e, abserr=%.3e\n', ...
-            ivert,meta.nedge,numel(starind),this_rel,this_abs);
-
-        assert(this_rel < tol, ...
-            'Periodic RCIP local block failed at vertex %d: relerr %.3e > %.3e.', ...
-            ivert,this_rel,tol);
-
-        rows = [rows; numel(starind)]; %#ok<AGROW>
-        vertex = [vertex; ivert]; %#ok<AGROW>
-        relerr = [relerr; this_rel]; %#ok<AGROW>
-        abserr = [abserr; this_abs]; %#ok<AGROW>
-        normref = [normref; this_ref]; %#ok<AGROW>
-        nedge_list = [nedge_list; meta.nedge]; %#ok<AGROW>
-    end
-
-    results = table(vertex,nedge_list,rows,relerr,abserr,normref, ...
-        'VariableNames',{'vertex','nedge','block_size','relerr','abserr','normref'});
-
-    fprintf('All periodic RCIP local block tests passed with tol %.3e.\n',tol);
-
 %end
 
 %% helpers:
@@ -282,7 +285,7 @@ function targs = gen_comp_domain(cgrph,Nx,Ny)
     verts = cgrph.verts; 
     xmin = min(verts(1,:)); xmax = max(verts(1,:)); 
     ymin = min(verts(2,:)); ymax = max(verts(2,:)); 
-    x1 = linspace(xmin-0.5,xmax+0.5,Nx);
+    x1 = linspace(xmin,xmax,Nx);
     y1 = linspace(ymin-0.5,ymax+0.5,Ny);
     [xx,yy] = meshgrid(x1,y1);
     targs = []; targs.r = [xx(:).'; yy(:).'];
