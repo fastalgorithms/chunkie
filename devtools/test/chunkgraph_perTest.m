@@ -13,11 +13,6 @@ function chunkgraph_perTest()
 %housekeeping: 
 clear; close all; clc; 
 vrb = true;   % set false to skip figures
-if vrb
-    %comp domain pts:
-    Nx = 150; 
-    Ny = 150; 
-end
 
 %% geometry tests: 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,7 +87,7 @@ end
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %composite object: 
-%{
+%
 %closed object: 
 verts = [0.4,-0.1,0.4;2,2.5,3]; 
 [~, nv] = size(verts);
@@ -137,7 +132,7 @@ end
 
 %}
 
-%% chunkermat RCIP: 
+%% chunkermat RCIP tests: 
 %
 
 %testing kappa = 0: 
@@ -178,13 +173,14 @@ fprintf('svd match: %.3e\n', norm(sort(svd(B0))-sort(svd(B1)))/norm(svd(B0)));
 %}
 
 %full QP problem: 
-%
+%{
+tstart = tic; 
 verts = [-0.5, 0, 0.5; -1,0,-1];
 edgesendverts = [3 2; 2 1];
-merge_idx = {[1 3]}; 
+merge_idx = {[1 3]}; %merge_idx = cell array, stores vertices to be periodically identified
 cg = chunkgraph_per(verts,edgesendverts,merge_idx); 
 dx = cg.dx; 
-refopts = []; refopts.nover = 2; 
+refopts = []; refopts.nover = 1; 
 cg = refine(cg,refopts); 
 
 %src: 
@@ -194,36 +190,33 @@ src = []; src.r = [0;-0.5];
 figure; hold on; 
 plot(cg); 
 scatter(src.r(1),src.r(2),'ro','filled')
+hold off; 
 
 %computational domain: 
-Nx = 100; Ny = 100; 
-cell_targs = gen_comp_domain(cg,Nx,Ny); 
-nper = 1; nshift = floor(nper/2); 
-cg_comp = cg; 
-comp_targs = cell_targs; 
-dxv = [dx;0];
-for s = -nshift:nshift
-    if s == 0 
-        continue
-    end
-    cg_comp = merge([cg_comp,cg + s*dxv]); 
-    comp_targs.r = [comp_targs.r, cell_targs.r + s*dxv]; 
-end
-cell_exti = ~chunkerinterior(cg,cell_targs); 
-comp_exti = repmat(cell_exti,nper,1); 
+Nxper = 1; Nyper = 1; 
+
+%comp domain opts: 
+cd_opts = []; 
+cd_opts.Nx = 100; cd_opts.Ny = 150; %# pts/(period + padding)
+cd_opts.pad = [0 0 0 0.5]; %[xmin xmax ymin ymax] padding outside of unit cell(s)
+Nshift = floor(Nxper/2); 
+[cg_comp,cell_targs,comp_targs] = gen_comp_domain(cg,Nxper,Nyper,cd_opts);
+cell_eidx = ~chunkerinterior(cg,cell_targs); 
+comp_eidx = repmat(cell_eidx,Nxper,1); 
 
 %kappa curve: 
-nkap = 60; 
-dt = (2*pi/dx) / nkap; 
-tkap = -pi/dx + dt*(0:nkap-1) ; 
+Nkap = 60; 
+dt = (2*pi/dx) / Nkap; 
+tkap = -pi/dx + dt*(0:Nkap-1) ; 
 [kap,kap_p] = kappa_curve(tkap); 
 w = dt; 
 
-%full QP problem: 
-zk = 2*dx; 
+zk = 1.2; %wavenumber
 us_zk_comp = zeros(size(comp_targs.r,2),1); 
-opts = []; opts.forcesmooth = false; 
-parfor k = 1:nkap
+opts = []; opts.forcesmooth = false; %set forcesmooth = true for speed up (bypassing near quad eval routine)
+
+%solving integral equation + evaluating soln for each node on kappa_curve: 
+parfor k = 1:Nkap
     kernsp = -2*kernel('hq','sp',zk,kap(k),dx);
     rhs    = -kernsp.eval(src,cg);
 
@@ -233,45 +226,46 @@ parfor k = 1:nkap
     kerns = kernel('hq','s',zk,kap(k),dx);
 
     us_zk_cell = chunkerkerneval(cg,kerns,sig,cell_targs,opts); 
-    us_zk_comp = us_zk_comp + w*kap_p(k) * kron(exp(1i*kap(k)*dx*(-nshift:nshift)),us_zk_cell); 
+    us_zk_comp = us_zk_comp + w*kap_p(k) * kron(exp(1i*kap(k)*dx*(-Nshift:Nshift)).',us_zk_cell); 
 end
-us = (dx/(2*pi)) * us_zk_comp; 
-us(~comp_exti) = NaN; 
- 
 
+%scattered field:
+us = (dx/(2*pi)) * us_zk_comp; 
+ 
 %incident wave: 
 kerns = kernel('h','s',zk); 
 ui = kerns.eval(src,comp_targs); 
 
 %total field: 
 u = ui + us; 
+u(~comp_eidx) = NaN; %set values beneath boundary to NaN
 
 %plotting: 
-pd = log10(abs(u)); 
-pd(~comp_exti) = NaN; 
-figure; hold on; 
+Nytot = cd_opts.Ny*Nyper; Nxtot = cd_opts.Nx*Nxper; 
+psize = [Nytot,Nxtot]; 
 xcomp = comp_targs.r(1,:); ycomp = comp_targs.r(2,:); 
-xplot = reshape(xcomp,[],Nx*nper); 
-yplot = reshape(ycomp,[],Ny*nper); 
-pd = reshape(pd,size(xplot)); 
-pcolor(xplot,yplot,pd)
-shading interp
-colorbar
+xplot = reshape(xcomp,psize); 
+yplot = reshape(ycomp,psize); 
+
+xmin = min(comp_targs.r(1,:)); xmax = max(comp_targs.r(1,:)); 
+ymin = min(comp_targs.r(2,:)); ymax = max(comp_targs.r(2,:)); 
+axs = [xmin xmax ymin ymax]; 
+
+edata= reshape(log10(abs(u)),psize);  
+figure; set(gcf,'theme','light'); hold on; 
+pcolor(xplot,yplot,edata); shading interp; colorbar; 
+scatter(src.r(1),src.r(2),'ro','filled')
+axis(axs)
+plot(cg_comp,'k','linewidth',6)
+title('log10(|u|)')
+
+t = toc(tstart); 
+
+fprintf('\nElapsed time for QP test: %1.1f s\n',t)
 %}
 end
 
 %% helpers:
-
-function targs = gen_comp_domain(cgrph,Nx,Ny)
-    verts = cgrph.verts; 
-    xmin = min(verts(1,:)); xmax = max(verts(1,:)); 
-    ymin = min(verts(2,:)); ymax = max(verts(2,:)); 
-    x1 = linspace(xmin,xmax,Nx);
-    y1 = linspace(ymin-0.5,ymax+0.5,Ny);
-    [xx,yy] = meshgrid(x1,y1);
-    targs = []; targs.r = [xx(:).'; yy(:).'];
-end
-
 function plot_geom(cg,Nx,Ny)
     %basic geometry: 
     figure; hold on; 
@@ -288,8 +282,10 @@ function plot_geom(cg,Nx,Ny)
     title('plot\_regions')
     
     %chunkgraph_perinregion: 
-    Nx = 150; Ny = 150; 
-    targs = gen_comp_domain(cg,Nx,Ny); 
+    cd_opts = []; cd_opts.Nx = Nx; cd_opts.Ny = Ny; 
+    cd_opts.pad = [0 0 0 0]; 
+    Nxper = 1; Nyper = 1; 
+    [~,~,targs] = gen_comp_domain(cg,Nxper,Nyper,cd_opts); 
     ireg = chunkgraph_perinregion(cg,targs); 
     xx = targs.r(1,:); yy = targs.r(2,:); 
     nreg = size(cg.regions,2); 

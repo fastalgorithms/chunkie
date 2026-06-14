@@ -53,15 +53,21 @@ for i = 1:nverts
         end
         if norm(verts(:,i) - verts(:,j)) < tol
             vmap(j) = i;
-            if ~isempty(merge_idx)
-                fi = find(cellfun(@(x) any(x==i), merge_idx), 1, 'first');
+            if ~isempty(merge_idx) %delete indices from merge_idx
+                fi = find(cellfun(@(x) (any(x==i) || any(x==j)), merge_idx), 1, 'first');
                 mf = merge_idx{fi}; 
                 mf(mf==i) = []; mf(mf==j) = []; 
                 nmidx = numel(merge_idx); 
                 for m = fi+1:nmidx
-                    rv = merge_idx{m} == j; 
-                    merge_idx{m}(rv) = []; 
+                    rv = ceil((merge_idx{m} == i) + (merge_idx{m} == j)/2); 
+                    if max(rv) == 0
+                        continue
+                    end
+                    merge_idx{m}(logical(rv)) = []; 
                     mf = [mf,merge_idx{m}]; 
+                    if numel(merge_idx{m}) < 2
+                        merge_idx(m) = []; 
+                    end
                 end
                 merge_idx{fi} = mf; 
             end
@@ -76,9 +82,8 @@ reindex(kept) = 1:numel(kept);
 verts = verts(:, kept);
 edgesendverts = reindex(vmap(edgesendverts));
 
-%cleaning physically merged indices: 
+%cleaning merge_idx:
 if ~isempty(merge_idx)
-   merge_idx(cellfun(@(x) length(x) <= 1,merge_idx)) = []; 
    merge_idx = cellfun(@(x) reindex(x),merge_idx,'uniformoutput',false); 
 else
     merge_idx = {[]}; 
