@@ -174,6 +174,7 @@ fprintf('svd match: %.3e\n', norm(sort(svd(B0))-sort(svd(B1)))/norm(svd(B0)));
 
 %full QP problem: 
 %
+%set up unit cell of boundary: 
 tstart = tic; 
 verts = [-0.5, 0, 0.5; -1,0,-1];
 edgesendverts = [3 2; 2 1];
@@ -192,13 +193,13 @@ plot(cg);
 scatter(src.r(1),src.r(2),'ro','filled')
 hold off; 
 
-%computational domain: 
-Nxper = 1; Nyper = 1; 
+%computational domain (should choose odd Nxper): 
+Nxper = 7; Nyper = 1; 
 
 %comp domain opts: 
 cd_opts = []; 
 cd_opts.Nx = 100; cd_opts.Ny = 150; %# pts/(period + padding)
-cd_opts.pad = [0 0 0 0.5]; %[xmin xmax ymin ymax] padding outside of unit cell(s)
+cd_opts.pad = [0 0 0 4.5]; %[xmin xmax ymin ymax] padding outside of unit cell(s)
 Nshift = floor(Nxper/2); 
 [cg_comp,cell_targs,comp_targs] = gen_comp_domain(cg,Nxper,Nyper,cd_opts);
 cell_eidx = ~chunkerinterior(cg,cell_targs); 
@@ -251,7 +252,10 @@ xmin = min(comp_targs.r(1,:)); xmax = max(comp_targs.r(1,:));
 ymin = min(comp_targs.r(2,:)); ymax = max(comp_targs.r(2,:)); 
 axs = [xmin xmax ymin ymax]; 
 
-edata= reshape(log10(abs(u)),psize);  
+abdata = reshape(abs(u),psize); 
+
+%error plot for interior point source: 
+edata= log10(abdata);  
 figure; set(gcf,'theme','light'); hold on; 
 pcolor(xplot,yplot,edata); shading interp; colorbar; 
 scatter(src.r(1),src.r(2),'ro','filled')
@@ -261,8 +265,7 @@ title('log10(|u|)')
 
 t = toc(tstart); 
 
-fprintf('\nElapsed time for QP test: %1.1f s\n',t)
-%}
+fprintf('\nElapsed time: %1.1f s\n',t)
 end
 
 %% helpers:
