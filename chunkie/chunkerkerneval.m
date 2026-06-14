@@ -64,6 +64,7 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %   the add/subtract strategy...
 
 % author: Travis Askham (askhamwhat@gmail.com)
+% periodic modification: Jonathan Shaw
 
 % determine operator dimensions using first two points
 
@@ -84,7 +85,6 @@ elseif class(chnkobj) == "chunkgraph_per"
     nregion = length(chnkobj.regions);
     nedge = length(chnkr);
     icgrph = true; 
-    iper = true; 
 else
     msg = "CHUNKERKERNEVAL: first input is an unsupported object";
     error(msg)

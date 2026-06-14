@@ -1,11 +1,13 @@
 %chunkgraph_perTest0();
 
-%function chunkgraph_perTest()
+function chunkgraph_perTest()
 %chunkgraph_perTest: 
 %
 % Objectives: 
 % - test geometry, region detection with plot_regions,
 % chunkgraph_perinregion
+% - test chunkermat RCIP edit (shift copies locally + apply phase shift
+% after)
 
 
 %housekeeping: 
@@ -182,7 +184,9 @@ edgesendverts = [3 2; 2 1];
 merge_idx = {[1 3]}; 
 cg = chunkgraph_per(verts,edgesendverts,merge_idx); 
 dx = cg.dx; 
-%
+refopts = []; refopts.nover = 2; 
+cg = refine(cg,refopts); 
+
 %src: 
 src = []; src.r = [0;-0.5]; 
 
@@ -207,16 +211,6 @@ for s = -nshift:nshift
 end
 cell_exti = ~chunkerinterior(cg,cell_targs); 
 comp_exti = repmat(cell_exti,nper,1); 
-
-%{
-figure;
-plot(cg_comp); 
-xc = cell_targs.r(1,:); yc = cell_targs.r(2,:); 
-xcomp = comp_targs.r(1,:); ycomp = comp_targs.r(2,:); 
-hold on; 
-scatter(xcomp(comp_exti),ycomp(comp_exti)); 
-scatter(xc(cell_exti),yc(cell_exti)); 
-%}
 
 %kappa curve: 
 nkap = 60; 
@@ -253,18 +247,18 @@ ui = kerns.eval(src,comp_targs);
 u = ui + us; 
 
 %plotting: 
-plotdata = log10(abs(u)); 
-plotdata(~comp_exti) = NaN; 
+pd = log10(abs(u)); 
+pd(~comp_exti) = NaN; 
 figure; hold on; 
 xcomp = comp_targs.r(1,:); ycomp = comp_targs.r(2,:); 
 xplot = reshape(xcomp,[],Nx*nper); 
 yplot = reshape(ycomp,[],Ny*nper); 
-plotdata = reshape(plotdata,size(xplot)); 
-pcolor(xplot,yplot,plotdata)
+pd = reshape(pd,size(xplot)); 
+pcolor(xplot,yplot,pd)
 shading interp
 colorbar
-
-%end
+%}
+end
 
 %% helpers:
 
