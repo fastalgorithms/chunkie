@@ -137,14 +137,52 @@ end
 
 %% chunkermat RCIP: 
 %
-%QP problem on staircase: 
-%
-verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
-edgesendverts = [4 3 2; 3 2 1];
-merge_idx = {[1 4]};
-cg = chunkgraph_per(verts,edgesendverts,merge_idx);
-dx = cg.dx; 
 
+%testing kappa = 0: 
+%{
+%chunkgraph_per: 
+verts = [-0.5, 0, 0.5; -1,0,-1];
+edgesendverts = [3 2; 2 1];
+merge_idx = {[1 3]}; 
+cgper = chunkgraph_per(verts,edgesendverts,merge_idx); 
+dx = cgper.dx; 
+
+%chunkgraph: 
+verts = [-1,-0.5, 0, 0.5; 0,-1,0,-1];
+edgesendverts = [4 3 2; 3 2 1];
+cg = chunkgraph(verts,edgesendverts); 
+
+zk = 1.1; 
+kap = 0; 
+kern = kernel('hq','s',zk,kap,dx); 
+
+[A0,~,rcip0] = chunkermat(cg,kern); 
+[A1,~,rcip1] = chunkermat(cgper,kern); 
+
+%compare mats for cgrph vert 2, cg vert 1: 
+si0 = rcip0{2}.starind; 
+B0 = A0(si0,si0); 
+
+si1 = rcip1{1}.starind; 
+B1 = A1(si1,si1); 
+
+n = size(B0,1)/2;
+swap = @(B)[B(n+1:end,n+1:end) B(n+1:end,1:n); B(1:n,n+1:end) B(1:n,1:n)];
+fprintf('after edge-block swap: %.3e\n', norm(B0 - swap(B1),'fro')/norm(B0,'fro')); %may have swapped indices... doesn't mean chunkermat is wrong
+
+fprintf('no swap:   %.3e\n', norm(B0 - B1,'fro')/norm(B0,'fro'));
+fprintf('swap:      %.3e\n', norm(B0 - swap(B1),'fro')/norm(B0,'fro'));
+fprintf('svd match: %.3e\n', norm(sort(svd(B0))-sort(svd(B1)))/norm(svd(B0)));
+%}
+
+%full QP problem: 
+%
+verts = [-0.5, 0, 0.5; -1,0,-1];
+edgesendverts = [3 2; 2 1];
+merge_idx = {[1 3]}; 
+cg = chunkgraph_per(verts,edgesendverts,merge_idx); 
+dx = cg.dx; 
+%
 %src: 
 src = []; src.r = [0;-0.5]; 
 
@@ -187,10 +225,10 @@ tkap = -pi/dx + dt*(0:nkap-1) ;
 [kap,kap_p] = kappa_curve(tkap); 
 w = dt; 
 
-%solving QP problem: 
+%full QP problem: 
 zk = 2*dx; 
 us_zk_comp = zeros(size(comp_targs.r,2),1); 
-opts = []; opts.forcesmooth = true; 
+opts = []; opts.forcesmooth = false; 
 parfor k = 1:nkap
     kernsp = -2*kernel('hq','sp',zk,kap(k),dx);
     rhs    = -kernsp.eval(src,cg);
@@ -218,64 +256,13 @@ u = ui + us;
 plotdata = log10(abs(u)); 
 plotdata(~comp_exti) = NaN; 
 figure; hold on; 
+xcomp = comp_targs.r(1,:); ycomp = comp_targs.r(2,:); 
 xplot = reshape(xcomp,[],Nx*nper); 
 yplot = reshape(ycomp,[],Ny*nper); 
 plotdata = reshape(plotdata,size(xplot)); 
 pcolor(xplot,yplot,plotdata)
 shading interp
 colorbar
-
-%}
-
-
-%test 1: 
-%{
-opts = [];
-opts.rcip = false;
-A_no_rcip = chunkermat(cg,kern,opts);
-
-opts.rcip = true;
-A_rcip = chunkermat(cg,kern,opts);
-
-fprintf('A_no_rcip size: %d x %d\n',size(A_no_rcip,1),size(A_no_rcip,2));
-fprintf('A_rcip    size: %d x %d\n',size(A_rcip,1),size(A_rcip,2));
-fprintf('relative difference = %.3e\n', ...
-norm(A_rcip - A_no_rcip,'fro')/norm(A_no_rcip,'fro'));
-%}
-
-%test 2: 
-%{
-opts = [];
-opts.rcip = true;
-
-opts.rcip_phase = false;
-[A0,~,rcip0] = chunkermat(cg,kern,opts);
-
-opts.rcip_phase = true;
-[A1,~,rcip1] = chunkermat(cg,kern,opts);
-
-for ivert = 1:numel(rcip1)
-
-    if isempty(rcip1{ivert})
-        continue
-    end
-
-    starind = rcip1{ivert}.starind;
-    pedge = rcip1{ivert}.pedge;
-
-    ngl = cg.echnks(1).k;
-    ndim = 1;  % change if vector-valued kernel
-
-    ph = repelem(pedge(:),2*ngl*ndim);
-
-    B_expected = (ph * (1./ph).') .* A0(starind,starind);
-    B_actual   = A1(starind,starind);
-
-    relerr = norm(B_actual - B_expected,'fro')/norm(B_expected,'fro');
-
-    fprintf('vertex %d phase block relerr = %.3e\n',ivert,relerr);
-end
-%}
 
 %end
 

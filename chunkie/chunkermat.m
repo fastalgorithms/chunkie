@@ -553,6 +553,7 @@ if(icgrph && isrcip)
 
         chnkrs_loc = chnkrs;
         
+        %periodic case (shift local chunker edge): 
         if iper && any(~isnan(chnkobj.vert_per(:,ivert)))
             mg = find(cellfun(@(v) ~isempty(v) && v(1) == ivert, chnkobj.merge_idx),1); %merge group with index ivert
             vm = chnkobj.merge_idx{mg};
@@ -569,7 +570,7 @@ if(icgrph && isrcip)
                 eidx = chnkobj.vstruc_free{midx}{1};
                 if isfield(kern.params,'quas_param')
                     kappa = kern.params.quas_param.kappa(:); 
-                    alph = exp(1i * (kappa.' * d(1))); 
+                    alph = exp(-1i * (kappa.' * d(1))); 
                     pedge(ismember(clist,eidx)) = alph; 
                 end
     
@@ -588,7 +589,8 @@ if(icgrph && isrcip)
 
         sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
 
-        if iper
+        %periodic case: apply phase shift
+        if iper 
             ph = repelem(pedge(:),2*ngl*ndim);
             sysmat_tmp = (ph * (1./ph).') .* sysmat_tmp;
         end
