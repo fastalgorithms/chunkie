@@ -29,7 +29,7 @@ plot(cg);
 scatter(src.r(1),src.r(2),'ro','filled')
 hold off; 
 
-%computational domain: 
+%computational domain (should choose odd Nxper): 
 Nxper = 7; Nyper = 1; 
 
 %comp domain opts: 

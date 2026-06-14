@@ -74,23 +74,14 @@ function [cg_comp,cell_targs,comp_targs] = gen_comp_domain(cg,Nxper,Nyper,opts)
     comp_targs = cell_targs; 
     Nxshift = floor(Nxper/2); 
     Nyshift = floor(Nyper/2); 
-    for xshift = -Nxshift:Nxshift
-        if xshift == 0 
-            continue
-        end
+    for xshift = 1:Nxshift
         dxv = [xshift*dx;0]; 
-        cg_comp = merge([cg_comp,cg + dxv]);
-        comp_targs.r = [comp_targs.r,cell_targs.r + dxv]; 
-        for yshift = -Nyshift:Nyshift
-            if yshift == 0 
-                continue
-            end
+        cg_comp = merge([cg + [-dxv],cg_comp,cg + dxv]);
+        comp_targs.r = [cell_targs.r - dxv,comp_targs.r,cell_targs.r + dxv]; 
+        for yshift = 1:Nyshift
             dyv = [0;yshift*dy]; 
-            cg_comp = merge([cg_comp,cg_comp + dyv]); 
-            comp_targs.r = [comp_targs.r,cell_targs.r + dyv]; 
+            cg_comp = merge([cg + [-dyv],cg_comp,cg + dyv]); 
+            comp_targs.r = [cell_targs.r - dyv,comp_targs.r,cell_targs.r + dyv]; 
         end
-    end
-    [~,sidx] = sort(comp_targs.r(1,:)); 
-    comp_targs.r = comp_targs.r(:,sidx); 
-         
+    end     
 end

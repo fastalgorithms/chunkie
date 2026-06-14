@@ -52,6 +52,7 @@ for i = 1:nverts
             continue
         end
         if norm(verts(:,i) - verts(:,j)) < tol
+            del = []; 
             vmap(j) = i;
             if ~isempty(merge_idx) %delete indices from merge_idx
                 fi = find(cellfun(@(x) (any(x==i) || any(x==j)), merge_idx), 1, 'first');
@@ -66,8 +67,11 @@ for i = 1:nverts
                     merge_idx{m}(logical(rv)) = []; 
                     mf = [mf,merge_idx{m}]; 
                     if numel(merge_idx{m}) < 2
-                        merge_idx(m) = []; 
+                        del = [del,m]; 
                     end
+                end
+                if ~isempty(del)
+                    merge_idx(del) = []; 
                 end
                 merge_idx{fi} = mf; 
             end
