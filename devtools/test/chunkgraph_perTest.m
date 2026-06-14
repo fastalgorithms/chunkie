@@ -126,7 +126,7 @@ cg5 = stack_layers([cg5 + [0;-1], cg5, cg5 + [0;1], cg5 + [0;4]], merge_idx);
 cg = merge([cg1,cg2,cg3,cg4,cg5]); 
 
 if vrb 
-    Nx = 150; Ny = 150; 
+    Nx = 150; Ny = 300; 
     plot_geom(cg,Nx,Ny)
 end
 
@@ -173,7 +173,7 @@ fprintf('svd match: %.3e\n', norm(sort(svd(B0))-sort(svd(B1)))/norm(svd(B0)));
 %}
 
 %full QP problem: 
-%{
+%
 tstart = tic; 
 verts = [-0.5, 0, 0.5; -1,0,-1];
 edgesendverts = [3 2; 2 1];
@@ -283,7 +283,7 @@ function plot_geom(cg,Nx,Ny)
     
     %chunkgraph_perinregion: 
     cd_opts = []; cd_opts.Nx = Nx; cd_opts.Ny = Ny; 
-    cd_opts.pad = [0 0 0 0]; 
+    cd_opts.pad = [0 0 -1e-5 -1e-5]; 
     Nxper = 1; Nyper = 1; 
     [~,~,targs] = gen_comp_domain(cg,Nxper,Nyper,cd_opts); 
     ireg = chunkgraph_perinregion(cg,targs); 
