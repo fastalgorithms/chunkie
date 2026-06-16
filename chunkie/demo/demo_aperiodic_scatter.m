@@ -7,7 +7,6 @@
 % easily set up and solve scattering problems on infinite, periodic, 1D
 % boundaries
 
-
 %set up unit cell of boundary: 
 tstart = tic; 
 verts = [-0.5, 0, 0.5; -1,0,-1];
@@ -27,17 +26,30 @@ plot(cg);
 scatter(src.r(1),src.r(2),'ro','filled')
 hold off; 
 
-%computational domain (should choose odd Nxper): 
-Nxper = 7; Nyper = 1; 
+%computational domain: 
+Nxper = 7; Nyper = 1; %x,y copies of unit cell
+Nx = 100; Ny = 100; %pts per x,y period
+v = cg.verts; 
+xmin = min(v(1,:)); xmax = max(v(1,:)); 
+ymin = min(v(2,:)); ymax = max(v(2,:)); 
+pad = [0 0 0 4.5]; %[xmin xmax ymin ymax] padding outside of unit cell(s)
+x1 = linspace(xmin - pad(1), xmax + pad(2), Nx); 
+y1 = linspace(ymin - pad(3), ymax + pad(4), Ny); 
+[xx_cell,yy_cell] = meshgrid(x1,y1);
+cell_targs = []; cell_targs.r = [xx_cell(:).'; yy_cell(:).']; 
+cell_ireg = ~chunkerinterior(cg,cell_targs); 
+cell_eval_targs.r = cell_targs.r(:,cell_ireg); 
 
-%comp domain opts: 
-cd_opts = []; 
-cd_opts.Nx = 100; cd_opts.Ny = 150; %# pts/(period + padding)
-cd_opts.pad = [0 0 0 4.5]; %[xmin xmax ymin ymax] padding outside of unit cell(s)
-Nshift = floor(Nxper/2); 
-[cg_comp,cell_targs,comp_targs] = gen_comp_domain(cg,Nxper,Nyper,cd_opts);
-cell_eidx = ~chunkerinterior(cg,cell_targs); 
-comp_eidx = repmat(cell_eidx,Nxper,1); 
+cg_comp = cg; 
+comp_targs = cell_targs; 
+Nxshift = floor(Nxper/2); 
+for xshift = 1:Nxshift
+    dxv = [xshift*dx;0]; 
+    cg_comp = merge([cg + [-dxv],cg_comp,cg + dxv]);
+    comp_targs.r = [cell_targs.r - dxv,comp_targs.r,cell_targs.r + dxv]; 
+end     
+comp_ireg = repmat(ireg,1,Nxper); 
+comp_eval_targs = []; comp_eval_targs.r = comp_targs.r(:,comp_ireg); 
 
 %kappa curve: 
 Nkap = 60; 
@@ -47,7 +59,7 @@ tkap = -pi/dx + dt*(0:Nkap-1) ;
 w = dt; 
 
 zk = 1.2; %wavenumber
-us_zk_comp = zeros(size(comp_targs.r,2),1); 
+us_zk_comp = zeros(size(comp_eval_targs.r,2),1); 
 opts = []; opts.forcesmooth = false; %set forcesmooth = true for speed up (bypassing near quad eval routine)
 
 %solving integral equation + evaluating soln for each node on kappa_curve: 
@@ -60,12 +72,13 @@ parfor k = 1:Nkap
 
     kerns = kernel('hq','s',zk,kap(k),dx);
 
-    us_zk_cell = chunkerkerneval(cg,kerns,sig,cell_targs,opts); 
-    us_zk_comp = us_zk_comp + w*kap_p(k) * kron(exp(1i*kap(k)*dx*(-Nshift:Nshift)).',us_zk_cell); 
+    us_zk_cell = chunkerkerneval(cg,kerns,sig,cell_eval_targs,opts); 
+    us_zk_comp = us_zk_comp + w*kap_p(k) * kron(exp(1i*kap(k)*dx*(-Nxshift:Nxshift)).',us_zk_cell); 
 end
 
 %scattered field:
-us = (dx/(2*pi)) * us_zk_comp; 
+us = nan(numel(comp_targs.r(1,:)),1); 
+us(comp_ireg) = (dx/(2*pi)) * us_zk_comp; 
  
 %incident wave: 
 kerns = kernel('h','s',zk); 
@@ -73,10 +86,9 @@ ui = kerns.eval(src,comp_targs);
 
 %total field: 
 u = ui + us; 
-u(~comp_eidx) = NaN; %set values beneath boundary to NaN
 
 %plotting: 
-Nytot = cd_opts.Ny*Nyper; Nxtot = cd_opts.Nx*Nxper; 
+Nxtot = Nx*Nxper; Nytot = Ny*Nyper; 
 psize = [Nytot,Nxtot]; 
 xcomp = comp_targs.r(1,:); ycomp = comp_targs.r(2,:); 
 xplot = reshape(xcomp,psize); 
@@ -87,7 +99,7 @@ ymin = min(comp_targs.r(2,:)); ymax = max(comp_targs.r(2,:));
 axs = [xmin xmax ymin ymax]; 
 
 redata = reshape(real(u),psize); 
-imdata = imag(u); imdata(~comp_eidx) = NaN; imdata = reshape(imdata,psize); 
+imdata = imag(u); imdata(~comp_ireg) = NaN; imdata = reshape(imdata,psize); 
 abdata = reshape(abs(u),psize); 
 
 figure; set(gcf,'theme','light'); hold on; 
@@ -119,16 +131,6 @@ hold off;
 sgtitle('Total field u')
 hold off; 
 
-%error plot for interior point source: 
-%{
-edata= log10(abdata);  
-figure; set(gcf,'theme','light'); hold on; 
-pcolor(xplot,yplot,edata); shading interp; colorbar; 
-scatter(src.r(1),src.r(2),'ro','filled')
-axis(axs)
-plot(cg_comp,'k','linewidth',6)
-title('log10(|u|)')
-%}
 t = toc(tstart); 
 
 fprintf('\nElapsed time: %1.1f s\n',t)
