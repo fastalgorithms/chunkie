@@ -1,11 +1,11 @@
 function poly = cell_polygon(obj,edges)
-%CELL_POLYGON contiguous closed polygon traced by a periodic cell that is
-% closed under tiling. The period jumps
+%CELL_POLYGON traces an object closed under periodic tiling by concatenating edge
+%points
 %
 % Syntax: poly = cell_polygon(obj,edges)
 %
 % Output:
-%   poly - 2 x M array of polygon vertices
+%   poly - (2 x obj.npt) points on closed polygon
 
 % author: Jonathan Shaw
 

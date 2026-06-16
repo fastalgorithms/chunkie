@@ -17,16 +17,10 @@ fchnks = cell(0);
 merge_idx = []; 
 for i = 1:length(cgs)
     verts = [verts, cgs(i).verts];
-    if isa(cgs(i), 'chunkgraph_per')
-        edgesendverts = [edgesendverts, cgs(i).edgesendverts_free + nverts];
-    else
-        edgesendverts = [edgesendverts, cgs(i).edgesendverts + nverts];
-    end
+    edgesendverts = [edgesendverts, cgs(i).edgesendverts_free + nverts];
 
-    if isa(cgs(i), 'chunkgraph_per') && ...
-            ~isempty(cgs(i).merge_idx) && ...
-            ~isempty(cgs(i).merge_idx{1})
-        merge_idx = [merge_idx, ...
+    if ~isempty(cgs(i).merge_idx)
+         merge_idx = [merge_idx, ...
             cellfun(@(x) x + nverts, cgs(i).merge_idx, ...
             'UniformOutput', false)];
     end
@@ -56,8 +50,8 @@ for i = 1:nverts
             vmap(j) = i;
             if ~isempty(merge_idx) %delete indices from merge_idx
                 fi = find(cellfun(@(x) (any(x==i) || any(x==j)), merge_idx), 1, 'first');
-                mf = merge_idx{fi}; 
-                mf(mf==i) = []; mf(mf==j) = []; 
+                mv = merge_idx{fi}; 
+                mv(mv==i) = []; mv(mv==j) = []; 
                 nmidx = numel(merge_idx); 
                 for m = fi+1:nmidx
                     rv = ceil((merge_idx{m} == i) + (merge_idx{m} == j)/2); 
@@ -65,7 +59,7 @@ for i = 1:nverts
                         continue
                     end
                     merge_idx{m}(logical(rv)) = []; 
-                    mf = [mf,merge_idx{m}]; 
+                    mv = [mv,merge_idx{m}]; 
                     if numel(merge_idx{m}) < 2
                         del = [del,m]; 
                     end
@@ -73,7 +67,7 @@ for i = 1:nverts
                 if ~isempty(del)
                     merge_idx(del) = []; 
                 end
-                merge_idx{fi} = mf; 
+                merge_idx{fi} = mv; 
             end
         end
     end
@@ -89,8 +83,6 @@ edgesendverts = reindex(vmap(edgesendverts));
 %cleaning merge_idx:
 if ~isempty(merge_idx)
    merge_idx = cellfun(@(x) reindex(x),merge_idx,'uniformoutput',false); 
-else
-    merge_idx = {[]}; 
 end
 
 cg = chunkgraph_per(verts,edgesendverts,merge_idx,fchnks); 

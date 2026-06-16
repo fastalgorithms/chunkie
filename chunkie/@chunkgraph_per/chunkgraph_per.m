@@ -54,8 +54,6 @@ classdef chunkgraph_per < chunkgraph
 %
 % see also CHUNKGRAPH, CHUNKGRAPH_PERINREGION, FINDREGIONS
 
-
-
    properties
         vstruc_free
         edgesendverts_free
