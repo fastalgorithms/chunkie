@@ -113,6 +113,18 @@ c2trval_assemb(:,2,:,:) = reshape(coefs(1)*dpval + coefs(2)*spval,nkappa,1,nt,ns
 c2trval_assemb = reshape(c2trval_assemb,[],ns);
 assert(norm(c2trval_assemb-c2trval) <  1e-12)
 
+% test dp directly from the hessian of the quasiperiodic Green's function:
+%   D'(x,y) = -hess . (n_src (x) n_targ)
+sn_q = quas_param.sn; l_q = quas_param.l;
+[~,~,hess_dp] = chnk.helm2dquas.green(src.r, targ.r, zk, kappa, d, sn_q, l_q, 1);
+nxs = repmat(src.n(1,:), nkappa*nt, 1);
+nys = repmat(src.n(2,:), nkappa*nt, 1);
+nxt = repmat(reshape(targ.n(1,:),1,nt),nkappa,1); nxt = repmat(nxt(:),1,ns);
+nyt = repmat(reshape(targ.n(2,:),1,nt),nkappa,1); nyt = repmat(nyt(:),1,ns);
+dp_ref = -(hess_dp(:,:,1).*nxs.*nxt + hess_dp(:,:,2).*(nys.*nxt + nxs.*nyt) ...
+    + hess_dp(:,:,3).*nys.*nyt);
+assert(norm(dp_ref - dpval) < 1e-11)
+
 % test ising parameter
 skern1a = kernel('hq','s',zk,kappa,d,[],[],0);
 skern1b = kernel('h','s',zk);
@@ -127,6 +139,28 @@ dval1b = dkern1b.eval(src,targ);
 dval1b = repmat(reshape(dval1b,1,nt,ns), nkappa,1,1);
 dval1 = dkern1a.eval(src,targ) + reshape(dval1b,nt*nkappa,ns);
 assert(norm(dval-dval1) <  1e-12)
+
+% test nsub reconstruction for s/sp/dp (value/grad/hess branches of green):
+%   kern(ising=0,nsub) + sum_{ii=-nsub}^{nsub} alpha^ii K_fs(targ-src-ii*[d;0])
+%   = kern(ising=1,nsub=0).
+% nsub must be <= l (default l=2 in the 'hq' factory).
+nsub_t = 2;
+alpha = exp(1i*kappa(:)*d);
+for kt = {'s','sp','dp'}
+    type = kt{1};
+    kquas = kernel('hq',type,zk,kappa,d,[],struct('nsub',nsub_t),0);
+    kfs   = kernel('h',type,zk);
+    recon = kquas.eval(src,targ);
+    for ii = -nsub_t:nsub_t
+        src_ii = src; src_ii.r = src.r + ii*[d;0];
+        Kfs = kfs.eval(src_ii,targ);   % free-space, (nt,ns)
+        Kfs = repmat(reshape(Kfs,1,nt,ns), nkappa,1,1);
+        Kfs = reshape(Kfs, nkappa*nt, ns);
+        recon = recon + repmat(alpha.^ii, nt, 1).*Kfs;
+    end
+    kfull = kernel('hq',type,zk,kappa,d).eval(src,targ);
+    assert(norm(recon - kfull) < 1e-11)
+end
 
 allkern1a = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'all',quas_param,coefa,0));
 allkern1b = kernel(@(s,t) chnk.helm2d.kern(zk,s,t,'all',coefa));
@@ -193,51 +227,51 @@ uscatp = chunkerkerneval(chnkr,dkern,soln,targp,opts);
 uinp = skern.eval(src,struct("r",targp));
 assert(abs(uinp-uscatp) < 1e-10)
 
-% ploting
-Lplot = d/1.5;
-nplot = 50;
-xts = linspace(-Lplot,Lplot,nplot); yts=xts+Lplot/2;
-[X,Y] = meshgrid(xts,yts);
-targ = [X(:).';Y(:).'];
-
-% targ = [2+0*yts;yts];
-ntarg = size(targ,2);
-tic;
-yc = sin_func(X(:),d,A); yc = yc(2,:);
-iup = Y(:).'>yc;
-toc
-targup = targ(:,iup.');
-
-tic;
-uin = NaN*zeros(ntarg,1)+NaN*1i;
-src.n = [0;1];
-uin(iup) = skern.eval(src,struct("r",targup));
-uscat = NaN*zeros(ntarg,1)+NaN*1i;
-opts = []; opts.forcesmooth = false; opts.eps = 1e-6;
-opts.forcepquad = true; opts.side = 'e';
-uscat(iup) = chunkerkerneval(chnkr,dkern,soln,targup,opts);
-toc
+% plotting (disabled in regression test; uncomment to visualize)
+% Lplot = d/1.5;
+% nplot = 50;
+% xts = linspace(-Lplot,Lplot,nplot); yts=xts+Lplot/2;
+% [X,Y] = meshgrid(xts,yts);
+% targ = [X(:).';Y(:).'];
 %
-utot = uin-uscat;
-maxu = max(abs(uin));
-figure(1);clf
-subplot(1,3,1)
-h = pcolor(X,Y,reshape(imag(uin),nplot,[])); set(h,'edgecolor','none')
-title('$u_{\rm{true}}$','Interpreter','latex'); set(gca,'fontsize',14)
-colorbar; clim([-maxu,maxu])
-hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
-
-subplot(1,3,2)
-h= pcolor(X,Y,reshape(imag(uscat),nplot,[])); set(h,'edgecolor','none')
-title('$u$','Interpreter','latex'); set(gca,'fontsize',14)
-colorbar; clim([-maxu,maxu])
-hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
-
-subplot(1,3,3)
-h = pcolor(X,Y,reshape(log10(abs(utot)),nplot,[])); set(h,'edgecolor','none')
-title('$\log_{10} $ error','Interpreter','latex'); set(gca,'fontsize',14)
-colorbar; 
-hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+% % targ = [2+0*yts;yts];
+% ntarg = size(targ,2);
+% tic;
+% yc = sin_func(X(:),d,A); yc = yc(2,:);
+% iup = Y(:).'>yc;
+% toc
+% targup = targ(:,iup.');
+%
+% tic;
+% uin = NaN*zeros(ntarg,1)+NaN*1i;
+% src.n = [0;1];
+% uin(iup) = skern.eval(src,struct("r",targup));
+% uscat = NaN*zeros(ntarg,1)+NaN*1i;
+% opts = []; opts.forcesmooth = false; opts.eps = 1e-6;
+% opts.forcepquad = true; opts.side = 'e';
+% uscat(iup) = chunkerkerneval(chnkr,dkern,soln,targup,opts);
+% toc
+% %
+% utot = uin-uscat;
+% maxu = max(abs(uin));
+% figure(1);clf
+% subplot(1,3,1)
+% h = pcolor(X,Y,reshape(imag(uin),nplot,[])); set(h,'edgecolor','none')
+% title('$u_{\rm{true}}$','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar; clim([-maxu,maxu])
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+%
+% subplot(1,3,2)
+% h= pcolor(X,Y,reshape(imag(uscat),nplot,[])); set(h,'edgecolor','none')
+% title('$u$','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar; clim([-maxu,maxu])
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
+%
+% subplot(1,3,3)
+% h = pcolor(X,Y,reshape(log10(abs(utot)),nplot,[])); set(h,'edgecolor','none')
+% title('$\log_{10} $ error','Interpreter','latex'); set(gca,'fontsize',14)
+% colorbar;
+% hold on, plot(chnkr,'.'), plot(src.r(1,:),src.r(2,:),'o','LineWidth',2), hold off
 
 
 end
@@ -552,49 +586,64 @@ tau_y = repmat(-src.n(1,:), nkappa*nt, 1);  % -n_x component
 hilb_ref = 2*(grad(:,:,1).*tau_x + grad(:,:,2).*tau_y);
 assert(norm(hilb_ref - hilbval) < 1e-11)
 
-% test ising flag: ising=0 differs from ising=1 only by the i=0 near-field
-% term, which is chnk.lap2d.green evaluated at the displacement (src -> targ).
-% The far-field lattice sum is the same for both, so the difference is just
-% the free-space Green's function at the displacement, broadcast over kappa.
-skern0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'s',kappa,d,s0q,snq,lq,0));
-dkern0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'d',kappa,d,s0q,snq,lq,0));
+% test st (tangential derivative of single layer) directly from definition:
+%   st(x,y) = grad_x G . tau_x  where tau_x = (-n_y^targ, n_x^targ)
+nxt = repmat(reshape(targ.n(1,:),1,nt),nkappa,1); nxt = nxt(:);
+nyt = repmat(reshape(targ.n(2,:),1,nt),nkappa,1); nyt = nyt(:);
+nxt = repmat(nxt,1,ns); nyt = repmat(nyt,1,ns);
+st_ref = -grad(:,:,1).*nyt + grad(:,:,2).*nxt;
+assert(norm(st_ref - stval) < 1e-11)
 
-sval0 = skern0.eval(src,targ);
-dval0 = dkern0.eval(src,targ);
+% test hilbprime (tangential derivative of Hilbert transform) directly from
+% definition, using the hessian of the quasiperiodic Green's function.
+[~,~,hess_h] = chnk.lap2dquas.green(src.r, targ.r, kappa, d, s0q, snq, lq, 1);
+nx_s = repmat(src.n(1,:), nkappa*nt, 1);
+ny_s = repmat(src.n(2,:), nkappa*nt, 1);
+hilbp_ref = 2*(-(hess_h(:,:,1).*ny_s - hess_h(:,:,2).*nx_s).*nyt ...
+    + (hess_h(:,:,2).*ny_s - hess_h(:,:,3).*nx_s).*nxt);
+assert(norm(hilbp_ref - hilbpval) < 1e-11)
 
-% ising=0 and ising=1 differ by the i=0 free-space contribution.
-% Verify by evaluating the Green's function at both ising values directly
-% and checking the kernels are consistent with the difference.
-[G1, G1_grad] = chnk.lap2dquas.green(src.r, targ.r, kappa, d, s0q, snq, lq, 1);
+% test ising flag against the Green's function definition directly.
+% S kernel is G; D kernel is -dG/dn_src = -(G_grad . n_src). The ising=1
+% values are already covered by the Bloch-shift and hilb checks above
+% (sval == green(...,1)), so here we pin down the ising=0 kernels.
+sval0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'s',kappa,d,s0q,snq,lq,0)).eval(src,targ);
+dval0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'d',kappa,d,s0q,snq,lq,0)).eval(src,targ);
+
 [G0, G0_grad] = chnk.lap2dquas.green(src.r, targ.r, kappa, d, s0q, snq, lq, 0);
-
-% S kernel is G; D kernel is -dG/dn_src = -(G_grad . n_src)
-srcnorm_d = src.n;
-nx_fs = repmat(srcnorm_d(1,:), nkappa*nt, 1);
-ny_fs = repmat(srcnorm_d(2,:), nkappa*nt, 1);
-dG1 = -(G1_grad(:,:,1).*nx_fs + G1_grad(:,:,2).*ny_fs);
+nx_fs = repmat(src.n(1,:), nkappa*nt, 1);
+ny_fs = repmat(src.n(2,:), nkappa*nt, 1);
 dG0 = -(G0_grad(:,:,1).*nx_fs + G0_grad(:,:,2).*ny_fs);
 
-% verify sval and dval match ising=1 green function values
-assert(norm(sval - G1) < 1e-12)
-assert(norm(dval - dG1) < 1e-12)
-% verify ising=0 kernels match ising=0 green function values
 assert(norm(sval0 - G0) < 1e-12)
 assert(norm(dval0 - dG0) < 1e-12)
 
-% test nsub: kern(ising=0,nsub=2) + sum_{ii=-2}^{2} alpha^ii * kern_fs(targ-src-ii*d) = kern(ising=1,nsub=0)
-% test quad_opts.nsub and ising via kernel('lq',...) wrapper: smoke-test that
-% the wrapper runs and returns the right shape, and that ising=0,nsub=0 via
-% the wrapper matches the direct kern call.
+% ising=1 D kernel against -dG/dn_src, reusing grad = green(...,1) from above
+dG1 = -(grad(:,:,1).*nx_fs + grad(:,:,2).*ny_fs);
+assert(norm(dval - dG1) < 1e-12)
+
+% test nsub reconstruction for s/sp/dp (value/grad/hess branches of green):
+%   kern(ising=0,nsub) + sum_{ii=-nsub}^{nsub} alpha^ii K_fs(targ-src-ii*[d;0])
+%   = kern(ising=1,nsub=0).
+% The kernel('lq',...) wrapper also exercises nsub threading via quad_opts.
+% nsub must be <= l (here l = 2).
 nsub_t = 2;
-spkern_nsub = kernel('lq', 'sp', kappa, d, struct('nsub', nsub_t), 0);
-spkern_0    = kernel('lq', 'sp', kappa, d, [], 0);
-spval_nsub  = spkern_nsub.eval(src, targ);
-assert(isequal(size(spval_nsub), [nkappa*nt, ns]))
-% extract lattice coefs from spkern_0 to ensure exact match
-sp0_param = spkern_0.params.quas_param;
-spval_0_kern = chnk.lap2dquas.kern(src, targ, 'sp', kappa, d, sp0_param.s0, sp0_param.sn, sp0_param.l, 0, 0);
-assert(norm(spkern_0.eval(src,targ) - spval_0_kern) < 1e-12)
+alpha = exp(1i*kappa(:)*d);
+for kt = {'s','sp','dp'}
+    type = kt{1};
+    kquas = kernel('lq',type,kappa,d,struct('nsub',nsub_t),0);
+    kfs   = kernel('l',type);
+    recon = kquas.eval(src,targ);
+    for ii = -nsub_t:nsub_t
+        src_ii = src; src_ii.r = src.r + ii*[d;0];
+        Kfs = kfs.eval(src_ii,targ);   % free-space, (nt,ns)
+        Kfs = repmat(reshape(Kfs,1,nt,ns), nkappa,1,1);
+        Kfs = reshape(Kfs, nkappa*nt, ns);
+        recon = recon + repmat(alpha.^ii, nt, 1).*Kfs;
+    end
+    kfull = kernel('lq',type,kappa,d).eval(src,targ);
+    assert(norm(recon - kfull) < 1e-11)
+end
 
 end
 
@@ -628,10 +677,13 @@ sval  = K('s').eval(src,targ);
 dval  = K('d').eval(src,targ);
 spval = K('sp').eval(src,targ);
 
-% test quasi-periodicity: shift target by d => multiply by exp(i*kappa*d)
+% test quasi-periodicity: shift target by d => multiply by exp(i*kappa*d).
+% Check s (value), d and sp (grad branch) so the gradient phase is exercised.
 targ_s = targ; targ_s.r = targ.r + [d;0];
-svalshift = K('s').eval(src,targ_s);
-assert(norm(svalshift - repmat(exp(1i*kappa(:)*d),nt,1).*sval) < 1e-12)
+bloch = repmat(exp(1i*kappa(:)*d),nt,1);
+assert(norm(K('s').eval(src,targ_s)  - bloch.*sval)  < 1e-12)
+assert(norm(K('d').eval(src,targ_s)  - bloch.*dval)  < 1e-12)
+assert(norm(K('sp').eval(src,targ_s) - bloch.*spval) < 1e-12)
 
 % test that flex S kernel = G_flex / (2*zk^2)
 % where G_flex is the raw quasiperiodic flexural Green's function
@@ -668,18 +720,28 @@ assert(norm(sval0  + reshape(sval_fs, nkappa*nt,ns)  - K1('s').eval(src,targ))  
 assert(norm(dval0  + reshape(dval_fs, nkappa*nt,ns)  - K1('d').eval(src,targ))  < 1e-11)
 assert(norm(spval0 + reshape(spval_fs,nkappa*nt,ns)  - K1('sp').eval(src,targ)) < 1e-11)
 
-% test quad_opts.nsub and ising via kernel('fq',...) wrapper: smoke-test that
-% the wrapper runs and returns the right shape, and that ising=0,nsub=0 via
-% the wrapper matches the direct kern call.
+% test nsub reconstruction for s/sp/d (value/grad/hess branches of green;
+% dp is not a standalone flex kernel). Goes through the kernel('fq',...)
+% wrapper, so this also value-tests nsub threading via quad_opts:
+%   kern(ising=0,nsub) + sum_{ii=-nsub}^{nsub} alpha^ii K_fs(targ-src-ii*[d;0])
+%   = kern(ising=1,nsub=0).
+% nsub must be <= l (here l = 2).
 nsub_t = 2;
-spkern_fq_nsub = kernel('fq', 'sp', zk, kappa, d, [], struct('nsub', nsub_t), 0);
-spkern_fq_0    = kernel('fq', 'sp', zk, kappa, d, [], [], 0);
-spval_fq_nsub  = spkern_fq_nsub.eval(src, targ);
-assert(isequal(size(spval_fq_nsub), [nkappa*nt, ns]))
-% ising=0, nsub=0 via wrapper should match direct kern call
-fq0 = spkern_fq_0.params;
-spval_fq_0_kern = chnk.flex2dquas.kern(zk, src, targ, 'sp', kappa, d, fq0.Sn, fq0.s0_l, fq0.sn_l, fq0.l, 0, 0);
-assert(norm(spkern_fq_0.eval(src,targ) - spval_fq_0_kern) < 1e-12)
+alpha = exp(1i*kappa(:)*d);
+for kt = {'s','sp','d'}
+    type = kt{1};
+    Kfs_h = kernel(@(s,t) chnk.flex2d.kern(zk,s,t,type));
+    recon = kernel('fq',type,zk,kappa,d,[],struct('nsub',nsub_t),0).eval(src,targ);
+    for ii = -nsub_t:nsub_t
+        src_ii = src; src_ii.r = src.r + ii*[d;0];
+        Kfs = Kfs_h.eval(src_ii, targ);   % free-space, (nt,ns)
+        Kfs = repmat(reshape(Kfs,1,nt,ns), nkappa,1,1);
+        Kfs = reshape(Kfs, nkappa*nt, ns);
+        recon = recon + repmat(alpha.^ii, nt, 1).*Kfs;
+    end
+    kfull = K(type).eval(src,targ);
+    assert(norm(recon - kfull) < 1e-11)
+end
 
 end
 

@@ -1,4 +1,4 @@
-function [val,grad,hess] = green(src,targ,zk,kappa,d,sn,l,ising)
+function [val,grad,hess] = green(src,targ,zk,kappa,d,sn,l,ising,nsub)
 %CHNK.HELM2DQUAS.GREEN evaluate the quasiperiodic Helmholtz Green's function
 % for the given sources and targets.
 %
@@ -21,6 +21,9 @@ function [val,grad,hess] = green(src,targ,zk,kappa,d,sn,l,ising)
 %   l     - number of periodic copies included explicitly on each side
 %   ising - if 1, include the free-space (singular) part of the Green's
 %               function; if 0, include only the periodic images
+%   nsub  - (optional, default 0) number of additional source copies to
+%               subtract on each side when ising == 0 (used for
+%               nearly-singular quadrature). Must satisfy nsub <= l.
 %
 % Output:
 %   val  - (nkappa*ntarg, nsrc) Green's function values
@@ -82,6 +85,12 @@ if nargout > 2
 hess = zeros(nkappa,npt,3);
 end
 
+if nargin < 9 || isempty(nsub)
+    nsub = 0;
+elseif nsub > l
+    error('trying to subtract off too many copies')
+end
+
 
 tol = 1e-10;
 Lbd = sqrt((log(tol))^2/real(ythresh)^2 + real(zk)^2);
@@ -122,7 +131,7 @@ if ~isempty(rxclose)
         if ising == 1
             iuse = true(nptclose,1);
         else
-            iuse = nxclose ~= -i;
+            iuse = ~ismember(nxclose, -i-nsub:-i+nsub);
         end
 
         rxi = rxclose - i*d;
@@ -224,12 +233,14 @@ if nargout == 1
     val = quasi_phase.*val;
 
     if ising == 0
-        isub = (abs(nx(:)) > max(ls)) | ifar;
+        for ii = -nsub:nsub
+        isub = (abs(nx(:)-ii) > max(ls)) | ifar;
 
         if any(isub)
-        vali = chnk.helm2d.green(zk,[0;0],[rx(isub).'+ nx(isub).'*d;ry(isub).']);
+        vali = chnk.helm2d.green(zk,[0;0],[rx(isub).'+ (nx(isub).'-ii)*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
-        val(:,isub,:) = val(:,isub,:) - vali;
+        val(:,isub,:) = val(:,isub,:) - vali.*alpha.^(ii);
+        end
         end
     end
 
@@ -239,14 +250,16 @@ elseif nargout == 2
     grad = quasi_phase.*grad;
     
     if ising == 0
-        isub = (abs(nx(:)) > max(ls)) | ifar;
-    
+        for ii = -nsub:nsub
+        isub = (abs(nx(:)-ii) > max(ls)) | ifar;
+
         if any(isub)
-        [vali, gradi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
+        [vali, gradi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + (nx(isub).'-ii)*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         gradi = reshape(gradi,1,[],2);
-        val(:,isub,:) = val(:,isub,:) - vali;
-        grad(:,isub,:) = grad(:,isub,:) - gradi;
+        val(:,isub,:) = val(:,isub,:) - vali.*alpha.^(ii);
+        grad(:,isub,:) = grad(:,isub,:) - gradi.*alpha.^(ii);
+        end
         end
     end
 
@@ -258,17 +271,19 @@ elseif nargout == 3
     hess = quasi_phase.*hess;
     
     if ising == 0
-        isub = (abs(nx(:)) > max(ls)) | ifar;
+        for ii = -nsub:nsub
+        isub = (abs(nx(:)-ii) > max(ls)) | ifar;
 
         if any(isub)
-        [vali, gradi, hessi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
+        [vali, gradi, hessi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + (nx(isub).'-ii)*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         gradi = reshape(gradi,1,[],2);
         hessi = reshape(hessi,1,[],3);
 
-        val(:,isub,:) = val(:,isub,:) - vali;
-        grad(:,isub,:) = grad(:,isub,:) - gradi;
-        hess(:,isub,:) = hess(:,isub,:) - hessi;
+        val(:,isub,:) = val(:,isub,:) - vali.*alpha.^(ii);
+        grad(:,isub,:) = grad(:,isub,:) - gradi.*alpha.^(ii);
+        hess(:,isub,:) = hess(:,isub,:) - hessi.*alpha.^(ii);
+        end
         end
     end
 

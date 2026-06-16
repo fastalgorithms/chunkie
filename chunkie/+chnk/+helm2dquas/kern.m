@@ -4,6 +4,7 @@ function submat=kern(zk,srcinfo,targinfo,type,quas_param,varargin)
 % Syntax: submat = chnk.helm2dquas.kern(zk,srcinfo,targinfo,type,quas_param)
 %         submat = chnk.helm2dquas.kern(zk,srcinfo,targinfo,type,quas_param,coef)
 %         submat = chnk.helm2dquas.kern(zk,srcinfo,targinfo,type,quas_param,coef,ising)
+%         submat = chnk.helm2dquas.kern(zk,srcinfo,targinfo,type,quas_param,coef,ising,nsub)
 %
 % Let x be targets and y be sources for these formulas, with
 % n_x and n_y the corresponding unit normals at those points
@@ -66,6 +67,9 @@ function submat=kern(zk,srcinfo,targinfo,type,quas_param,varargin)
 %                (2x2) matrix for 'all'/'c2trans'
 %   ising    - (optional, default 1) if 1, include the free-space singular
 %                part; if 0, include only the periodic images (smooth kernel)
+%   nsub     - (optional, default 0) number of additional source copies to
+%                subtract on each side when ising == 0 (for nearly-singular
+%                quadrature). Must satisfy nsub <= l.
 %
 % Output:
 %   submat - kernel matrix; rows correspond to targets, columns to sources.
@@ -82,7 +86,14 @@ targ = targinfo.r(:,:);
 ising = 1;
 if length(varargin) >1
     ising = varargin{2};
-end 
+end
+
+% nsub: number of extra periodic copies to subtract (for nearly-singular
+% quadrature), only used when ising == 0. Optional, default 0.
+nsub = 0;
+if length(varargin) > 2 && ~isempty(varargin{3})
+    nsub = varargin{3};
+end
 
 kappa = quas_param.kappa;
 d = quas_param.d;
@@ -98,7 +109,7 @@ switch lower(type)
 % double layer
 case {'d', 'double'}
   srcnorm = srcinfo.n(:,:);
-  [~,grad] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [~,grad] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
   nx = repmat(srcnorm(1,:),nkappa*nt,1);
   ny = repmat(srcnorm(2,:),nkappa*nt,1);
   submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
@@ -106,7 +117,7 @@ case {'d', 'double'}
 % normal derivative of single layer
 case {'sp', 'sprime'}
   targnorm = targinfo.n(:,:);
-  [~,grad] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [~,grad] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
   nx = repmat(reshape(targnorm(1,:),1,nt,1),nkappa,1,ns);
   nx = reshape(nx,[],ns);
   ny = repmat(reshape(targnorm(2,:),1,nt,1),nkappa,1,ns);
@@ -118,14 +129,14 @@ case {'sp', 'sprime'}
 
 % single later
 case {'s', 'single'}
-  submat = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  submat = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
   submat = reshape(submat,[],ns);
 
 % normal derivative of double layer
 case {'dp', 'dprime'}
   targnorm = targinfo.n(:,:);
   srcnorm = srcinfo.n(:,:);
-  [~,~,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [~,~,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
   nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
   nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
   % nxtarg = repmat((targnorm(1,:)).',1,ns);
@@ -140,12 +151,12 @@ case {'dp', 'dprime'}
 
 % gradient of single layer
 case {'sgrad','sg'}
-    [~,grad] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+    [~,grad] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
     submat = reshape(permute(grad,[1,3,2]),[],ns);
 
 % gradient of double layer
 case {'dgrad','dg'}
-    [~,~,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+    [~,~,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
     submat = -(hess(:,:,1:2).*reshape(srcinfo.n(1,:),1,[],1)+hess(:,:,2:3).*reshape(srcinfo.n(2,:),1,[],1));
     submat = reshape(permute(submat,[1,3,2]),[],ns);
 
@@ -154,7 +165,7 @@ case {'c', 'combined'}
   srcnorm = srcinfo.n(:,:);
   coef = ones(2,1);
   if(nargin >= 6); coef = varargin{1}; end
-  [submats,grad] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [submats,grad] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
   nx = repmat(srcnorm(1,:),nkappa*nt,1);
   ny = repmat(srcnorm(2,:),nkappa*nt,1);
   submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
@@ -168,7 +179,7 @@ case {'cp', 'cprime'}
   srcnorm = srcinfo.n(:,:);
 
   % Get gradient and hessian info
-  [~,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [~,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
 
   nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
   nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
@@ -197,7 +208,7 @@ case {'c2trans', 'c2t', 'c2tr'}
   srcnorm = srcinfo.n(:,:);
 
   % Get gradient and hessian info
-  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
 
   nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
   nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
@@ -228,7 +239,7 @@ case {'c2trans', 'c2t', 'c2tr'}
 case {'cgrad','cg'}
     coef = ones(2,1);
     if(nargin >= 6); coef = varargin{1}; end
-    [~,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+    [~,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
 
     submats = reshape(permute(grad,[1,3,2]),[],ns);
 
@@ -246,7 +257,7 @@ case {'all','trans_sys','tsys'}
   cc = varargin{1};
 
   % Get gradient and hessian info
-  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
 
   nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
   nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
@@ -287,7 +298,7 @@ case {'trans_rep','trep'}
   coef = ones(2,1);
   if(nargin >= 6); coef = varargin{1}; end;
   srcnorm = srcinfo.n(:,:);
-  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
 
   submats = reshape(submats,[],ns);
   nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
@@ -308,7 +319,7 @@ case {'trans_rep_prime','trep_p', 'trans_rep_p'}
   submat = zeros(nt,ns);
 
   % Get gradient and hessian info
-  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
 
   nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
   nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
@@ -334,7 +345,7 @@ case {'trans_rep_grad','trep_g', 'trans_rep_g'}
   
   srcnorm = srcinfo.n(:,:);
 
-  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising);
+  [submats,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub);
 
   nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
   nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
