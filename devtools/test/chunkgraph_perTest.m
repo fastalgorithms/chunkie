@@ -9,7 +9,7 @@ function chunkgraph_perTest0()
 % - test chunkermat RCIP edit (shift copies locally + apply phase shift
 % after)
 
-vrb = true;   % set false to skip figures
+vrb = false;   % set false to skip figures
 
 %% geometry test:
 %singly-periodic, layered media: 
@@ -95,7 +95,7 @@ end
 Nxper = 1; Nyper = 1; 
 [~,~,targs] = gen_comp_domain(cg,Nxper,Nyper); 
 ireg = chunkgraph_perinregion(cg,targs); 
-irknown = [0 -0.25 0 0 0 0.2 -0.25 0.4 0.45 0; 4.5 3 0 -1 -2 2.5 2 -3.5 -4.85 -4.9]; 
+irknown = [0 -0.25 0 0 0 0.2 cx 0.4 0.45 0; 4.5 3 0 -1 -2 2.5 cy -3.5 -4.85 -4.9]; 
 nr = 10; 
 irtest = nan(1,nr); 
 for i = 1:nr
