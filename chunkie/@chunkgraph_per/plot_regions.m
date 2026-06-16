@@ -1,5 +1,6 @@
 function plot_regions(obj,iflabel)
-%PLOT_REGIONS plots regions of a chunkgraph_per in 2 dimensions. 
+%PLOT_REGIONS plots regions of a chunkgraph_per in 2 dimensions. Assumes
+%geometries live "close" to the unit cell. 
 %
 % Syntax: plot_regions(cgrph_per,iflabel)
 %
