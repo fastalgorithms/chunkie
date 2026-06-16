@@ -1,11 +1,10 @@
 function [val, grad, hess, third, fourth] = quasi_dual_sum(rx,ry,zk,kappa,d)
-%CHNK.LAP2DQUAS.QUASI_DUAL_SUM evaluate the quasiperiodic dual (Ewald)
+%CHNK.LAP2DQUAS.QUASI_DUAL_SUM evaluate the quasiperiodic dual (Rayleigh-Bloch)
 % sum for the Laplace Green's function using the plane-wave expansion.
 %
-% Computes the far-field part of the quasiperiodic Laplace Green's function
-% using a Fourier-series expansion in the periodic direction. This is used
-% by CHNK.LAP2DQUAS.LATTICECOEFS to determine the constant s0 of the
-% local polynomial expansion.
+% Computes the quasiperiodic Laplace Green's function using a
+% Fourier-series expansion in the periodic direction, which converges
+% rapidly at large |y|.
 %
 % Syntax: [val,grad,hess,third,fourth] = chnk.lap2dquas.quasi_dual_sum(rx,ry,zk,kappa,d)
 %

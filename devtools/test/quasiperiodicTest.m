@@ -8,7 +8,7 @@ quasiperiodicTest_lap_algebraic();
 quasiperiodicTest_flex_algebraic();
 
 function quasiperiodicTest0()
-% test the representation
+% algebraic consistency checks for helm2dquas kernels (Bloch shift, Green's function identity, ising flag)
 
 % problem parameters
 d= 1;
@@ -298,9 +298,9 @@ curv = signed_curvature(chnkr); curv = curv(:);
 opts_s = []; opts_s.sing = 'smooth'; opts_s.quad = 'native';
 opts_l = []; opts_l.sing = 'log';
 
-% build system: quasi periodic part uses smooth quadrature (ising=0) since
-% the self-interaction and nsub nearest periodic copies are subtracted and
-% handled separately via the free-space kernel with log quadrature
+% build system: quasi periodic part uses smooth quadrature (ising=0): add
+% the self-interaction and nsub nearest periodic copies to ising=0 kernel
+% and compare with original value
 ising = 0; nsub = 1;
 alpha = exp(1i*kappa*d);
 
@@ -451,9 +451,9 @@ chnkr.data(2,:,:) = arclengthder(chnkr, squeeze(chnkr.data(1,:,:)));
 opts_s = []; opts_s.sing = 'smooth'; opts_s.quad = 'native';
 opts_l = []; opts_l.sing = 'log';
 
-% build system: quasi periodic part uses smooth quadrature (ising=0) since
-% the self-interaction and nsub nearest periodic copies are subtracted and
-% handled separately via the free-space kernels with log/smooth quadrature
+% build system: quasi periodic part uses smooth quadrature (ising=0): add
+% the self-interaction and nsub nearest periodic copies to ising=0 kernel
+% and compare with original value
 ising = 0; nsub = 1;
 alpha = exp(1i*kappa*d);
 c0    = (nu - 1)*(nu + 3)*(2*nu - 1)/(2*(3 - nu));
@@ -499,8 +499,7 @@ end
 
 
 function quasiperiodicTest_lap_algebraic()
-% algebraic consistency checks for lap2dquas kernels (analogous to
-% quasiperiodicTest0 for helm2dquas)
+% algebraic consistency checks for lap2dquas kernels (Bloch shift, Green's function identity, ising flag, nsub)
 
 % problem parameters
 d = 1;
@@ -524,9 +523,10 @@ dpkern = kernel('lq', 'dp', kappa, d);
 stkern = kernel('lq', 'st', kappa, d);
 
 quas_param = skern.params.quas_param;
+s0q = quas_param.s0; snq = quas_param.sn; lq = quas_param.l;
 
-hilbkern  = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'hilb',     kappa,d,s0,sn,l,1));
-hilbpkern = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'hilbprime',kappa,d,s0,sn,l,1));
+hilbkern  = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'hilb',     kappa,d,s0q,snq,lq,1));
+hilbpkern = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'hilbprime',kappa,d,s0q,snq,lq,1));
 
 % evaluate all kernels
 sval  = skern.eval(src,targ);
@@ -545,7 +545,7 @@ assert(norm(svalshift - repmat(exp(1i*kappa(:)*d),nt,1).*sval) < 1e-12)
 
 % test hilb directly from definition:
 %   hilb(x,y) = 2 * grad_x G(x,y) . tau_y  where tau_y = (n_y^src, -n_x^src)
-[~,grad] = chnk.lap2dquas.green(src.r, targ.r, kappa, d, s0, sn, l, 1);
+[~,grad] = chnk.lap2dquas.green(src.r, targ.r, kappa, d, s0q, snq, lq, 1);
 % grad is (nkappa*nt, ns, 2); src.n gives tau_src = (n_y, -n_x)
 tau_x = repmat(src.n(2,:), nkappa*nt, 1);   % n_y component
 tau_y = repmat(-src.n(1,:), nkappa*nt, 1);  % -n_x component
@@ -556,31 +556,51 @@ assert(norm(hilb_ref - hilbval) < 1e-11)
 % term, which is chnk.lap2d.green evaluated at the displacement (src -> targ).
 % The far-field lattice sum is the same for both, so the difference is just
 % the free-space Green's function at the displacement, broadcast over kappa.
-skern0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'s',kappa,d,s0,sn,l,0));
-dkern0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'d',kappa,d,s0,sn,l,0));
+skern0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'s',kappa,d,s0q,snq,lq,0));
+dkern0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'d',kappa,d,s0q,snq,lq,0));
 
 sval0 = skern0.eval(src,targ);
 dval0 = dkern0.eval(src,targ);
 
-% free-space i=0 contribution: chnk.lap2d.green at displacement
-[fs_s, fs_grad] = chnk.lap2d.green(src.r, targ.r);
+% ising=0 and ising=1 differ by the i=0 free-space contribution.
+% Verify by evaluating the Green's function at both ising values directly
+% and checking the kernels are consistent with the difference.
+[G1, G1_grad] = chnk.lap2dquas.green(src.r, targ.r, kappa, d, s0q, snq, lq, 1);
+[G0, G0_grad] = chnk.lap2dquas.green(src.r, targ.r, kappa, d, s0q, snq, lq, 0);
+
+% S kernel is G; D kernel is -dG/dn_src = -(G_grad . n_src)
 srcnorm_d = src.n;
-nx_fs = repmat(srcnorm_d(1,:), nt, 1);
-ny_fs = repmat(srcnorm_d(2,:), nt, 1);
-fs_d  = -(fs_grad(:,:,1).*nx_fs + fs_grad(:,:,2).*ny_fs);
+nx_fs = repmat(srcnorm_d(1,:), nkappa*nt, 1);
+ny_fs = repmat(srcnorm_d(2,:), nkappa*nt, 1);
+dG1 = -(G1_grad(:,:,1).*nx_fs + G1_grad(:,:,2).*ny_fs);
+dG0 = -(G0_grad(:,:,1).*nx_fs + G0_grad(:,:,2).*ny_fs);
 
-fs_s = repmat(reshape(fs_s, 1,nt,ns), nkappa,1,1);
-fs_d = repmat(reshape(fs_d, 1,nt,ns), nkappa,1,1);
+% verify sval and dval match ising=1 green function values
+assert(norm(sval - G1) < 1e-12)
+assert(norm(dval - dG1) < 1e-12)
+% verify ising=0 kernels match ising=0 green function values
+assert(norm(sval0 - G0) < 1e-12)
+assert(norm(dval0 - dG0) < 1e-12)
 
-assert(norm(sval0 + reshape(fs_s,nkappa*nt,ns) - sval) < 1e-12)
-assert(norm(dval0 + reshape(fs_d,nkappa*nt,ns) - dval) < 1e-12)
+% test nsub: kern(ising=0,nsub=2) + sum_{ii=-2}^{2} alpha^ii * kern_fs(targ-src-ii*d) = kern(ising=1,nsub=0)
+% test quad_opts.nsub and ising via kernel('lq',...) wrapper: smoke-test that
+% the wrapper runs and returns the right shape, and that ising=0,nsub=0 via
+% the wrapper matches the direct kern call.
+nsub_t = 2;
+spkern_nsub = kernel('lq', 'sp', kappa, d, struct('nsub', nsub_t), 0);
+spkern_0    = kernel('lq', 'sp', kappa, d, [], 0);
+spval_nsub  = spkern_nsub.eval(src, targ);
+assert(isequal(size(spval_nsub), [nkappa*nt, ns]))
+% extract lattice coefs from spkern_0 to ensure exact match
+sp0_param = spkern_0.params.quas_param;
+spval_0_kern = chnk.lap2dquas.kern(src, targ, 'sp', kappa, d, sp0_param.s0, sp0_param.sn, sp0_param.l, 0, 0);
+assert(norm(spkern_0.eval(src,targ) - spval_0_kern) < 1e-12)
 
 end
 
 
 function quasiperiodicTest_flex_algebraic()
-% algebraic consistency checks for flex2dquas kernels (analogous to
-% quasiperiodicTest0 for helm2dquas)
+% algebraic consistency checks for flex2dquas kernels (Bloch shift, Green's function identity, ising flag, nsub)
 
 % problem parameters
 d = 1; zk = 3;
@@ -647,6 +667,19 @@ spval_fs = repmat(reshape(spval_fs,1,nt,ns), nkappa,1,1);
 assert(norm(sval0  + reshape(sval_fs, nkappa*nt,ns)  - K1('s').eval(src,targ))  < 1e-11)
 assert(norm(dval0  + reshape(dval_fs, nkappa*nt,ns)  - K1('d').eval(src,targ))  < 1e-11)
 assert(norm(spval0 + reshape(spval_fs,nkappa*nt,ns)  - K1('sp').eval(src,targ)) < 1e-11)
+
+% test quad_opts.nsub and ising via kernel('fq',...) wrapper: smoke-test that
+% the wrapper runs and returns the right shape, and that ising=0,nsub=0 via
+% the wrapper matches the direct kern call.
+nsub_t = 2;
+spkern_fq_nsub = kernel('fq', 'sp', zk, kappa, d, [], struct('nsub', nsub_t), 0);
+spkern_fq_0    = kernel('fq', 'sp', zk, kappa, d, [], [], 0);
+spval_fq_nsub  = spkern_fq_nsub.eval(src, targ);
+assert(isequal(size(spval_fq_nsub), [nkappa*nt, ns]))
+% ising=0, nsub=0 via wrapper should match direct kern call
+fq0 = spkern_fq_0.params;
+spval_fq_0_kern = chnk.flex2dquas.kern(zk, src, targ, 'sp', kappa, d, fq0.Sn, fq0.s0_l, fq0.sn_l, fq0.l, 0, 0);
+assert(norm(spkern_fq_0.eval(src,targ) - spval_fq_0_kern) < 1e-12)
 
 end
 

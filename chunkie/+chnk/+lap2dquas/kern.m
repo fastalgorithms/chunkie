@@ -71,7 +71,7 @@ case {'d', 'double'}
 % normal derivative of single layer
 case {'sp', 'sprime'}
     targnorm = targinfo.n;
-    [~,grad] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising);
+    [~,grad] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising,nsub);
     nx = repmat(reshape(targnorm(1,:),1,nt,1),nkappa,1,ns);
     nx = reshape(nx,[],ns);
     ny = repmat(reshape(targnorm(2,:),1,nt,1),nkappa,1,ns);
@@ -82,7 +82,7 @@ case {'sp', 'sprime'}
 % Tangential derivative of single layer
 case {'stau'}
     targnorm = targinfo.n;
-    [~,grad] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising);
+    [~,grad] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising,nsub);
     % nx = repmat((targnorm(1,:)).',1,ns);
     % ny = repmat((targnorm(2,:)).',1,ns);
     nx = repmat(reshape(targnorm(1,:),1,nt,1),nkappa,1,ns);
@@ -123,7 +123,7 @@ case {'hilbprime'}
 case {'dprime','dp'}
     targnorm = targinfo.n;
     srcnorm = srcinfo.n;
-    [~,~,hess] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising);
+    [~,~,hess] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising,nsub);
     nxsrc = repmat(srcnorm(1,:),nkappa*nt,1);
     nysrc = repmat(srcnorm(2,:),nkappa*nt,1);
     nxtarg = repmat(reshape(targnorm(1,:),1,nt,1),nkappa,1,ns);
@@ -135,7 +135,7 @@ case {'dprime','dp'}
 
 % single layer
 case {'s', 'single'}
-    submat = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,1);
+    submat = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising,nsub);
 
 otherwise
     error('Unknown quasiperiodic Laplace kernel type ''%s''.', type);

@@ -3,14 +3,13 @@ function [val, grad, hess, third, fourth] = quasi_flex_dual_sum(rx,ry,zk,kappa,d
 % (Ewald) sum for the flexural wave Green's function using plane-wave
 % expansions.
 %
-% Computes the far-field part of the quasiperiodic flexural Green's function
-% as the difference of two quasiperiodic Helmholtz dual sums evaluated at
-% wavenumbers zk and i*zk:
+% Computes the quasiperiodic flexural Green's function as the difference of
+% two quasiperiodic Helmholtz dual sums evaluated at wavenumbers zk and
+% i*zk:
 %
 %   G_flex_far(x,y) = G_H_far(x,y; zk) - G_H_far(x,y; i*zk)
 %
-% This is used by CHNK.FLEX2DQUAS.LATTICECOEFS to determine the lattice
-% sum coefficients.
+% The series converges quickly for large |y|
 %
 % Syntax: [val,grad,hess,third,fourth] = ...
 %             chnk.flex2dquas.quasi_flex_dual_sum(rx,ry,zk,kappa,d)

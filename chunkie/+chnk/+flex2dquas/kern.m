@@ -30,24 +30,27 @@ function submat= kern(zk,srcinfo,targinfo,type,kappa,d,Sn,s0_l,sn_l,l,ising,vara
 %
 %       Clamped plate (BCs: displacement and normal derivative):
 %         'clamped_plate_bcs'         - [u; d_n u] applied to point source
-%         'clamped_plate_bcs_trx'     - transmission BCs to object (4 DOFs per source)
+%         'clamped_plate_bcs_trx'     - flat transmission rep evaluated on object
 %         'clamped_plate'             - 2x2 block integral equation kernel [K11 K12; K21 K22]
 %         'clamped_plate_eval'        - evaluation kernel for solution plotting
-%         'clamped_plate_eval_trx'    - evaluation kernel (transmission rep)
+%         'clamped_plate_eval_trx'    - evaluation kernel and its first
+%                                       three x dervatives
 %
 %       Free plate (BCs: bending moment and shear force; requires Poisson ratio nu = coef(1)):
 %         'free_plate_bcs'            - [M_n u; V_n u] applied to point source
-%         'free_plate_bcs_trx'        - transmission BCs to object
+%         'free_plate_bcs_trx'        - flat transmission rep evaluated on object
 %         'free_plate'                - 4x2 block integral equation kernel
 %         'free_plate_eval'           - evaluation kernel for solution plotting
-%         'free_plate_eval_trx'       - evaluation kernel (transmission rep)
+%         'free_plate_eval_trx'       - evaluation kernel and its first
+%                                       three x dervatives
 %
 %       Simply-supported plate (BCs: displacement and bending moment; requires nu = coef(1)):
 %         'supported_plate_bcs'       - BCs applied to point source
-%         'supported_plate_bcs_trx'   - transmission BCs to object
+%         'supported_plate_bcs_trx'   - flat transmission rep evaluated on object
 %         'supported_plate'           - 2x2 block integral equation kernel
 %         'supported_plate_eval'      - evaluation kernel for solution plotting
-%         'supported_plate_eval_trx'  - evaluation kernel (transmission rep)
+%         'supported_plate_eval_trx'  - evaluation kernel and its first
+%                                       three x dervatives
 %
 %   kappa  - (nkappa,1) array of quasiperiodic phase parameters
 %   d      - period (scalar)
@@ -82,12 +85,20 @@ targ = targinfo.r;
 [~,nt] = size(targ);
 nkappa = length(kappa);
 
+% nsub: number of extra periodic copies to subtract (for nearly-singular quadrature).
+% For simple kernels ('s','d','sp'), varargin{1} is nsub if present and scalar.
+nsub = 0;
+if ~isempty(varargin) && isscalar(varargin{1}) && ...
+        any(strcmpi(type, {'s','single','d','double','sp','sprime'}))
+    nsub = varargin{1};
+end
+
 %%% STANDARD LAYER POTENTIALS
 
 switch lower(type)
 case {'s', 'single'} % flexural wave single layer
 
-   val = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l,0);  
+   val = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l,0,nsub);
    submat = 1/(2*zk^2).*val;
 
 case {'sp', 'sprime'} % normal derivative of flexural wave single layer
@@ -98,16 +109,16 @@ case {'sp', 'sprime'} % normal derivative of flexural wave single layer
     nytarg = repmat(reshape(targnorm(2,:),1,nt,1),nkappa,1,ns);
     nytarg = reshape(nytarg,[],ns);
 
-    [~,grad] = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l,ising);
+    [~,grad] = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l,0,nsub);
     submat = 1/(2*zk^2).*(grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
 
-case {'d', 'double'} % normal derivative of flexural wave single layer
+case {'d', 'double'} % double layer = -d/dn_src of single layer
 
     srcnorm = srcinfo.n;
     nx = repmat(srcnorm(1,:),nkappa*nt,1);
     ny = repmat(srcnorm(2,:),nkappa*nt,1);
 
-    [~,grad] = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l,ising);  
+    [~,grad] = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l,0,nsub);
     submat = -1/(2*zk^2).*(grad(:,:,1).*nx + grad(:,:,2).*ny);
 
 

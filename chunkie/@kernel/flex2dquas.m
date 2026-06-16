@@ -75,11 +75,13 @@ function obj = flex2dquas(type, zk, kappa, d, coefs, quad_opts, ising)
 %
 %   all versions accept quad_opts to change the parameters in the lattice
 %   sum computations. (see chnk.helm2dquas.latticecoefs)
-%       quad_opts.l - (2) radius of periodic copies to exclude from
+%       quad_opts.l    - (2) radius of periodic copies to exclude from
 %           lattice sum (excludes copies within l*d)
-%       quad_opts.N - (40) number of lattice sums
-%       quad_opts.m - (1e4) number of trapezoid rule quadrature nodes
-%       quad_opts.a - (15) length of trapezoid quadrature rule
+%       quad_opts.N    - (40) number of lattice sums
+%       quad_opts.M    - (1e4) number of trapezoid rule quadrature nodes
+%       quad_opts.a    - (15) length of trapezoid quadrature rule
+%       quad_opts.nsub - (0) number of extra periodic copies to subtract
+%           near the source, for use in nearly-singular quadrature
 %
 % See also CHNK.FLEX2DQUAS.KERN.
 
@@ -99,7 +101,7 @@ obj.params.zk = zk;
 obj.opdims = [numel(kappa) 1];
 
 % lattice sum parameters
-l = 2; N = 40; a = 15; M = 1e4;
+l = 2; N = 40; a = 15; M = 1e4; nsub = 0;
 
 if nargin >= 6
     if isfield(quad_opts,'l')
@@ -113,6 +115,9 @@ if nargin >= 6
     end
     if isfield(quad_opts,'a')
         a = quad_opts.a;
+    end
+    if isfield(quad_opts,'nsub')
+        nsub = quad_opts.nsub;
     end
 end
 
@@ -140,19 +145,19 @@ switch lower(type)
 
     case {'s', 'single'}
         obj.type = 's';
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 's', kappa, d, Sn, s0_l, sn_l, l, ising);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 's', kappa, d, Sn, s0_l, sn_l, l, ising, nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'sp', kappa, d, Sn, s0_l, sn_l, l, ising);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'sp', kappa, d, Sn, s0_l, sn_l, l, ising, nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'d', 'double'}
         obj.type = 'd';
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'd', kappa, d, Sn, s0_l, sn_l, l, ising);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'd', kappa, d, Sn, s0_l, sn_l, l, ising, nsub);
         obj.fmm = [];
         obj.sing = 'log';
 

@@ -3,8 +3,8 @@ function S = latticecoefs(n,zk,d,kappa,alpha,a,M,l)
 % quasiperiodic flexural wave Green's function.
 %
 % The flexural Green's function is the difference G_H(zk) - G_H(i*zk) of
-% two quasiperiodic Helmholtz Green's functions, so this routine calls
-% CHNK.HELM2DQUAS.LATTICECOEFS twice and concatenates the results.
+% two quasiperiodic Helmholtz Green's functions, so this routine computes
+% the lattice sums for both frequencies.
 %
 % Syntax: S = chnk.flex2dquas.latticecoefs(n,zk,d,kappa,alpha,a,M,l)
 %
