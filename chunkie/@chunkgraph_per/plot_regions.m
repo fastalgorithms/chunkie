@@ -41,7 +41,25 @@ for ii = 2:nr
     elseif cl_und_tiling(obj,comps)
         ply_bnd = [ply_bnd,per_cl_poly(obj,comps)];
     else
-        ply_bnd = [ply_bnd,cl_poly(obj,comps)];
+        jvals = 0; kvals = 0;
+        ptol = 1e-13; 
+        if ~isempty(obj.dx) && obj.dx > ptol, jvals = -1:1; end
+        if ~isempty(obj.dy) && obj.dy > ptol, kvals = -1:1; end
+        ply0 = cl_poly(obj,comps);
+        plyii = polyshape();
+        for j = jvals
+            for k = kvals
+                plyjk = ply0;
+                plyjk.Vertices = ply0.Vertices + [j*obj.dx,k*obj.dy];
+                plyii = union(plyii, plyjk, 'Simplify', false);
+            end
+        end
+        % clip to unit cell
+        xmin = min(obj.r(1,:)); xmax = max(obj.r(1,:));
+        ymin = min(obj.r(2,:)); ymax = max(obj.r(2,:));
+        uc = polyshape([xmin xmax xmax xmin],[ymin ymin ymax ymax]);
+        plyii = intersect(plyii,uc);
+        ply_bnd = [ply_bnd,plyii];
     end
 
 end
