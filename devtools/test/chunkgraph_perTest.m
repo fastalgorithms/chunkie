@@ -1,6 +1,6 @@
-%chunkgraph_perTest0();
+chunkgraph_perTest0();
 
-function chunkgraph_perTest()
+function chunkgraph_perTest0()
 %chunkgraph_perTest: 
 %
 % Objectives: 
@@ -9,9 +9,6 @@ function chunkgraph_perTest()
 % - test chunkermat RCIP edit (shift copies locally + apply phase shift
 % after)
 
-
-%housekeeping: 
-clear; close all; clc; 
 vrb = true;   % set false to skip figures
 
 %% geometry tests: 

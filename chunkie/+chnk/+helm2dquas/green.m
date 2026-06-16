@@ -1,18 +1,33 @@
 function [val,grad,hess] = green(src,targ,zk,kappa,d,sn,l,ising)
 %CHNK.HELM2DQUAS.GREEN evaluate the quasiperiodic Helmholtz Green's function
-% for the given sources and targets
+% for the given sources and targets.
+%
+% The quasiperiodic Green's function satisfies
+%   G(x + d e_1, y) = G(x, y) exp(i kappa d)
+% and is given by
+%   G(x,y) = sum_{n=-inf}^{inf} i/4 H_0^{(1)}(zk |x - n d e_1 - y|)
+%                exp(i kappa d n)
+%
+% Syntax: [val,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising)
 %
 % Input:
-%   zk - wavenumber
-%   kappa - quasiperiodic parameters
-%   d - period
-%   sn - precomputed lattice sum integrals 
-%       (see chnk.helm2dquas.latticecoefs)
-%   l - number of periodic copies computed explicitly
-%   ising - if set to 0, only include the periodic copies. If set to 1,
-%       include the free-space part
+%   src   - (2,:) array of source positions
+%   targ  - (2,:) array of target positions
+%   zk    - complex number, Helmholtz wavenumber
+%   kappa - (nkappa,1) array of quasiperiodic phase parameters
+%   d     - period (scalar)
+%   sn    - (nkappa, N+1) precomputed lattice sum coefficients
+%               (see chnk.helm2dquas.latticecoefs)
+%   l     - number of periodic copies included explicitly on each side
+%   ising - if 1, include the free-space (singular) part of the Green's
+%               function; if 0, include only the periodic images
 %
-% see also CHNK.HELM2DQUAS.KERN
+% Output:
+%   val  - (nkappa*ntarg, nsrc) Green's function values
+%   grad - (nkappa*ntarg, nsrc, 2) gradient [d/dx, d/dy]
+%   hess - (nkappa*ntarg, nsrc, 3) Hessian [d^2/dx^2, d^2/dxdy, d^2/dy^2]
+%
+% see also CHNK.HELM2DQUAS.KERN, CHNK.HELM2DQUAS.LATTICECOEFS
 [~,nsrc] = size(src);
 [~,ntarg] = size(targ);
 

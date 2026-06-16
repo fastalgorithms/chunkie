@@ -1,10 +1,14 @@
 function cgrph = merge(cgrphs)
+%MERGE Merge an array of chunkgraph objects into one chunkgraph.
+%
 % merge an array of chunkgraph objects into a single chunkgraph
 %
 % after accumulating all verts and edgesendverts, any pair of vertices
 % within 1e-14 (relative to largest vertex norm) are identified,
 % edgesendverts is remapped to canonical vertices, and duplicate vertices
-% are removed before calling the constructor.
+% are removed.
+
+
 
 % accumulate verts, edgesendverts, and edge chunkers
 nverts = 0;

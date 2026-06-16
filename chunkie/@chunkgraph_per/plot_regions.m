@@ -222,48 +222,31 @@ function ply = per_cl_poly(obj,comps)
 %PER_CL_POLY closed-under-tiling object(s), shown over one unit cell.
 % Complete objects can straddle a period boundary, so period translates are
 % added and clipped to the displayed unit cell.
-    
-    ptol = 1e-13; 
-    dtol = 1e-10; jtol = 1e-6; 
-    ply = polyshape(); 
-    if ~isempty(obj.dx) && ~isempty(obj.dy)
-        for c = 1:numel(comps)
-            e = comps{c}; 
-            if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol
-                base = cell_polygon(obj,e); 
-                for j = -1:1
-                    for k = -1:1 %construct 8 surrounding copies for closure:
-                        ply = union(ply, polyshape((base + [j*obj.dx;k*obj.dy]).', 'Simplify', false));
-                    end
-                end
-            end
-        end
-    elseif obj.dx>ptol
-        for c = 1:numel(comps)
-            e = comps{c}; 
-            if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol
-                base = cell_polygon(obj,e); 
-                for j = -1:1 %construct 2 surrounding copies for closure:
-                    ply = union(ply, polyshape((base + [j*obj.dx;0]).', 'Simplify', false));
-                end
-            end
-        end
-    else
-        for c = 1:numel(comps)
-            e = comps{c}; 
-            if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol
-                base = cell_polygon(obj,e); 
-                for k = -1:1 %construct 2 surrounding copies for closure:
-                    ply = union(ply, polyshape((base + [0;k*obj.dy]).', 'Simplify', false));
+
+    ptol = 1e-13;
+    dtol = 1e-10; jtol = 1e-6;
+    ply = polyshape();
+
+    jvals = 0; kvals = 0;
+    if ~isempty(obj.dx) && obj.dx > ptol, jvals = -1:1; end
+    if ~isempty(obj.dy) && obj.dy > ptol, kvals = -1:1; end
+
+    for c = 1:numel(comps)
+        e = comps{c};
+        if norm(loop_displacement(obj,e)) < dtol && loop_max_jump(obj,e) > jtol
+            base = cell_polygon(obj,e);
+            for j = jvals
+                for k = kvals
+                    ply = union(ply, polyshape((base + [j*obj.dx; k*obj.dy]).', 'Simplify', false));
                 end
             end
         end
     end
 
-    %clipping to unit cell: 
-    xmin = min(obj.r(1,:)); xmax = max(obj.r(1,:)); 
-    ymin = min(obj.r(2,:)); ymax = max(obj.r(2,:)); 
-    uc = polyshape([xmin xmax xmax xmin],[ymin ymin ymax ymax]); 
+    % clip to unit cell
+    xmin = min(obj.r(1,:)); xmax = max(obj.r(1,:));
+    ymin = min(obj.r(2,:)); ymax = max(obj.r(2,:));
+    uc = polyshape([xmin xmax xmax xmin],[ymin ymin ymax ymax]);
     ply = intersect(ply,uc);
 end
 

@@ -1,83 +1,79 @@
 function submat=kern(zk,srcinfo,targinfo,type,quas_param,varargin)
 %CHNK.HELM2DQUAS.KERN quasi-periodic Helmholtz layer potential kernels in 2D
-% 
-% Syntax: submat = chnk.helm2dquas.kern(zk,srcinfo,targinfo,type,quas_param,varargin)
+%
+% Syntax: submat = chnk.helm2dquas.kern(zk,srcinfo,targinfo,type,quas_param)
+%         submat = chnk.helm2dquas.kern(zk,srcinfo,targinfo,type,quas_param,coef)
+%         submat = chnk.helm2dquas.kern(zk,srcinfo,targinfo,type,quas_param,coef,ising)
 %
 % Let x be targets and y be sources for these formulas, with
 % n_x and n_y the corresponding unit normals at those points
-% (if defined). 
-%  
-% Kernels based on the quasi periodic green's function satisfying 
-%       G(x+d e_1,y) = G(x,y) exp(i kapppa d),
-%  which is given by
-%       G(x,y) = sum_{n=-inf}^inf i/4 H_0^{(1)}(zk |x- n d e_1-y|) 
-%                   exp(i kapppa d n)
+% (if defined).
 %
-% NOTE: The quasiperiodic green's has extra singularities at periodic 
-% copies of the source, which might cause quadrature errors.
+% Kernels based on the quasiperiodic Green's function satisfying
+%       G(x + d e_1, y) = G(x,y) exp(i kappa d),
+% which is given by
+%       G(x,y) = sum_{n=-inf}^{inf} i/4 H_0^{(1)}(zk |x - n d e_1 - y|)
+%                   exp(i kappa d n)
 %
-% NOTE: This will be singular if kappa = +- pi/d
+% NOTE: The quasiperiodic Green's function has extra singularities at
+% periodic copies of the source, which may cause quadrature errors.
 %
-% D(x,y) = \nabla_{n_y} G(x,y)
-% S(x,y) = G(x,y)
-% S'(x,y) = \nabla_{n_x} G(x,y)
-% D'(x,y) = \nabla_{n_x} \nabla_{n_y} G(x,y)
+% NOTE: This kernel is singular (Wood's anomaly) when kappa = +/- pi/d.
+%
+% Kernel definitions:
+%   S(x,y)  = G(x,y)
+%   D(x,y)  = grad_{n_y} G(x,y)
+%   S'(x,y) = grad_{n_x} G(x,y)
+%   D'(x,y) = grad_{n_x} grad_{n_y} G(x,y)
 %
 % Input:
-%   zk - complex number, Helmholtz wave number
-%   srcinfo - description of sources in ptinfo struct format, i.e.
-%                ptinfo.r - positions (2,:) array
-%                ptinfo.d - first derivative in underlying
-%                     parameterization (2,:)
-%                ptinfo.d2 - second derivative in underlying
-%                     parameterization (2,:)
-%   targinfo - description of targets in ptinfo struct format,
-%                if info not relevant (d/d2) it doesn't need to
-%                be provided. sprime requires tangent info in
-%                targinfo.d
-%   type - string, determines kernel type
-%                type == 'd', double layer kernel D
-%                type == 's', single layer kernel S
-%                type == 'sprime', normal derivative of single
-%                      layer S'
-%                type == 'dprime', normal derivative of double layer D'
-%                type == 'c', combined layer kernel coef(1) D + coef(2) S
-%                type == 'all', returns all four layer potentials, 
-%                       [coef(1,1)*D coef(1,2)*S; coef(2,1)*D' coef(2,2)*S']
-%                type == 'c2trans' returns the combined field, and the 
-%                          normal derivative of the combined field
-%                        [coef(1,1)*D + coef(1,2)*S; coef(2,1)*D' + coef(2,2)*S']
-%                type == 'trans_rep' returns the potential corresponding
-%                           to the transmission representation
-%                        [coef(1)*D coef(2)*S]
-%                type == 'trans_rep_prime' returns the normal derivative
-%                          corresponding to the transmission representation
-%                        [coef(1)*D' coef(2)*S']
-%                type == 'trans_rep_grad' returns the gradient corresponding
-%                         to the transmission representation
-%                        [coef(1)*d_x D coef(2)*d_x S;
-%                         coef(1)*d_y D coef(2)*d_y S]
-% 
-%   quas_param - struct with quasiperiodic parameters,
-%       quas_param.kappa - phase differences
-%       quas_param.d - period
-%       quas_param.l - radius excluded from local quasiperiodic farfield
-%       quas_param.sn - precomputed lattice sum integrals, see 
-%               chnk.helm2dquas.latticecoefs
-%
-%   varargin{1} - ising: if set to 0, only include the periodic copies. 
-%                 If set to 1, include the free-space part
-%   varargin{1} - coef: length 2 array in the combined layer 
-%                 formula, 2x2 matrix for all kernels
-%                 otherwise does nothing
+%   zk       - complex number, Helmholtz wavenumber
+%   srcinfo  - source descriptor in ptinfo struct format:
+%                srcinfo.r  - positions (2,:)
+%                srcinfo.d  - first derivative in parameterization (2,:)
+%                srcinfo.n  - unit outward normal (2,:)
+%                srcinfo.d2 - second derivative in parameterization (2,:)
+%   targinfo - target descriptor in ptinfo struct format; only .r is
+%                required for 's'/'d'; .n is also needed for 'sp'/'dp';
+%                .d is needed for 'sprime' in tangent-based types
+%   type     - string, determines kernel type:
+%                's'  or 'single'         - single layer S
+%                'd'  or 'double'         - double layer D
+%                'sp' or 'sprime'         - normal deriv of single layer S'
+%                'dp' or 'dprime'         - normal deriv of double layer D'
+%                'c'  or 'combined'       - coef(1)*D + coef(2)*S
+%                'cp' or 'cprime'         - coef(1)*D' + coef(2)*S'
+%                'sg' or 'sgrad'          - gradient of S, output (2*nt x ns)
+%                'dg' or 'dgrad'          - gradient of D, output (2*nt x ns)
+%                'cg' or 'cgrad'          - gradient of combined field
+%                'c2trans'/'c2t'/'c2tr'   - [coef(1,1)*D+coef(1,2)*S;
+%                                            coef(2,1)*D'+coef(2,2)*S']
+%                'all'/'trans_sys'/'tsys' - 2x2 block [cc(1,1)*D cc(1,2)*S;
+%                                            cc(2,1)*D' cc(2,2)*S']
+%                'trans_rep'/'trep'       - [coef(1)*D coef(2)*S]  (1x2 block)
+%                'trans_rep_prime'/'trep_p' - [coef(1)*D' coef(2)*S'] (1x2 block)
+%                'trans_rep_grad'/'trep_g'  - gradient of transmission rep
+%                                            [coef(1)*d_x D coef(2)*d_x S;
+%                                             coef(1)*d_y D coef(2)*d_y S]
+%   quas_param - struct with quasiperiodic parameters:
+%       quas_param.kappa - (nkappa,1) phase parameters
+%       quas_param.d     - period
+%       quas_param.l     - number of explicit periodic copies on each side
+%       quas_param.sn    - precomputed lattice sum coefficients
+%                           (see chnk.helm2dquas.latticecoefs)
+%   coef     - (optional) coefficient array for combined/transmission kernels:
+%                length-2 vector for 'c', 'cp', 'trans_rep', 'trans_rep_prime';
+%                (2x2) matrix for 'all'/'c2trans'
+%   ising    - (optional, default 1) if 1, include the free-space singular
+%                part; if 0, include only the periodic images (smooth kernel)
 %
 % Output:
-%   submat - the evaluation of the selected kernel for the
-%            provided sources and targets. the number of
-%            rows equals the number of targets and the
-%            number of columns equals the number of sources  
+%   submat - kernel matrix; rows correspond to targets, columns to sources.
+%            Size is (nkappa*ntarg, nsrc) for scalar kernels, with nkappa
+%            rows per target for vector-kappa. Block kernels have additional
+%            rows or columns as described above.
 %
-% see also CHNK.HELM2DQUAS.GREEN
+% see also CHNK.HELM2DQUAS.GREEN, CHNK.HELM2DQUAS.LATTICECOEFS
 
 src = srcinfo.r(:,:);
 targ = targinfo.r(:,:);

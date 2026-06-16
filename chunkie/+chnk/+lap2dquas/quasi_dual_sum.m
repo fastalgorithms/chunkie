@@ -1,4 +1,29 @@
 function [val, grad, hess, third, fourth] = quasi_dual_sum(rx,ry,zk,kappa,d)
+%CHNK.LAP2DQUAS.QUASI_DUAL_SUM evaluate the quasiperiodic dual (Ewald)
+% sum for the Laplace Green's function using the plane-wave expansion.
+%
+% Computes the far-field part of the quasiperiodic Laplace Green's function
+% using a Fourier-series expansion in the periodic direction. This is used
+% by CHNK.LAP2DQUAS.LATTICECOEFS to determine the constant s0 of the
+% local polynomial expansion.
+%
+% Syntax: [val,grad,hess,third,fourth] = chnk.lap2dquas.quasi_dual_sum(rx,ry,zk,kappa,d)
+%
+% Input:
+%   rx    - x-components of evaluation points (targets relative to source)
+%   ry    - y-components of evaluation points; must be nonzero
+%   zk    - wavenumber (set to 0 for Laplace)
+%   kappa - (nkappa,1) quasiperiodic phase parameters
+%   d     - period (scalar)
+%
+% Output:
+%   val   - (nkappa, npt) Green's function values
+%   grad  - (nkappa, npt, 2) gradient [d/drx, d/dry]
+%   hess  - (nkappa, npt, 3) Hessian [d^2/drx^2, d^2/drxdry, d^2/dry^2]
+%   third - (nkappa, npt, 4) third-order derivatives [xxx, xxy, xyy, yyy]
+%   fourth- (nkappa, npt, 5) fourth-order derivatives [xxxx, ..., yyyy]
+%
+% see also CHNK.LAP2DQUAS.LATTICECOEFS
 
 kappa = kappa(:).';
 

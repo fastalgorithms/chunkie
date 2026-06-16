@@ -504,8 +504,7 @@ if(icgrph && isrcip)
             continue
         end
         clist = chnkobj.vstruc{ivert}{1};
-        vconn = chnkobj.vstruc{ivert}{2};
-        isstart = vconn; 
+        isstart = chnkobj.vstruc{ivert}{2};
         isstart(isstart==1) = 0;
         isstart(isstart==-1) = 1;
         nedge = length(isstart);
@@ -551,7 +550,7 @@ if(icgrph && isrcip)
         optsrcip.rcip_savedepth = rcip_savedepth;
         optsrcip.adaptive_correction = rcip_adaptive_correction;
 
-        chnkrs_loc = chnkrs;
+        chnkrs_shift = chnkrs;
         
         %periodic case (shift local chunker edge): 
         if iper && any(~isnan(chnkobj.vert_per(:,ivert)))
@@ -575,13 +574,13 @@ if(icgrph && isrcip)
                 end
     
                 for ee = eidx(:).'
-                    chnkrs_loc(ee) = chnkrs_loc(ee) + d;
+                    chnkrs_shift(ee) = chnkrs_shift(ee) + d;
                 end
             end
         end
 
         [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk( ...
-            chnkrs_loc, iedgechunks, kern, ndim, chnkobj.verts(:,ivert), ...
+            chnkrs_shift, iedgechunks, kern, ndim, chnkobj.verts(:,ivert), ...
             Pbc, PWbc, nsub, starL, circL, starS, circS, ilist, starL1, circL1, ...
             sbclmat, sbcrmat, lvmat, rvmat, u, optsrcip);
 

@@ -1,7 +1,79 @@
 function submat= kern(zk,srcinfo,targinfo,type,kappa,d,Sn,s0_l,sn_l,l,ising,varargin)
-
-% 
-% see also CHNK.FLEX2D.KERN
+%CHNK.FLEX2DQUAS.KERN quasiperiodic flexural wave layer potential kernels in 2D
+%
+% Syntax: submat = chnk.flex2dquas.kern(zk,srcinfo,targinfo,type,kappa,d,Sn,s0_l,sn_l,l,ising)
+%         submat = chnk.flex2dquas.kern(zk,srcinfo,targinfo,type,kappa,d,Sn,s0_l,sn_l,l,ising,coef)
+%
+% Kernels are constructed from the quasiperiodic flexural Green's function
+% G_flex (see chnk.flex2dquas.green), scaled by 1/(2*zk^2), so that G_flex
+% is the fundamental solution of (Delta+zk^2)(Delta-zk^2).
+%
+% Input:
+%   zk       - complex number, flexural wavenumber
+%   srcinfo  - source descriptor in ptinfo struct format:
+%                srcinfo.r  - positions (2,:)
+%                srcinfo.n  - unit outward normal (2,:)
+%                srcinfo.d  - first derivative in parameterization (2,:)
+%                             [needed for plate boundary kernels]
+%   targinfo - target descriptor in ptinfo struct format:
+%                targinfo.r  - positions (2,:)
+%                targinfo.n  - unit outward normal (2,:)
+%                targinfo.d  - first derivative in parameterization (2,:)
+%                targinfo.d2 - second derivative in parameterization (2,:)
+%                              [.d and .d2 needed for free/supported plate kernels]
+%   type     - string, determines kernel type:
+%
+%       Standard layer potentials:
+%         's'  or 'single'           - single layer  1/(2*zk^2) * G_flex
+%         'd'  or 'double'           - double layer -1/(2*zk^2) * grad_{n_y} G_flex
+%         'sp' or 'sprime'           - normal deriv of single layer
+%
+%       Clamped plate (BCs: displacement and normal derivative):
+%         'clamped_plate_bcs'         - [u; d_n u] applied to point source
+%         'clamped_plate_bcs_trx'     - transmission BCs to object (4 DOFs per source)
+%         'clamped_plate'             - 2x2 block integral equation kernel [K11 K12; K21 K22]
+%         'clamped_plate_eval'        - evaluation kernel for solution plotting
+%         'clamped_plate_eval_trx'    - evaluation kernel (transmission rep)
+%
+%       Free plate (BCs: bending moment and shear force; requires Poisson ratio nu = coef(1)):
+%         'free_plate_bcs'            - [M_n u; V_n u] applied to point source
+%         'free_plate_bcs_trx'        - transmission BCs to object
+%         'free_plate'                - 4x2 block integral equation kernel
+%         'free_plate_eval'           - evaluation kernel for solution plotting
+%         'free_plate_eval_trx'       - evaluation kernel (transmission rep)
+%
+%       Simply-supported plate (BCs: displacement and bending moment; requires nu = coef(1)):
+%         'supported_plate_bcs'       - BCs applied to point source
+%         'supported_plate_bcs_trx'   - transmission BCs to object
+%         'supported_plate'           - 2x2 block integral equation kernel
+%         'supported_plate_eval'      - evaluation kernel for solution plotting
+%         'supported_plate_eval_trx'  - evaluation kernel (transmission rep)
+%
+%   kappa  - (nkappa,1) array of quasiperiodic phase parameters
+%   d      - period (scalar)
+%   Sn     - (nkappa, N+1, 2) flexural lattice sum coefficients
+%                (see chnk.flex2dquas.latticecoefs)
+%   s0_l   - (nkappa,1) Laplace lattice sum constant (n=0 term)
+%                (see chnk.lap2dquas.latticecoefs; used for free plate kernels)
+%   sn_l   - (nkappa, 3) Laplace lattice sum coefficients for orders 1..3
+%                (used for free plate Hilbert transform kernels)
+%   l      - number of explicit periodic copies on each side
+%   ising  - if 1, include the free-space singular part; if 0, periodic
+%                images only
+%   coef   - (optional) coefficient for plate kernels or nsub for
+%                'clamped_plate'/'free_plate': when a scalar, treated as nsub
+%                (number of extra source copies to subtract); for plate BCs
+%                kernels taking Poisson ratio, pass as coef(1) = nu
+%
+% Output:
+%   submat - kernel matrix. Size depends on type:
+%              scalar kernels:  (nkappa*ntarg, nsrc)
+%              2-component BCs: (2*nkappa*ntarg, nsrc)
+%              2x2 block:       (2*nkappa*ntarg, 2*nsrc)
+%              4-component:     (4*nkappa*ntarg, 2*nsrc)
+%
+% see also CHNK.FLEX2DQUAS.GREEN, CHNK.FLEX2DQUAS.LATTICECOEFS,
+%          CHNK.LAP2DQUAS.KERN, CHNK.FLEX2D.KERN
   
 src = srcinfo.r;
 targ = targinfo.r;
@@ -26,7 +98,7 @@ case {'sp', 'sprime'} % normal derivative of flexural wave single layer
     nytarg = repmat(reshape(targnorm(2,:),1,nt,1),nkappa,1,ns);
     nytarg = reshape(nytarg,[],ns);
 
-    [~,grad] = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l);  
+    [~,grad] = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l,ising);
     submat = 1/(2*zk^2).*(grad(:,:,1).*nxtarg + grad(:,:,2).*nytarg);
 
 case {'d', 'double'} % normal derivative of flexural wave single layer
@@ -34,8 +106,8 @@ case {'d', 'double'} % normal derivative of flexural wave single layer
     srcnorm = srcinfo.n;
     nx = repmat(srcnorm(1,:),nkappa*nt,1);
     ny = repmat(srcnorm(2,:),nkappa*nt,1);
-    
-    [~,grad] = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l);  
+
+    [~,grad] = chnk.flex2dquas.green(src,targ,zk,kappa,d,Sn,l,ising);  
     submat = -1/(2*zk^2).*(grad(:,:,1).*nx + grad(:,:,2).*ny);
 
 
@@ -1035,7 +1107,24 @@ end
 if (ising == 1) && ~contains(type,'trx')
     ishape = size(submat);
     submat = reshape(submat,nkappa,ishape(1)/nkappa,ishape(2));
-    submat = submat + reshape(chnk.flex2d.kern(zk,srcinfo,targinfo,type,varargin{:}),1,ishape(1)/nkappa,ishape(2));
+    switch lower(type)
+    case {'d', 'double'}
+        srcnorm = srcinfo.n;
+        nx_fs = repmat(srcnorm(1,:), nt, 1);
+        ny_fs = repmat(srcnorm(2,:), nt, 1);
+        [~,grad_fs] = chnk.flex2dquas.hkdiffgreen1(zk, src, targ);
+        fs = -1/(2*zk^2).*(grad_fs(:,:,1).*nx_fs + grad_fs(:,:,2).*ny_fs);
+        submat = submat + reshape(fs, 1, nt, ns);
+    case {'sp', 'sprime'}
+        targnorm = targinfo.n;
+        nxtarg_fs = repmat(reshape(targnorm(1,:),nt,1), 1, ns);
+        nytarg_fs = repmat(reshape(targnorm(2,:),nt,1), 1, ns);
+        [~,grad_fs] = chnk.flex2dquas.hkdiffgreen1(zk, src, targ);
+        fs = 1/(2*zk^2).*(grad_fs(:,:,1).*nxtarg_fs + grad_fs(:,:,2).*nytarg_fs);
+        submat = submat + reshape(fs, 1, nt, ns);
+    otherwise
+        submat = submat + reshape(chnk.flex2d.kern(zk,srcinfo,targinfo,type,varargin{:}),1,ishape(1)/nkappa,ishape(2));
+    end
     submat = reshape(submat,ishape);
 end
 end

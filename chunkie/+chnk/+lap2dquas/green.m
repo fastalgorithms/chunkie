@@ -1,17 +1,37 @@
 function [val,grad,hess] = green(src,targ,kappa,d,s0,sn,l,ising,nsub)
-%CHNK.LAP2DQUAS.GREEN evaluate the quasiperiodic Helmholtz Green's function
-% for the given sources and targets
+%CHNK.LAP2DQUAS.GREEN evaluate the quasiperiodic Laplace Green's function
+% for the given sources and targets.
+%
+% The quasiperiodic Laplace Green's function satisfies
+%   G(x + d e_1, y) = G(x, y) exp(i kappa d)
+% and is given by
+%   G(x,y) = sum_{n=-inf}^{inf} -1/(2*pi) log|x - n d e_1 - y|
+%                exp(i kappa d n)
+%
+% Syntax: [val,grad,hess] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising)
+%         [val,grad,hess] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising,nsub)
 %
 % Input:
-%   kappa - quasiperiodic parameters
-%   d - period
-%   s0 - precomputed lattice sum for n = 0 
-%   sn - precomputed lattice sum for n >1 
-%   l - number of periodic copies computed explicitly
-%   ising - if set to 0, only include the periodic copies. If set to 1,
-%       include the free-space part
+%   src   - (2,:) array of source positions
+%   targ  - (2,:) array of target positions
+%   kappa - (nkappa,1) array of quasiperiodic phase parameters
+%   d     - period (scalar)
+%   s0    - (nkappa,1) precomputed n=0 lattice sum constant
+%               (see chnk.lap2dquas.latticecoefs)
+%   sn    - (nkappa, N) precomputed lattice sum coefficients for orders 1..N
+%               (see chnk.lap2dquas.latticecoefs)
+%   l     - number of periodic copies included explicitly on each side
+%   ising - if 1, include the free-space (singular) part of the Green's
+%               function; if 0, include only the periodic images
+%   nsub  - (optional, default 0) number of additional source copies to
+%               subtract off near the source (used for nearly-singular targets)
 %
-% see also CHNK.HELM2DQUAS.KERN
+% Output:
+%   val  - (nkappa*ntarg, nsrc) Green's function values
+%   grad - (nkappa*ntarg, nsrc, 2) gradient [d/dx, d/dy]
+%   hess - (nkappa*ntarg, nsrc, 3) Hessian [d^2/dx^2, d^2/dxdy, d^2/dy^2]
+%
+% see also CHNK.LAP2DQUAS.KERN, CHNK.LAP2DQUAS.LATTICECOEFS
 [~,nsrc] = size(src);
 [~,ntarg] = size(targ);
 
@@ -283,199 +303,3 @@ elseif nargout == 3
     hess = reshape(hess,nkappa*ntarg,nsrc,3);
 end
 end
-
-% function [val, grad, hess] = green(src,targ,kappa,d,pxys,cs,l,ising)
-% 
-% pgreen = @(s,t) chnk.lap2d.green(s,t);
-% sgreen = pgreen;
-% 
-% 
-% [~,nsrc] = size(src);
-% [~,ntarg] = size(targ);
-% 
-% xs = repmat(src(1,:),ntarg,1);
-% ys = repmat(src(2,:),ntarg,1);
-% 
-% xt = repmat(targ(1,:).',1,nsrc);
-% yt = repmat(targ(2,:).',1,nsrc);
-% 
-% rx = xt-xs;
-% ry = yt-ys;
-% 
-% 
-% rx = rx(:);
-% ry = ry(:);
-% 
-% 
-% nx = fix(rx/d);
-% rx = rx - nx*d;
-% 
-% 
-% rx2 = rx.*rx;
-% ry2 = ry.*ry;
-% 
-% r2 = rx2+ry2;
-% 
-% r = sqrt(r2);
-% 
-% npt = size(r,1);
-% 
-% ythresh = 2*d/2;
-% iclose = abs(ry) < ythresh;
-% ifar = ~iclose;
-% 
-% rxfar = rx(ifar);
-% ryfar = ry(ifar);
-% 
-% rxclose = rx(iclose);
-% ryclose = ry(iclose);
-% rclose = r(iclose);
-% 
-% nxclose = nx(iclose);
-% nptclose = size(rxclose, 1);
-% 
-% nkappa = length(kappa);
-% 
-% val = zeros(nkappa,npt,1);
-% if nargout > 1
-% grad = zeros(nkappa,npt,2);
-% end
-% if nargout > 2
-% hess = zeros(nkappa,npt,3);
-% end
-% 
-% 
-% if ~isempty(ryfar)
-% 
-%     if nargout > 2
-%     [val(:,ifar,:), grad(:,ifar,:), hess(:,ifar,:)] =  quasi_dual_sum(rxfar,ryfar,0,kappa,d);
-%     elseif nargout > 1
-%     [val(:,ifar,:), grad(:,ifar,:)] =  quasi_dual_sum(rxfar,ryfar,0,kappa,d);
-%     else
-%     val(:,ifar,:) =  quasi_dual_sum(rxfar,ryfar,0,kappa,d);
-%     end
-% end
-% 
-% 
-% alpha = (exp(1i*kappa(:)*d));
-% 
-% val_near= zeros(nkappa,nptclose);
-% grad_near = zeros(nkappa,nptclose,2);
-% hess_near = zeros(nkappa,nptclose,3);
-% ls = -l:l;
-% if ~isempty(rxclose)
-%     for i = ls
-%         if ising == 1
-%             iuse = true(nptclose,1);
-%         else
-%             iuse = nxclose ~= -i;
-%         end
-% 
-%         rxi = rxclose - i*d;
-%         if nargout>2
-%         [vali,gradi,hessi] = sgreen([0;0],[rxi.';ryclose.']);
-%         vali = reshape(vali,1,[],1);
-%         gradi = reshape(gradi,1,[],2);
-%         hessi = reshape(hessi,1,[],3);
-%         val_near(:,iuse) = val_near(:,iuse) + vali(:,iuse).*alpha.^i;
-%         grad_near(:,iuse,:) = grad_near(:,iuse,:) + gradi(:,iuse,:).*alpha.^i;
-%         hess_near(:,iuse,:) = hess_near(:,iuse,:) + hessi(:,iuse,:).*alpha.^i;
-%         elseif nargout > 1
-%         [vali,gradi] = sgreen([0;0],[rxi.';ryclose.']);
-%         vali = reshape(vali,1,[],1);
-%         gradi = reshape(gradi,1,[],2);
-%         val_near(:,iuse) = val_near(:,iuse) + vali(:,iuse).*alpha.^i;
-%         grad_near(:,iuse,:) = grad_near(:,iuse,:) + gradi(:,iuse,:).*alpha.^i;
-%         else
-%         vali = sgreen([0;0],[rxi.';ryclose.']);
-%         vali = reshape(vali,1,[],1);
-%         val_near(:,iuse) = val_near(:,iuse) + vali(:,iuse).*alpha.^i;
-%         end
-%     end
-% 
-% 
-%     if nargout > 2
-%         [val_far, grad_far, hess_far] = pgreen(pxys,[rxclose.';ryclose.']);
-%         val_far = reshape(val_far * cs, nptclose, nkappa, 1);
-%         grad_far = reshape(pagemtimes(grad_far, cs), nptclose, nkappa, 2);
-%         hess_far = reshape(pagemtimes(hess_far, cs), nptclose, nkappa, 3);
-% 
-%         val(:,iclose,:) = val_near + permute(val_far, [2,1,3]); 
-%         grad(:,iclose,:) = grad_near + permute(grad_far, [2,1,3]); 
-%         hess(:,iclose,:) = hess_near + permute(hess_far, [2,1,3]);
-%     elseif nargout >1
-%         [val_far, grad_far] = pgreen(pxys,[rxclose.';ryclose.']);
-%         val_far = reshape(val_far * cs, nptclose, nkappa, 1);
-%         grad_far = reshape(pagemtimes(grad_far, cs), nptclose, nkappa, 2);
-% 
-%         val(:,iclose,:) = val_near + permute(val_far, [2,1,3]); 
-%         grad(:,iclose,:) = grad_near + permute(grad_far, [2,1,3]);
-%     else
-%         val_far = pgreen(pxys,[rxclose.';ryclose.']);
-%         val_far = reshape(val_far * cs, nptclose, nkappa, 1);
-% 
-%         val(:,iclose,:) = val_near + permute(val_far, [2,1,3]); 
-%     end
-% end
-% 
-% quasi_phase = exp(1i*kappa(:)*nx(:).'*d);
-% 
-% 
-% if nargout == 1
-%     val = quasi_phase.*val;
-% 
-%     if ising == 0
-%         isub = (abs(nx(:)) > max(ls)) | ifar;
-% 
-%         if any(isub)
-%         vali = sgreen([0;0],[rx(isub).'+ nx(isub).'*d;ry(isub).']);
-%         vali = reshape(vali,1,[],1);
-%         val(:,isub,:) = val(:,isub,:) - vali;
-%         end
-%     end
-% 
-%     val = reshape(val,nkappa*ntarg,nsrc);
-% elseif nargout == 2
-%     val = quasi_phase.*val;
-%     grad = quasi_phase.*grad;
-% 
-%     if ising == 0
-%         isub = (abs(nx(:)) > max(ls)) | ifar;
-% 
-%         if any(isub)
-%         [vali, gradi] = sgreen([0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
-%         vali = reshape(vali,1,[],1);
-%         gradi = reshape(gradi,1,[],2);
-%         val(:,isub,:) = val(:,isub,:) - vali;
-%         grad(:,isub,:) = grad(:,isub,:) - gradi;
-%         end
-%     end
-% 
-%     val = reshape(val,nkappa*ntarg,nsrc);
-%     grad = reshape(grad,nkappa*ntarg,nsrc,2);
-% elseif nargout == 3
-%     val = quasi_phase.*val;
-%     grad = quasi_phase.*grad;
-%     hess = quasi_phase.*hess;
-% 
-%     if ising == 0
-%         isub = (abs(nx(:)) > max(ls)) | ifar;
-% 
-%         if any(isub)
-%         [vali, gradi, hessi] = sgreen([0;0],[rx(isub).' + nx(isub).'*d;ry(isub).']);
-%         vali = reshape(vali,1,[],1);
-%         gradi = reshape(gradi,1,[],2);
-%         hessi = reshape(hessi,1,[],3);
-% 
-%         val(:,isub,:) = val(:,isub,:) - vali;
-%         grad(:,isub,:) = grad(:,isub,:) - gradi;
-%         hess(:,isub,:) = hess(:,isub,:) - hessi;
-%         end
-%     end
-% 
-%     val = reshape(val,nkappa*ntarg,nsrc);
-%     grad = reshape(grad,nkappa*ntarg,nsrc,2);
-%     hess = reshape(hess,nkappa*ntarg,nsrc,3);
-% end
-% 
-% end

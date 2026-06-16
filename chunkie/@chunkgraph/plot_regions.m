@@ -22,44 +22,48 @@ if nargin < 2 || isempty(iflabel)
     iflabel = 2;
 end
 
+
 ifhold = ishold();
 
 echnks =  obj.echnks;
 regions = obj.regions;
+
 
 nr = numel(regions);
 legtext = cell(max(1,nr-1),1);
 
 for ii=2:numel(regions)
     legtext{ii-1} = "region " + num2str(ii);
-    rs = [];
-    for ijk=1:numel(regions{ii}{1})
-        enum = regions{ii}{1}(ijk);
-        rchnk = echnks(abs(enum)).r;
-        rchnk = rchnk(1:2,:);
-        if (enum<0)
-           rchnk = fliplr(rchnk); 
-        end    
-        rs = [rs, rchnk];
-    end  
-    plyrgn = polyshape(rs.', 'Simplify', false);
+           rs = [];
+        for ijk=1:numel(regions{ii}{1})
+            enum = regions{ii}{1}(ijk);
+            rchnk = echnks(abs(enum)).r;
+            rchnk =rchnk(1:2,:);
+            if (enum<0)
+               rchnk = fliplr(rchnk); 
+            end    
+            rs = [rs, rchnk];
+        end  
+        plyrgn = polyshape(rs.', 'Simplify', false);
 
     for jj=2:numel(regions{ii})
+
         for kk=2:numel(regions{ii})
-            rs = [];
-            for ijk=1:numel(regions{ii}{kk})
-                enum = regions{ii}{kk}(ijk);
-                rchnk = echnks(abs(enum)).r;
-                rchnk = rchnk(1:2,:);
-                if (enum<0)
-                   rchnk = fliplr(rchnk); 
-                end    
-                rs = [rs,rchnk];
-            end
-            
-            plyrgnsub = polyshape(rs', 'Simplify', false);
-            plyrgn = subtract(plyrgn, plyrgnsub);
+        rs = [];
+        for ijk=1:numel(regions{ii}{kk})
+            enum = regions{ii}{kk}(ijk);
+            rchnk = echnks(abs(enum)).r;
+            rchnk =rchnk(1:2,:);
+            if (enum<0)
+               rchnk = fliplr(rchnk); 
+            end    
+            rs = [rs,rchnk];
+        end
+        
+        plyrgnsub = polyshape(rs', 'Simplify', false);
+        plyrgn = subtract(plyrgn, plyrgnsub);
         end  
+        
     end    
     plot(plyrgn);
     hold on
@@ -92,6 +96,4 @@ hold off
 
 if ifhold
     hold on
-end
-
 end

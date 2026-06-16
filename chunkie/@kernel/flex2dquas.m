@@ -125,7 +125,7 @@ alpha = exp(1i*kappa*d);
 Sn = chnk.flex2dquas.latticecoefs(ns,zk,d,kappa,alpha,a,M,l+1);
 
 % lap2dquas lattice coefs (needed for free_plate kernels)
-ns_l = (1:3).';
+ns_l = 1:3;
 [s0_l,sn_l] = chnk.lap2dquas.latticecoefs(ns_l,d,kappa,l+1);
 
 obj.params.kappa = kappa;

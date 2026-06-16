@@ -1,26 +1,58 @@
 classdef chunkgraph_per < chunkgraph
-% CHUNKGRAPH_PER is a subclass of CHUNKGRAPH that extends periodically in
-% at least one direction. 
+%CHUNKGRAPH_PER subclass of CHUNKGRAPH for geometries that are periodic in
+% one or two directions. The period cell is described by the same vertex/
+% edge graph as CHUNKGRAPH, but pairs of boundary vertices are identified
+% to encode the periodicity. See CHUNKGRAPH for a full description
+% of inherited properties and methods.
 %
-% INPUTS: same as chunkgraph and additionally: 
-% -merge_idx: cell array with vecs, listing vertices to be merged
+% The key addition is the merge_idx argument, which specifies a list
+% vertices to be identified. The constructor computes the x and y periods
+% automatically.
 %
-% properties: 
-% -vstruc_free: original unmerged vstruc from chunkgraph
-% -merge_idx: cell array, each cell containing vec of vertices to be merged
-% -vert_per: vec housing periods associated with each vertex (each belonging to
-% a periodic region). For vertices not being merged, vert_per(vert) = NaN.
+% chunkgraph_per properties (in addition to those of CHUNKGRAPH):
+%   dx            - period in the x direction (0 if not periodic in x)
+%   dy            - period in the y direction (0 if not periodic in y)
+%   merge_idx     - (1 x nmerge) cell array; merge_idx{m} is a vector of
+%                     vertex indices that are identified with each other
+%   vstruc_free   - unmerged copy of vstruc
+%   edgesendverts_free - unmerged copy ofedgesendverts
+%   vert_per      - (2 x nverts) array; vert_per(:,j) is the displacement
+%                     from vertex j to the first vertex of its merge group
+%                     (merge_idx{m}(1)), or NaN if vertex j is not merged
 %
-% methods: 
-% obj = chunkgraph_per(verts, edgesendverts, merge_idx, varargin)
-%       -initializations chunkgraph_per object
-% obj = calc_per(obj,merge_idx)
-% obj = build_vstruc(obj,merge_idx); 
-%       - computes vert_per for each vertex
-%       - loops over each cell in merge_idx, merges indices and overwrites
-%       vstruc
+% chunkgraph_per methods (in addition to those of CHUNKGRAPH):
+%   obj = chunkgraph_per(verts,edgesendverts,merge_idx,varargin)
+%   obj = findregions(obj) - region labeling aware of periodic identification
+%   plot_regions(obj,iflabel) - plot with period-cell boundary shown
+%   cg  = merge(cgs) - merge an array of chunkgraph_per objects into one
+%   cg  = stack_layers(cg,merge_idx) - stack chunkgraph_per layers vertically
+%   [dom,merge_idx] = gen_comp_domain(obj,varargin) - generate computational
+%                       domain (scatter geometry + unit cell boundary)
+%   [unbnd,bnd] = classify_loops(obj,loops) - split loops into unbounded
+%                       periodic curves and bounded/closed objects
+%   d   = loop_displacement(obj,edges) - net displacement around an edge loop
+%   m   = loop_max_jump(obj,edges) - largest gap between consecutive edges
+%   y   = loop_mean_y(obj,edges) - mean y-coordinate along an edge list
+%   ny  = loop_normal_y(obj,edges) - mean outward normal y-component
+%   poly = cell_polygon(obj,edges) - closed polygon for a tiling-closed loop
 %
-%OUTPUT: 
+% Syntax:
+%
+%   cgp = chunkgraph_per(verts, edgesendverts, merge_idx)
+%   cgp = chunkgraph_per(verts, edgesendverts, merge_idx, fchnks, cparams, pref)
+%   cgp = chunkgraph_per(verts, edgesendverts, [], fchnks, cparams)
+%
+% Input:
+%   verts          - (2 x nverts) vertex locations; same format as CHUNKGRAPH
+%   edgesendverts  - (2 x nedges) starting/ending vertex indices per edge
+%   merge_idx      - (1 x nmerge) cell array of vertex groups to identify,
+%                      or [] if the period is instead specified via cparams
+% Optional input:
+%   fchnks, cparams, pref - same as CHUNKGRAPH
+%   cparams.dx, cparams.dy - period(s), used when merge_idx is empty and
+%                      the geometry consists of closed loops inside the cell
+%
+% see also CHUNKGRAPH, CHUNKGRAPH_PERINREGION, FINDREGIONS
 
 
 
@@ -28,7 +60,7 @@ classdef chunkgraph_per < chunkgraph
         vstruc_free
         edgesendverts_free
         merge_idx
-        vert_per %NOT CURRENTLY USED... probably will use in chunkermat
+        vert_per
         dx
         dy
    end
@@ -102,6 +134,7 @@ classdef chunkgraph_per < chunkgraph
         end
 
         function obj = build_vstruc(obj,merge_idx)
+            % merge chunkgraph vstrucs using periodicity
             obj.vstruc_free = obj.vstruc; 
             obj.edgesendverts_free = obj.edgesendverts;
             vstruc = obj.vstruc;

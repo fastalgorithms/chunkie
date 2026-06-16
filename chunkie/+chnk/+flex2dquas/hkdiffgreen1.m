@@ -1,42 +1,47 @@
 function [val,grad,hess,der3,der4,der5,der6] = hkdiffgreen1(k,src,targ,ifr2logr)
-%HKDIFFGREEN evaluate the difference of the 
-% Helmholtz Green function and the modified Helmholtz Green function
-% for the given sources and targets, i.e. 
+%CHNK.FLEX2DQUAS.HKDIFFGREEN1 evaluate the free-space flexural Green's
+% function (difference of Helmholtz and modified Helmholtz Green's functions)
+% for the given sources and targets, up to sixth derivatives.
 %
-% G(x,y) = i/4 H_0^(1)(k|x-y|) - 1/(2 pi) K_0(k|x-y|)
+% This is a variant of CHNK.FLEX2D.HKDIFFGREEN that also returns fifth and
+% sixth derivatives, needed for the quasiperiodic flexural Green's function
+% near-field evaluation in CHNK.FLEX2DQUAS.GREEN.
 %
-% or the difference of the Helmholtz and modified Helmholtz Green funcions 
-% and k^2 r^2 log r/ 8 pi (a constant times the biharmonic Green function)
-% i.e. 
+% Without the r^2 log r subtraction (default), computes:
+%   G(x,y) = i/4 H_0^{(1)}(k|x-y|) - 1/(2pi) K_0(k|x-y|)
 %
-% G(x,y) = i/4 H_0^(1)(k|x-y|) - 1/(2 pi) K_0(k|x-y|) + ...
-%                    - k^2/(4*pi) |x-y|^2 log(|x-y|)
+% With ifr2logr = true, also subtracts the biharmonic kernel:
+%   G(x,y) = i/4 H_0^{(1)}(k|x-y|) - 1/(2pi) K_0(k|x-y|)
+%               - k^2/(4pi) |x-y|^2 log|x-y|
 %
-% where H_0^(1) is the principal branch of the Hankel function
-% of the first kind and K_0 is the modified Bessel function of the second
-% kind. This routine avoids numerical cancellation
-% when |k||x-y| is small.
+% where H_0^{(1)} is the Hankel function of the first kind and K_0 is the
+% modified Bessel function of the second kind. Uses Taylor series to avoid
+% numerical cancellation when k|x-y| is small.
 %
-% - grad(:,:,1) has G_{x1}, grad(:,:,2) has G_{x2}
-% - hess(:,:,1) has G_{x1x1}, hess(:,:,2) has G_{x1x2}, 
-% hess(:,:,3) has G_{x2x2}
-% - der3 has the third derivatives in the order G_{x1x1x1}, G_{x1x1x2}, 
-% G_{x1x2x2}, G_{x2x2x2}
-% - der4 has the fourth derivatives in the order G_{x1x1x1x1}, 
-% G_{x1x1x1x2}, G_{x1x1x2x2}, G_{x1x2x2x2}, G_{x2x2x2x2}
+% Syntax: [val,grad,hess,der3,der4,der5,der6] = ...
+%             chnk.flex2dquas.hkdiffgreen1(k,src,targ)
+%         [val,grad,hess,der3,der4,der5,der6] = ...
+%             chnk.flex2dquas.hkdiffgreen1(k,src,targ,ifr2logr)
 %
-% derivatives are on the *target* variables
+% Input:
+%   k        - complex number, flexural wavenumber
+%   src      - (2,ns) array of source positions
+%   targ     - (2,nt) array of target positions
+%   ifr2logr - (optional, default false) if true, subtract the biharmonic
+%                  kernel k^2/(4pi) r^2 log r
 %
-% input:
+% Output:
+%   val  - (nt, ns) Green's function values
+%   grad - (nt, ns, 2) gradient; grad(:,:,j) = d/dx_j G
+%   hess - (nt, ns, 3) Hessian [G_{x1x1}, G_{x1x2}, G_{x2x2}]
+%   der3 - (nt, ns, 4) third derivatives [xxx, xxy, xyy, yyy]
+%   der4 - (nt, ns, 5) fourth derivatives [xxxx, xxxy, xxyy, xyyy, yyyy]
+%   der5 - (nt, ns, 6) fifth derivatives [xxxxx, ..., yyyyy]
+%   der6 - (nt, ns, 7) sixth derivatives [xxxxxx, ..., yyyyyy]
 %
-% src - (2,ns) array of source locations
-% targ - (2,nt) array of target locations
-% k - wave number, as above
+% All derivatives are with respect to the *target* variable.
 %
-% optional input:
-%
-% ifr2logr - boolean, default: false. If true, also subtract off the 
-%             k^2/(8pi) r^2 log r kernel
+% see also CHNK.FLEX2D.HKDIFFGREEN, CHNK.FLEX2DQUAS.GREEN
 
 if nargin < 4
     ifr2logr = false;

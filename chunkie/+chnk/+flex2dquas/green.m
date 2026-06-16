@@ -1,18 +1,48 @@
 function [val,grad,hess,third,fourth,fifth,sixth] = green(src,targ,zk,kappa,d,sn,l,ising,nsub)
-%CHNK.FLEX2DQUAS.GREEN evaluate the quasiperiodic flexural Green's function
-% for the given sources and targets
+%CHNK.FLEX2DQUAS.GREEN evaluate the quasiperiodic flexural wave Green's
+% function for the given sources and targets.
+%
+% The quasiperiodic flexural Green's function is the difference of the
+% quasiperiodic Helmholtz Green's functions at wavenumbers zk and i*zk:
+%
+%   G_flex(x,y) = G_H(x,y; zk) - G_H(x,y; i*zk)
+%
+% where G_H is the quasiperiodic Helmholtz Green's function satisfying
+%   G_H(x + d e_1, y; k) = G_H(x, y; k) exp(i kappa d).
+%
+% G_flex is the fundamental solution to (Delta + zk^2)(Delta - zk^2) u = delta
+% subject to the quasiperiodic condition u(x + d e_1) = u(x) exp(i kappa d).
+%
+% Syntax: [val,...] = chnk.flex2dquas.green(src,targ,zk,kappa,d,sn,l,ising)
+%         [val,...] = chnk.flex2dquas.green(src,targ,zk,kappa,d,sn,l,ising,nsub)
 %
 % Input:
-%   zk - wavenumber
-%   kappa - quasiperiodic parameters
-%   d - period
-%   sn - precomputed lattice sum integrals 
-%       (see chnk.helm2dquas.latticecoefs)
-%   l - number of periodic copies computed explicitly
-%   ising - if set to 0, only include the periodic copies. If set to 1,
-%       include the free-space part
+%   src   - (2,:) array of source positions
+%   targ  - (2,:) array of target positions
+%   zk    - complex number, flexural wavenumber
+%   kappa - (nkappa,1) array of quasiperiodic phase parameters
+%   d     - period (scalar)
+%   sn    - (nkappa, N+1, 2) precomputed lattice sum coefficients;
+%               sn(:,:,1) for the Helmholtz part at wavenumber zk,
+%               sn(:,:,2) for the modified part at wavenumber i*zk
+%               (see chnk.flex2dquas.latticecoefs)
+%   l     - number of periodic copies included explicitly on each side
+%   ising - if 1, include the free-space (singular) part; if 0, include
+%               only the periodic images
+%   nsub  - (optional, default 0) number of additional source copies to
+%               subtract near the source
 %
-% see also CHNK.FLEX2DQUAS.KERN
+% Output:
+%   val   - (nkappa*ntarg, nsrc) Green's function values
+%   grad  - (nkappa*ntarg, nsrc, 2) gradient [d/dx, d/dy]
+%   hess  - (nkappa*ntarg, nsrc, 3) Hessian [xx, xy, yy]
+%   third - (nkappa*ntarg, nsrc, 4) third derivatives [xxx, xxy, xyy, yyy]
+%   fourth- (nkappa*ntarg, nsrc, 5) fourth derivatives [xxxx, ..., yyyy]
+%   fifth - (nkappa*ntarg, nsrc, 6) fifth derivatives
+%   sixth - (nkappa*ntarg, nsrc, 7) sixth derivatives
+%
+% see also CHNK.FLEX2DQUAS.KERN, CHNK.FLEX2DQUAS.LATTICECOEFS,
+%          CHNK.FLEX2DQUAS.HKDIFFGREEN1
 [~,nsrc] = size(src);
 [~,ntarg] = size(targ);
 

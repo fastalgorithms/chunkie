@@ -1,7 +1,51 @@
 function submat = kern(srcinfo,targinfo,type,kappa,d,s0,sn,l,ising,nsub,varargin)
-%CHNK.LAP2D.KERN standard Laplace layer potential kernels in 2D
+%CHNK.LAP2DQUAS.KERN quasiperiodic Laplace layer potential kernels in 2D
 %
-% Syntax: submat = kern(srcinfo,targinfo,type,varargin)
+% Syntax: submat = chnk.lap2dquas.kern(srcinfo,targinfo,type,kappa,d,s0,sn,l,ising)
+%         submat = chnk.lap2dquas.kern(srcinfo,targinfo,type,kappa,d,s0,sn,l,ising,nsub)
+%
+% Let x be targets and y be sources, with n_x and n_y the corresponding
+% unit outward normals and tau_x, tau_y the unit tangents.
+%
+% Kernel definitions (based on the quasiperiodic Laplace Green's function G):
+%   S(x,y)  = G(x,y)
+%   D(x,y)  = grad_{n_y} G(x,y)
+%   S'(x,y) = grad_{n_x} G(x,y)
+%   D'(x,y) = grad_{n_x} grad_{n_y} G(x,y)
+%
+% Input:
+%   srcinfo  - source descriptor in ptinfo struct format:
+%                srcinfo.r  - positions (2,:)
+%                srcinfo.n  - unit outward normal (2,:) [needed for 'd','hilb','hilbprime','dp']
+%   targinfo - target descriptor in ptinfo struct format:
+%                targinfo.r  - positions (2,:)
+%                targinfo.n  - unit outward normal (2,:) [needed for 'sp','stau','hilbprime','dp']
+%   type     - string, determines kernel type:
+%                's'  or 'single'    - single layer S
+%                'd'  or 'double'    - double layer D
+%                'sp' or 'sprime'    - normal derivative of single layer S'
+%                'st' or 'stau'      - tangential derivative of single layer
+%                'hilb'              - quasiperiodic Hilbert transform
+%                                      (2 * tangential adjoint of S)
+%                'hilbprime'         - tangential derivative of Hilbert transform
+%                'dp' or 'dprime'    - normal derivative of double layer D'
+%   kappa    - (nkappa,1) array of quasiperiodic phase parameters
+%   d        - period (scalar)
+%   s0       - (nkappa,1) n=0 lattice sum constant
+%                  (see chnk.lap2dquas.latticecoefs)
+%   sn       - (nkappa, N) lattice sum coefficients for orders 1..N
+%                  (see chnk.lap2dquas.latticecoefs)
+%   l        - number of explicit periodic copies on each side
+%   ising    - if 1, include the free-space singular part; if 0, periodic
+%                  images only (smooth kernel)
+%   nsub     - (optional, default 0) number of additional source copies to
+%                  subtract near the source
+%
+% Output:
+%   submat - (nkappa*ntarg, nsrc) kernel matrix; rows correspond to targets,
+%            columns to sources
+%
+% see also CHNK.LAP2DQUAS.GREEN, CHNK.LAP2DQUAS.LATTICECOEFS
 
 src = srcinfo.r(:,:);
 targ = targinfo.r(:,:);

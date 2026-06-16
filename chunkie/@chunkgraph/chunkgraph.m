@@ -349,6 +349,7 @@ classdef chunkgraph
             obj.echnks = echnks;
             obj.vstruc = procverts(obj);
             obj.wts = weights(obj);
+           
             
             obj.regions = findregions(obj);
 

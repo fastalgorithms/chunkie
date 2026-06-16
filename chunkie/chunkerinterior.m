@@ -6,7 +6,7 @@ function [in] = chunkerinterior(chnkobj,ptsobj,opts)
 %         in = chunkerinterior(chnkobj,{x,y},opts) % meshgrid version
 %
 % Input:
-%   chnkobj - chunker object or chunkgraph object describing geometry
+%   chnkobj - chunker, chunkgraph, or chunkgraph_per object describing geometry
 %   ptsobj - object describing the target points, can be specified as
 %       * (chnkr.dim,:) array of points to test
 %       * {x,y} - length 2 cell array. the points checked then have the
@@ -25,6 +25,9 @@ function [in] = chunkerinterior(chnkobj,ptsobj,opts)
 %  Note on the default behavior: 
 %    by default it tries to use the fmm if it exists, if it doesn't
 %    then unless explicitly set to false, it tries to use flam
+%
+%
+%  Currently only accepts periodic objects that are periodic in the x direction
 %
 % Output:
 %   in - logical array, if in(i) is true, then pts(:,i) is inside the
@@ -157,11 +160,10 @@ if isper && (~isfield(opts,'dx') || isempty(opts.dx))
 end
 
 if isper
-    kap = 1e-16*(1 - 1i); 
-    kernd = kernel('lq','d',kap,opts.dx); 
+    kernd = kernel('lq','d',1e-16*(1 - 1i),opts.dx); 
     targs = []; targs.r = pts; 
-    D = kernd.eval(chnkobj,targs)*diag(chnkobj.wts(:)); 
-    vals1 = D*ones(size(D,2),1); 
+    D = kernd.eval(chnkobj,targs) * diag(chnkobj.wts(:)); 
+    vals1 = D * ones(size(D,2),1); 
     in = real(vals1)<-0.25; 
 else
     
@@ -207,6 +209,7 @@ end
 % for points where the integral might be inaccurate:
 % find close boundary point and check normal direction
 if isper || class(chnkobj) == "chunkgraph_per"
+    % bounded curves return -1 or 0, ubounded return +-1/2
     vals1 = 2*vals1; 
     iffy = abs(round(vals1) - vals1) > 1e-2; 
 else
