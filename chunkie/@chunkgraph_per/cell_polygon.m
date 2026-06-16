@@ -1,6 +1,7 @@
 function poly = cell_polygon(obj,edges)
 %CELL_POLYGON traces an object closed under periodic tiling by concatenating edge
-%points
+%points. Used to identify periodic objects that are cut by the cell
+%boundary.
 %
 % Syntax: poly = cell_polygon(obj,edges)
 %

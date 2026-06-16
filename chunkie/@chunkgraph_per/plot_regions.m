@@ -64,7 +64,11 @@ for ii = 2:nr
 
 end
 nunb = numel(ply_unb); nbnd = numel(ply_bnd); 
-ply_bnd_tot = union(ply_bnd); 
+if nbnd ~= 0
+    ply_bnd_tot = union(ply_bnd); 
+else
+    ply_bnd_tot = polyshape(); 
+end
 for r = 1:nunb
     plot(subtract(ply_unb(r),ply_bnd_tot))
 end

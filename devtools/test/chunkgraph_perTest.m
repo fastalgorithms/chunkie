@@ -12,8 +12,34 @@ function chunkgraph_perTest0()
 vrb = true;   % set false to skip figures
 
 %% geometry test:
-%composite object: 
+%singly-periodic, layered media: 
 
+%composite object: 
+verts = [-0.5, -0.25, 0.25, 0.5; -0.25, 0, -0.5, -0.25];
+edgesendverts = [4 3 2; 3 2 1];
+merge_idx = {[1 4]};
+cg = chunkgraph_per(verts,edgesendverts,merge_idx);
+cg = merge([cg + [0;-1], cg, cg + [0;1], cg + [0;4]]);
+
+if vrb 
+    Nx = 150; Ny = 300; 
+    plot_geom(cg,Nx,Ny)
+end
+
+%pick known pts in regions: 
+Nxper = 1; Nyper = 1; 
+[~,~,targs] = gen_comp_domain(cg,Nxper,Nyper); 
+ireg = chunkgraph_perinregion(cg,targs); 
+irknown = [0 -0.25 0 0 0; 4.5 3 0 -1 -2]; 
+nr = 5; 
+irtest = nan(1,nr); 
+for i = 1:nr
+     [~,idx] = min(vecnorm(targs.r - irknown(:,i))); 
+     irtest(i) = isequal(i,ireg(idx)); 
+end
+assert(min(irtest)==1,'chunkgraph_perinregion test failed.')
+
+%composite object: 
 %smooth circle touching boundary:
 cx = -0.45; cy = 1.5; R = 0.25;     
 verts = [cx + R; cy];
@@ -78,7 +104,7 @@ for i = 1:nr
 end
 assert(min(irtest)==1,'chunkgraph_perinregion test failed.')
 
-%% chunkermat RCIP tests: 
+%% chunkermat RCIP test: 
 
 %Bloch phase test: 
 %set up unit cell of boundary: 
