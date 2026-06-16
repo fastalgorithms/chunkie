@@ -1,3 +1,5 @@
+chunkgraph_perTest0();
+
 function chunkgraph_perTest0()
 %chunkgraph_perTest: 
 %
@@ -13,7 +15,7 @@ vrb = true;   % set false to skip figures
 %composite object: 
 
 %smooth circle touching boundary:
-cx = -0.25; cy = 2; R = 0.25;     
+cx = -0.45; cy = 1.5; R = 0.25;     
 verts = [cx + R; cy];
 edgesendverts = [1; 1];
 fcurve = @(t) fcircle(t,[cx;cy],R);
