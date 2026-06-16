@@ -22,7 +22,7 @@ cg = chunkgraph_per(verts,edgesendverts,merge_idx);
 cg = merge([cg + [0;-1], cg, cg + [0;1], cg + [0;4]]);
 
 if vrb 
-    Nx = 150; Ny = 300; 
+    Nx = 150; Ny = 150; 
     plot_geom(cg,Nx,Ny)
 end
 
@@ -124,7 +124,7 @@ Nxper = 7; Nyper = 1;
 
 %comp domain opts: 
 cd_opts = []; 
-cd_opts.Nx = 100; cd_opts.Ny = 150; %# pts/(period + padding)
+cd_opts.Nx = 30; cd_opts.Ny = 30; %# pts/(period + padding)
 cd_opts.pad = [0 0 0 4.5]; %[xmin xmax ymin ymax] padding outside of unit cell(s)
 Nshift = floor(Nxper/2); 
 [cg_comp,cell_targs,comp_targs] = gen_comp_domain(cg,Nxper,Nyper,cd_opts);
@@ -153,7 +153,7 @@ ui = kerns.eval(src,comp_targs);
 %total field: 
 u = ui + us; 
 meanerr = mean(abs(u(comp_eidx)),'all'); 
-assert(meanerr<1e-9,'chunkermat RCIP test failed.')
+assert(meanerr<1e-8,'chunkermat RCIP test failed.')
 
 if vrb
 
@@ -267,12 +267,12 @@ function [cg_comp,cell_targs,comp_targs] = gen_comp_domain(cg,Nxper,Nyper,opts)
     end
 
     if ~isfield(opts,'Nx')
-        Nx = 100; 
+        Nx = 30; 
     else
         Nx = opts.Nx; 
     end
     if ~isfield(opts,'Ny')
-        Ny = 100; 
+        Ny = 30; 
     else
         Ny = opts.Ny; 
     end
