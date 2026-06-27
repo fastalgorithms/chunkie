@@ -124,24 +124,31 @@ function [kerns, varargout] = transmission_helper(chnkobj,ks,cs,coefs,varargin)
         
         c1 = coefs(cs(1,i));
         c2 = coefs(cs(2,i));
-        cc1(1,1) = -alpha1(i)*c1;
-        cc2(1,1) = -alpha1(i)*c2;
+        cc1(1,1) = alpha1(i)*c1;
+        cc1(1,2) = alpha1(i);
+        cc1(2,1) = -alpha2(i);
+        cc1(2,2) = -alpha2(i)/c1;
+
+        cc2(1,1) = alpha1(i)*c2;
+        cc2(1,2) = alpha1(i); 
+        cc2(2,1) = -alpha2(i);
+        cc2(2,2) = -alpha2(i)/c2;
         
-        cc1(1,2) = -alpha1(i);
-        cc2(1,2) = -alpha1(i);
-        
-        cc1(2,1) = alpha2(i);
-        cc2(2,1) = alpha2(i);
-        
-        cc1(2,2) = alpha2(i)/c1;
-        cc2(2,2) = alpha2(i)/c2;
+        % Build the correct system kernel cc1*K_{k1} - cc2*K_{k2}.
+        % Using helmdiff naively with cat(3,cc1,cc2) gives
+        %   cc1*(K_{k1}-K_Lap) - cc2*(K_{k2}-K_Lap)
+        %   = cc1*K_{k1} - cc2*K_{k2} - (cc1-cc2)*K_Lap,
+        % missing the Laplace correction when cc1~=cc2 (i.e. c1~=c2).
+        % Instead use the full Helmholtz 'all' kernel directly.
+        k1_cap = k1(i); k2_cap = k2(i);
+        cc1_cap = cc1; cc2_cap = cc2;
         for j=1:ncurve
-            zks = [k1(i), k2(i)];
-            cc_use = cat(3, -cc1, -cc2);
-            kerns(i,j) = kernel('helmdiff', 'all', zks, cc_use);            
-%            kerns{i,j} = @(s,t) -(chnk.helm2d.kern(k1(i),s,t,'all',cc1)- ...
-%                 chnk.helm2d.kern(k2(i),s,t,'all',cc2));
-        end  
+            kerns(i,j) = kernel();
+            kerns(i,j).eval = @(s,t) chnk.helm2d.kern(k1_cap, s, t, 'all', cc1_cap) - ...
+                                      chnk.helm2d.kern(k2_cap, s, t, 'all', cc2_cap);
+            kerns(i,j).sing = 'log';
+            kerns(i,j).opdims = [2,2];
+        end
     end
     
     
