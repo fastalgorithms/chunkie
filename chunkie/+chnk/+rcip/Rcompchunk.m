@@ -252,7 +252,18 @@ for level=1:nsub
 
     % test for opdims ~= [1,1]
     [MAT,opts] = chunkermat(chnkrlocal, fkernlocal, opts, ilistl);
-    
+
+    % optional user-supplied correction of the level-wise local system
+    % matrix (e.g. special quadrature for kernels with additional fine
+    % scales, cf. chnk.lnsf2d.nearcorrect). The handle is called as
+    %    MAT = opts.rcip_matcorrect(MAT, chnkrlocal, level, nsub)
+    % with chnkrlocal the array of local (recentered) edge chunkers.
+    % Correction routines are expected to become no-ops once the local
+    % chunks are smaller than the kernel's fine scale, so the recursion
+    % below that level proceeds unmodified.
+    if isfield(opts,'rcip_matcorrect') && ~isempty(opts.rcip_matcorrect)
+        MAT = opts.rcip_matcorrect(MAT, chnkrlocal, level, nsub);
+    end
 
 %
     MAT = eye(nsys) + MAT;
