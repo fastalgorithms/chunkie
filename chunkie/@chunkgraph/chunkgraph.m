@@ -140,7 +140,11 @@ classdef chunkgraph
         dim
         datadim
     end
-    
+
+    properties(SetAccess=private)
+        nedge
+    end
+
     methods
         function obj = chunkgraph(verts, edgesendverts, fchnks, cparams, pref)
             %CHUNKGRAPH constructor. Documented above.
@@ -173,6 +177,7 @@ classdef chunkgraph
             obj.edgesendverts = edgesendverts;
             obj.v2emat        = build_v2emat(obj);
             obj.echnks        = chunker.empty;
+            obj.nedge         = nedge;
 
             if nargin < 3
                 fchnks = [];
@@ -372,6 +377,12 @@ classdef chunkgraph
         end  
         function obj = set.wts(obj,val)
             obj.wts = val;
+        end
+        function obj = set.data(obj,val)
+            nptvec = [obj.echnks.npt];
+            for ii = 1:length(obj.echnks)
+                obj.echnks(ii).data(:,:) = val(:,sum(nptvec(1:ii-1))+1:sum(nptvec(1:ii)));
+            end
         end
         function r = get.r(obj)
             chnk = merge(obj.echnks);

@@ -14,12 +14,9 @@ function obj = makedatarows(obj,nrows)
 %
 %
     if (nrows > 0)
-        datatemp = obj.data;
-        datadimold = obj.datadim;
-        nch = sum(horzcat(obj.echnks.nch));
-        obj.data = zeros(datadimold+nrows,obj.k,nch);
-        obj.data(1:datadimold,:) = datatemp(:,:);
-        obj.hasdata = true;
+        for ii = 1:length(obj.echnks)
+            obj.echnks(ii) = makedatarows(obj.echnks(ii),nrows);
+        end
     else
         if (nrows < 0)
             warning('attempted to add negative rows, doing nothing');
