@@ -76,6 +76,10 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 %           opts.rcip_adaptive_correction = (false) flag for whether to use
 %                    adaptive quadrature for near touching panels on
 %                    different chunkers within rcip
+%           opts.rcip_identity = (1) scalar or vector of length nedges.
+%                    RCIP will assume that the total system is
+%                    rcip_identity*I + chunkermat. Passing a vector allows
+%                    a different strength on each edge. Cannot be zero.
 %           opts.eps = (1e-14) tolerance for adaptive quadrature
 %  ilist - cell array of integer arrays ([]), list of panel interactions that 
 %          should be ignored when constructing matrix entries or quadrature
@@ -146,6 +150,7 @@ nsub = 40;
 rcip_savedepth = 10;
 adaptive_correction = false;
 rcip_adaptive_correction = false;
+rcip_identity = 1;
 sing = 'log';
 
 % get opts from struct if available
@@ -181,6 +186,18 @@ if(isfield(opts,'rcip_ignore'))
         fprintf('in chunkermat: provided list of vertices to ignore in RCIP\n')
         fprintf('while RCIP is not enabled.\n')
     end
+end
+if(isfield(opts,'rcip_identity'))
+    rcip_identity = opts.rcip_identity;
+end
+
+if icgrph
+    % check the length of the diagonal scalings
+    nchunkers = length(chnkobj.echnks);
+    assert(isscalar(rcip_identity) || length(rcip_identity)==nchunkers, ...
+        'rcip_identity must be a scalar or a vector of length nchunkers');
+    assert(all(rcip_identity(:)~=0),'rcip_identity must be nonzero');
+    rcip_identity = rcip_identity(:).*ones(nchunkers,1);
 end
 
 if(isfield(opts,'nsub_or_tol'))
@@ -492,8 +509,19 @@ if(icgrph && isrcip)
     [~,nv] = size(chnkobj.verts);
     ngl = chnkrs(1).k;
 
+    % rescale kernels so that we build rcip for the matrix I + kernrcip.
+    kernrcip = kern;
+    if isscalar(kernrcip)
+        kernrcip = repmat(kernrcip,nchunkers,nchunkers);
+    end
+    for i=1:nchunkers
+        for j=1:nchunkers
+            kernrcip(i,j) = kernrcip(i,j).*(1/rcip_identity(i));
+        end
+    end
+
     rcipsav = cell(nv,1);
-    
+
     for ivert=setdiff(1:nv,rcip_ignore)
         clist = chnkobj.vstruc{ivert}{1};
         isstart = chnkobj.vstruc{ivert}{2};
@@ -522,6 +550,7 @@ if(icgrph && isrcip)
         end
         starind = zeros(1,2*ngl*ndim*nedge);
         corinds = cell(nedge,1);
+        diagstar = zeros(2*ngl*ndim*nedge,1);
         for i=1:nedge
             i1 = (i-1)*2*ngl*ndim+1;
             i2 = i*2*ngl*ndim;
@@ -532,6 +561,8 @@ if(icgrph && isrcip)
                 starind(i1:i2) = irowlocs(clist(i)+1)-fliplr(0:2*ngl*ndim-1)-1;
                 corinds{i} = (npt_all(clist(i))-2*ngl + 1):npt_all(clist(i));
             end
+            % identity scaling for rows of edge i in the rcip block
+            diagstar(i1:i2) = rcip_identity(clist(i));
         end
         
         [Pbc,PWbc,starL,circL,starS,circS,ilist,starL1,circL1] = ...
@@ -543,13 +574,15 @@ if(icgrph && isrcip)
         optsrcip.adaptive_correction = rcip_adaptive_correction;
 
 
-        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim,chnkobj.verts(:,ivert), ...
-            Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
+        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kernrcip,ndim,chnkobj.verts(:,ivert), ...
+            Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,...
             sbclmat,sbcrmat,lvmat,rvmat,u,optsrcip);
 
         rcipsav{ivert}.starind = starind;
 
-        sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
+        % R is built for I + kern/rcip_identity, now rescale to recover the
+        % correction for rcip_identity*I + kern
+        sysmat_tmp = diagstar.*(inv(R) - eye(2*ngl*nedge*ndim));
         if (~nonsmoothonly)
             
             sysmat(starind,starind) = sysmat_tmp;
