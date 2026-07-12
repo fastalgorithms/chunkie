@@ -50,6 +50,7 @@ t1 = toc(t0);
 fprintf('%5.2e s : time to build geo\n',t1)
 
 fprintf('Number of points: %d\n',cgrph.npt)
+fprintf('Number of chunks: %d\n',cgrph.nch)
 fprintf('Number of edges: %d\n',cgrph.nedge)
 
 zk = 1.1;

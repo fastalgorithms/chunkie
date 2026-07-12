@@ -70,6 +70,8 @@ classdef chunker
 %   [re,taue] = chunkends(obj,ich) - get the endpoints of chunks
 %   flag = flagnear(obj,pts,opts) - flag points near the boundary
 %   obj = obj.move(r0,r1,trotat,scale) - translate, rotate, etc
+%   du = arclengthder(chnkr,u) - returns arclength derivative of u along
+%              the boundary of the chunker
 
 
 % author: Travis Askham (askhamwhat@gmail.com)
