@@ -4,7 +4,28 @@
 Get chunkIE
 ============
 
-Installation From Source 
+Install with mip (recommended)
+------------------------------
+
+The recommended way to install chunkIE is with `mip <https://mip.sh>`_, a package
+manager for MATLAB. After installing mip, run the following command in MATLAB:
+
+.. code:: matlab
+
+  >> mip install chunkie
+
+This will install chunkIE together with its dependencies using pre-built MEX
+binaries, so there is no need to compile anything yourself.
+
+Then load chunkIE onto your MATLAB path for the current session:
+
+.. code:: matlab
+
+  >> mip load chunkie
+  
+See `mip.sh/docs <https://mip.sh/docs>`_ for more information on using mip.
+
+Installation From Source
 ---------------------------
 
 Installation directly from source is not recommended for Windows
