@@ -37,18 +37,19 @@ axis equal
 
 % assembling system matrix
 
-fkern =  @(s,t) chnk.flex2d.kern(zk, s, t, 'clamped_plate');
-
-kappa = signed_curvature(chnkr);
-kappa = kappa(:);
+fkern =  kernel(@(s,t) chnk.flex2d.kern(zk, s, t, 'clamped_plate'));
 
 opts = [];
 opts.sing = 'log';
 
+% Left-multiply by M(t) = [-2, 0; -4*kappa(t), -2] so that the diagonal
+% term becomes the identity, i.e. sys = M*K + I.
+Mfun = @(t) reshape([-2*ones(1,size(t.r(:,:),2)); -4*chnk.curvature2d(t); ...
+                     zeros(1,size(t.r(:,:),2)); -2*ones(1,size(t.r(:,:),2))], 2, 2, []);
+
 start = tic;
-sys = chunkermat(chnkr,fkern, opts);
-sys = sys - 0.5*eye(2*chnkr.npt);
-sys(2:2:end,1:2:end) = sys(2:2:end,1:2:end) + kappa.*eye(chnkr.npt);
+sys = chunkermat(chnkr, Mfun*fkern, opts);
+sys = sys + eye(2*chnkr.npt);
 
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix\n',t1)
@@ -57,19 +58,25 @@ fprintf('%5.2e s : time to assemble matrix\n',t1)
 
 [r1, grad] = planewave(kvec, chnkr.r);
 
-nx = chnkr.n(1,:); 
+nx = chnkr.n(1,:);
 ny = chnkr.n(2,:);
 
-normalderiv = grad(:, 1).*(nx.')+ grad(:, 2).*(ny.');                                % Dirichlet and Neumann BC(Clamped BC)                         
+normalderiv = grad(:, 1).*(nx.')+ grad(:, 2).*(ny.');                                % Dirichlet and Neumann BC(Clamped BC)
 
 firstbc = -r1;
 secondbc = -normalderiv;
 
 rhs = zeros(2*chnkr.npt, 1); rhs(1:2:end) = firstbc ; rhs(2:2:end) = secondbc;
 
+% apply M(t) to the right-hand side
+ptinfo = []; ptinfo.r = chnkr.r(:,:); ptinfo.d = chnkr.d(:,:); ptinfo.d2 = chnkr.d2(:,:);
+kappa = chnk.curvature2d(ptinfo); kappa = kappa(:);
+rhs(2:2:end) = -4*kappa.*rhs(1:2:end) - 2*rhs(2:2:end);
+rhs(1:2:end) = -2*rhs(1:2:end);
+
 % Solving linear system
 
-start = tic; sol = gmres(sys,rhs,[],1e-12,100); t1 = toc(start);
+start = tic; sol = gmres(sys,rhs,[],1e-12,200); t1 = toc(start);
 fprintf('%5.2e s : time for dense gmres\n',t1)    
 
 % evaluate at targets and plot
@@ -109,7 +116,7 @@ t = tiledlayout(1,3,'TileSpacing','compact');
 nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = uin;
-h=pcolor(xxtarg,yytarg,imag(zztarg),"FaceColor","interp");
+h=pcolor(xxtarg,yytarg,imag(zztarg)); h.FaceColor="interp";
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
 colormap(redblue);
@@ -122,7 +129,7 @@ title('$u^{\textrm{inc}}$','Interpreter','latex','FontSize',12)
 nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = uscat;
-h=pcolor(xxtarg,yytarg,imag(zztarg),"FaceColor","interp");
+h=pcolor(xxtarg,yytarg,imag(zztarg)); h.FaceColor="interp";
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
 colormap(redblue);
@@ -135,7 +142,7 @@ title('$u^{\textrm{scat}}$','Interpreter','latex','FontSize',12)
 nexttile
 zztarg = nan(size(xxtarg));
 zztarg(out) = utot;
-h=pcolor(xxtarg,yytarg,imag(zztarg),"FaceColor","interp");
+h=pcolor(xxtarg,yytarg,imag(zztarg)); h.FaceColor="interp";
 set(h,'EdgeColor','none')
 clim([-maxu,maxu])
 colormap(redblue);
