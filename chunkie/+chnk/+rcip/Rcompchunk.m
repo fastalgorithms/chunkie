@@ -94,8 +94,15 @@ dscal = zeros(nedge,1);
 d2scal = zeros(nedge,1);
 ctr = zeros(dim,nedge);
 
+if max([chnkr.datadim]) > 0
+datacs = zeros(k,max([chnkr.datadim]),nedge);
+end
+
 ileftright = zeros(nedge,1);
 nextchunk = zeros(nedge,1);
+
+% flag for whether the edges meeting at this vertex carry data
+hasdata = false(nedge,1);
 
 for i = 1:nedge
     ic = iedgechunks(1,i);
@@ -106,6 +113,10 @@ for i = 1:nedge
     d2 = chnkri.d2(:,:,ie);    
     il = chnkri.adj(1,ie);
     ir = chnkri.adj(2,ie);
+    hasdata(i) = chnkri.hasdata;
+    if hasdata(i)
+        datai = chnkri.data(:,:,ie);
+    end
     if (il > 0 && ir < 0)
         nextchunk(i) = il;
         ileftright(i) = 1;
@@ -116,7 +127,10 @@ for i = 1:nedge
         dcs(:,:,i) = u*(d.');
         d2cs(:,:,i) = u*(d2.');
         dscal(i) = 2;
-        d2scal(i) = 4; 
+        d2scal(i) = 4;
+        if hasdata(i)
+            datacs(:,1:chnkri.datadim,i) = u*(datai.');
+        end
     elseif (il < 0 && ir > 0)
         nextchunk(i) = ir;
         ileftright(i) = -1;
@@ -126,7 +140,10 @@ for i = 1:nedge
         dcs(:,:,i) = u*(d.');
         d2cs(:,:,i) = u*(d2.');
         dscal(i) = 2;
-        d2scal(i) = 4; 
+        d2scal(i) = 4;
+        if hasdata(i)
+            datacs(:,1:chnkri.datadim,i) = u*(datai.');
+        end
     else
         error('RCIP: edge chunk not adjacent to one vertex and one neighbor')
     end
@@ -141,6 +158,10 @@ rcipsav.d2scal = d2scal;
 rcipsav.ileftright = ileftright;
 rcipsav.glxs = glxs;
 rcipsav.glws = glws;
+
+if max([chnkr.datadim]) > 0
+rcipsav.datacs = datacs;
+end
 
 pref = []; 
 pref.k = k;
@@ -214,6 +235,10 @@ for level=1:nsub
     for i=1:nedge
         chnkrlocal(i) = chnk.rcip.chunkerfunclocal(@(t) shiftedcurve(t,rcs(:,:,i),dcs(:,:,i), ...
             dscal(i),d2cs(:,:,i),d2scal(i),ileftright(i)),ts{i},pref,glxs,glws);
+        if hasdata(i)
+            chnkrlocal(i) = setdatalocal(chnkrlocal(i),ts{i},datacs(:,:,i), ...
+                ileftright(i),glxs);
+        end
     end
     
     % at the top level, append/prepend the next chunk
@@ -226,6 +251,13 @@ for level=1:nsub
             chnkrlocal(i).r(:,:,nchi+1) = chnkr(ic).r(:,:,nc)-ctr(:,i);
             chnkrlocal(i).d(:,:,nchi+1) = chnkr(ic).d(:,:,nc);                
             chnkrlocal(i).d2(:,:,nchi+1) = chnkr(ic).d2(:,:,nc); 
+
+            if hasdata(i)
+                if ~chnkrlocal(i).hasdata
+                    chnkrlocal(i) = chnkrlocal(i).makedatarows(size(chnkr(ic).data,1));
+                end
+                chnkrlocal(i).data(:,:,nchi+1) = chnkr(ic).data(:,:,nc);
+            end
 
             if ileftright(i) == -1
                 chnkrlocal(i).adj(1,nchi+1) = nchi;
@@ -288,6 +320,39 @@ pols = lege.pols(tt,nm1); pols = pols.';
 r = (t.*(pols(:,1:nm1)*rc)).';
 d = (scald*(pols*dc)).';
 d2 = (scald2*(pols*d2c)).';
+
+end
+
+function chnkr = setdatalocal(chnkr,ts,datac,ilr,xs)
+%SETDATALOCAL set data on a local chunker, mirroring shiftedcurve's
+% Legendre expansion for d/d2 (plain expansion, no vanishing-at-corner
+% factor, since data need not vanish at the vertex like r does)
+
+datadim = size(datac,2);
+nch = chnkr.nch;
+k = chnkr.k;
+nm1 = k-1;
+
+chnkr = chnkr.makedatarows(datadim);
+
+ab = zeros(2,nch);
+ab(1,:) = ts(1:end-1);
+ab(2,:) = ts(2:end);
+
+for i = 1:nch
+    a = ab(1,i);
+    b = ab(2,i);
+    tt = a + (b-a)*(xs+1)/2;
+
+    if (ilr == -1)
+        ttshift = 2*tt-1;
+    else
+        ttshift = 2*tt+1;
+    end
+    pols = lege.pols(ttshift,nm1); pols = pols.';
+
+    chnkr.data(:,:,i) = (pols*datac).';
+end
 
 end
 

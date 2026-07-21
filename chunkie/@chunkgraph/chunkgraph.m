@@ -32,7 +32,7 @@ classdef chunkgraph
 %   k - integer, number of Legendre nodes on each chunk
 %   dim - integer, dimension of the ambient space in which the curve is 
 %             embedded
-%   In the rest, nch = \sum_{j} chunkgraph.echnks(j).nch;
+%   nch - integer, total number of chunks in the chunkgraph
 %   npt - returns k*nch, the total number of points on the curve
 %   r - dim x k x nch array, r(:,i,j) gives the coordinates of the ith 
 %         node on the jth chunk of the chunkgraph
@@ -82,6 +82,8 @@ classdef chunkgraph
 %   rflag = datares(obj,opts) - check if data in data rows is resolved
 %   edge_reg = find_regions_of_edges(obj) - determine regions on either 
 %                side of each edge
+%   du = arclengthder(cgrph,u) - returns arclength derivative of u along
+%              the boundary of the chunkgraph
 %
 % Syntax:
 %
@@ -141,8 +143,13 @@ classdef chunkgraph
         k
         dim
         datadim
+        nch
     end
-    
+
+    properties(SetAccess=private)
+        nedge
+    end
+
     methods
         function obj = chunkgraph(verts, edgesendverts, fchnks, cparams, pref)
             %CHUNKGRAPH constructor. Documented above.
@@ -175,6 +182,7 @@ classdef chunkgraph
             obj.edgesendverts = edgesendverts;
             obj.v2emat        = build_v2emat(obj);
             obj.echnks        = chunker.empty;
+            obj.nedge         = nedge;
 
             if nargin < 3
                 fchnks = [];
@@ -375,6 +383,12 @@ classdef chunkgraph
         function obj = set.wts(obj,val)
             obj.wts = val;
         end
+        function obj = set.data(obj,val)
+            nptvec = [obj.echnks.npt];
+            for ii = 1:length(obj.echnks)
+                obj.echnks(ii).data(:,:) = val(:,sum(nptvec(1:ii-1))+1:sum(nptvec(1:ii)));
+            end
+        end
         function r = get.r(obj)
             chnk = merge(obj.echnks);
             r = chnk.r;
@@ -416,6 +430,9 @@ classdef chunkgraph
         function dim = get.dim(obj)
             dim = size(obj.r,1);
         end
+        function nch = get.nch(obj)
+            nch = size(obj.r,3);
+        end        
         function datadim = get.datadim(obj)
             datadim = size(obj.data,1);
         end
@@ -465,7 +482,8 @@ classdef chunkgraph
         obj = plus(v,obj)
         obj = mtimes(A,obj)        
         obj = rotate(obj,theta,r0,r1)
-        obj = reflect(obj,theta,r0,r1)   
+        obj = reflect(obj,theta,r0,r1)  
+        du = arclengthder(obj,u)        
         err = chunk_fun_error(obj,fval)
     end
 

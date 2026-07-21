@@ -19,7 +19,12 @@ function du = arclengthder(chnkr,u)
 %
 
 dmat = lege.dermat(chnkr.k);
-ds = squeeze(sqrt(chnkr.d(1,:,:).^2+chnkr.d(2,:,:).^2));
+
+if chnkr.dim == 2
+    ds = squeeze(sqrt(chnkr.d(1,:,:).^2+chnkr.d(2,:,:).^2));
+elseif chnkr.dim == 3 
+    ds = squeeze(sqrt(chnkr.d(1,:,:).^2+chnkr.d(2,:,:).^2+chnkr.d(3,:,:).^2));
+end
 
 du = dmat*reshape(u,[chnkr.k chnkr.nch]);
 du = du ./ ds;
