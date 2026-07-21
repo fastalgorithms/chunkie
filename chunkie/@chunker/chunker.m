@@ -43,6 +43,8 @@ classdef chunker
 %   obj = reverse(obj) - reverse chunk orientation
 %   rmin = min(obj) - minimum of coordinate values
 %   rmax = max(obj) - maximum of coordinate values
+%   rmean = mean(obj) - weighted average of coordinate values
+%   rctr = ctr(obj) - average of max(obj) and min(obj)
 %   wts = weights(obj) - scaled integration weights on curve
 %   obj.n = normals(obj) - recompute normal vectors
 %   onesmat = onesmat(obj) - matrix that corresponds to integration of a
@@ -353,6 +355,8 @@ classdef chunker
         obj = move(obj,r0,r1,trotat,scale)
         rmin = min(obj)
         rmax = max(obj)
+        rmean = mean(obj)
+        rctr = ctr(obj)
         whts = whts(obj)
         wts = weights(obj)
         rnorm = normals(obj)

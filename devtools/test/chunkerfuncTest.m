@@ -89,7 +89,29 @@ chnkr = refine(chnkr,struct('nover',1));
 a = area(chnkr);
 assert(abs(a - pi*r^2) < 1e-12,'area wrong for circle domain')
 
-% iflcosed flag testing 
+% chunk up cavity geometry
+
+cparams = []; cparams.eps = 1.0e-4;
+start = tic; chnkr = chunkerfunc(@(t) chnk.curves.cavity(t,11),cparams,pref);
+t1 = toc(start);
+
+fprintf('%5.2e seconds to chunk cavity domain with %d chunks\n', ...
+    t1,chnkr.nch);
+
+[~,~,info] = sortinfo(chnkr);
+assert(info.ier == 0,'adjacency issues after chunk build cavity');
+
+% test mean and ctr on cavity chunker
+
+rmean = mean(chnkr);
+rmean2 = sum(chnkr.r(:,:).*chnkr.wts(:).',2)/sum(chnkr.wts(:));
+assert(norm(rmean-rmean2) < 1e-12,'mean does not match definition');
+
+rctr = chnkr.ctr;
+rctr2 = (max(chnkr)+min(chnkr))/2;
+assert(norm(rctr-rctr2) < 1e-12,'ctr does not match definition');
+
+% iflcosed flag testing
 
 lastwarn(''); %clears warning state
 cparams = [];
