@@ -1,36 +1,37 @@
-function [val,grad,hess] = green(src,targ,zk,kappa,d,sn,l,ising,nsub)
-%CHNK.HELM2DQUAS.GREEN evaluate the quasiperiodic Helmholtz Green's function
+function [val,grad,hess] = green(src,targ,kappa,d,s0,sn,l,ising,nsub)
+%CHNK.LAP2DQUAS.GREEN evaluate the quasiperiodic Laplace Green's function
 % for the given sources and targets.
 %
-% The quasiperiodic Green's function satisfies
+% The quasiperiodic Laplace Green's function satisfies
 %   G(x + d e_1, y) = G(x, y) exp(i kappa d)
 % and is given by
-%   G(x,y) = sum_{n=-inf}^{inf} i/4 H_0^{(1)}(zk |x - n d e_1 - y|)
+%   G(x,y) = sum_{n=-inf}^{inf} -1/(2*pi) log|x - n d e_1 - y|
 %                exp(i kappa d n)
 %
-% Syntax: [val,grad,hess] = chnk.helm2dquas.green(src,targ,zk,kappa,d,sn,l,ising)
+% Syntax: [val,grad,hess] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising)
+%         [val,grad,hess] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising,nsub)
 %
 % Input:
 %   src   - (2,:) array of source positions
 %   targ  - (2,:) array of target positions
-%   zk    - complex number, Helmholtz wavenumber
 %   kappa - (nkappa,1) array of quasiperiodic phase parameters
 %   d     - period (scalar)
-%   sn    - (nkappa, N+1) precomputed lattice sum coefficients
-%               (see chnk.helm2dquas.latticecoefs)
+%   s0    - (nkappa,1) precomputed n=0 lattice sum constant
+%               (see chnk.lap2dquas.latticecoefs)
+%   sn    - (nkappa, N) precomputed lattice sum coefficients for orders 1..N
+%               (see chnk.lap2dquas.latticecoefs)
 %   l     - number of periodic copies included explicitly on each side
 %   ising - if 1, include the free-space (singular) part of the Green's
 %               function; if 0, include only the periodic images
 %   nsub  - (optional, default 0) number of additional source copies to
-%               subtract on each side when ising == 0 (used for
-%               nearly-singular quadrature). Must satisfy nsub <= l.
+%               subtract off near the source (used for nearly-singular targets)
 %
 % Output:
 %   val  - (nkappa*ntarg, nsrc) Green's function values
 %   grad - (nkappa*ntarg, nsrc, 2) gradient [d/dx, d/dy]
 %   hess - (nkappa*ntarg, nsrc, 3) Hessian [d^2/dx^2, d^2/dxdy, d^2/dy^2]
 %
-% see also CHNK.HELM2DQUAS.KERN, CHNK.HELM2DQUAS.LATTICECOEFS
+% see also CHNK.LAP2DQUAS.KERN, CHNK.LAP2DQUAS.LATTICECOEFS
 [~,nsrc] = size(src);
 [~,ntarg] = size(targ);
 
@@ -61,7 +62,7 @@ r = sqrt(r2);
 
 npt = size(r,1);
 
-ythresh = 2*d/2;
+ythresh = 1.5*d/2;
 iclose = abs(ry) < ythresh;
 ifar = ~iclose;
 
@@ -85,13 +86,13 @@ if nargout > 2
 hess = zeros(nkappa,npt,3);
 end
 
-if nargin < 9 || isempty(nsub)
+if nargin < 9
     nsub = 0;
 elseif nsub > l
     error('trying to subtract off too many copies')
 end
 
-
+zk = 0;
 tol = 1e-10;
 Lbd = sqrt((log(tol))^2/real(ythresh)^2 + real(zk)^2);
 
@@ -131,12 +132,12 @@ if ~isempty(rxclose)
         if ising == 1
             iuse = true(nptclose,1);
         else
-            iuse = ~ismember(nxclose, -i-nsub:-i+nsub);
+            iuse = ~ismember(nxclose, -i-nsub:-i+nsub); 
         end
 
         rxi = rxclose - i*d;
         if nargout>2
-        [vali,gradi,hessi] = chnk.helm2d.green(zk,[0;0],[rxi.';ryclose.']);
+        [vali,gradi,hessi] = chnk.lap2d.green([0;0],[rxi.';ryclose.']);
         vali = reshape(vali,1,[],1);
         gradi = reshape(gradi,1,[],2);
         hessi = reshape(hessi,1,[],3);
@@ -144,83 +145,93 @@ if ~isempty(rxclose)
         grad_near(:,iuse,:) = grad_near(:,iuse,:) + gradi(:,iuse,:).*alpha.^i;
         hess_near(:,iuse,:) = hess_near(:,iuse,:) + hessi(:,iuse,:).*alpha.^i;
         elseif nargout > 1
-        [vali,gradi] = chnk.helm2d.green(zk,[0;0],[rxi.';ryclose.']);
+        [vali,gradi] = chnk.lap2d.green([0;0],[rxi.';ryclose.']);
         vali = reshape(vali,1,[],1);
         gradi = reshape(gradi,1,[],2);
         val_near(:,iuse) = val_near(:,iuse) + vali(:,iuse).*alpha.^i;
         grad_near(:,iuse,:) = grad_near(:,iuse,:) + gradi(:,iuse,:).*alpha.^i;
         else
-        vali = chnk.helm2d.green(zk,[0;0],[rxi.';ryclose.']);
+        vali = chnk.lap2d.green([0;0],[rxi.';ryclose.']);
         vali = reshape(vali,1,[],1);
         val_near(:,iuse) = val_near(:,iuse) + vali(:,iuse).*alpha.^i;
         end
     end
 
-    N = size(sn,2)-1;
-    ns = (0:N);
-    ns_use = (0:N+2);
-    Js = zeros(length(rclose),N+3);
-
-    if length(rclose) < N+3
-        for i = 1:length(rclose)
-        Js(i,:) = besselj(ns_use,zk*rclose(i));
-        end
-    else
-        for i = 1:length(ns_use)
-        Js(:,i) = besselj(ns_use(i),zk*rclose);
-        end
-    end
-    % t1 = tic;
+    N = size(sn,2);
+    ns = 1:N;
+    
+    Rns = rclose.^ns;
+    
     eip = (rxclose+1i*ryclose)./rclose;
-    eipn = reshape(eip.^ns,1,[], N+1);
+    eipn = reshape(eip.^ns,1,[], N);
     cs = (eipn+1./eipn)/2;
     
-    Js = reshape(Js,1,[],N+3);
-    sn = reshape(sn,nkappa, 1, N+1);
+    Rns = reshape(Rns,1,[],N);
+    sn = reshape(sn,nkappa, 1, N);
     
-    tmp = reshape(Js(:,:,2:end-2).*cs(:,:,2:end),[],N);
-    val_far = 0.25*1i*Js(:,:,1).*sn(:,:,1) + 0.5*1i*sn(:,2:end)*tmp.';
+    tmp = reshape(Rns.*cs,[],N);
+    val_far = sn(:,:)*tmp.' + s0;
+    
+    ndiag = sum(rclose < 1e-14);
+    if ndiag > 0
+    val_far(:,rclose < 1e-14) = repmat(s0,1,ndiag); % diagonal replacement
+    end
+
     val(:,iclose) = val_near+val_far;
     
     if nargout >1
-        DJs = cat(3,-Js(:,:,2),.5*(Js(:,:,1:end-3)-Js(:,:,3:end-1)))*zk;
+        DRns = ns.*rclose.^(ns-1);
+        DRns = reshape(DRns,1,[],N);
         ss = (eipn-1./eipn)/2i;
             
-        tmp = reshape(DJs(:,:,2:end).*cs(:,:,2:end),[],N);
-        grad_far_p = 0.25*1i*DJs(:,:,1).*sn(:,:,1) + 0.5*1i*sn(:,2:end)*tmp.';
-        tmp = reshape(Js(:,:,2:end-2).*ss(:,:,2:end),[],N)./rclose;
-        grad_far_t = (0.5*1i*((-reshape((1:N),1,[]).*sn(:,2:end))*tmp.'));
+        tmp = reshape(DRns.*cs,[],N);
+        grad_far_p = sn(:,:)*tmp.';
+        tmp = reshape(Rns.*ss,[],N)./rclose;
+        grad_far_t = ((-reshape((1:N),1,[]).*sn(:,:))*tmp.');
         
-        grad_far = cat(3,cs(:,:,2).*grad_far_p - ss(:,:,2).*grad_far_t, ss(:,:,2).*grad_far_p + cs(:,:,2).*grad_far_t);
+        grad_far = cat(3,cs(:,:,1).*grad_far_p - ss(:,:,1).*grad_far_t, ss(:,:,1).*grad_far_p + cs(:,:,1).*grad_far_t);
+        
+        if ndiag > 0
+            grad_far(:,rclose < 1e-14,1) = repmat(sn(:,1),1,ndiag);
+            grad_far(:,rclose < 1e-14,2) = 0;            
+        end
+        
         grad(:,iclose,:) = grad_near + grad_far; 
     end
     if nargout > 2
-        DDJs = cat(3,.5*(Js(:,:,3)-Js(:,:,1)),.25*(Js(:,:,4)-3*Js(:,:,2)),.25*(Js(:,:,1:end-4)-2*Js(:,:,3:end-2)+Js(:,:,5:end)))*zk^2;
+        DDRns = ns.*(ns-1).*rclose.^(ns-2);
+        DDRns = reshape(DDRns,1,[],N);
         rclose = rclose.';
         rxclose = rxclose.';
         ryclose = ryclose.';
         ns = reshape(ns,1,1,[]);
 
-        tmp_n = rclose.^(-4).*(-ns.*ryclose.*Js(:,:,1:end-2).*(ns.*ryclose.*cs+2*rxclose.*ss)+ ...
-            rclose.*ryclose.*(ryclose.*cs + 2*ns.*rxclose.*ss).*DJs+ ...
-            rclose.^2.*rxclose.^2.*cs.*DDJs);
-        tmp_n = reshape(tmp_n,[],N+1);
-        hess_far_xx = 0.25*1i*tmp_n(:,1).'.*sn(:,1)+.5*1i*sn(:,2:end)*tmp_n(:,2:end).';
+        tmp_n = rclose.^(-4).*(-ns.*ryclose.*Rns(:,:,:).*(ns.*ryclose.*cs+2*rxclose.*ss)+ ...
+            rclose.*ryclose.*(ryclose.*cs + 2*ns.*rxclose.*ss).*DRns+ ...
+            rclose.^2.*rxclose.^2.*cs.*DDRns);
+        tmp_n = reshape(tmp_n,[],N);
+        hess_far_xx = sn(:,:)*tmp_n(:,:).';
 
-        tmp_n = ns.*Js(:,:,1:end-2).*(ns.*rxclose.*ryclose.*cs+(rxclose.^2-ryclose.^2).*ss).*rclose.^(-4) ...
-            +rclose.^(-3).*(-(rxclose.*ryclose.*cs+ns.*(rxclose.^2-ryclose.^2).*ss).*DJs+...
-            rclose.*rxclose.*ryclose.*cs.*DDJs);
+        tmp_n = ns.*Rns(:,:,:).*(ns.*rxclose.*ryclose.*cs+(rxclose.^2-ryclose.^2).*ss).*rclose.^(-4) ...
+            +rclose.^(-3).*(-(rxclose.*ryclose.*cs+ns.*(rxclose.^2-ryclose.^2).*ss).*DRns+...
+            rclose.*rxclose.*ryclose.*cs.*DDRns);
 
-        tmp_n = reshape(tmp_n,[],N+1);
-        hess_far_xy = 0.25*1i*tmp_n(:,1).'.*sn(:,1)+.5*1i*sn(:,2:end)*tmp_n(:,2:end).';
+        tmp_n = reshape(tmp_n,[],N);
+        hess_far_xy = sn(:,:)*tmp_n(:,:).';
 
-        tmp_n = rclose.^(-4).*(-ns.*rxclose.*Js(:,:,1:end-2).*(ns.*rxclose.*cs-2*ryclose.*ss)+ ...
-            rclose.*rxclose.*(rxclose.*cs - 2*ns.*ryclose.*ss).*DJs+ ...
-            rclose.^2.*ryclose.^2.*cs.*DDJs);
-        tmp_n = reshape(tmp_n,[],N+1);
-        hess_far_yy = 0.25*1i*tmp_n(:,1).'.*sn(:,1)+.5*1i*sn(:,2:end)*tmp_n(:,2:end).';
+        tmp_n = rclose.^(-4).*(-ns.*rxclose.*Rns(:,:,:).*(ns.*rxclose.*cs-2*ryclose.*ss)+ ...
+            rclose.*rxclose.*(rxclose.*cs - 2*ns.*ryclose.*ss).*DRns+ ...
+            rclose.^2.*ryclose.^2.*cs.*DDRns);
+        tmp_n = reshape(tmp_n,[],N);
+        hess_far_yy = sn(:,:)*tmp_n(:,:).';
 
         hess_far = cat(3,hess_far_xx, hess_far_xy, hess_far_yy);
+
+        if ndiag > 0
+            hess_far(:,rclose < 1e-14,1) = repmat(2*sn(:,2),1,ndiag);
+            hess_far(:,rclose < 1e-14,2) = 0; 
+            hess_far(:,rclose < 1e-14,3) = repmat(-2*sn(:,2),1,ndiag);            
+        end
 
         hess(:,iclose,:) = hess_near + hess_far;
     end
@@ -237,7 +248,7 @@ if nargout == 1
         isub = (abs(nx(:)-ii) > max(ls)) | ifar;
 
         if any(isub)
-        vali = chnk.helm2d.green(zk,[0;0],[rx(isub).'+ (nx(isub).'-ii)*d;ry(isub).']);
+        vali = chnk.lap2d.green([0;0],[rx(isub).'+ (nx(isub).'-ii)*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         val(:,isub,:) = val(:,isub,:) - vali.*alpha.^(ii);
         end
@@ -250,11 +261,11 @@ elseif nargout == 2
     grad = quasi_phase.*grad;
     
     if ising == 0
-        for ii = -nsub:nsub
+        for ii = -nsub:nsub        
         isub = (abs(nx(:)-ii) > max(ls)) | ifar;
-
+    
         if any(isub)
-        [vali, gradi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + (nx(isub).'-ii)*d;ry(isub).']);
+        [vali, gradi] = chnk.lap2d.green([0;0],[rx(isub).' + (nx(isub).'-ii)*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         gradi = reshape(gradi,1,[],2);
         val(:,isub,:) = val(:,isub,:) - vali.*alpha.^(ii);
@@ -271,11 +282,11 @@ elseif nargout == 3
     hess = quasi_phase.*hess;
     
     if ising == 0
-        for ii = -nsub:nsub
+        for ii = -nsub:nsub        
         isub = (abs(nx(:)-ii) > max(ls)) | ifar;
 
         if any(isub)
-        [vali, gradi, hessi] = chnk.helm2d.green(zk,[0;0],[rx(isub).' + (nx(isub).'-ii)*d;ry(isub).']);
+        [vali, gradi, hessi] = chnk.lap2d.green([0;0],[rx(isub).' + (nx(isub).'-ii)*d;ry(isub).']);
         vali = reshape(vali,1,[],1);
         gradi = reshape(gradi,1,[],2);
         hessi = reshape(hessi,1,[],3);

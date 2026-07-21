@@ -149,6 +149,19 @@ case {'s', 'single'} % single layer
 
    submat = val;
 
+case {'d', 'double'} % double layer = -d/dn_src of S kernel
+
+   srcnorm = srcinfo.n;
+   nxsrc = repmat((srcnorm(1,:)),nt,1);
+   nysrc = repmat((srcnorm(2,:)),nt,1);
+
+   [~,grad1] = gfunc1(src,targ);
+   [~,grad2] = gfunc2(src,targ);
+
+   grad = 1/(zk1^2-zk2^2)*(grad1-grad2);
+
+   submat = -(grad(:,:,1).*nxsrc + grad(:,:,2).*nysrc);
+
 case {'sp', 'sprime'} % normal derivative of flexural wave single layer
 
    targnorm = targinfo.n;

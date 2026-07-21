@@ -109,10 +109,17 @@ function [sysmat,varargout] = chunkermat(chnkobj,kern,opts,ilist)
 icgrph = 0;
 
 if (class(chnkobj) == "chunker")
+    iper = 0; 
     chnkrs = chnkobj;
     npttot = chnkobj.npt;
 elseif(class(chnkobj) == "chunkgraph")
+    iper = 0; 
     icgrph = 1;
+    chnkrs = chnkobj.echnks;
+    npttot = chnkobj.npt;
+elseif (class(chnkobj) == "chunkgraph_per")
+    icgrph = 1;
+    iper = 1; 
     chnkrs = chnkobj.echnks;
     npttot = chnkobj.npt;
 else
@@ -483,8 +490,6 @@ for i=1:nchunkers
     end    
 end
 
-
-
 if(icgrph && isrcip)
     [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k);
     nch_all = horzcat(chnkobj.echnks.nch);
@@ -493,19 +498,22 @@ if(icgrph && isrcip)
     ngl = chnkrs(1).k;
 
     rcipsav = cell(nv,1);
-    
+   
     for ivert=setdiff(1:nv,rcip_ignore)
+        if isempty(chnkobj.vstruc{ivert})
+            continue
+        end
         clist = chnkobj.vstruc{ivert}{1};
         isstart = chnkobj.vstruc{ivert}{2};
         isstart(isstart==1) = 0;
         isstart(isstart==-1) = 1;
         nedge = length(isstart);
+        pedge = ones(1,nedge); 
         iedgechunks = zeros(2,nedge);
         iedgechunks(1,:) = clist;
         iedgechunks(2,:) = 1;
         nch_use = nch_all(clist);
         iedgechunks(2,isstart==0) = nch_use(isstart==0);
-        
         
         % since opdims mat for all chunkers meeting at the same 
         % vertex should be the same 
@@ -542,14 +550,50 @@ if(icgrph && isrcip)
         optsrcip.rcip_savedepth = rcip_savedepth;
         optsrcip.adaptive_correction = rcip_adaptive_correction;
 
+        chnkrs_shift = chnkrs;
+        
+        %periodic case (shift local chunker edge): 
+        if iper && any(~isnan(chnkobj.vert_per(:,ivert)))
+            mg = find(cellfun(@(v) ~isempty(v) && v(1) == ivert, chnkobj.merge_idx),1); %merge group with index ivert
+            vm = chnkobj.merge_idx{mg};
+    
+            for iv = 2:numel(vm)
+                midx = vm(iv); 
 
-        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk(chnkrs,iedgechunks,kern,ndim,chnkobj.verts(:,ivert), ...
-            Pbc,PWbc,nsub,starL,circL,starS,circS,ilist,starL1,circL1,... 
-            sbclmat,sbcrmat,lvmat,rvmat,u,optsrcip);
+                vp = chnkobj.vert_per(:,ivert);
+                if any(~isnan(vp))
+                    d = vp;
+                    d(isnan(d)) = 0;
+                end
+
+                eidx = chnkobj.vstruc_free{midx}{1};
+                if isfield(kern.params,'quas_param')
+                    kappa = kern.params.quas_param.kappa(:); 
+                    alph = exp(-1i * (kappa.' * d(1))); 
+                    pedge(ismember(clist,eidx)) = alph; 
+                end
+    
+                for ee = eidx(:).'
+                    chnkrs_shift(ee) = chnkrs_shift(ee) + d;
+                end
+            end
+        end
+
+        [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk( ...
+            chnkrs_shift, iedgechunks, kern, ndim, chnkobj.verts(:,ivert), ...
+            Pbc, PWbc, nsub, starL, circL, starS, circS, ilist, starL1, circL1, ...
+            sbclmat, sbcrmat, lvmat, rvmat, u, optsrcip);
 
         rcipsav{ivert}.starind = starind;
 
         sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
+
+        %periodic case: apply phase shift
+        if iper 
+            ph = repelem(pedge(:),2*ngl*ndim);
+            sysmat_tmp = (ph * (1./ph).') .* sysmat_tmp;
+        end
+
         if (~nonsmoothonly)
             
             sysmat(starind,starind) = sysmat_tmp;
@@ -598,7 +642,7 @@ if(icgrph && isrcip)
                 end
                 sysmat_tmp = sysmat_tmp - cormat;
             end
-                       
+            
             [jind,iind] = meshgrid(starind);
             
             isysmat = [isysmat;iind(:)];
@@ -613,8 +657,6 @@ if(icgrph && isrcip)
 
     
 end
-
-
 
 
 if (nonsmoothonly)

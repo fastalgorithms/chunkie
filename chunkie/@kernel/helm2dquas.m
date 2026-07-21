@@ -64,7 +64,9 @@ function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts, ising)
 %       quad_opts.N - (40) number of lattice sums
 %       quad_opts.m - (1e4) number of trapezoid rule quadrature nodes
 %       quad_opts.a - (a) length of trpezoid quadrature rule
-%   
+%       quad_opts.nsub - (0) number of extra periodic copies to subtract
+%           on each side when ising == 0 (for nearly-singular quadrature)
+%
 % See also CHNK.HELM2DQUAS.KERN.
 
 % author: Tristan Goodwill
@@ -84,9 +86,9 @@ obj.opdims = [numel(kappa) 1];
 
 
 % lattice sum parameters
-l=2; N = 40; a = 15; M = 1e4;
+l=2; N = 40; a = 15; M = 1e4; nsub = 0;
 
-if nargin >= 6
+if nargin >= 6 && ~isempty(quad_opts)
     if isfield(quad_opts,'l')
         l = quad_opts.l;
     end
@@ -98,6 +100,9 @@ if nargin >= 6
     end
     if isfield(quad_opts,'a')
         a = quad_opts.a;
+    end
+    if isfield(quad_opts,'nsub')
+        nsub = quad_opts.nsub;
     end
 end
 
@@ -120,7 +125,7 @@ switch lower(type)
 
     case {'s', 'single'}
         obj.type = 's';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 's',quas_param,[],ising);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 's',quas_param,[],ising,nsub);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
@@ -132,7 +137,7 @@ switch lower(type)
 
     case {'d', 'double'}
         obj.type = 'd';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'd',quas_param,[],ising);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'd',quas_param,[],ising,nsub);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
@@ -144,13 +149,13 @@ switch lower(type)
 
     case {'sp', 'sprime'}
         obj.type = 'sp';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'sprime',quas_param,[],ising);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'sprime',quas_param,[],ising,nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'dp', 'dprime'}
         obj.type = 'dp';
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'dprime',quas_param,[],ising);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'dprime',quas_param,[],ising,nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -161,7 +166,7 @@ switch lower(type)
         end
         obj.type = 'c';
         obj.params.coefs = coefs;
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c',quas_param,coefs,ising);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c',quas_param,coefs,ising,nsub);
         obj.fmm = [];
         obj.sing = 'log';
         if isscalar(kappa)
@@ -178,7 +183,7 @@ switch lower(type)
         end
         obj.type = 'cprime';
         obj.params.coefs = coefs;
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'cprime',quas_param,coefs,ising);
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'cprime',quas_param,coefs,ising,nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
