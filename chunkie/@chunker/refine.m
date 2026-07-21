@@ -107,7 +107,13 @@ for i = 1:length(splitchunks)
         error('too many chunks')
     end
 
-    chnkr = split(chnkr,ii,[],x,w,u,stype);
+    
+    if max(abs(imag(chnkr.r(:,:,ii))), [], 'all') > 1e-16
+        chnkr = split(chnkr,ii,[],x,w,u,'t');
+    else
+        chnkr = split(chnkr,ii,[],x,w,u,stype);
+    end
+
 
     % update chunklens 
 
@@ -145,7 +151,13 @@ if maxchunklen < Inf
                     error('too many chunks')
                 end
 
-                chnkr = split(chnkr,i,[],x,w,u,stype);
+                
+                if max(abs(imag(chnkr.r(:,:,i))), [], 'all') > 1e-16
+                    chnkr = split(chnkr,i,[],x,w,u,'t');
+                else
+                    chnkr = split(chnkr,i,[],x,w,u,stype);
+                end
+
 
                 % update chunklens 
                 
@@ -215,7 +227,13 @@ if (strcmpi(lvlr,'a'))
                     error('too many chunks')
                 end
 
-                chnkr = split(chnkr,i,[],x,w,u,stype);
+                
+                if max(abs(imag(chnkr.r(:,:,i))), [], 'all') > 1e-16
+                    chnkr = split(chnkr,i,[],x,w,u,'t');
+                else
+                    chnkr = split(chnkr,i,[],x,w,u,stype);
+                end
+
 
                 % update chunklens 
 
@@ -254,7 +272,12 @@ for ijk = 1:nover
             error('CHUNKER.REFINE nchmax=%d exceeded during oversample',nchmax)
         end
 
-        chnkr = split(chnkr,i,[],x,w,u,stype);
+
+        if max(abs(imag(chnkr.r(:,:,i))), [], 'all') > 1e-16
+            chnkr = split(chnkr,i,[],x,w,u,'t');
+        else
+            chnkr = split(chnkr,i,[],x,w,u,stype);
+        end
 
         % update chunklens 
 

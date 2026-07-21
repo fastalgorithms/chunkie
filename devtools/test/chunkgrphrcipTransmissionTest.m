@@ -59,7 +59,7 @@ quiver(cgrph);
 
 nregions = 2;
 ks = [1.1;2.1]*10;
-coefs = [1.0;1.0];
+coefs = [1.1;1.0];
 cs(1,1:ncurve) = 1;
 cs(2,1:ncurve) = 2;
 opts = [];
