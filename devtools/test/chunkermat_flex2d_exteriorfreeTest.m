@@ -34,6 +34,11 @@ amp = 0.25;
 start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
 t1 = toc(start);
 
+chnkr = makedatarows(chnkr,1);
+kappa = signed_curvature(chnkr);
+kp = arclengthder(chnkr,kappa);
+chnkr.data(1,:) = kp(:);
+
 fprintf('%5.2e s : time to build geo\n',t1)
 
 % targets
@@ -87,22 +92,30 @@ utarg = kernmatstarg*strengths;
 
 % defining free plate kernels
 
-fkern1 =  @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate', nu);        % build the desired kernel
+fkern_log =  @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate_log', nu);
+fkern_sm = @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate_smooth', nu);        % build the desired kernel
 double = @(s,t) chnk.lap2d.kern(s,t,'d');
 hilbert = @(s,t) chnk.lap2d.kern(s,t,'hilb');
 
-opts = [];
-opts.sing = 'log';
+opts_log = [];
+opts_log.sing = 'log';
 
-opts2 = [];
-opts2.sing = 'pv';
+opts_sm = [];
+opts_sm.sing = 'log';
+opts_sm.quad = 'native';
+
+opts_pv = [];
+opts_pv.sing = 'pv';
 
 % building system matrix
 
 start = tic;
-sysmat1 = chunkermat(chnkr,fkern1, opts);
-D = chunkermat(chnkr, double, opts);
-H = chunkermat(chnkr, hilbert, opts2);     
+sysmat1 = chunkermat(chnkr,fkern_log, opts_log); 
+sysmat2 = chunkermat(chnkr,fkern_sm, opts_sm);
+D = chunkermat(chnkr, double, opts_log);
+H = chunkermat(chnkr, hilbert, opts_pv);     
+
+sysmat1 = sysmat1 + sysmat2;
 
 sysmat = zeros(2*chnkr.npt);
 sysmat(1:2:end,1:2:end) = sysmat1(1:4:end,1:2:end) + sysmat1(3:4:end,1:2:end)*H  - 2*((1+nu)/2)^2*D*D;
@@ -110,10 +123,10 @@ sysmat(2:2:end,1:2:end) = sysmat1(2:4:end,1:2:end) + sysmat1(4:4:end,1:2:end)*H;
 sysmat(1:2:end,2:2:end) = sysmat1(1:4:end,2:2:end) + sysmat1(3:4:end,2:2:end);
 sysmat(2:2:end,2:2:end) = sysmat1(2:4:end,2:2:end) + sysmat1(4:4:end,2:2:end);
 
-D = [-1/2 + (1/8)*(1+nu).^2, 0; 0, 1/2];  % jump matrix 
-D = kron(eye(chnkr.npt), D);
+A = [-1/2 + (1/8)*(1+nu).^2, 0; 0, 1/2];  % jump matrix 
+A = kron(eye(chnkr.npt), A);
 
-sys =  D + sysmat;
+sys =  A + sysmat;
 t1 = toc(start);
 fprintf('%5.2e s : time to assemble matrix\n',t1)
 
