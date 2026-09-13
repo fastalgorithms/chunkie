@@ -9,23 +9,25 @@ if (~isa(f,'kernel'))
     f = times(g,f);
     return
 elseif (isnumeric(g) && isscalar(g))
-    if(isa(f.eval, 'function_handle'))        
+    if(isa(f.eval, 'function_handle'))
         f.eval = @(varargin) g*f.eval(varargin{:});
     else
         f.eval = [];
     end
-    
-    if(isa(f.shifted_eval, 'function_handle'))        
+
+    if(isa(f.shifted_eval, 'function_handle'))
         f.shifted_eval = @(varargin) g*f.shifted_eval(varargin{:});
     else
         f.shifted_eval = [];
     end
-    
+
     if(isa(f.fmm, 'function_handle'))
         f.fmm = @(varargin) g*f.fmm(varargin{:});
     else
         f.fmm = [];
     end
+
+    f.splitinfo = kernel.scale_splitinfo(f.splitinfo, g);
 
     if or(f.isnan,isnan(g))
         f = kernel.nans(f.opdims(1),f.opdims(2));
@@ -33,7 +35,7 @@ elseif (isnumeric(g) && isscalar(g))
     if ~f.isnan && g==0 || f.iszero && ~isnan(g)
         f = kernel.zeros(f.opdims(1),f.opdims(2));
     end
-    
+
 else
     error('KERNEL:times:invalid', ...
        'F or G must be constant and the other a kernel class object');

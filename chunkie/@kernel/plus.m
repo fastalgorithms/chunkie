@@ -21,7 +21,9 @@ if (isa(g,'kernel') && isa(f,'kernel'))
         f.shifted_eval = [];
     end
   end
-  
+
+  f.splitinfo = kernel.combine_splitinfo(f.splitinfo, g.splitinfo, 1, 1);
+
   f.eval = @(varargin) g.eval(varargin{:}) + f.eval(varargin{:});
   if (isa(g.fmm,'function_handle') && isa(f.fmm,'function_handle'))
     f.fmm = @(varargin) g.fmm(varargin{:}) + f.fmm(varargin{:});

@@ -730,7 +730,7 @@ else
             mat0xsplitfun = mat0opdim.*funsf{l};
             mat1f = mat1f + mat0xsplitfun;
         end
-        mat1 = mat1f*kron(intp,eye(opdims(:).'));
+        mat1 = mat1f*kron(intp,eye(opdims(2)));
 
         else
             mat1 = [];
@@ -780,14 +780,16 @@ else
                 mat0xsplitfun = mat0opdim.*funsf{l};
                 mat2f = mat2f + mat0xsplitfun;
             end
-            mat2 = mat2f*kron(intp,eye(opdims(:).'));
+            mat2 = mat2f*kron(intp,eye(opdims(2)));
         else
             mat2 = [];
         end
 
-        mat3 = zeros(size(targinfoji.r,2),k);
-        mat3(iiin,:) = mat1;
-        mat3(iout,:) = mat2;
+        mat3 = zeros(opdims(1)*size(targinfoji.r,2),opdims(2)*k);
+        iiinblk = repelem(iiin(:),opdims(1));
+        ioutblk = repelem(iout(:),opdims(1));
+        mat3(iiinblk,:) = mat1;
+        mat3(ioutblk,:) = mat2;
 
 
         js1 = jmat:jmatend;
