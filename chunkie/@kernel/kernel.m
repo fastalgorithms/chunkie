@@ -93,6 +93,8 @@ classdef kernel
         opdims = [0 0] % Dimension of the operator
         isnan  = false % Boolean, determines if NaN kernel
         iszero = false % Boolean, determines if zero kernel
+        diag   = []    % Function handle for the identity (Dirac delta) term
+                       % Typically built by KERNEL.EYE. [] means unset;
 
     end
 
@@ -120,6 +122,8 @@ classdef kernel
                       obj = kernel.elast2d(varargin{:});
                   case {'elasticity_string', 'elast_str', 'e_str'}
                       obj = kernel.elast2d_string(varargin{:});
+                  case {'eye', 'identity', 'delta'}
+                      obj = kernel.eye(varargin{:});
                   case {'zeros', 'zero', 'z'}
                       obj = kernel.zeros(varargin{:});
                   case {'nans', 'nan'}
@@ -187,6 +191,7 @@ classdef kernel
         obj = flex2dquas(varargin);
         obj = zeros(varargin);
         obj = nans(varargin);
+        obj = eye(varargin);
 
     end
 
@@ -358,8 +363,31 @@ if ( all(cellfun('isclass', {kerns.fmm}, 'function_handle')) )
     K.fmm  = @fmm_;
 end
 
+if any(arrayfun(@(k) isa(kerns(k).diag,'function_handle'), 1:numel(kerns)))
+    K.diag = @diag_;
+end
+
+    function D = diag_(t)
+        nt = size(t.r(:,:),2);
+        M = opdims(1); N = opdims(2);
+        D = zeros(M*nt, N);
+        for k = 1:m
+            for l = 1:n
+                if isa(kerns(k,l).diag,'function_handle')
+                    mk = rowstarts(k+1)-rowstarts(k);
+                    Dkl = kerns(k,l).diag(t);
+                    for pp = 1:nt
+                        rr = (pp-1)*M + (rowstarts(k)+1:rowstarts(k+1));
+                        cc = colstarts(l)+1:colstarts(l+1);
+                        D(rr, cc) = Dkl((pp-1)*mk + (1:mk), :);
+                    end
+                end
+            end
+        end
+    end
+
 % 
-if all([kerns.iszero])
+if all([kerns.iszero]) && all(arrayfun(@(k) isempty(kerns(k).diag), 1:numel(kerns)))
     K = kernel.zeros(opdims(1),opdims(2));
 else
     K.iszero = false;

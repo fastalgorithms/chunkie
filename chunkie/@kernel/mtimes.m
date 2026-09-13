@@ -138,17 +138,31 @@ out.name = ['custom ', K.name];
         end
     end
 
+Kdiag = K.diag;
+
 if strcmp(side, 'left')
     out.opdims       = [p, q];
     out.eval         = @eval_left;
     out.fmm          = set_if_exist(Kfmm, @fmm_left);
     out.shifted_eval = set_if_exist(Kshifted_eval, @shifted_eval_left);
+    if isa(Kdiag, 'function_handle'), out.diag = @diag_left; end
 else
     out.opdims       = [m, p];
     out.eval         = @eval_right;
     out.fmm          = set_if_exist(Kfmm, @fmm_right);
     out.shifted_eval = set_if_exist(Kshifted_eval, @shifted_eval_right);
+    if isa(Kdiag, 'function_handle'), out.diag = @diag_right; end
 end
+
+% the delta term transforms with the kernel: h(t)*D(t) or D(t)*h(t)
+
+    function D = diag_left(t)
+        D = diag_stack(apply_left(evalh(t), diag_pages(Kdiag(t), m)), p);
+    end
+
+    function D = diag_right(t)
+        D = diag_stack(apply_right(diag_pages(Kdiag(t), m), evalh(t)), m);
+    end
 
 % left-multiply: h(t) * K(s,t)
 
@@ -163,7 +177,7 @@ end
     end
 
     function vals = eval_left(s, t)
-        nt   = size(t.r, 2);
+        nt   = size(t.r(:,:), 2);
         fval = evalh(t);
         Kmat = Keval(s, t);
         K4   = reshape(Kmat, m, 1, nt, []);
@@ -172,7 +186,7 @@ end
     end
 
     function vals = shifted_eval_left(s, t, o)
-        nt   = size(t.r, 2);
+        nt   = size(t.r(:,:), 2);
         fval = evalh(shift_pts(t, o));
         Kmat = Kshifted_eval(s, t, o);
         K4   = reshape(Kmat, m, 1, nt, []);
@@ -181,7 +195,7 @@ end
     end
 
     function out = fmm_left(eps, s, t, sigma)
-        nt    = size(t.r, 2);
+        nt    = size(t.r(:,:), 2);
         fval  = evalh(t);
         inner = Kfmm(eps, s, t, sigma);
         out   = reshape(apply_left(fval, reshape(inner, m, 1, nt)), p*nt, 1);
@@ -190,8 +204,8 @@ end
 % right-multiply: K(s,t) * h(s)
 
     function vals = eval_right(s, t)
-        ns   = size(s.r, 2);
-        nt   = size(t.r, 2);
+        ns   = size(s.r(:,:), 2);
+        nt   = size(t.r(:,:), 2);
         fval = evalh(s);
         Kmat = Keval(s, t);
         K3   = reshape(Kmat, m*nt, q, ns);
@@ -199,8 +213,8 @@ end
     end
 
     function vals = shifted_eval_right(s, t, o)
-        ns   = size(s.r, 2);
-        nt   = size(t.r, 2);
+        ns   = size(s.r(:,:), 2);
+        nt   = size(t.r(:,:), 2);
         fval = evalh(shift_pts(s, o));
         Kmat = Kshifted_eval(s, t, o);
         K3   = reshape(Kmat, m*nt, q, ns);
@@ -208,12 +222,28 @@ end
     end
 
     function out = fmm_right(eps, s, t, sigma)
-        ns     = size(s.r, 2);
+        ns     = size(s.r(:,:), 2);
         fval   = evalh(s);
         sig_in = reshape(apply_left(fval, reshape(sigma, p, 1, ns)), q, ns);
         out    = Kfmm(eps, s, t, sig_in);
     end
 
+end
+
+function P = diag_pages(D, m)
+% (m*nt x n) stacked diag -> [m n nt] pages
+
+n  = size(D,2);
+nt = size(D,1)/m;
+P  = permute(reshape(D, m, nt, n), [1 3 2]);
+end
+
+function S = diag_stack(P, m)
+% [m n nt] pages -> (m*nt x n) stacked diag
+
+n  = size(P,2);
+nt = size(P,3);
+S  = reshape(permute(P, [1 3 2]), m*nt, n);
 end
 
 function out = set_if_exist(cond, val)

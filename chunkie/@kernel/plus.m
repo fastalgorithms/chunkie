@@ -7,6 +7,7 @@ if (isa(g,'kernel') && isa(f,'kernel'))
   assert(f.opdims(1) == g.opdims(1) && f.opdims(2) == g.opdims(2), ...
       'kernel dimensions must agree to add');
   f.name = ['custom ',f.name,' ',g.name];
+  fdiag = f.diag;  gdiag = g.diag;
 
   if(isa(f.shifted_eval, 'function_handle'))
     if(isa(g.shifted_eval, 'function_handle'))
@@ -36,6 +37,14 @@ if (isa(g,'kernel') && isa(f,'kernel'))
       f.iszero = true;
   else
       f.iszero = false;
+  end
+
+  if isempty(fdiag)
+      f.diag = gdiag;
+  elseif isempty(gdiag)
+      f.diag = fdiag;
+  else
+      f.diag = @(t) fdiag(t) + gdiag(t);
   end
 else
     error('KERNEL:plus:invalid', ...

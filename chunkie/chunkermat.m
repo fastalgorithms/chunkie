@@ -477,6 +477,16 @@ for i=1:nchunkers
         wtsrow = repmat(wts,opdims(1),1); wtsrow = wtsrow(:);
         sysmat_tmp = wtsrow.*sysmat_tmp./wtscol;
     end
+
+    if (size(kern) == 1)
+        dfun = get_diagfun(kern,chnkr);
+    else
+        dfun = get_diagfun(kern(i,i),chnkr);
+    end
+    if ~isempty(dfun)
+        Dvals = dfun(chnkr);
+        sysmat_tmp = add_delta_block(sysmat_tmp,Dvals,opdims(1),opdims(2));
+    end
  
     if (~nonsmoothonly)
         irowinds = irowlocs(i):(irowlocs(i+1)-1);
@@ -498,7 +508,45 @@ if(icgrph && isrcip)
     ngl = chnkrs(1).k;
 
     rcipsav = cell(nv,1);
-   
+
+    diagfuns = cell(nchunkers,1);
+    for i = 1:nchunkers
+        if (size(kern) == 1)
+            diagfuns{i} = get_diagfun(kern,chnkrs(i));
+        else
+            diagfuns{i} = get_diagfun(kern(i,i),chnkrs(i));
+        end
+    end
+
+    if (size(kern) == 1)
+        kernrcip = kern;
+        if ~isempty(diagfuns{1})
+            dfun1 = diagfuns{1};
+            mi = opdims_mat(1,1,1);
+            Dpages = @(t) diag_stack_to_pages(dfun1(t),mi);
+            kernrcip = Dpages \ kernrcip;
+        end
+        % Rcompchunk owns the identity
+        kernrcip.diag = [];
+    else
+        clear kernrcip
+        kernrcip(nchunkers,nchunkers) = kernel();
+        for i = 1:nchunkers
+            for j = 1:nchunkers
+                kentry = kern(i,j);
+                if ~isempty(diagfuns{i})
+                    dfuni = diagfuns{i};
+                    mi = opdims_mat(1,i,i);
+                    Dpages = @(t) diag_stack_to_pages(dfuni(t),mi);
+                    kentry = Dpages \ kentry;
+                end
+                % Rcompchunk owns the identity
+                kentry.diag = [];
+                kernrcip(i,j) = kentry;
+            end
+        end
+    end
+
     for ivert=setdiff(1:nv,rcip_ignore)
         if isempty(chnkobj.vstruc{ivert})
             continue
@@ -580,13 +628,20 @@ if(icgrph && isrcip)
         end
 
         [R,rcipsav{ivert}] = chnk.rcip.Rcompchunk( ...
-            chnkrs_shift, iedgechunks, kern, ndim, chnkobj.verts(:,ivert), ...
+            chnkrs_shift, iedgechunks, kernrcip, ndim, chnkobj.verts(:,ivert), ...
             Pbc, PWbc, nsub, starL, circL, starS, circS, ilist, starL1, circL1, ...
             sbclmat, sbcrmat, lvmat, rvmat, u, optsrcip);
 
         rcipsav{ivert}.starind = starind;
 
-        sysmat_tmp = inv(R) - eye(2*ngl*nedge*ndim);
+        Dstar = rcip_build_Dstar(chnkrs,clist,corinds,diagfuns,ndim,ngl,nedge);
+        sysmat_tmp = Dstar*inv(R);
+        for i = 1:nedge
+            if isempty(diagfuns{clist(i)})
+                idx = (i-1)*2*ngl*ndim + (1:2*ngl*ndim);
+                sysmat_tmp(idx,idx) = sysmat_tmp(idx,idx) - eye(2*ngl*ndim);
+            end
+        end
 
         %periodic case: apply phase shift
         if iper 
@@ -673,6 +728,73 @@ end
 if (nargout >1) 
 	varargout{1} = opts;
 end  
+
+end
+
+function d = get_diagfun(k,chnkr)
+% diag handle of a kernel, or [] if it carries no identity term
+
+d = [];
+if isempty(k.diag), return, end
+
+dd = k.diag;
+if ~isa(dd,'function_handle')
+    error('CHUNKIE:chunkermat:diag', ...
+        'kern.diag must be empty or a function handle, see KERNEL.EYE');
+end
+
+% O(N) test if diag is zero
+if nnz(dd(chnkr)) == 0, return, end
+
+d = dd;
+
+end
+
+function M = add_delta_block(M, D, m, n)
+% add per-point blocks onto the block diagonal of M
+
+nt = size(D,1)/m;
+Dp = permute(reshape(D, m, nt, n), [1 3 2]);
+[A, B, P] = ndgrid(1:m, 1:n, 1:nt);
+rows = (P(:)-1)*m + A(:);
+cols = (P(:)-1)*n + B(:);
+M = M + sparse(rows, cols, Dp(:), size(M,1), size(M,2));
+
+end
+
+function P = diag_stack_to_pages(D, m)
+% (m*nt x n) stacked diag -> [m n nt] pages
+
+n  = size(D,2);
+nt = size(D,1)/m;
+P  = permute(reshape(D, m, nt, n), [1 3 2]);
+
+end
+
+function Dstar = rcip_build_Dstar(chnkrs,clist,corinds,diagfuns,ndim,ngl,nedge)
+% block diagonal of the self-block D at the RCIP star points
+
+blocklen = 2*ngl*ndim;
+N = blocklen*nedge;
+iis = []; jjs = []; vvs = [];
+for i = 1:nedge
+    ich = clist(i);
+    iinds = corinds{i};
+    npi = numel(iinds);
+    if isempty(diagfuns{ich})
+        Di = repmat(eye(ndim), 1, 1, npi);
+    else
+        Dall = diagfuns{ich}(chnkrs(ich));
+        rows = (iinds(:).'-1)*ndim + (1:ndim).';
+        Di = diag_stack_to_pages(Dall(rows(:),:), ndim);
+    end
+    off = (i-1)*blocklen;
+    [A, B, P] = ndgrid(1:ndim, 1:ndim, 1:npi);
+    iis = [iis; off + (P(:)-1)*ndim + A(:)];
+    jjs = [jjs; off + (P(:)-1)*ndim + B(:)];
+    vvs = [vvs; Di(:)];
+end
+Dstar = full(sparse(iis, jjs, vvs, N, N));
 
 end
 

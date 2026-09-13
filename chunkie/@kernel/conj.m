@@ -11,6 +11,11 @@ end
 
 f.eval = @(varargin) conj(f.eval(varargin{:}));
 
+if(isa(f.diag, 'function_handle'))
+    fdiag = f.diag;
+    f.diag = @(t) conj(fdiag(t));
+end
+
 if (isa(f.fmm,'function_handle'))
     f.fmm = @(varargin) conj(f.fmm(varargin{:}));
 else

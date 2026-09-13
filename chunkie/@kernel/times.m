@@ -27,6 +27,11 @@ elseif (isnumeric(g) && isscalar(g))
         f.fmm = [];
     end
 
+    if(isa(f.diag, 'function_handle'))
+        fdiag = f.diag;
+        f.diag = @(t) g*fdiag(t);
+    end
+
     if or(f.isnan,isnan(g))
         f = kernel.nans(f.opdims(1),f.opdims(2));
     end
