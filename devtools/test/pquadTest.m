@@ -2,6 +2,7 @@ pquadTest0();
 pquadTest1();
 pquadTest2();
 pquadTest3();
+pquadTest4();
 
 function pquadTest0()
 % testing product quadrature rule
@@ -202,5 +203,38 @@ sysB = chunkerkernevalmat(chnkr,kernvB,targs,opts);
 rel_error_right = norm(sysv*kron(eye(ns),B) - sysB,'fro')/norm(sysB,'fro');
 fprintf('%5.2e : Relative fro error in K*B\n',rel_error_right);
 assert(rel_error_right < 1e-10)
+
+end
+
+function pquadTest4()
+% check that the corrections=true option is correct
+
+zk = 1.7;
+fkern = kernel('helm','s',zk);
+
+cparams = []; cparams.eps = 1e-9;
+chnkr = chunkerfunc(@(t) starfish(t),cparams);
+chnkr = refine(chnkr,struct('nover',1));
+
+targinfo = []; targinfo.r = chnkr.r(1:2,:) - 1e-3*chnkr.n(1:2,:);
+
+opts = [];
+opts.forcepquad = true;
+opts.side = 'i';
+
+full_fp = chunkerkernevalmat(chnkr,fkern,targinfo.r,opts);
+
+opts_c = opts; opts_c.corrections = true;
+cor_fp = chunkerkernevalmat(chnkr,fkern,targinfo.r,opts_c);
+
+srcinfo = []; srcinfo.r = chnkr.r(:,:); srcinfo.n = chnkr.n(:,:);
+srcinfo.d = chnkr.d(:,:); srcinfo.d2 = chnkr.d2(:,:);
+wts = chnkr.wts; wts = wts(:).';
+smooth_all = fkern.eval(srcinfo,targinfo).*wts;
+
+rel_error = norm(full_fp - (smooth_all+cor_fp),'fro')/norm(full_fp,'fro');
+fprintf('%5.2e : Relative fro error, full vs smooth + corrections (forcepquad)\n',rel_error);
+
+assert(rel_error < 1e-10)
 
 end
