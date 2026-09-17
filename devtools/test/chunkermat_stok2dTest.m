@@ -103,7 +103,10 @@ assert(norm(err) < 1e-10);
 opts.forcepquad=true;
 opts.side = 'i';
 Ssol_pquad = chunkerkerneval(chnkr,fkerns,sol,targets,opts); 
+Ssys_pquad = chunkerkernevalmat(chnkr,fkerns,targets,opts);
 err = abs(Ssol - Ssol_pquad);
+assert(norm(err) < 1e-10);
+err = abs(Ssol - Ssys_pquad*sol);
 assert(norm(err) < 1e-10);
 opts.forcepquad=false;
 
@@ -114,7 +117,10 @@ Dsol = chunkerkerneval(chnkr,fkernd,sol,targets,opts);
 opts.forcepquad=true;
 opts.side = 'i';
 Dsol_pquad = chunkerkerneval(chnkr,fkernd,sol,targets,opts); 
+Dsys_pquad = chunkerkernevalmat(chnkr,fkernd,targets,opts);
 err = abs(Dsol - Dsol_pquad);
+assert(norm(err) < 1e-10);
+err = abs(Dsol - Dsys_pquad*sol);
 assert(norm(err) < 1e-10);
 opts.forcepquad=false;
 
@@ -125,7 +131,10 @@ Stracsol = chunkerkerneval(chnkr,fkernstrac,sol,targinfo,opts);
 opts.forcepquad=true;
 opts.side = 'i';
 Stracsol_pquad = chunkerkerneval(chnkr,fkernstrac,sol,targinfo,opts); 
+Stracsys_pquad = chunkerkernevalmat(chnkr,fkernstrac,targinfo,opts);
 err = abs(Stracsol - Stracsol_pquad);
+assert(norm(err) < 1e-10);
+err = abs(Stracsol - Stracsys_pquad*sol);
 assert(norm(err) < 1e-10);
 opts.forcepquad=false;
 
@@ -136,7 +145,10 @@ Dtracsol = chunkerkerneval(chnkr,fkerndtrac,sol,targinfo,opts);
 opts.forcepquad=true;
 opts.side = 'i';
 Dtracsol_pquad = chunkerkerneval(chnkr,fkerndtrac,sol,targinfo,opts); 
+Dtracsys_pquad = chunkerkernevalmat(chnkr,fkerndtrac,targinfo,opts);
 err = abs(Dtracsol - Dtracsol_pquad);
+assert(norm(err) < 1e-8);
+err = abs(Dtracsol - Dtracsys_pquad*sol);
 assert(norm(err) < 1e-8);
 opts.forcepquad=false;
 
@@ -147,7 +159,10 @@ Spressol = chunkerkerneval(chnkr,fkernspres,sol,targinfo,opts);
 opts.forcepquad=true;
 opts.side = 'i';
 Spressol_pquad = chunkerkerneval(chnkr,fkernspres,sol,targinfo,opts); 
+Spressys_pquad = chunkerkernevalmat(chnkr,fkernspres,targinfo,opts);
 err = abs(Spressol - Spressol_pquad);
+assert(norm(err) < 1e-10);
+err = abs(Spressol - Spressys_pquad*sol);
 assert(norm(err) < 1e-10);
 opts.forcepquad=false;
 
@@ -158,7 +173,10 @@ Dpressol = chunkerkerneval(chnkr,fkerndpres,sol,targinfo,opts);
 opts.forcepquad=true;
 opts.side = 'i';
 Dpressol_pquad = chunkerkerneval(chnkr,fkerndpres,sol,targinfo,opts); 
+Dpressys_pquad = chunkerkernevalmat(chnkr,fkerndpres,targinfo,opts);
 err = abs(Dpressol - Dpressol_pquad);
+assert(norm(err) < 1e-10);
+err = abs(Dpressol - Dpressys_pquad*sol);
 assert(norm(err) < 1e-10);
 opts.forcepquad=false;
 

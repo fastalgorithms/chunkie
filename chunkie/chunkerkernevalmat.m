@@ -588,10 +588,14 @@ end
 function mat = chunkerkernevalmat_pquad(chnkr,kern,opdims, ...
     targinfo,flag,opts)
 
-if isa(kern,'kernel')
-    kerneval = kern.eval;
-else
-    kerneval = kern;
+if ~isa(kern,'kernel') || isempty(kern.splitinfo)
+    error('Helsing-Ojala quad only available for kernel class objects with splitinfo defined');
+end
+
+scalar = 1;
+q = functions(kern.eval);
+if ~isempty(q.workspace) && isfield(q.workspace{1},'g')
+    scalar = q.workspace{1}.g;
 end
 
 k = chnkr.k;
@@ -654,6 +658,17 @@ else
 
         targinfoji = [];
         targinfoji.r = targinfo.r(:,ji);
+        if isfield(targinfo, 'd')
+            targinfoji.d = targinfo.d(:,ji);
+        end
+
+        if isfield(targinfo, 'd2')
+            targinfoji.d2 = targinfo.d2(:,ji);
+        end
+
+        if isfield(targinfo, 'n')
+            targinfoji.n = targinfo.n(:,ji);
+        end        
 
         srcinfo = [];
         srcinfo.r = r(:,:,i);
@@ -701,19 +716,8 @@ else
 
         % Helsing-Ojala (interior/exterior?)
         allmatsf = cell(size(kern.splitinfo.type));
-        [allmatsf{:}] = chnk.pquadwts(r,d,n,d2,wts,i,targinfouse.r,t,w, ...
+        [allmatsf,srcinfof] = chnk.pquadwts(r,d,n,d2,wts,i,targinfouse.r,t,w, ...
             optsuse,intp_ab,intp,kern.splitinfo.type,true);
-
-        r_i = intp*(r(1,:,i)'+1i*r(2,:,i)'); 
-        d_i = (intp*(d(1,:,i)'+1i*d(2,:,i)'));
-        d2_i = (intp*(d(1,:,i)'+1i*d(2,:,i)'));
-        sp = abs(d_i); tang = d_i./sp; 
-        n_i = -1i*tang; 
-        srcinfof = [];
-        srcinfof.r  = [real(r_i)  imag(r_i)]';
-        srcinfof.d  = [real(d_i)  imag(d_i)]';
-        srcinfof.d2 = [real(d2_i) imag(d2_i)]';
-        srcinfof.n  = [real(n_i)  imag(n_i)]';
 
         mat1f = zeros(opdims(1)*size(targinfouse.r,2),opdims(2)*2*k);
         funsf = kern.splitinfo.functions(srcinfof,targinfouse);
@@ -730,7 +734,7 @@ else
             mat0xsplitfun = mat0opdim.*funsf{l};
             mat1f = mat1f + mat0xsplitfun;
         end
-        mat1 = mat1f*kron(intp,eye(opdims(:).'));
+        mat1 = mat1f*kron(intp,eye(opdims(2)));
 
         else
             mat1 = [];
@@ -751,19 +755,8 @@ else
             optsuse.side = 'e';
             % Helsing-Ojala (interior/exterior?)
             allmatsf = cell(size(kern.splitinfo.type));
-            [allmatsf{:}] = chnk.pquadwts(r,d,n,d2,wts,i,targinfouse.r,t,w, ...
+            [allmatsf,srcinfof] = chnk.pquadwts(r,d,n,d2,wts,i,targinfouse.r,t,w, ...
                 optsuse,intp_ab,intp,kern.splitinfo.type,true);
-    
-            r_i = intp*(r(1,:,i)'+1i*r(2,:,i)'); 
-            d_i = (intp*(d(1,:,i)'+1i*d(2,:,i)'));
-            d2_i = (intp*(d(1,:,i)'+1i*d(2,:,i)'));
-            sp = abs(d_i); tang = d_i./sp; 
-            n_i = -1i*tang; 
-            srcinfof = [];
-            srcinfof.r  = [real(r_i)  imag(r_i)]';
-            srcinfof.d  = [real(d_i)  imag(d_i)]';
-            srcinfof.d2 = [real(d2_i) imag(d2_i)]';
-            srcinfof.n  = [real(n_i)  imag(n_i)]';
     
             mat2f = zeros(opdims(1)*size(targinfouse.r,2),opdims(2)*2*k);
             funsf = kern.splitinfo.functions(srcinfof,targinfouse);
@@ -780,14 +773,14 @@ else
                 mat0xsplitfun = mat0opdim.*funsf{l};
                 mat2f = mat2f + mat0xsplitfun;
             end
-            mat2 = mat2f*kron(intp,eye(opdims(:).'));
+            mat2 = mat2f*kron(intp,eye(opdims(2)));
         else
             mat2 = [];
         end
 
-        mat3 = zeros(size(targinfoji.r,2),k);
-        mat3(iiin,:) = mat1;
-        mat3(iout,:) = mat2;
+        mat3 = zeros(opdims(1)*size(targinfoji.r,2),opdims(2)*k);
+        mat3(repelem(iiin,opdims(1)),:) = mat1;
+        mat3(repelem(iout,opdims(1)),:) = mat2;
 
 
         js1 = jmat:jmatend;
@@ -813,5 +806,5 @@ end
 if dclosest < 1e-10
     warning('Unable to estimate pquad side. Provide opts.side to ensure accuracy.')
 end
-
+mat = scalar*mat;
 end

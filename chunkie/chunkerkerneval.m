@@ -309,7 +309,7 @@ if opts_use.forcepquad
     fints(irow0) = fints(irow0) + chunkerkerneval_pquad(chnkr0,kern0,opdims0,dens0, ...
         targinfo0,flag,opts_use);
 
-    return
+    continue
 end
 
 % smooth for sufficiently far, adaptive otherwise
@@ -345,6 +345,12 @@ function fints = chunkerkerneval_pquad(chnkr,kern,opdims,dens, ...
 
 if ~isa(kern,'kernel') || isempty(kern.splitinfo)
     error('Helsing-Ojala quad only available for kernel class objects with splitinfo defined');
+end
+
+scalar = 1;
+q = functions(kern.eval);
+if ~isempty(q.workspace) && isfield(q.workspace{1},'g')
+    scalar = q.workspace{1}.g;
 end
 
 % target
@@ -400,19 +406,8 @@ for j=1:size(chnkr.r,3)
 
         % Helsing-Ojala (interior/exterior?)
         allmatsf = cell(size(kern.splitinfo.type));
-        [allmatsf{:}] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji),t,w, ...
+        [allmatsf,srcinfof] = chnk.pquadwts(r,d,n,d2,wts,j,targs(:,ji),t,w, ...
             opts,intp_ab,intp,kern.splitinfo.type,true);
-
-        r_i = intp*(r(1,:,j)'+1i*r(2,:,j)'); 
-        d_i = (intp*(d(1,:,j)'+1i*d(2,:,j)'));
-        d2_i = (intp*(d(1,:,j)'+1i*d(2,:,j)'));
-        sp = abs(d_i); tang = d_i./sp; 
-        n_i = -1i*tang; 
-        srcinfof = [];
-        srcinfof.r  = [real(r_i)  imag(r_i)]';
-        srcinfof.d  = [real(d_i)  imag(d_i)]';
-        srcinfof.d2 = [real(d2_i) imag(d2_i)]';
-        srcinfof.n  = [real(n_i)  imag(n_i)]';
 
         funsf = kern.splitinfo.functions(srcinfof,targinfoji);
         for l = 1:length(allmatsf)
@@ -431,6 +426,9 @@ for j=1:size(chnkr.r,3)
         end
     end
 end
+
+fints = scalar*fints;
+
 end
 
 
