@@ -1,4 +1,4 @@
-function varargout = pquadwts(r,d,n,d2,wts,j,rt,t,w,opts,intp_ab,intp,types,ifup)
+function [allmats,srcinfo] = pquadwts(r,d,n,d2,wts,j,rt,t,w,opts,intp_ab,intp,types,ifup)
 %CHNK.pquadwts product integration for interaction of kernel on chunk
 % at targets
 %
@@ -31,7 +31,8 @@ function varargout = pquadwts(r,d,n,d2,wts,j,rt,t,w,opts,intp_ab,intp,types,ifup
 %       corresponds to (log(z-w))^a (log(zc-wc))^b (z-w)^c (zc-wc)^d
 %
 % Output
-%   varargout - integration matrices for specified singularity types
+%   allmats - cell array of integration matrices for specified singularity types
+%   srcinfo - upsampled source panel with fields: r, d, d2, n
 
 if nargin < 14, ifup = false; end
 
@@ -45,6 +46,11 @@ sp = abs(d_i); tang = d_i./sp;                    % speed, tangent
 n_i = -1i*tang;                                   % normal
 cur = -real(conj(d2_i).*n_i)./sp.^2;              % curvature
 wxp_i = w.*d_i;                                   % complex speed weights (Helsing's wzp)
+srcinfo = [];
+srcinfo.r  = [real(r_i)  imag(r_i)]';
+srcinfo.d  = [real(d_i)  imag(d_i)]';
+srcinfo.d2 = [real(d2_i) imag(d2_i)]';
+srcinfo.n  = [real(n_i)  imag(n_i)]';
 
 % determine number of matrices needed
 nout = 0;
@@ -80,19 +86,19 @@ else
     end
 end
 
-varargout = cell(size(types));
+allmats = cell(size(types));
 for j = 1:length(types)
     type0 = types{j};
     if (all(type0 == [0 0 0 0]))
-        varargout{j} = ones(size(rt,2),numel(wts_i)).*wts_i;
+        allmats{j} = ones(size(rt,2),numel(wts_i)).*wts_i;
     elseif (all(type0 == [1 0 0 0]))
-        varargout{j} = Ac{1};
+        allmats{j} = Ac{1};
     elseif (all(type0 == [0 0 -1 0]))
-        varargout{j} = Ac{2};
+        allmats{j} = Ac{2};
     elseif (all(type0 == [0 0 -2 0]))
-        varargout{j} = Ac{3};
+        allmats{j} = Ac{3};
     elseif (all(type0 == [0 0 -3 0]))
-        varargout{j} = Ac{4};
+        allmats{j} = Ac{4};
     else
         error("Split panel quad type [%s] not available",...
             join(string(type0)," "));
