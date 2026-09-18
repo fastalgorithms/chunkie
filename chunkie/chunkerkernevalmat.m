@@ -594,12 +594,6 @@ if ~isa(kern,'kernel') || isempty(kern.splitinfo)
     error('Helsing-Ojala quad only available for kernel class objects with splitinfo defined');
 end
 
-scalar = 1;
-q = functions(kern.eval);
-if ~isempty(q.workspace) && isfield(q.workspace{1},'g')
-    scalar = q.workspace{1}.g;
-end
-
 k = chnkr.k;
 nch = chnkr.nch;
 
@@ -808,5 +802,4 @@ end
 if dclosest < 1e-10
     warning('Unable to estimate pquad side. Provide opts.side to ensure accuracy.')
 end
-mat = scalar*mat;
 end

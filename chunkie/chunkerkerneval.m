@@ -347,12 +347,6 @@ if ~isa(kern,'kernel') || isempty(kern.splitinfo)
     error('Helsing-Ojala quad only available for kernel class objects with splitinfo defined');
 end
 
-scalar = 1;
-q = functions(kern.eval);
-if ~isempty(q.workspace) && isfield(q.workspace{1},'g')
-    scalar = q.workspace{1}.g;
-end
-
 % target
 [~,nt] = size(targinfo.r);
 fints = zeros(opdims(1)*nt,1);
@@ -426,8 +420,6 @@ for j=1:size(chnkr.r,3)
         end
     end
 end
-
-fints = scalar*fints;
 
 end
 
