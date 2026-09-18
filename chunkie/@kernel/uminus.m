@@ -17,6 +17,7 @@ else
     f.fmm = [];
 end
 
-end
+f.splitinfo = kernel.scale_splitinfo(f.splitinfo, -1);
 
+end
 

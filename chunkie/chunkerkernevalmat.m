@@ -275,7 +275,9 @@ if forcepquad
     spmat = chunkerkernevalmat_pquad(chnkr0,kern0,opdims0, ...
         targinfo0,flag,opts);
     if corrections
-        mat(irow0,icol0) = spmat;
+        smooth_near = chunkerkernevalmat_smooth(chnkr0,kern0,opdims0, ...
+            targinfo0,~flag,opts);
+        mat(irow0,icol0) = sparse(spmat - smooth_near);
         continue
     else
         mat(irow0,icol0) = chunkerkernevalmat_smooth(chnkr0,kern0,opdims0, ...
@@ -592,12 +594,6 @@ if ~isa(kern,'kernel') || isempty(kern.splitinfo)
     error('Helsing-Ojala quad only available for kernel class objects with splitinfo defined');
 end
 
-scalar = 1;
-q = functions(kern.eval);
-if ~isempty(q.workspace) && isfield(q.workspace{1},'g')
-    scalar = q.workspace{1}.g;
-end
-
 k = chnkr.k;
 nch = chnkr.nch;
 
@@ -806,5 +802,4 @@ end
 if dclosest < 1e-10
     warning('Unable to estimate pquad side. Provide opts.side to ensure accuracy.')
 end
-mat = scalar*mat;
 end

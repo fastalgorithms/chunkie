@@ -8,6 +8,8 @@ function out = mtimes(f, g)
 %
 % Right multiply K * N: N is a (q x p) matrix or function handle N(s)
 %   returning (q x p x ns), q = K.opdims(2). Output opdims = [K.opdims(1), p].
+%
+% splitinfo is dropped for right mult by a function handle N(s).
 
 % Determine which argument is the kernel and which is the multiplier.
 if isa(f, 'kernel') && isa(g, 'kernel')
@@ -107,6 +109,7 @@ q             = K.opdims(2);
 out      = K;
 out.type = ['custom_', K.type];
 out.name = ['custom ', K.name];
+out.splitinfo = [];
 
     function fval = evalh(pts)
         % h is either a constant (p x m) or (q x p) matrix
@@ -143,12 +146,43 @@ if strcmp(side, 'left')
     out.eval         = @eval_left;
     out.fmm          = set_if_exist(Kfmm, @fmm_left);
     out.shifted_eval = set_if_exist(Kshifted_eval, @shifted_eval_left);
+    out.splitinfo    = mtimes_splitinfo_left(K.splitinfo);
 else
     out.opdims       = [m, p];
     out.eval         = @eval_right;
     out.fmm          = set_if_exist(Kfmm, @fmm_right);
     out.shifted_eval = set_if_exist(Kshifted_eval, @shifted_eval_right);
+    if isnumeric(h)
+        % constant matrix: splitinfo transform is exact
+        out.splitinfo = mtimes_splitinfo_right(K.splitinfo);
+    else
+        % function handle N(s): chunkerkernevalmat_pquad cannot handle a
+        % splitinfo coefficient that varies within a panel, so drop it
+        out.splitinfo = [];
+    end
 end
+
+    function s = mtimes_splitinfo_left(s0)
+        % transform each split function the same way eval_left does
+        if isempty(s0), s = []; return; end
+        s = s0;
+        f0 = s0.functions;
+        s.functions = @(src,targ) cellfun( ...
+            @(c) reshape(apply_left(reshape_fval_left(evalh(targ), size(targ.r,2)), ...
+                reshape(c, m, 1, size(targ.r,2), [])), p*size(targ.r,2), []), ...
+            f0(src,targ), 'UniformOutput', false);
+    end
+
+    function s = mtimes_splitinfo_right(s0)
+        % transform each split function the same way eval_right does
+        if isempty(s0), s = []; return; end
+        s = s0;
+        f0 = s0.functions;
+        s.functions = @(src,targ) cellfun( ...
+            @(c) reshape(apply_right(reshape(c, m*size(targ.r,2), q, []), evalh(src)), ...
+                m*size(targ.r,2), []), ...
+            f0(src,targ), 'UniformOutput', false);
+    end
 
 % left-multiply: h(t) * K(s,t)
 
