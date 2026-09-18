@@ -115,6 +115,24 @@ fprintf('%5.2e : Relative fro error in native vs arithmetic\n',rel_error);
 
 assert(rel_error < 1e-10)
 
+c = 2.5 - 1i;
+fkernd_rdiv = fkernd./c;
+assert(~isempty(fkernd_rdiv.splitinfo))
+fkernd_mdiv = fkernd/c;
+assert(~isempty(fkernd_mdiv.splitinfo))
+
+sysd = chunkerkernevalmat(chnkr,fkernd,targs,opts);
+sysd_rdiv = chunkerkernevalmat(chnkr,fkernd_rdiv,targs,opts);
+sysd_mdiv = chunkerkernevalmat(chnkr,fkernd_mdiv,targs,opts);
+
+rel_error_rdiv = norm(sysd/c-sysd_rdiv,'fro')/norm(sysd_rdiv,'fro');
+fprintf('%5.2e : Relative fro error in K./c\n',rel_error_rdiv);
+assert(rel_error_rdiv < 1e-10)
+
+rel_error_mdiv = norm(sysd_rdiv-sysd_mdiv,'fro')/norm(sysd_rdiv,'fro');
+fprintf('%5.2e : Relative fro error in ./c vs /c\n',rel_error_mdiv);
+assert(rel_error_mdiv < 1e-10)
+
 end
 
 function pquadTest2()
