@@ -262,7 +262,9 @@ end
 xflam = real(xflam);
 width = max(mmax-mmin);
 
-chnkrtotal = merge(chnkrs);
+pref_merge = [];
+pref_merge.nchmax = sum([chnkrs(1:nchunkers).nch]);
+chnkrtotal = merge(chnkrs, pref_merge);
 
 matfun = @(i,j) chnk.flam.kernbyindex(i,j,chnkrs,kern,opdims_mat,sp,l2scale);
 
