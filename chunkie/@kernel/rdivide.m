@@ -25,6 +25,8 @@ if (isnumeric(g) && isscalar(g))
         f.fmm = [];
     end
 
+    f.splitinfo = kernel.scale_splitinfo(f.splitinfo, 1/g);
+
     if or(f.isnan,isnan(g))
         f = kernel.nans(f.opdims(1),f.opdims(2));
     end

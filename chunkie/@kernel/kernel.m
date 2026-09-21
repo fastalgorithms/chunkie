@@ -187,6 +187,8 @@ classdef kernel
         obj = flex2dquas(varargin);
         obj = zeros(varargin);
         obj = nans(varargin);
+        s = combine_splitinfo(sf, sg, cf, cg);
+        s = scale_splitinfo(s0, c);
 
     end
 
