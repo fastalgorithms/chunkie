@@ -21,6 +21,7 @@ classdef kernel
 %                                                   'cvel', 'cpres',
 %                                                   'ctrac', 'cgrad'
 %      'zeros'       ('zero','z') 
+%      'ones'        ('one','o')  optional constant matrix A
 %      'axis sym helmholtz'                         's' 'd' 'sp' 'c'
 %         ('axissymh', 'axissymhelm')
 %      'axis sym helmholtz difference'              's' 'd' 'sp' 'dp'
@@ -122,6 +123,8 @@ classdef kernel
                       obj = kernel.elast2d_string(varargin{:});
                   case {'zeros', 'zero', 'z'}
                       obj = kernel.zeros(varargin{:});
+                  case {'ones', 'one', 'o'}
+                      obj = kernel.ones(varargin{:});
                   case {'nans', 'nan'}
                       obj = kernel.nans(varargin{:});
                   case {'axis sym helmholtz', 'axissymh', 'axissymhelm'}
@@ -187,6 +190,7 @@ classdef kernel
         obj = flex2dquas(varargin);
         obj = zeros(varargin);
         obj = nans(varargin);
+        obj = ones(varargin);
         s = combine_splitinfo(sf, sg, cf, cg);
         s = scale_splitinfo(s0, c);
 
@@ -211,8 +215,8 @@ opdims = [sum(rowdims) sum(coldims)];
 
     function out = eval_(s, t)
 
-        [~, ns] = size(s.r);
-        [~, nt] = size(t.r);
+        ns = size(s.r(:,:), 2);
+        nt = size(t.r(:,:), 2);
 
         % Compute interleaved indices
         ridx = cell(m, 1);
@@ -240,8 +244,8 @@ opdims = [sum(rowdims) sum(coldims)];
 
     function out = shifted_eval_(s, t, o)
 
-        [~, ns] = size(s.r);
-        [~, nt] = size(t.r);
+        ns = size(s.r(:,:), 2);
+        nt = size(t.r(:,:), 2);
 
         % Compute interleaved indices
         ridx = cell(m, 1);
@@ -270,11 +274,11 @@ opdims = [sum(rowdims) sum(coldims)];
 
     function varargout = fmm_(eps, s, t, sigma)
 
-        [~, ns] = size(s.r);
+        ns = size(s.r(:,:), 2);
         if isa(t,'struct')
-            [~,nt] = size(t.r);
+            nt = size(t.r(:,:), 2);
         else
-            [~,nt] = size(t);
+            nt = size(t(:,:), 2);
         end
         
 

@@ -18,23 +18,23 @@ if ( nargin < 2 )
 end
 
     function out = eval_(s, t)
-        [~, ns] = size(s.r);
-        [~, nt] = size(t.r);
+        ns = size(s.r(:,:), 2);
+        nt = size(t.r(:,:), 2);
         out = zeros(m*nt, n*ns);
     end
 
     function out = shifted_eval_(s, t, o)
-        [~, ns] = size(s.r);
-        [~, nt] = size(t.r);
+        ns = size(s.r(:,:), 2);
+        nt = size(t.r(:,:), 2);
         out = zeros(m*nt, n*ns);
     end
 
     function varargout = fmm_(eps, s, t, sigma)
 
         if ( isstruct(t) )
-            [~, nt] = size(t.r);
+            nt = size(t.r(:,:), 2);
         else
-            [~, nt] = size(t);
+            nt = size(t(:,:), 2);
         end
 
         if ( nargout > 0 ), varargout{1} = zeros(m*nt, 1); end
