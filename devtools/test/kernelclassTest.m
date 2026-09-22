@@ -1,11 +1,15 @@
 kernelclassTest0();
 
 
-function kernelclassTest0()
+function kernelclassTest0(ifplot)
 %KERNELCLASSTEST check the use of kernel class for sending FMM
 % and singularity info to various routines
 %
 % 
+
+if nargin < 1
+    ifplot = false;
+end
 
 seed = 8675309;
 rng(seed);
@@ -43,13 +47,14 @@ targets = targets.*repmat(rand(1,nt),2,1);
 xs = chnkr.r(1,:,:); xmin = min(xs(:)); xmax = max(xs(:));
 ys = chnkr.r(2,:,:); ymin = min(ys(:)); ymax = max(ys(:));
 
-hold off
-plot(chnkr)
-hold on
-scatter(sources(1,:),sources(2,:),'o')
-scatter(targets(1,:),targets(2,:),'x')
-axis equal 
-
+if ifplot
+    hold off
+    plot(chnkr)
+    hold on
+    scatter(sources(1,:),sources(2,:),'o')
+    scatter(targets(1,:),targets(2,:),'x')
+    axis equal 
+end
 %
 
 % kernel defs
@@ -100,6 +105,28 @@ assert(kerntmp.isnan);
 kerntmp = nan*kerns;
 assert(kerntmp.isnan);
 
+% test promotion of singularity type (should get most singular of sum)
+
+kernspd = kerns + kernd;
+kerndps = kernd + kerns;
+kernsmd = kerns - kernd;
+kerndms = kernd - kerns;
+
+assert(strcmpi(kernspd.sing , 'log'));
+assert(strcmpi(kernsmd.sing , 'log'));
+assert(strcmpi(kerndps.sing , 'log'));
+assert(strcmpi(kerndms.sing , 'log'));
+
+kernstau = kernel('lap','stau');
+kerndprime = kernel('lap','dp');
+
+kerndpstau = kernd + kernstau;
+kerndpdprime = kernd + kerndprime;
+kerndprimeps = kerndprime + kerns;
+
+assert(strcmpi(kerndpstau.sing , 'pv'));
+assert(strcmpi(kerndpdprime.sing , 'hs'));
+assert(strcmpi(kerndprimeps.sing , 'hs'));
 
 
 end

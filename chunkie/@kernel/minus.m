@@ -39,6 +39,12 @@ if (isa(g,'kernel') && isa(f,'kernel'))
   else
       f.iszero = false;
   end
+
+  sing = 'smooth';
+  if strcmpi(f.sing,'log') || strcmpi(g.sing,'log'); sing = 'log'; end
+  if strcmpi(f.sing,'pv') || strcmpi(g.sing,'pv'); sing = 'pv'; end
+  if strcmpi(f.sing,'hs') || strcmpi(g.sing,'hs'); sing = 'hs'; end
+  f.sing = sing;
 else
     error('KERNEL:minus:invalid', ...
        'F and G must be kernel class objects');
