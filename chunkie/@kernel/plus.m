@@ -40,11 +40,11 @@ if (isa(g,'kernel') && isa(f,'kernel'))
       f.iszero = false;
   end
 
-  sing = 'smooth';
-  if strcmpi(f.sing,'log') || strcmpi(g.sing,'log'); sing = 'log'; end
-  if strcmpi(f.sing,'pv') || strcmpi(g.sing,'pv'); sing = 'pv'; end
-  if strcmpi(f.sing,'hs') || strcmpi(g.sing,'hs'); sing = 'hs'; end
-  f.sing = sing;
+  assert(kernel.insinghierarchy(f.sing),...
+      'adding only supported for kernels with known singularity type');
+  assert(kernel.insinghierarchy(g.sing),...
+      'adding only supported for kernels with known singularity type');
+  f.sing = kernel.singpromotion(f.sing,g.sing);
 else
     error('KERNEL:plus:invalid', ...
        'F and G must be kernel class objects');
