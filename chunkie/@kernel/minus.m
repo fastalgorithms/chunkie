@@ -40,10 +40,6 @@ if (isa(g,'kernel') && isa(f,'kernel'))
       f.iszero = false;
   end
 
-  assert(kernel.insinghierarchy(f.sing),...
-      'adding only supported for kernels with known singularity type');
-  assert(kernel.insinghierarchy(g.sing),...
-      'adding only supported for kernels with known singularity type');
   f.sing = kernel.singpromotion(f.sing,g.sing);
 else
     error('KERNEL:minus:invalid', ...

@@ -112,10 +112,29 @@ kerndps = kernd + kerns;
 kernsmd = kerns - kernd;
 kerndms = kernd - kerns;
 
+kerncustom = kernel.zeros(1);
+kerncustom.sing = [];
+
+original_warn_state = warning('off', 'all'); 
+
+lastwarn('', ''); 
+kerncustomps = kerncustom + kerns;
+[warnMsg, ~] = lastwarn();
+assert(~isempty(warnMsg));
+
 assert(strcmpi(kernspd.sing , 'log'));
 assert(strcmpi(kernsmd.sing , 'log'));
 assert(strcmpi(kerndps.sing , 'log'));
 assert(strcmpi(kerndms.sing , 'log'));
+assert(strcmpi(kerncustomps.sing , 'log'));
+
+lastwarn('', ''); 
+kerncustom.sing = 'myownsingularity';
+kerncustomps = kerncustom + kerns;
+[warnMsg, ~] = lastwarn();
+assert(~isempty(warnMsg));
+assert(strcmpi(kerncustomps.sing,'unknown'));
+warning(original_warn_state);
 
 kernstau = kernel('lap','stau');
 kerndprime = kernel('lap','dp');
