@@ -6,6 +6,7 @@ The chunkIE development team is grateful to our contributors!
 - Jeremy Hoskins ([jghoskins](https://github.com/jghoskins))
 - Jonathan Shaw ([Jonathan-D-Shaw](https://github.com/Jonathan-D-Shaw))
 - Hai Zhu ([haiszhu](https://github.com/haiszhu))
+- Fredrik Fryklund ([fryklund](https://github.com/fryklund))
 - Dan Fortunato ([danfortunato](https://github.com/danfortunato))
 - Haiyang Wang ([haiyangwang-1](https://github.com/haiyangwang-1))
 - Dhairya Malhotra ([dmalhotra](https://github.com/dmalhotra))
