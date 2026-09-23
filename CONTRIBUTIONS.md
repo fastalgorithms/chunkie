@@ -12,6 +12,7 @@ The chunkIE development team is grateful to our contributors!
 - Kshitij Sinha ([kshitijs21](https://github.com/kshitijs21))
 - Paul Beckman ([pbeckman](https://github.com/pbeckman))
 - Alex Barnett ([ahbarnett](https://github.com/ahbarnett))
+- Mike O'Neil ([oneilm](https://github.com/oneilm))
 - Zydrunas Gimbutas ([zgimbutas](https://github.com/zgimbutas))
 - Shidong Jiang ([sj90101](https://github.com/sj90101))
 - James Bremer ([JamesCBremerJr](https://github.com/JamesCBremerJr))
