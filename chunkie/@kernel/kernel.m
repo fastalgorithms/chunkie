@@ -193,7 +193,6 @@ classdef kernel
         obj = ones(varargin);
         s = combine_splitinfo(sf, sg, cf, cg);
         s = scale_splitinfo(s0, c);
-        isin = insinghierarchy(sing);
         sing = singpromotion(sing1,sing2);
 
     end
