@@ -56,17 +56,23 @@ in the distribution (see chunkie/LICENSE.md)
 
 ## chunkIE team
 
-chunkIE has benefitted from the contributions of several developers: Travis Askham, 
-Manas Rachh, Michael O'Neil, Jeremy Hoskins, Dan Fortunato, Shidong Jiang, 
-Fredrik Fryklund, Hai Yang Wang, Hai Zhu, and Tristan Goodwill.
+chunkIE is maintained by Travis Askham, Manas Rachh, Jeremy Hoskins,
+and Dan Fortunato.
 
-For a full list of contributors, see CONTRIBUTIONS.md
-
-James Bremer and Zydrunas Gimbutas provided generalized Gaussian quadrature rules (chunkie/+chnk/+quadggq)
+chunkIE has benefitted from many contributions:
+- The original Fortran library was written by Mike O'Neil.
+- James Bremer and Zydrunas Gimbutas provided generalized Gaussian
+quadrature rules (chunkie/+chnk/+quadggq).
+- Shidong Jiang, Hai Zhu, Fredrik Fryklund, Tristan Goodwill,
+and Haiyang Wang made contributions to the core MATLAB library routines,
+including RCIP methods, kernel-split quadrature, and iterative solvers.
+- For a full list of contributors, see CONTRIBUTIONS.md
 
 Many routines were modelled after parts of the legeexps.f library (Copyright Vladimir Rokhlin, Free BSD 3-clause),
 FMMLIB2D (Copyright Leslie Greengard and Zydrunas Gimbutas, Free BSD 3-clause), and Johan Helsing's
 [RCIP tutorial](https://arxiv.org/abs/1207.6737)
+
+
 
 ## Citing this software
 
