@@ -60,6 +60,8 @@ chunkIE has benefitted from the contributions of several developers: Travis Askh
 Manas Rachh, Michael O'Neil, Jeremy Hoskins, Dan Fortunato, Shidong Jiang, 
 Fredrik Fryklund, Hai Yang Wang, Hai Zhu, and Tristan Goodwill.
 
+For a full list of contributors, see CONTRIBUTIONS.md
+
 James Bremer and Zydrunas Gimbutas provided generalized Gaussian quadrature rules (chunkie/+chnk/+quadggq)
 
 Many routines were modelled after parts of the legeexps.f library (Copyright Vladimir Rokhlin, Free BSD 3-clause),
