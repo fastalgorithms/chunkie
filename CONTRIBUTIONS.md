@@ -1,0 +1,22 @@
+The chunkIE development team is grateful to our contributors!
+
+- Travis Askham ([askhamwhat](https://github.com/askhamwhat))
+- Manas Rachh ([mrachh](https://github.com/mrachh))
+- Tristan Goodwill ([tristangdwl](https://github.com/tristangdwl))
+- Jeremy Hoskins ([jghoskins](https://github.com/jghoskins))
+- Jonathan Shaw ([Jonathan-D-Shaw](https://github.com/Jonathan-D-Shaw))
+- Hai Zhu ([haiszhu](https://github.com/haiszhu))
+- Dan Fortunato ([danfortunato](https://github.com/danfortunato))
+- Haiyang Wang ([haiyangwang-1](https://github.com/haiyangwang-1))
+- Dhairya Malhotra ([dmalhotra](https://github.com/dmalhotra))
+- Kshitij Sinha ([kshitijs21](https://github.com/kshitijs21))
+- Paul Beckman ([pbeckman](https://github.com/pbeckman))
+- Alex Barnett ([ahbarnett](https://github.com/ahbarnett))
+- Zydrunas Gimbutas ([zgimbutas](https://github.com/zgimbutas))
+- Shidong Jiang ([sj90101](https://github.com/sj90101))
+- James Bremer ([JamesCBremerJr](https://github.com/JamesCBremerJr))
+- Jacob Linden
+- Peter Nekrasov ([peter-nekrasov](https://github.com/peter-nekrasov))
+- Solomon Quinn ([solquinn](https://github.com/solquinn))
+- Zhaosen Su ([suzhaosenTim](https://github.com/suzhaosenTim))
+- R. Connor Greene ([rcgreene](https://github.com/rcgreene))
