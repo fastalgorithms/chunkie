@@ -9,6 +9,9 @@ function out = mtimes(f, g)
 % Right multiply K * N: N is a (q x p) matrix or function handle N(s)
 %   returning (q x p x ns), q = K.opdims(2). Output opdims = [K.opdims(1), p].
 %
+% A function handle may alternatively return the matrix forms
+%   M(t): (p*nt x m) or N(s): (q x p*ns)
+%
 % splitinfo is dropped for right mult by a function handle N(s).
 
 % Determine which argument is the kernel and which is the multiplier.
@@ -72,6 +75,7 @@ if ~exist('p', 'var')
         probe.r  = randn(2,1);  probe.d  = randn(2,1);
         probe.d2 = randn(2,1);  probe.n  = randn(2,1);
         hval = h(probe);
+        hr = size(hval, 1); hc = size(hval, 2);
         if size(hval,1) == 1 && size(hval,2) == 1
             ispointwise = true;
             if strcmp(side, 'left')
@@ -117,6 +121,23 @@ out.splitinfo = [];
             fval = h;
         else
             fval = h(pts);
+            fval = normalize_fval(fval, size(pts.r(:,:), 2));
+        end
+    end
+
+    function fval = normalize_fval(fval, n)
+        % Function handles may return either a tensor (hr x hc x n) or
+        % a stacked matrix:
+        %   left,  h(t): (hr*n x hc), stacked by target
+        %   right, h(s): (hr x hc*n), stacked by source
+        % Convert the stacked forms to the tensor form.
+        if n <= 1 || size(fval, 3) ~= 1
+            return
+        end
+        if strcmp(side, 'left') && size(fval,1) == hr*n && size(fval,2) == hc
+            fval = permute(reshape(fval, hr, n, hc), [1 3 2]);
+        elseif strcmp(side, 'right') && size(fval,1) == hr && size(fval,2) == hc*n
+            fval = reshape(fval, hr, hc, n);
         end
     end
 
