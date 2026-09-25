@@ -21,7 +21,7 @@ classdef kernel
 %                                                   'cvel', 'cpres',
 %                                                   'ctrac', 'cgrad'
 %      'zeros'       ('zero','z') 
-%      'ones'        ('one','o')  optional constant matrix A
+%      'ones'        ('one','o')  optional size M, N
 %      'axis sym helmholtz'                         's' 'd' 'sp' 'c'
 %         ('axissymh', 'axissymhelm')
 %      'axis sym helmholtz difference'              's' 'd' 'sp' 'dp'

@@ -1,12 +1,15 @@
-function obj = ones(A)
+function obj = ones(m, n)
 %KERNEL.ONES   Construct a constant kernel.
 %
 %   K = KERNEL.ONES() constructs a 1 x 1 kernel with value 1, i.e.
 %   K(x,y) = 1 for all targets x and sources y. Applied to a density this
 %   gives the integral of the density: (K sigma)(x) = int sigma ds.
 %
-%   K = KERNEL.ONES(A) constructs an m x n constant block kernel with
-%   K(x,y) = A, where A is an m x n numeric matrix.
+%   K = KERNEL.ONES(M) constructs an M x M constant block kernel with
+%   K(x,y) = ones(M).
+%
+%   K = KERNEL.ONES(M, N) constructs an M x N constant block kernel with
+%   K(x,y) = ones(M, N).
 %
 %   A typical use is to remove the null space of a rank-deficient integral
 %   equation, e.g. the interior Laplace Neumann problem
@@ -16,13 +19,18 @@ function obj = ones(A)
 %
 %   See also KERNEL, KERNEL.ZEROS.
 
-if ( nargin < 1 || isempty(A) )
-    A = 1;
+if ( nargin < 1 || isempty(m) )
+    m = 1;
 end
-assert(isnumeric(A) && ismatrix(A), ...
-    'CHUNKIE:kernel:ones', 'A must be a numeric 2D matrix.');
+if ( nargin < 2 || isempty(n) )
+    n = m;
+end
+assert(isnumeric(m) && isscalar(m) && m == round(m) && m > 0, ...
+    'CHUNKIE:kernel:ones', 'M must be a positive integer.');
+assert(isnumeric(n) && isscalar(n) && n == round(n) && n > 0, ...
+    'CHUNKIE:kernel:ones', 'N must be a positive integer.');
 
-[m, n] = size(A);
+A = builtin('ones', m, n);
 
     function out = eval_(s, t)
         % s.r / t.r may be 2 x k x nch (e.g. a chunker), so count points

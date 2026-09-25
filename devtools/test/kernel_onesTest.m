@@ -13,11 +13,10 @@ rng(iseed);
 
 K = kernel('ones');
 assert(isequal(K.opdims, [1 1]));
-A = [1 2 3; 4 5 6];
-KA = kernel.ones(A);
+KA = kernel.ones(2, 3);
 assert(isequal(KA.opdims, [2 3]));
 s = []; s.r = randn(2, 4); t = []; t.r = randn(2, 5);
-assert(isequal(KA.eval(s, t), repmat(A, 5, 4)));
+assert(isequal(KA.eval(s, t), repmat(ones(2, 3), 5, 4)));
 sig = randn(3*4, 1);
 assert(norm(KA.fmm(1e-10, s, t, sig) - KA.eval(s, t)*sig) < 1e-12);
 
