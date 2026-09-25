@@ -70,6 +70,9 @@ classdef kernel
 %        - 'pv' sum of above type kernels and phi(s)/(s-t)
 %        - 'hs' sum of above type kernels and phi(s)/(s-t)^2
 %
+%      - K.parts: used for combining kernels with different K.sing.
+%        A struct with one kernel per singularity type, e.g. K.parts.log.
+%
 %      - K.fmm: A function handle which calls the FMM for the corresponding
 %        kernel. K.fmm(eps, s, t, sigma) evaluates the kernel with density
 %        sigma from sources s to targets t with accuracy eps.
@@ -89,6 +92,7 @@ classdef kernel
         shifted_eval   % Function handle for evaluating translated kernel evaluation
         fmm            % Function handle for kernel FMM
         sing           % Singularity type
+        parts = []     % Struct of kernels, one per singularity type (see above)
         splitinfo      % Kernel-split information
         opdims = [0 0] % Dimension of the operator
         isnan  = false % Boolean, determines if NaN kernel
@@ -260,7 +264,11 @@ opdims = [sum(rowdims) sum(coldims)];
         out = zeros(opdims(1)*nt, opdims(2)*ns);
         for k = 1:m
             for l = 1:n
-                out(ridx{k},cidx{l}) = kerns(k,l).shifted_eval(s,t,o);  
+                if isa(kerns(k,l).shifted_eval, 'function_handle')
+                    out(ridx{k},cidx{l}) = kerns(k,l).shifted_eval(s,t,o);
+                else
+                    out(ridx{k},cidx{l}) = kerns(k,l).eval(s,t);
+                end
             end
         end
 
@@ -337,6 +345,33 @@ if ( any(strcmpi(sings, 'log')) ),  K.sing = 'log'; end
 if ( any(strcmpi(sings, 'pv'))  ),  K.sing = 'pv';  end
 if ( any(strcmpi(sings, 'hs'))  ),  K.sing = 'hs';  end
 
+% One part per singularity type, built from the matching part of each block
+partsings = {};
+for idx = 1:numel(kerns)
+    if kerns(idx).iszero, continue; end
+    if isempty(kerns(idx).parts)
+        partsings{end+1} = lower(char(kerns(idx).sing));
+    else
+        partsings = [partsings, fieldnames(kerns(idx).parts)'];
+    end
+end
+partsings = unique(partsings);
+if numel(partsings) > 1 && ~any(cellfun(@isempty, partsings))
+    for sname = partsings(:)'
+        blocks = kerns;
+        for idx = 1:numel(kerns)
+            if isfield(kerns(idx).parts, sname{1})
+                blocks(idx) = kerns(idx).parts.(sname{1});
+            elseif kerns(idx).iszero || ~isempty(kerns(idx).parts) ...
+                    || ~strcmpi(kerns(idx).sing, sname{1})
+                blocks(idx) = kernel.zeros(kerns(idx).opdims(1), kerns(idx).opdims(2));
+            end
+        end
+        K.parts.(sname{1}) = interleave(blocks);
+        K.parts.(sname{1}).sing = sname{1};
+    end
+end
+
 % Set params
 K.params = cell(m, n);
 for kk=1:m
@@ -350,8 +385,8 @@ if ( all(cellfun('isclass', {kerns.eval}, 'function_handle')) )
     K.eval = @eval_;
 end
 
-% The new kernel has shifted_eval() only if all sub-kernels have eval()
-if ( all(cellfun('isclass', {kerns.shifted_eval}, 'function_handle')) )
+% The new kernel has shifted_eval() if any sub-kernel has shifted_eval(), the others use eval()
+if ( any(cellfun('isclass', {kerns.shifted_eval}, 'function_handle')) )
     K.shifted_eval = @shifted_eval_;
 end
 

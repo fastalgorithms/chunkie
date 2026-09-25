@@ -18,6 +18,11 @@ else
 end
 
 f.splitinfo = kernel.scale_splitinfo(f.splitinfo, -1);
+if ~isempty(f.parts)
+    for sname = fieldnames(f.parts)'
+        f.parts.(sname{1}) = -f.parts.(sname{1});
+    end
+end
 
 end
 

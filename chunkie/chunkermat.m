@@ -366,76 +366,31 @@ for i=1:nchunkers
 
     singi = sing;
     chnkr = chnkrs(i);
+    k = chnkr.k;
     if (size(kern) == 1)
-        ftmp = kern.eval;
-        if ~isempty(kern.sing)
-            singi = kern.sing;
-        end
+        kerni = kern;
     else
-        
-        ftmp = kern(i,i).eval;
-        if ~isempty(kern(i,i).sing)
-            singi = kern(i,i).sing;
-        end
-    end 
+        kerni = kern(i,i);
+    end
+    ftmp = kerni.eval;
+    if ~isempty(kerni.sing)
+        singi = kerni.sing;
+    end
+    parts = kerni.parts;
+    if isempty(parts)
+        parts = struct(lower(singi), kerni);
+    end
 
-    
-    
     % call requested routine
 
     if strcmpi(quad,'ggq')
-        if strcmpi(singi,'smooth')
-            %TODO: make a reasonable method for smooth with removable
-            type = 'log';
-            if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
-                auxquads = opts.auxquads.ggqlog;
-            else
-                k = chnkr.k;
-                auxquads = chnk.quadggq.setup(k,type);
-                opts.auxquads.ggqlog = auxquads;
-            end
-        elseif strcmpi(singi, 'removable')
-            type = 'removable';
-            if (isfield(opts,'auxquads') && isfield(opts.auxquads,'ggqremovable'))
-                auxquads = opts.auxquads.ggqremovable;
-            else
-                k = chnkr.k;
-                auxquads = chnk.quadggq.setup(k, type);
-                opts.auxquads.ggqremovable = auxquads;
-            end
-        elseif strcmpi(singi,'log')
-            type = 'log';
-            if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqlog'))
-                auxquads = opts.auxquads.ggqlog;
-            else
-                k = chnkr.k;
-                auxquads = chnk.quadggq.setup(k,type);
-                opts.auxquads.ggqlog = auxquads;
-            end
-        elseif strcmpi(singi,'pv')
-            type = 'pv';
-            if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqpv'))
-                auxquads = opts.auxquads.ggqpv;
-            else
-                k = chnkr.k;
-                auxquads = chnk.quadggq.setup(k,type);
-                opts.auxquads.ggqpv = auxquads;
-            end
-        elseif strcmpi(singi,'hs')
-            type = 'hs';
-            if (isfield(opts,'auxquads') &&isfield(opts.auxquads,'ggqhs'))
-                auxquads = opts.auxquads.ggqhs;
-            else
-                k = chnkr.k;
-                auxquads = chnk.quadggq.setup(k,type);
-                opts.auxquads.ggqhs = auxquads;
-            end
+
+        auxquads = [];
+        if isfield(opts,'auxquads')
+            auxquads = opts.auxquads;
         end
-        if nonsmoothonly
-            sysmat_tmp = chnk.quadggq.buildmattd(chnkr,ftmp,opdims,type,auxquads,jlist,corrections);
-        else
-            sysmat_tmp = chnk.quadggq.buildmat(chnkr,ftmp,opdims,type,auxquads,jlist);
-        end
+        [sysmat_tmp,opts.auxquads] = chnk.quadggq.buildmatparts(chnkr,ftmp,opdims, ...
+            jlist,nonsmoothonly,corrections,parts,auxquads);
 
     elseif strcmpi(quad,'native')
 

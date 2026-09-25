@@ -162,6 +162,16 @@ else
     end
 end
 
+if ~isempty(K.parts)
+    for sname = fieldnames(K.parts)'
+        if strcmp(side, 'left')
+            out.parts.(sname{1}) = h * K.parts.(sname{1});
+        else
+            out.parts.(sname{1}) = K.parts.(sname{1}) * h;
+        end
+    end
+end
+
     function s = mtimes_splitinfo_left(s0)
         % transform each split function the same way eval_left does
         if isempty(s0), s = []; return; end

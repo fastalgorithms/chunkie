@@ -28,6 +28,11 @@ elseif (isnumeric(g) && isscalar(g))
     end
 
     f.splitinfo = kernel.scale_splitinfo(f.splitinfo, g);
+    if ~isempty(f.parts)
+        for sname = fieldnames(f.parts)'
+            f.parts.(sname{1}) = f.parts.(sname{1}) .* g;
+        end
+    end
 
     if or(f.isnan,isnan(g))
         f = kernel.nans(f.opdims(1),f.opdims(2));

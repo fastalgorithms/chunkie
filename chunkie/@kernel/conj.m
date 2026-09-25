@@ -17,6 +17,11 @@ else
     f.fmm = [];
 end
 
+if ~isempty(f.parts)
+    for sname = fieldnames(f.parts)'
+        f.parts.(sname{1}) = conj(f.parts.(sname{1}));
+    end
+end
 end
 
 

@@ -184,11 +184,6 @@ chnkrlocal(1,nedge) = chunker(pref);
 
 if(size(fkern)==1)
     fkernlocal = fkern;
-    if isa(fkern, 'kernel')
-        if isa(fkern.shifted_eval, 'function_handle')
-            fkernlocal.eval = @(s,t) fkern.shifted_eval(s, t, vert0);
-        end
-    end
 else
     fkernlocal(nedge,nedge) = kernel();
     for i=1:nedge
@@ -196,13 +191,29 @@ else
         for j=1:nedge
             icj = iedgechunks(1,j);
             fkernlocal(i,j) = fkern(ici,icj);
-            if isa(fkern(ici,icj), 'kernel')
-                if isa(fkern(ici,icj).shifted_eval, 'function_handle')
-                    fkernlocal(i,j).eval = ...
-                      @(s,t) fkern(ici,icj).shifted_eval(s,t,vert0);
+        end
+    end
+end
+
+% use the shifted evaluator for the kernel and each of its parts
+if isa(fkernlocal, 'kernel')
+    for ik = 1:numel(fkernlocal)
+        K = fkernlocal(ik);
+        if isa(K.shifted_eval, 'function_handle')
+            shifted_eval = K.shifted_eval;
+            K.eval = @(s,t) shifted_eval(s,t,vert0);
+            if ~isempty(K.parts)
+                for sname = fieldnames(K.parts)'
+                    P = K.parts.(sname{1});
+                    if isa(P.shifted_eval, 'function_handle')
+                        shifted_eval = P.shifted_eval;
+                        P.eval = @(s,t) shifted_eval(s,t,vert0);
+                    end
+                    K.parts.(sname{1}) = P;
                 end
             end
         end
+        fkernlocal(ik) = K;
     end
 end
 
