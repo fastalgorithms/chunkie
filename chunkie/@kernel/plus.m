@@ -39,6 +39,8 @@ if (isa(g,'kernel') && isa(f,'kernel'))
   else
       f.iszero = false;
   end
+
+  f.sing = kernel.singpromotion(f.sing,g.sing);
 else
     error('KERNEL:plus:invalid', ...
        'F and G must be kernel class objects');

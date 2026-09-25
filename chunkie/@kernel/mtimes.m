@@ -168,8 +168,8 @@ end
         s = s0;
         f0 = s0.functions;
         s.functions = @(src,targ) cellfun( ...
-            @(c) reshape(apply_left(reshape_fval_left(evalh(targ), size(targ.r,2)), ...
-                reshape(c, m, 1, size(targ.r,2), [])), p*size(targ.r,2), []), ...
+            @(c) reshape(apply_left(reshape_fval_left(evalh(targ), size(targ.r(:,:), 2)), ...
+                reshape(c, m, 1, size(targ.r(:,:), 2), size(c,2))), p*size(targ.r(:,:), 2), size(c,2)), ...
             f0(src,targ), 'UniformOutput', false);
     end
 
@@ -179,8 +179,8 @@ end
         s = s0;
         f0 = s0.functions;
         s.functions = @(src,targ) cellfun( ...
-            @(c) reshape(apply_right(reshape(c, m*size(targ.r,2), q, []), evalh(src)), ...
-                m*size(targ.r,2), []), ...
+            @(c) reshape(apply_right(reshape(c, m*size(targ.r(:,:), 2), q, size(c,2)/q), evalh(src)), ...
+                m*size(targ.r(:,:), 2), p*size(c,2)/q), ...
             f0(src,targ), 'UniformOutput', false);
     end
 
@@ -197,25 +197,27 @@ end
     end
 
     function vals = eval_left(s, t)
-        nt   = size(t.r, 2);
+        nt   = size(t.r(:,:), 2);
+        ns   = size(s.r(:,:), 2);
         fval = evalh(t);
         Kmat = Keval(s, t);
-        K4   = reshape(Kmat, m, 1, nt, []);
+        K4   = reshape(Kmat, m, 1, nt, q*ns);
         out4 = apply_left(reshape_fval_left(fval, nt), K4);
-        vals = reshape(out4, p*nt, []);
+        vals = reshape(out4, p*nt, q*ns);
     end
 
     function vals = shifted_eval_left(s, t, o)
-        nt   = size(t.r, 2);
+        nt   = size(t.r(:,:), 2);
+        ns   = size(s.r(:,:), 2);
         fval = evalh(shift_pts(t, o));
         Kmat = Kshifted_eval(s, t, o);
-        K4   = reshape(Kmat, m, 1, nt, []);
+        K4   = reshape(Kmat, m, 1, nt, q*ns);
         out4 = apply_left(reshape_fval_left(fval, nt), K4);
-        vals = reshape(out4, p*nt, []);
+        vals = reshape(out4, p*nt, q*ns);
     end
 
     function out = fmm_left(eps, s, t, sigma)
-        nt    = size(t.r, 2);
+        nt    = size(t.r(:,:), 2);
         fval  = evalh(t);
         inner = Kfmm(eps, s, t, sigma);
         out   = reshape(apply_left(fval, reshape(inner, m, 1, nt)), p*nt, 1);
@@ -224,8 +226,8 @@ end
 % right-multiply: K(s,t) * h(s)
 
     function vals = eval_right(s, t)
-        ns   = size(s.r, 2);
-        nt   = size(t.r, 2);
+        ns   = size(s.r(:,:), 2);
+        nt   = size(t.r(:,:), 2);
         fval = evalh(s);
         Kmat = Keval(s, t);
         K3   = reshape(Kmat, m*nt, q, ns);
@@ -233,8 +235,8 @@ end
     end
 
     function vals = shifted_eval_right(s, t, o)
-        ns   = size(s.r, 2);
-        nt   = size(t.r, 2);
+        ns   = size(s.r(:,:), 2);
+        nt   = size(t.r(:,:), 2);
         fval = evalh(shift_pts(s, o));
         Kmat = Kshifted_eval(s, t, o);
         K3   = reshape(Kmat, m*nt, q, ns);
@@ -242,7 +244,7 @@ end
     end
 
     function out = fmm_right(eps, s, t, sigma)
-        ns     = size(s.r, 2);
+        ns     = size(s.r(:,:), 2);
         fval   = evalh(s);
         sig_in = reshape(apply_left(fval, reshape(sigma, p, 1, ns)), q, ns);
         out    = Kfmm(eps, s, t, sig_in);
