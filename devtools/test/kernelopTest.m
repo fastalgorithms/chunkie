@@ -1,10 +1,13 @@
 %KERNELOPTEST verify kernel class operations are correct
-kernelopTest0()
-kernelopTest1()
-kernelopTest2()
-kernelopTest3()
+kernelopTest_basic()
+kernelopTest_times()
+kernelopTest_times_shifted()
+kernelopTest_mtimes()
+kernelopTest_mtimes_stacked()
+kernelopTest_mtimes_shifted()
+kernelopTest_errors()
 
-function kernelopTest0()
+function kernelopTest_basic()
 % setup points
 src = [];
 src.r = [[0;0],[0;1]];
@@ -47,11 +50,151 @@ assert(norm(conj_dkern.eval(src,targ) - conj_dkern.eval(src,targ))<1e-10)
 
 end
 
-function kernelopTest1()
-% Test matrix-valued mtimes for a vector kernel (Stokes velocity,
-% opdims = [2 2]): left and right multiplication by scalar and
-% matrix-valued functions and constants, square and non-square,
-% checked against eval and fmm.
+function kernelopTest_times()
+% Test .* of a kernel by a numeric array.
+
+rng(2);
+src = []; src.r = [[0;0],[0;1],[0.5;-0.2]];
+src.n = randn(size(src.r)); src.n = src.n./vecnorm(src.n);
+targ = []; targ.r = [[1;1],[-1;0]];
+targ.n = randn(size(targ.r)); targ.n = targ.n./vecnorm(targ.n);
+nt = size(targ.r,2); ns = size(src.r,2);
+
+nsrc = 12; ntarg = 9;
+src2 = []; src2.r = randn(2, nsrc);
+src2.n = randn(2, nsrc); src2.n = src2.n./vecnorm(src2.n);
+targ2 = []; targ2.r = 3 + randn(2, ntarg);
+targ2.n = randn(2, ntarg); targ2.n = targ2.n./vecnorm(targ2.n);
+eps_fmm = 1e-12;
+
+%% kernel with opdims [2 2]: scalar, column, row, matrix
+
+stkern = kernel('stokes','svel',1.0);
+Kmat = stkern.eval(src, targ);
+sigma = randn(2*nsrc, 1);
+Kfmm_out = stkern.fmm(eps_fmm, src2, targ2, sigma);
+
+Alist = {3, [2; -3], [1.5, -0.5i], [1, 2; 3, 4]};
+for k = 1:numel(Alist)
+    A = Alist{k};
+    AK = A .* stkern;
+    KA = stkern .* A;
+    assert(isequal(AK.opdims, [2 2]) && isequal(KA.opdims, [2 2]));
+
+    ref = kron(ones(nt, ns), A.*ones(2)) .* Kmat;
+    assert(norm(AK.eval(src,targ) - ref) < 1e-10, 'A.*K eval mismatch');
+    assert(norm(KA.eval(src,targ) - ref) < 1e-10, 'K.*A eval mismatch');
+
+    if iscolumn(A)
+        % column: fmm scales the output
+        ref2 = kron(eye(ntarg), diag(A.*ones(2,1))) * Kfmm_out;
+    elseif isrow(A)
+        % row: fmm scales the density
+        ref2 = stkern.fmm(eps_fmm, src2, targ2, kron(eye(nsrc), diag(A)) * sigma);
+    else
+        assert(isempty(AK.fmm) && isempty(KA.fmm), 'matrix .* K should have empty fmm');
+        continue
+    end
+    assert(norm(AK.fmm(eps_fmm, src2, targ2, sigma) - ref2) < 1e-8, 'A.*K fmm mismatch');
+    assert(norm(KA.fmm(eps_fmm, src2, targ2, sigma) - ref2) < 1e-8, 'K.*A fmm mismatch');
+end
+
+%% implicit expansion of a kernel with opdims [1 1]
+
+skern = kernel('lap', 's');
+Ks = skern.eval(src, targ);
+sigma1 = randn(nsrc, 1);
+Ksfmm_out = skern.fmm(eps_fmm, src2, targ2, sigma1);
+
+Alist = {[2; -1], [1, -2, 0.5], [1 2 3; 4 5 6]};
+for k = 1:numel(Alist)
+    A = Alist{k};
+    AK = A .* skern;
+    KA = skern .* A;
+    assert(isequal(AK.opdims, size(A)) && isequal(KA.opdims, size(A)));
+
+    ref = kron(Ks, A);
+    assert(norm(AK.eval(src,targ) - ref) < 1e-10, 'A.*K1 eval mismatch');
+    assert(norm(KA.eval(src,targ) - ref) < 1e-10, 'K1.*A eval mismatch');
+
+    if iscolumn(A)
+        sig = sigma1;
+        ref2 = kron(Ksfmm_out(:), A);
+    elseif isrow(A)
+        sig = randn(numel(A)*nsrc, 1);
+        ref2 = skern.fmm(eps_fmm, src2, targ2, kron(eye(nsrc), A) * sig);
+    else
+        assert(isempty(AK.fmm) && isempty(KA.fmm), 'matrix .* K1 should have empty fmm');
+        continue
+    end
+    assert(norm(AK.fmm(eps_fmm, src2, targ2, sig) - ref2) < 1e-8, 'A.*K1 fmm mismatch');
+    assert(norm(KA.fmm(eps_fmm, src2, targ2, sig) - ref2) < 1e-8, 'K1.*A fmm mismatch');
+end
+
+%% implicit expansion of a kernel with opdims [2 1] (Laplace gradient)
+
+gkern = kernel('lap', 'sgrad');
+Kg = gkern.eval(src, targ);
+r2 = [1, -1];
+Kgr = gkern .* r2;
+assert(isequal(Kgr.opdims, [2 2]));
+assert(norm(Kgr.eval(src,targ) - Kg * kron(eye(ns), r2)) < 1e-10, ...
+    'Kgrad.*r eval mismatch');
+
+%% zero / nan
+
+zK = zeros(2) .* stkern;
+assert(zK.iszero && isequal(zK.opdims, [2 2]));
+nK = stkern .* [1; NaN];
+assert(nK.isnan);
+
+end
+
+function kernelopTest_times_shifted()
+% Test shifted_eval for .* of a kernel by a numeric array. Uses
+% axisymmetric Helmholtz single layer kernels, interleaved into a 2x2
+% kernel with distinct blocks.
+
+S = @(zk) kernel('axissymhelm', 's', zk);
+K1 = S(1.3);                                    % opdims [1 1]
+K2 = kernel([S(1.3), S(0.7); S(2.1), S(0.4)]);  % opdims [2 2]
+
+% axisymmetric kernel requires nonnegative radial (first) coordinate
+src = []; src.r = [[0.5;0],[1.0;1],[0.8;-0.4]];
+targ = []; targ.r = [[2.0;1],[1.5;-0.5]];
+nt = size(targ.r,2); ns = size(src.r,2);
+o = [0.7, -0.3];
+
+Ksh1 = K1.shifted_eval(src, targ, o);
+Ksh2 = K2.shifted_eval(src, targ, o);
+
+% kernel with opdims [2 2]: scalar, column, row, matrix
+Alist = {2.5, [2; -3], [1.5, -0.5i], [1, 2; 3, 4]};
+for k = 1:numel(Alist)
+    A = Alist{k};
+    AK = A .* K2;
+    KA = K2 .* A;
+    ref = kron(ones(nt, ns), A.*ones(2)) .* Ksh2;
+    assert(norm(AK.shifted_eval(src, targ, o) - ref) < 1e-10, 'A.*K shifted_eval mismatch');
+    assert(norm(KA.shifted_eval(src, targ, o) - ref) < 1e-10, 'K.*A shifted_eval mismatch');
+end
+
+% implicit expansion of a kernel with opdims [1 1]
+Alist = {[2; -1], [1, -2, 0.5], [1 2 3; 4 5 6]};
+for k = 1:numel(Alist)
+    A = Alist{k};
+    AK = A .* K1;
+    KA = K1 .* A;
+    assert(isequal(AK.opdims, size(A)) && isequal(KA.opdims, size(A)));
+    ref = kron(Ksh1, A);
+    assert(norm(AK.shifted_eval(src, targ, o) - ref) < 1e-10, 'A.*K1 shifted_eval mismatch');
+    assert(norm(KA.shifted_eval(src, targ, o) - ref) < 1e-10, 'K1.*A shifted_eval mismatch');
+end
+
+end
+
+function kernelopTest_mtimes()
+% Test matrix-valued mtimes for a vector kernel (Stokes vel, opdims = [2, 2])
 
 % setup points
 src = [];
@@ -257,9 +400,80 @@ assert(norm(got_Q_right - ref_Q_right) < 1e-10, 'K*Q(s) (non-square) eval mismat
 
 end
 
-function kernelopTest2()
-% Test mtimes shifted_eval (axisymmetric Helmholtz kernel, opdims = [1 1]):
-% left and right multiplication by scalar functions.
+function kernelopTest_mtimes_stacked()
+% Test mtimes with function handles returning stacked (non-tensor)
+% matrices: M(t) of size (p*nt x m), N(s) of size (q x p*ns).
+
+src = []; src.r = [[0;0],[0;1],[0.4;0.3]];
+src.n = [1 0 0.6; 0 1 0.8];
+targ = []; targ.r = [[1;1],[-1;0]];
+nt = size(targ.r,2); ns = size(src.r,2);
+
+stkern = kernel('stokes','svel',1.0);   % opdims = [2 2]
+Kmat = stkern.eval(src, targ);
+
+% M(t) is 3x2 per target, returned stacked as (3*nt x 2)
+Mblk = @(x) [1, 0; -x(1), 1; x(2), 2];
+Mfun = @(t) [reshape([ones(1,size(t.r,2)); -t.r(1,:); t.r(2,:)], [], 1), ...
+             reshape([zeros(1,size(t.r,2)); ones(1,size(t.r,2)); ...
+                      2*ones(1,size(t.r,2))], [], 1)];
+MK = Mfun * stkern;
+assert(isequal(MK.opdims, [3 2]));
+ref = zeros(3*nt, 2*ns);
+for j = 1:nt
+    ref((j-1)*3+(1:3), :) = Mblk(targ.r(:,j)) * Kmat((j-1)*2+(1:2), :);
+end
+assert(norm(MK.eval(src, targ) - ref) < 1e-10, 'stacked M(t)*K eval mismatch');
+
+% N(s) is 2x3 per source, returned stacked as (2 x 3*ns)
+Nblk = @(x) [1, 0, x(1); -x(2), 1, 2];
+Nfun = @(s) [reshape([ones(1,size(s.r,2)); zeros(1,size(s.r,2)); s.r(1,:)], 1, []); ...
+             reshape([-s.r(2,:); ones(1,size(s.r,2)); 2*ones(1,size(s.r,2))], 1, [])];
+KN = stkern * Nfun;
+assert(isequal(KN.opdims, [2 3]));
+ref = zeros(2*nt, 3*ns);
+for i = 1:ns
+    ref(:, (i-1)*3+(1:3)) = Kmat(:, (i-1)*2+(1:2)) * Nblk(src.r(:,i));
+end
+assert(norm(KN.eval(src, targ) - ref) < 1e-10, 'stacked K*N(s) eval mismatch');
+
+% fmm with stacked forms
+rng(3);
+nsrc = 10; ntarg = 7;
+src2 = []; src2.r = randn(2, nsrc);
+src2.n = randn(2, nsrc); src2.n = src2.n./vecnorm(src2.n);
+targ2 = []; targ2.r = 3 + randn(2, ntarg);
+sigma = randn(2*nsrc, 1);
+Kfmm_out = stkern.fmm(1e-12, src2, targ2, sigma);
+ref2 = zeros(3*ntarg, 1);
+for j = 1:ntarg
+    ref2((j-1)*3+(1:3)) = Mblk(targ2.r(:,j)) * Kfmm_out((j-1)*2+(1:2));
+end
+assert(norm(MK.fmm(1e-12, src2, targ2, sigma) - ref2) < 1e-8, ...
+    'stacked M(t)*K fmm mismatch');
+
+sigma3 = randn(3*nsrc, 1);
+sig_in = zeros(2*nsrc, 1);
+for i = 1:nsrc
+    sig_in((i-1)*2+(1:2)) = Nblk(src2.r(:,i)) * sigma3((i-1)*3+(1:3));
+end
+ref3 = stkern.fmm(1e-12, src2, targ2, sig_in);
+assert(norm(KN.fmm(1e-12, src2, targ2, sigma3) - ref3) < 1e-8, ...
+    'stacked K*N(s) fmm mismatch');
+
+% scalar pointwise function returned as a plain (nt x 1) vector
+wfun = @(t) (1 + t.r(1,:).^2).';
+wK = wfun * stkern;
+ref = kron(diag(1 + targ.r(1,:).^2), eye(2)) * Kmat;
+assert(norm(wK.eval(src, targ) - ref) < 1e-10, 'stacked pointwise w(t)*K mismatch');
+
+end
+
+function kernelopTest_mtimes_shifted()
+% Test shifted_eval for * of a kernel by scalars, constant matrices and
+% functions of the target or source.
+
+%% scalar functions (pointwise multiplier)
 
 zk = 1.3;
 axkern = kernel('axissymhelm', 's', zk);   % opdims = [1 1], has shifted_eval
@@ -298,12 +512,120 @@ end
 got_shift_right = axKN.shifted_eval(asrc, atarg, o);
 assert(norm(got_shift_right - ref_shift_right) < 1e-10, 'shifted_eval_right mismatch');
 
+%% interleaved kernels
+
+S = @(zk) kernel('axissymhelm', 's', zk);
+K1 = S(1.3);                                    % opdims [1 1]
+K2 = kernel([S(1.3), S(0.7); S(2.1), S(0.4)]);  % opdims [2 2]
+
+src = []; src.r = [[0.5;0],[1.0;1],[0.8;-0.4]];
+targ = []; targ.r = [[2.0;1],[1.5;-0.5]];
+nt = size(targ.r,2); ns = size(src.r,2);
+tsh = targ.r + o(:);   % shifted target positions
+ssh = src.r + o(:);    % shifted source positions
+
+Ksh1 = K1.shifted_eval(src, targ, o);
+Ksh2 = K2.shifted_eval(src, targ, o);
+
+% scalar constant
+Kt = 2 * K2;
+assert(norm(Kt.shifted_eval(src, targ, o) - 2*Ksh2) < 1e-10, 'c*K shifted_eval mismatch');
+Kt = K2 * 2;
+assert(norm(Kt.shifted_eval(src, targ, o) - 2*Ksh2) < 1e-10, 'K*c shifted_eval mismatch');
+
+% square matrix constant
+A = [1, 2; 3, 4];
+Kt = A * K2;
+assert(norm(Kt.shifted_eval(src, targ, o) - kron(eye(nt), A)*Ksh2) < 1e-10, ...
+    'A*K shifted_eval mismatch');
+Kt = K2 * A;
+assert(norm(Kt.shifted_eval(src, targ, o) - Ksh2*kron(eye(ns), A)) < 1e-10, ...
+    'K*A shifted_eval mismatch');
+
+% non-square matrix constant
+B = [1, -2; 0, 3; 2, 1];   % 3x2
+Kt = B * K2;
+assert(isequal(Kt.opdims, [3 2]));
+assert(norm(Kt.shifted_eval(src, targ, o) - kron(eye(nt), B)*Ksh2) < 1e-10, ...
+    'B*K (non-square) shifted_eval mismatch');
+Kt = K2 * B.';             % 2x3
+assert(isequal(Kt.opdims, [2 3]));
+assert(norm(Kt.shifted_eval(src, targ, o) - Ksh2*kron(eye(ns), B.')) < 1e-10, ...
+    'K*B (non-square) shifted_eval mismatch');
+
+% column constant times a scalar kernel: opdims [3 1]
+c = [1; -1; 2];
+Kt = c * K1;
+assert(norm(Kt.shifted_eval(src, targ, o) - kron(eye(nt), c)*Ksh1) < 1e-10, ...
+    'c*K1 shifted_eval mismatch');
+
+% P(t) is 3x2 per target, as a tensor and stacked as (3*nt x 2)
+Pfun = @(t) reshape([ones(1,size(t.r,2)); -t.r(1,:); t.r(2,:); ...
+                     zeros(1,size(t.r,2)); ones(1,size(t.r,2)); ...
+                     2*ones(1,size(t.r,2))], 3, 2, []);
+Pstk = @(t) [reshape([ones(1,size(t.r,2)); -t.r(1,:); t.r(2,:)], [], 1), ...
+             reshape([zeros(1,size(t.r,2)); ones(1,size(t.r,2)); ...
+                      2*ones(1,size(t.r,2))], [], 1)];
+ref = zeros(3*nt, 2*ns);
+for j = 1:nt
+    Pj = [1, 0; -tsh(1,j), 1; tsh(2,j), 2];
+    ref((j-1)*3+(1:3), :) = Pj * Ksh2((j-1)*2+(1:2), :);
+end
+Kt = Pfun * K2;
+assert(norm(Kt.shifted_eval(src, targ, o) - ref) < 1e-10, ...
+    'P(t)*K shifted_eval mismatch');
+Kt = Pstk * K2;
+assert(norm(Kt.shifted_eval(src, targ, o) - ref) < 1e-10, ...
+    'P(t)*K (stacked) shifted_eval mismatch');
+
+% Q(s) is 2x3 per source, as a tensor and stacked as (2 x 3*ns)
+Qfun = @(s) reshape([ones(1,size(s.r,2)); -s.r(2,:); ...
+                     zeros(1,size(s.r,2)); ones(1,size(s.r,2)); ...
+                     s.r(1,:); 2*ones(1,size(s.r,2))], 2, 3, []);
+Qstk = @(s) [reshape([ones(1,size(s.r,2)); zeros(1,size(s.r,2)); s.r(1,:)], 1, []); ...
+             reshape([-s.r(2,:); ones(1,size(s.r,2)); 2*ones(1,size(s.r,2))], 1, [])];
+ref = zeros(2*nt, 3*ns);
+for i = 1:ns
+    Qi = [1, 0, ssh(1,i); -ssh(2,i), 1, 2];
+    ref(:, (i-1)*3+(1:3)) = Ksh2(:, (i-1)*2+(1:2)) * Qi;
+end
+Kt = K2 * Qfun;
+assert(norm(Kt.shifted_eval(src, targ, o) - ref) < 1e-10, ...
+    'K*Q(s) shifted_eval mismatch');
+Kt = K2 * Qstk;
+assert(norm(Kt.shifted_eval(src, targ, o) - ref) < 1e-10, ...
+    'K*Q(s) (stacked) shifted_eval mismatch');
+
+% c(t) is 2x1 per target times a scalar kernel, as a tensor and stacked
+cfun = @(t) reshape([ones(1,size(t.r,2)); t.r(1,:)], 2, 1, []);
+cstk = @(t) reshape([ones(1,size(t.r,2)); t.r(1,:)], [], 1);
+ref = zeros(2*nt, ns);
+for j = 1:nt
+    ref((j-1)*2+(1:2), :) = [1; tsh(1,j)] * Ksh1(j, :);
+end
+Kt = cfun * K1;
+assert(norm(Kt.shifted_eval(src, targ, o) - ref) < 1e-10, ...
+    'c(t)*K1 shifted_eval mismatch');
+Kt = cstk * K1;
+assert(norm(Kt.shifted_eval(src, targ, o) - ref) < 1e-10, ...
+    'c(t)*K1 (stacked) shifted_eval mismatch');
+
+% scalar functions returned as plain vectors
+wt = @(t) (1 + t.r(1,:).^2).';     % nt x 1
+ws = @(s) 1 + s.r(2,:).^2;         % 1 x ns
+Kt = wt * K2;
+ref = kron(diag(1 + tsh(1,:).^2), eye(2)) * Ksh2;
+assert(norm(Kt.shifted_eval(src, targ, o) - ref) < 1e-10, ...
+    'w(t)*K (vector) shifted_eval mismatch');
+Kt = K2 * ws;
+ref = Ksh2 * kron(diag(1 + ssh(2,:).^2), eye(2));
+assert(norm(Kt.shifted_eval(src, targ, o) - ref) < 1e-10, ...
+    'K*w(s) (vector) shifted_eval mismatch');
+
 end
 
-function kernelopTest3()
-% Test that kernel.mtimes errors on bad inputs: function handles of more
-% than one argument, and matrix-valued constants/functions whose
-% dimensions are inconsistent with K.opdims.
+function kernelopTest_errors()
+% Test that .* and * error on bad inputs.
 
 stkern = kernel('stokes','svel',1.0);   % opdims = [2 2]
 
@@ -336,6 +658,15 @@ try
 catch ME
     assert(contains(ME.message, 'must return matrices with'), ...
         'wrong error for bad function handle opdims');
+end
+
+% .* with incompatible sizes
+try
+    stkern .* [1 2 3];
+    error('expected error for incompatible sizes not thrown');
+catch ME
+    assert(strcmp(ME.identifier, 'KERNEL:times:dims'), ...
+        'wrong error for incompatible .* sizes');
 end
 
 end
