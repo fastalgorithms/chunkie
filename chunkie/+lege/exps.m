@@ -23,6 +23,20 @@ if nargin > 1
     end
 end
 
+% Cache outputs keyed by (k,stab,nargout); kernel-split / RCIP loops
+% hit this thousands of times per build.
+persistent cache
+if isempty(cache); cache = struct(); end
+key = sprintf('k%d_s%d_n%d', k, stab, nargout);
+if isfield(cache, key)
+    e = cache.(key);
+    x = e.x;
+    if nargout > 1; w = e.w; end
+    if nargout > 2; u = e.u; end
+    if nargout > 3; v = e.v; end
+    return
+end
+
 if (or(stab,k<=200))
     if nargout > 1
         [x,w] = lege.rts_stab(k);
@@ -42,3 +56,9 @@ if nargout > 2
     d = (2.0*(1:k) - 1)/2.0;
     u = ((v).*(w(:)*d)).';
 end
+
+e = struct('x', x);
+if nargout > 1; e.w = w; end
+if nargout > 2; e.u = u; end
+if nargout > 3; e.v = v; end
+cache.(key) = e;
