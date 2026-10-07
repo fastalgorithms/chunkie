@@ -69,11 +69,31 @@ switch lower(type)
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0]};
         obj.splitinfo.action = {'r','r'};
         obj.splitinfo.functions = @(s,t) helm2d_s_split(zk,s,t);
+    
+    case {'s_ff', 'single_farfield'}
+        obj.type = 's';
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 's_ff');
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 's_ff', sigma);
+        obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 0 0],[1 0 0 0]};
+        obj.splitinfo.action = {'r','r'};
+        obj.splitinfo.functions = @(s,t) helm2d_s_split(zk,s,t);
 
     case {'d', 'double'}
         obj.type = 'd';
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'd');
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'd', sigma);
+        obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r','r'};
+        obj.splitinfo.functions = @(s,t) helm2d_d_split(zk,s,t);
+
+    case {'d_ff', 'double_farfield'}
+        obj.type = 'd';
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'd_ff');
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'd_ff', sigma);
         obj.sing = 'log';
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
@@ -101,6 +121,21 @@ switch lower(type)
         obj.params.coefs = coefs;
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c', coefs);
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'c', sigma, coefs);
+        obj.sing = 'log';
+        obj.splitinfo = [];
+        obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
+        obj.splitinfo.action = {'r','r','r'};
+        obj.splitinfo.functions = @(s,t) helm2d_c_split(zk,s,t,coefs);
+
+    case {'c_ff', 'combined_farfield'}
+        if ( nargin < 3 )
+            warning('Missing combined layer coefficients. Defaulting to [1,1i].');
+            coefs = [1,1i];
+        end
+        obj.type = 'c_ff';
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c_ff', coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'c_ff', sigma, coefs);
         obj.sing = 'log';
         obj.splitinfo = [];
         obj.splitinfo.type = {[0 0 0 0],[1 0 0 0],[0 0 -1 0]};
