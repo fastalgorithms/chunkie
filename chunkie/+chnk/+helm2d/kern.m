@@ -81,6 +81,14 @@ case {'d', 'double'}
   ny = repmat(srcnorm(2,:),nt,1);
   submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
 
+% double layer, far field
+case {'d_ff', 'double_far_field'}
+  srcnorm = srcinfo.n(:,:);
+  [~,grad] = chnk.helm2d.green_ff(zk,src,targ);
+  nx = repmat(srcnorm(1,:),nt,1);
+  ny = repmat(srcnorm(2,:),nt,1);
+  submat = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+
 % double layer (difference)
 case {'d_diff', 'double_diff'}
   srcnorm = srcinfo.n(:,:);
@@ -129,6 +137,10 @@ case {'stau_diff','st_diff'}
 % single layer
 case {'s', 'single'}
   submat = chnk.helm2d.green(zk,src,targ);
+
+% single layer far field
+case {'s_ff', 'single_far_field'}
+  submat = chnk.helm2d.green_ff(zk,src,targ);
 
 % single layer (difference)
 case {'s_diff', 'single_diff'}
@@ -186,6 +198,17 @@ case {'c', 'combined'}
   coef = ones(2,1);
   if(nargin == 5); coef = varargin{1}; end
   [submats,grad] = chnk.helm2d.green(zk,src,targ);
+  nx = repmat(srcnorm(1,:),nt,1);
+  ny = repmat(srcnorm(2,:),nt,1);
+  submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
+  submat = coef(1)*submatd + coef(2)*submats;
+
+% combined far field
+case {'c_ff', 'combined_farfield'}
+  srcnorm = srcinfo.n(:,:);
+  coef = ones(2,1);
+  if(nargin == 5); coef = varargin{1}; end
+  [submats,grad] = chnk.helm2d.green_ff(zk,src,targ);
   nx = repmat(srcnorm(1,:),nt,1);
   ny = repmat(srcnorm(2,:),nt,1);
   submatd = -(grad(:,:,1).*nx + grad(:,:,2).*ny);
