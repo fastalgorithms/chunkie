@@ -31,7 +31,7 @@ pref = [];
 pref.k = 16;
 narms = 3;
 amp = 0.25;
-start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp),cparams,pref); 
+start = tic; chnkr = chunkerfunc(@(t) starfish(t,narms,amp,[0,0],0,2.0),cparams,pref); 
 t1 = toc(start);
 
 fprintf('%5.2e s : time to build geo\n',t1)

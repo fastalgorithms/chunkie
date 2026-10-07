@@ -62,12 +62,13 @@ snt = sin(narms*(t+phi));
 xs = x0+(1+amp*cnt).*ct*scale;
 ys = y0+(1+amp*cnt).*st*scale;
 dxs = -(1+amp*cnt).*st-narms*amp*snt.*ct;
-dxs = dxs*scale;
 dys = (1+amp*cnt).*ct-narms*amp*snt.*st;
-dys = dys*scale;
 d2xs = -dys-narms*amp*(narms*cnt.*ct-snt.*st);
-d2xs = d2xs*scale;
 d2ys = dxs-narms*amp*(narms*cnt.*st+snt.*ct);
+
+dxs = dxs*scale;
+dys = dys*scale;
+d2xs = d2xs*scale;
 d2ys = d2ys*scale;
 
 r = [(xs(:)).'; (ys(:)).'];
