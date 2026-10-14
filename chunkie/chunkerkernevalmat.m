@@ -123,7 +123,7 @@ elseif isa(targobj, "chunkgraph")
     targinfo.d = targobj.d(:,:);
     targinfo.d2 = targobj.d2(:,:);
     targinfo.n = targobj.n(:,:);
-    targinfo.data = targinfo.data(:,:);
+    targinfo.data = targobj.data(:,:);
 elseif isstruct(targobj)
     if isfield(targobj,"r")
         targinfo.r = targobj.r(:,:);
