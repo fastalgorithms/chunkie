@@ -37,6 +37,13 @@ classdef kernel
 %                                                   'free_plate', ...
 %                                                   'supported_plate_bcs',
 %                                                   'supported_plate', ...
+%      'radial green'                               's', 'd', 'sp', 'dp', 'c',
+%         ('radgreen', 'rg')                        'cp', 'sg', 'dg', 'cg',
+%                                                   's2trans', 'trans', ...
+%                                                   plate kernels (see
+%                                                   KERNEL.RADGREEN)
+%      'radial piecewise polynomial'                same types as 'radgreen'
+%         ('radpp', 'rp')
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.
@@ -138,6 +145,10 @@ classdef kernel
                       obj = kernel.lap2dquas(varargin{:});
                   case {'quasiperiodic flexural wave', 'flexquas', 'fq'}
                       obj = kernel.flex2dquas(varargin{:});
+                  case {'radial green', 'radgreen', 'rg'}
+                      obj = kernel.radgreen(varargin{:});
+                  case {'radial piecewise polynomial', 'radpp', 'rp'}
+                      obj = kernel.radpp(varargin{:});
                   otherwise
                       error('Kernel ''%s'' not found.', kern);
               end
@@ -188,6 +199,8 @@ classdef kernel
         obj = helm2dquas(varargin);
         obj = lap2dquas(varargin);
         obj = flex2dquas(varargin);
+        obj = radgreen(varargin);
+        obj = radpp(varargin);
         obj = zeros(varargin);
         obj = nans(varargin);
         obj = ones(varargin);
