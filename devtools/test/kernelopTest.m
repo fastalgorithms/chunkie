@@ -467,6 +467,18 @@ wK = wfun * stkern;
 ref = kron(diag(1 + targ.r(1,:).^2), eye(2)) * Kmat;
 assert(norm(wK.eval(src, targ) - ref) < 1e-10, 'stacked pointwise w(t)*K mismatch');
 
+% scalar pointwise function returned as a row vector, left and right,
+% and as a column vector on the right
+wrow = @(p) 1 + p.r(1,:).^2;
+wcol = @(p) (1 + p.r(1,:).^2).';
+wK = wrow * stkern;
+assert(norm(wK.eval(src, targ) - ref) < 1e-10, 'row pointwise w(t)*K mismatch');
+ref = Kmat * kron(diag(1 + src.r(1,:).^2), eye(2));
+Kw = stkern * wrow;
+assert(norm(Kw.eval(src, targ) - ref) < 1e-10, 'row pointwise K*w(s) mismatch');
+Kw = stkern * wcol;
+assert(norm(Kw.eval(src, targ) - ref) < 1e-10, 'column pointwise K*w(s) mismatch');
+
 end
 
 function kernelopTest_mtimes_shifted()

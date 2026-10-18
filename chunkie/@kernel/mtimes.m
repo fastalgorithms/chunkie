@@ -11,8 +11,8 @@ function out = mtimes(f, g)
 %
 % A function handle may alternatively return the matrix forms
 %   M(t): (p*nt x m) or N(s): (q x p*ns)
-%
-% splitinfo is dropped for right mult by a function handle N(s).
+% and a pointwise scalar multiplier may be returned as a row or column
+% vector of length n.
 
 % Determine which argument is the kernel and which is the multiplier.
 if isa(f, 'kernel') && isa(g, 'kernel')
@@ -134,7 +134,9 @@ out.splitinfo = [];
         if n <= 1 || size(fval, 3) ~= 1
             return
         end
-        if strcmp(side, 'left') && size(fval,1) == hr*n && size(fval,2) == hc
+        if hr == 1 && hc == 1 && isvector(fval) && numel(fval) == n
+            fval = reshape(fval, 1, 1, n);
+        elseif strcmp(side, 'left') && size(fval,1) == hr*n && size(fval,2) == hc
             fval = permute(reshape(fval, hr, n, hc), [1 3 2]);
         elseif strcmp(side, 'right') && size(fval,1) == hr && size(fval,2) == hc*n
             fval = reshape(fval, hr, hc, n);
@@ -173,14 +175,8 @@ else
     out.eval         = @eval_right;
     out.fmm          = set_if_exist(Kfmm, @fmm_right);
     out.shifted_eval = set_if_exist(Kshifted_eval, @shifted_eval_right);
-    if isnumeric(h)
-        % constant matrix: splitinfo transform is exact
-        out.splitinfo = mtimes_splitinfo_right(K.splitinfo);
-    else
-        % function handle N(s): chunkerkernevalmat_pquad cannot handle a
-        % splitinfo coefficient that varies within a panel, so drop it
-        out.splitinfo = [];
-    end
+    % multiply by N(s) evaluated at the oversampled nodes
+    out.splitinfo    = mtimes_splitinfo_right(K.splitinfo);
 end
 
     function s = mtimes_splitinfo_left(s0)
