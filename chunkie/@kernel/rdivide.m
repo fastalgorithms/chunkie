@@ -20,7 +20,7 @@ if (isnumeric(g) && isscalar(g))
     end
     
     if(isa(f.fmm, 'function_handle'))
-        f.fmm = @(varargin) f.fmm(varargin{:}).g;
+        f.fmm = @(varargin) f.fmm(varargin{:})/g;
     else
         f.fmm = [];
     end
