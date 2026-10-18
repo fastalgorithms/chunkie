@@ -71,6 +71,7 @@ if ~exist('p', 'var')
     try
         probe.r  = randn(2,1);  probe.d  = randn(2,1);
         probe.d2 = randn(2,1);  probe.n  = randn(2,1);
+        probe.data = randn(5,1);
         hval = h(probe);
         if size(hval,1) == 1 && size(hval,2) == 1
             ispointwise = true;
