@@ -138,6 +138,7 @@ switch lower(type)
             coefs = ones(2,1);
         end
         obj.type = 'trep';
+        obj.params.coefs = coefs;
         obj.opdims = [1,2];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'trans_rep', coefs);
         obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'trans_rep', sigma, coefs);

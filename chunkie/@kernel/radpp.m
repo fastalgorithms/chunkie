@@ -77,6 +77,10 @@ obj = kernel.green(ppgreen, type, args{:}, 'sing', Kex.sing, 'check', false);
 
 obj.name = 'radpp';
 obj.params.green = green;
+obj.params.ppgreen = ppgreen;
+obj.params.type = type;
+obj.params.args = args;
+obj.params.fitopts = fitopts;
 obj.params.rmin = rmin;
 obj.params.rmax = rmax;
 obj.params.breaks = breaks;
@@ -147,6 +151,10 @@ end
 greens = cellfun(@(K) K.params.green, Ks, 'UniformOutput', false);
 obj.name = 'radpp';
 obj.params.green = chnk.green.sum(cs, greens{:});
+obj.params.ppgreen = ppgreen;
+obj.params.type = Ks{1}.type;
+obj.params.args = [par, {'dim', p.dim}];
+obj.params.fitopts = p.fitopts;
 obj.params.rmin = rmin;
 obj.params.rmax = rmax;
 obj.params.breaks = breaks;

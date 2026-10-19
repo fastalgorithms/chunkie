@@ -20,6 +20,7 @@ test_chunkermat();
 test_bad_inputs();
 test_nonsymmetric();
 test_fmm();
+test_grad();
 
 
 function test_fit_limits()
@@ -740,6 +741,81 @@ A = K.eval(src,targ);
 sigma = randn(size(A,2),1);
 err = norm(K.fmm(1e-12,src,targ,sigma) - A*sigma)/norm(A*sigma);
 assert(err < 1e-9,'radpp fmm: %.2e',err);
+
+end
+
+
+function test_grad()
+% grad and normaltrace (ntrace) against the gradient and normal derivative
+% types, and their fmms
+
+[src,targ] = geom();
+zk = 1.3;
+green = @(s,t) chnk.helm2d.green(zk,s,t);
+fmm = @(eps,s,pg,t,pgt) hfmm2d(eps,zk,s,pg,t,pgt);
+cf = [0.7 1.3i];
+tab = {kernel.green(green,'s','fmm',fmm), 'sg', 'sp'; ...
+    kernel.green(green,'d','fmm',fmm), 'dg', 'dp'; ...
+    kernel.green(green,'c',cf,'fmm',fmm), 'cg', 'cp'; ...
+    kernel.radpp(green,[1e-6 6],'s'), 'sg', 'sp'; ...
+    kernel.radpp(green,[1e-6 6],'d'), 'dg', 'dp'; ...
+    kernel.green(green,'trans_rep',cf,'fmm',fmm), 'trans_rep_grad', ...
+        'trans_rep_prime'; ...
+    kernel.radpp(green,[1e-6 6],'trans_rep',cf), 'trans_rep_grad', ...
+        'trans_rep_prime'};
+for i = 1:size(tab,1)
+    K = tab{i,1};
+    a = targs(tab{i,2});
+    Ag = kernel.green(green,tab{i,2},a{:}).eval(src,targ);
+    An = kernel.green(green,tab{i,3},a{:}).eval(src,targ);
+    Kg = grad(K);
+    Kn = normaltrace(K);
+    assert(isequal(Kg.opdims,[2 1].*K.opdims),'grad %d: opdims',i);
+    assert(norm(Kg.eval(src,targ) - Ag,'fro') < 1e-10*norm(Ag,'fro'),'grad %d',i);
+    assert(norm(Kn.eval(src,targ) - An,'fro') < 1e-10*norm(An,'fro'), ...
+        'normaltrace %d',i);
+    assert(isequal(ntrace(K).eval(src,targ),Kn.eval(src,targ)),'ntrace %d',i);
+    assert(strcmp(Kn.sing,kernel.green(green,tab{i,3},a{:}).sing), ...
+        'normaltrace sing %d',i);
+    if ~isempty(K.fmm)
+        sig = randn(size(Ag,2),2);
+        assert(norm(Kg.fmm(1e-12,src,targ,sig) - Ag*sig,'fro') < ...
+            1e-10*norm(Ag*sig,'fro'),'grad fmm %d',i);
+        assert(norm(Kn.fmm(1e-12,src,targ,sig) - An*sig,'fro') < ...
+            1e-10*norm(An*sig,'fro'),'normaltrace fmm %d',i);
+    end
+end
+
+% the built-in kernels
+tab = {kernel.lap2d('s'), 'sp', 'sg'; kernel.lap2d('c',cf), 'cp', 'cg'; ...
+    kernel.helm2d('d',zk), 'dp', ''; kernel.helm2d('trans_rep',zk,cf), ...
+    'trans_rep_prime', ''};
+for i = 1:size(tab,1)
+    K = tab{i,1};
+    c = {};
+    if isfield(K.params,'coefs'), c = {K.params.coefs}; end
+    if strcmp(K.name,'laplace')
+        mk = @(type) kernel.lap2d(type,c{:});
+    else
+        mk = @(type) kernel.helm2d(type,zk,c{:});
+    end
+    A = mk(tab{i,2}).eval(src,targ);
+    assert(norm(normaltrace(K).eval(src,targ) - A,'fro') < ...
+        1e-14*norm(A,'fro'),'built-in normaltrace %d',i);
+    if ~isempty(tab{i,3})
+        A = mk(tab{i,3}).eval(src,targ);
+        assert(norm(grad(K).eval(src,targ) - A,'fro') < ...
+            1e-14*norm(A,'fro'),'built-in grad %d',i);
+    end
+end
+
+caught = false;
+try
+    grad(kernel.lap2d('sp'));
+catch
+    caught = true;
+end
+assert(caught,'grad: prime type not rejected');
 
 end
 
