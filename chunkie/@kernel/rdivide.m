@@ -6,7 +6,9 @@ function f = rdivide(f,g)
 % f./g returns a kernel class object where each of the function
 % handles - eval, and fmm are divided by g
 
-if (isnumeric(g) && isscalar(g))
+if (isnumeric(g) && isscalar(g) && kernel.radpp('summable', {f}))
+    f = kernel.radpp('sum', {f}, 1/g);
+elseif (isnumeric(g) && isscalar(g))
     if(isa(f.eval, 'function_handle'))        
         f.eval = @(varargin) f.eval(varargin{:})/g;
     else

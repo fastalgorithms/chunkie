@@ -9,11 +9,25 @@ function obj = radpp(green, rmax, type, varargin)
 %   KERNEL.RADPP(GREEN, RMAX, TYPE, ..., 'opts', OPTS) sets the options of
 %   the fit, see CHNK.RADPP.FIT. The fit is stored in K.params.
 %
+%   Sums and multiples of radpp kernels of the same type are radpp kernels
+%   whose fit is the sum of the fits, on the distances common to them.
+%
 %   Example:
 %      green = @(s,t) chnk.helm2d.green(zk, s, t);
 %      K = kernel.radpp(green, [1e-6 10], 'sp');
 %
 % See also KERNEL.GREEN, CHNK.RADPP.FIT, CHNK.RADPP.GREEN.
+
+% kernel arithmetic: kernel.radpp('summable', KS) and
+% kernel.radpp('sum', KS, CS) = sum_k CS(k)*KS{k}
+if ( ischar(green) )
+    if ( strcmp(green, 'summable') )
+        obj = summable(rmax);
+    else
+        obj = ppsum(rmax, type);
+    end
+    return
+end
 
 if ( nargin < 2 )
     error('Missing Green''s function or range of distances.');
@@ -71,6 +85,83 @@ obj.params.nbin = fit.nbin;
 obj.params.nlev = fit.nlev;
 obj.params.err = fit.err;
 
+end
+
+
+function tf = summable(Ks)
+% radpp kernels of one built-in type, parameter and fit order, with fits
+% that overlap
+tf = all(cellfun(@(K) strcmp(K.name, 'radpp'), Ks));
+if ( ~tf ), return; end
+p = Ks{1}.params;
+tf = all(cellfun(@(K) ~strcmp(K.type, 'custom') && strcmp(K.type, Ks{1}.type) && ...
+    isequal(K.params.param, p.param) && K.params.dim == p.dim && ...
+    size(K.params.coefs, 2) == size(p.coefs, 2) && ...
+    size(K.params.coefs, 3) == size(p.coefs, 3), Ks));
+tf = tf && max(cellfun(@(K) K.params.rmin, Ks)) < ...
+    min(cellfun(@(K) K.params.rmax, Ks));
+end
+
+
+function obj = ppsum(Ks, cs)
+% sum_k cs(k)*Ks{k}, with the fits added on the union of their panels
+p = Ks{1}.params;
+rmin = max(cellfun(@(K) K.params.rmin, Ks));
+rmax = min(cellfun(@(K) K.params.rmax, Ks));
+breaks = unique(cell2mat(cellfun(@(K) K.params.breaks(:), Ks(:), ...
+    'UniformOutput', false)));
+breaks = unique([rmin; breaks(breaks > rmin & breaks < rmax); rmax]);
+a = breaks(1:end-1);
+[~, n, m] = size(p.coefs);
+coefs = zeros(numel(a), n, m);
+for k = 1:numel(Ks)
+    % the panel polynomials, highest degree first in r - b, re-centred at
+    % a: (r-b)^q = ((r-a) + (a-b))^q
+    q = Ks{k}.params;
+    ib = discretize((a + breaks(2:end))/2, q.breaks);
+    d = q.coefs(ib, end:-1:1, :);
+    del = a - q.breaks(ib);
+    e = zeros(size(d));
+    for j = 0:n-1
+        for i = j:n-1
+            e(:,j+1,:) = e(:,j+1,:) + nchoosek(i, j)*del.^(i-j).*d(:,i+1,:);
+        end
+    end
+    coefs = coefs + cs(k)*e(:, end:-1:1, :);
+end
+
+sing = Ks{1}.sing;
+for k = 2:numel(Ks), sing = kernel.singpromotion(sing, Ks{k}.sing); end
+par = {};
+if ( ~isempty(p.param) ), par = {p.param}; end
+ppgreen = @(s,t) chnk.radpp.green( ...
+    @(r) chnk.radpp.fiteval(r, breaks, coefs), p.dim, s, t);
+obj = kernel.green(ppgreen, Ks{1}.type, par{:}, 'dim', p.dim, ...
+    'sing', sing, 'check', false);
+
+if ( all(cellfun(@(K) isa(K.fmm, 'function_handle'), Ks)) )
+    fmms = cellfun(@(K) K.fmm, Ks, 'UniformOutput', false);
+    obj.fmm = @(varargin) fmmsum(fmms, cs, varargin{:});
+end
+
+greens = cellfun(@(K) K.params.green, Ks, 'UniformOutput', false);
+obj.name = 'radpp';
+obj.params.green = chnk.green.sum(cs, greens{:});
+obj.params.rmin = rmin;
+obj.params.rmax = rmax;
+obj.params.breaks = breaks;
+obj.params.coefs = coefs;
+obj.params.nbin = numel(a);
+obj.params.nlev = max(cellfun(@(K) K.params.nlev, Ks));
+obj.params.err = sum(abs(cs(:)).*cellfun(@(K) K.params.err, Ks(:)));
+end
+
+
+function pot = fmmsum(fmms, cs, varargin)
+pot = 0;
+for k = 1:numel(fmms)
+    pot = pot + cs(k)*fmms{k}(varargin{:});
+end
 end
 
 

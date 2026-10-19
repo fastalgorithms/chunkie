@@ -444,6 +444,24 @@ assert(err < 1e-10,'green block interleave');
 
 assert(chk(kernel('green',green,'d'),D),'kernel green dispatch');
 
+% sums and multiples of radpp kernels of one type are radpp kernels
+g1 = @(s,t) chnk.helm2d.green(1.1,s,t);
+g2 = @(s,t) chnk.helm2d.green(2.3,s,t);
+K1 = kernel.radpp(g1,[1e-6 6],'c',[1 2i]);
+K2 = kernel.radpp(g2,[1e-5 8],'c',[1 2i]);
+A1 = K1.eval(src,targ);  A2 = K2.eval(src,targ);
+tab = {2*K1 - K2, 2*A1 - A2; K1 + K2/3, A1 + A2/3; -K1, -A1; K1.*1i, 1i*A1};
+for i = 1:size(tab,1)
+    K = tab{i,1};
+    assert(strcmp(K.name,'radpp'),'radpp sum %d: not radpp',i);
+    assert(norm(K.eval(src,targ) - tab{i,2},'fro') < 1e-13*norm(tab{i,2},'fro'), ...
+        'radpp sum %d',i);
+end
+K = K1 + K2;
+assert(K.params.rmin == 1e-5 && K.params.rmax == 6,'radpp sum: range');
+K = K1 + kernel.radpp(g1,6,'sp');
+assert(~strcmp(K.name,'radpp'),'radpp sum: different types merged');
+
 % the fmms of sums, scalings and interleaved kernels, with two densities
 if exist(['fmm2d.' mexext],'file') == 3
     zk = 1.1;

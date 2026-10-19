@@ -4,6 +4,10 @@ function f = minus(f,g)
 % Currently only supported for subtracting two kernel class objects.
 
 if (isa(g,'kernel') && isa(f,'kernel'))
+  if kernel.radpp('summable', {f, g})
+      f = kernel.radpp('sum', {f, g}, [1 -1]);
+      return
+  end
   assert(f.opdims(1) == g.opdims(1) && f.opdims(2) == g.opdims(2), ...
       'kernel dimensions must agree to add');
   f.name = ['custom ',f.name,' ',g.name];
