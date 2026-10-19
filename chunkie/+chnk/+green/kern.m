@@ -1,111 +1,45 @@
-function submat = kern(profun,dim,srcinfo,targinfo,type,varargin)
-%CHNK.RADPP.KERN kernels of a radial Green's function in 2D or 3D
+function submat = kern(green,dim,srcinfo,targinfo,type,varargin)
+%CHNK.GREEN.KERN kernels of a translation invariant Green's function
 %
-% Syntax: submat = chnk.radpp.kern(profun,dim,srcinfo,targinfo,type,varargin)
+% Syntax: submat = chnk.green.kern(green,dim,srcinfo,targinfo,type,varargin)
 %
-% The provided Green's function must be radial: G(x,y) = G(|x-y|) and
-% return all the required derivatives in the usual format.
-%
-% S(x,y)  = G(x,y)
-% D(x,y)  = G_{n_y}(x,y)
-% S'(x,y) = G_{n_x}(x,y)
-% D'(x,y) = G_{n_x n_y}(x,y)
-%
-% and so on.
+% G(x,y) = g(x-y) is given by green, see KERNEL.GREEN. Source derivatives
+% are minus target derivatives. S = G, D = G_{n_y}, S' = G_{n_x} and
+% D' = G_{n_x n_y}.
 %
 % Input:
-%   profun - function handle, profun(r) is the (numel(r),nprof) array of
-%            on-axis profiles of G and its derivatives, see
-%            CHNK.RADPP.PROFILES
-%   dim - 2 or 3, the dimension of the derivative tensors, see
-%            CHNK.RADPP.ROTATE
-%   srcinfo - description of sources in ptinfo struct format, i.e.
-%                ptinfo.r - positions (dim,:) array
-%                ptinfo.d - first derivative in underlying
-%                     parameterization (dim,:)
-%                ptinfo.d2 - second derivative in underlying
-%                     parameterization (dim,:)
-%                ptinfo.n - normals (dim,:)
-%                ptinfo.data - data (:,:), the first row is the
-%                     derivative of the curvature for supported_eval
-%   targinfo - description of targets in ptinfo struct format, only the
-%                fields relevant to the kernel type are needed
-%   type - string, determines kernel type, or a struct for a custom kernel
-%                with fields fun, nderiv and opdims, see KERNEL.RADGREEN
-%                type == 's', single layer kernel S
-%                type == 'd', double layer kernel D
-%                type == 'sp', normal derivative of single layer S'
-%                type == 'dp', normal derivative of double layer D'
-%                type == 'c', combined layer kernel coef(1) D + coef(2) S
-%                type == 'cp', coef(1) D' + coef(2) S'
-%                type == 'sg', 'dg', 'cg', gradients of S, D and
-%                       coef(1) D + coef(2) S, a (dim*nt,ns) array
-%                type == 'st', tangential derivative of S (dim = 2)
-%                type == 'hilb', two times the adjoint of st (dim = 2)
-%                type == 's2trans', [S; S']
-%                type == 'd2trans', [D; D']
-%                type == 'c2trans', returns the combined field and the
-%                       normal derivative of the combined field
-%                       [coef(1,1)*D + coef(1,2)*S; coef(2,1)*D' + coef(2,2)*S']
-%                type == 'trans', returns all four layer potentials,
-%                       [coef(1,1)*D coef(1,2)*S; coef(2,1)*D' coef(2,2)*S']
-%                type == 'trans_rep', returns the potential corresponding
-%                       to the transmission representation
-%                       [coef(1)*D coef(2)*S]
-%                type == 'trans_rep_prime', returns the normal derivative
-%                       corresponding to the transmission representation
-%                       [coef(1)*D' coef(2)*S']
-%                type == 'trans_rep_grad', returns the gradient
-%                       corresponding to the transmission representation
-%                       [coef(1)*grad D coef(2)*grad S]
-%
-%         plate kernels (dim = 2), with n_x, tau_x and kappa_x the
-%         normal, tangent and curvature of the targets and n_y, tau_y
-%         and kappa_y those of the sources
-%                type == 'clamped_bc', returns the clamped plate
-%                       boundary conditions applied to a point source,
-%                       [G; G_{n_x}]. requires target normal info.
-%                type == 'clamped_eval', returns the kernels
-%                       corresponding to the clamped plate representation,
-%                       [G_{n_y n_y n_y}+3*G_{n_y tau_y tau_y},
-%                        -G_{n_y n_y}+G_{tau_y tau_y}]
-%                type == 'supported_bc', returns the supported plate
-%                       boundary conditions applied to a point source,
-%                       [G; G_{n_x n_x}+nu*G_{tau_x tau_x}]. requires
-%                       target normal and tangent info.
-%                type == 'supported_eval', returns the kernels
-%                       corresponding to the supported plate
-%                       representation. requires kappa' in the first
-%                       data field of srcinfo.
-%                type == 'free_bc', returns the free plate boundary
-%                       conditions applied to a point source,
-%                       [G_{n_x n_x}+nu*G_{tau_x tau_x};
-%                        G_{n_x n_x n_x}+(2-nu)*G_{n_x tau_x tau_x}
-%                         +(1-nu)*kappa_x*(G_{tau_x tau_x}-G_{n_x n_x})]
-%                       requires target normals, tangents, and d2.
-%                type == 'free_eval' returns the kernels corresponding to
-%                       the free plate representation:
-%                       [G_{n_y}, (1+nu)/2*G_{tau_y}, G]
-%
-%   varargin{1} - coef: length 2 array in the combined layer formulas,
-%                 2x2 matrix for c2trans and trans, nu: scalar value for
-%                 the Poisson's ratio of the plate in the supported and
-%                 free plate kernels, otherwise does nothing
-%
+%   green - function handle, the Green's function
+%   dim - 2 or 3, the dimension of the points
+%   srcinfo, targinfo - sources and targets in ptinfo struct format
+%   type - string, determines kernel type
+%                type == 's', 'd', 'sp', 'dp', S, D, S', D'
+%                type == 'c', 'cp', coef(1) D + coef(2) S and its normal
+%                       derivative
+%                type == 'sg', 'dg', 'cg', the gradients of S, D and C
+%                type == 'st', 'hilb', tangential derivative of S and two
+%                       times its adjoint (dim = 2)
+%                type == 's2trans', 'd2trans', 'c2trans', 'trans',
+%                       'trans_rep', 'trans_rep_prime', 'trans_rep_grad',
+%                       as in CHNK.HELM2D.KERN
+%                type == 'clamped_bc', 'clamped_eval', 'supported_bc',
+%                       'supported_eval', 'free_bc', 'free_eval', plate
+%                       kernels as in CHNK.FLEX2D.KERN (dim = 2)
+%         or a custom struct, fun(D,srcinfo,targinfo) with D(td,sd) being
+%                the derivative of G along the directions td and sd
+%   varargin{1} - coef, 2x2 for c2trans and trans, or nu for the plate
+%                kernels
+
 % Output:
 %   submat - the evaluation of the selected kernel for the provided
-%            sources and targets. the number of rows equals the number
-%            of targets times opdims(1) and the number of columns equals
-%            the number of sources times opdims(2), with the entries of
-%            each block interleaved
+%            sources and targets.
 %
-% see also KERNEL.RADGREEN, KERNEL.RADPP, CHNK.RADPP.TYPEINFO
+% see also KERNEL.GREEN, KERNEL.RADPP, CHNK.GREEN.TYPEINFO
 
 if isstruct(type)
     info = struct('type','custom','opdims',type.opdims, ...
         'nderiv',type.nderiv,'param','');
 else
-    info = chnk.radpp.typeinfo(type,dim);
+    info = chnk.green.typeinfo(type,dim);
 end
 
 par = [];
@@ -123,27 +57,23 @@ switch info.param
         nu = par;
 end
 
-src = srcinfo.r(:,:);
-targ = targinfo.r(:,:);
+ns = size(srcinfo.r(:,:),2);
+nt = size(targinfo.r(:,:),2);
 
-[~,ns] = size(src);
-[~,nt] = size(targ);
-
-dx = bsxfun(@minus,targ(1,:).',src(1,:));
-dy = bsxfun(@minus,targ(2,:).',src(2,:));
-dz = zeros(nt,ns);
-if size(src,1) > 2 && size(targ,1) > 2
-    dz = bsxfun(@minus,targ(3,:).',src(3,:));
+% derivative tensors of G with respect to the target, (nt,ns,ncomp)
+nd = info.nderiv;
+out = cell(1,nd+1);
+[out{:}] = green(srcinfo.r(:,:),targinfo.r(:,:));
+comps = cell(1,nd+1);
+comps{1} = reshape(out{1},nt,ns);
+for k = 1:nd
+    c = chnk.green.unpack(out{k+1},dim,k);
+    comps{k+1} = reshape(c,nt,ns,size(c,2));
 end
-r = sqrt(dx.^2 + dy.^2 + dz.^2);
-
-% derivative tensors of G with respect to the target
-comps = chnk.radpp.rotate(dx,dy,dz,profun(r(:)),info.nderiv,dim);
-comps = reshape(comps,nt,ns,[]);
 
 % derivative of G along the directions td at the target and sd at the
 % source (a derivative with respect to y is minus one with respect to x)
-Dg = @(td,sd) (-1)^numel(sd)*chnk.radpp.contract(comps,dim,[td sd]);
+Dg = @(td,sd) (-1)^numel(sd)*contract(comps,dim,[td sd]);
 
 submat = zeros(info.opdims(1)*nt,info.opdims(2)*ns);
 
@@ -300,6 +230,32 @@ switch info.type
         submat(:,2:3:end) = (1+nu)/2*Dg({},{st});
         submat(:,3:3:end) = Dg({},{});
 
+end
+
+end
+
+
+function val = contract(comps,dim,vs)
+% the derivative tensor of order k = numel(vs) contracted with the
+% directions vs{j} = {vx,vy[,vz]}, sum D_{i1...ik} v1_{i1} ... vk_{ik}
+
+k = numel(vs);
+c = comps{k+1};
+if k == 0
+    val = c;
+    return
+end
+tup = nchoosek(1:dim+k-1,k) - (0:k-1);
+val = 0;
+for m = 1:dim^k
+    idx = cell(1,k);
+    [idx{:}] = ind2sub([repmat(dim,1,k) 1],m);
+    idx = [idx{:}];
+    term = c(:,:,all(tup == sort(idx),2));
+    for j = 1:k
+        term = term.*vs{j}{idx(j)};
+    end
+    val = val + term;
 end
 
 end

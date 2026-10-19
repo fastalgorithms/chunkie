@@ -40,12 +40,13 @@ function varargout = fmm(eps, zk, srcinfo, targinfo, type, sigma, varargin)
 %                   note that targinfo must contain targ.n
 %                type = 'cprime' normal derivative of combined layer,
 %                   note that targinfo must contain targ.n
-%   sigma - density
+%   sigma - density, (ns,ndens) for ndens densities
 %   varargin{1} - coef in the combined layer formula, otherwise
 %                does nothing
 %
 % Optional Output:
-%   pot - potential/neumann data corresponding to the kernel at the target locations
+%   pot - potential/neumann data corresponding to the kernel at the target
+%         locations, (nt,ndens)
 %   grad - gradient at target locations
 %   hess - hessian at target locations
 
@@ -57,17 +58,26 @@ end
 
 srcuse = [];
 srcuse.sources = srcinfo.r(1:2,:);
+ns = size(srcuse.sources,2);
+sigma = reshape(sigma,ns,[]);
+ndens = size(sigma,2);
+srcuse.nd = ndens;
+if any(strcmpi(type, {'d', 'dprime', 'dp', 'c', 'cprime', 'cp', ...
+        'dgrad', 'cgrad'}))
+    dipvec = srcinfo.n(1:2,:);
+    if ( ndens > 1 ), dipvec = repmat(reshape(dipvec,1,2,ns),ndens,1,1); end
+end
 switch lower(type)
-    case {'s', 'sprime'}
-        srcuse.charges = sigma(:).';
-    case {'d', 'dprime'}
-        srcuse.dipstr = sigma(:).';
-        srcuse.dipvec = srcinfo.n(1:2,:);
-    case {'c', 'cprime'}
+    case {'s', 'sprime', 'sp'}
+        srcuse.charges = sigma.';
+    case {'d', 'dprime', 'dp'}
+        srcuse.dipstr = sigma.';
+        srcuse.dipvec = dipvec;
+    case {'c', 'cprime', 'cp'}
         coefs = varargin{1};
-        srcuse.charges = coefs(2)*sigma(:).';
-        srcuse.dipstr  = coefs(1)*sigma(:).';
-        srcuse.dipvec  = srcinfo.n(1:2,:);
+        srcuse.charges = coefs(2)*sigma.';
+        srcuse.dipstr  = coefs(1)*sigma.';
+        srcuse.dipvec  = dipvec;
 end
 
 if ( isstruct(targinfo) )
@@ -77,25 +87,27 @@ else
 end
 
 pg = 0;
-pgt = min(nargout, 2);
+pgt = min(nargout, 3);
 switch lower(type)
     case {'sprime', 'dprime', 'cprime','sp','dp','cp'}
         pgt = max(pgt, 2);
 end
 U = hfmm2d(eps, zk, srcuse, pg, targuse, pgt);
+nt = size(targuse,2);
 
 % Assign potentials
 if ( nargout > 0 )
     switch lower(type)
         case {'s', 'd', 'c'}
-            varargout{1} = U.pottarg.';
+            varargout{1} = reshape(U.pottarg,ndens,nt).';
         case {'sprime', 'dprime', 'cprime','sp','dp','cp'}
             if ( ~isfield(targinfo, 'n') )
                 error('CHUNKIE:helm2d:fmm:normals', ...
                     'Targets require normal info when evaluating Helmholtz kernel ''%s''.', type);
             end
-            varargout{1} = ( U.gradtarg(1,:).*targinfo.n(1,:) + ...
-                             U.gradtarg(2,:).*targinfo.n(2,:) ).';
+            g = reshape(U.gradtarg,ndens,2,nt);
+            varargout{1} = ( reshape(g(:,1,:),ndens,nt).*targinfo.n(1,:) + ...
+                             reshape(g(:,2,:),ndens,nt).*targinfo.n(2,:) ).';
         otherwise
             error('CHUNKIE:helm2d:fmm:pot', ...
                 'Potentials not supported for Helmholtz kernel ''%s''.', type);

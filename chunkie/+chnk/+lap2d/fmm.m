@@ -55,17 +55,26 @@ end
 
 srcuse = [];
 srcuse.sources = srcinfo.r(1:2,:);
+ns = size(srcuse.sources,2);
+sigma = reshape(sigma,ns,[]);
+ndens = size(sigma,2);
+srcuse.nd = ndens;
+if any(strcmpi(type, {'d', 'dprime', 'dp', 'c', 'cprime', 'cp', ...
+        'dgrad', 'cgrad'}))
+    dipvec = srcinfo.n(1:2,:);
+    if ( ndens > 1 ), dipvec = repmat(reshape(dipvec,1,2,ns),ndens,1,1); end
+end
 switch lower(type)
-    case {'s', 'sgrad', 'sprime', 'sp'}
-        srcuse.charges = -1/(2*pi)*sigma(:).';
+    case {'s', 'sgrad', 'sprime', 'sp', 'stau'}
+        srcuse.charges = -1/(2*pi)*sigma.';
     case {'d', 'dgrad', 'dprime', 'dp'}
-        srcuse.dipstr = -1/(2*pi)*sigma(:).';
-        srcuse.dipvec = srcinfo.n(1:2,:);
+        srcuse.dipstr = -1/(2*pi)*sigma.';
+        srcuse.dipvec = dipvec;
     case {'c', 'cgrad', 'cprime', 'cp'}
         coef = varargin{1};
-        srcuse.charges = -1/(2*pi)*coef(2)*sigma(:).';
-        srcuse.dipstr  = -1/(2*pi)*coef(1)*sigma(:).';
-        srcuse.dipvec  = srcinfo.n(1:2,:);
+        srcuse.charges = -1/(2*pi)*coef(2)*sigma.';
+        srcuse.dipstr  = -1/(2*pi)*coef(1)*sigma.';
+        srcuse.dipvec  = dipvec;
 end
 
 if ( isstruct(targinfo) )
@@ -77,26 +86,34 @@ end
 pg = 0;
 pgt = min(nargout, 3);
 switch lower(type)
-    case {'sprime', 'dprime', 'cprime','sp','dp','cp','sgrad','dgrad','cgrad','sg','dg','cg'}
+    case {'sprime', 'dprime', 'cprime','sp','dp','cp','sgrad','dgrad','cgrad','sg','dg','cg','stau'}
         pgt = min(nargout+1,3);
         pgt = max(pgt, 2);
 end
 U = rfmm2d(eps, srcuse, pg, targuse, pgt);
+nt = size(targuse,2);
+% gradient components (nt,ndens), and the gradient interleaved (2*nt,ndens)
+if ( pgt >= 2 )
+    g3 = reshape(U.gradtarg,ndens,2,nt);
+    gc = @(i) reshape(g3(:,i,:),ndens,nt).';
+    gradi = U.gradtarg;
+    if ( ndens > 1 ), gradi = reshape(permute(g3,[2 3 1]),2*nt,ndens); end
+end
 
 % Assign potentials
 if ( nargout > 0 )
     switch lower(type)
         case {'s', 'd', 'c'}
-            varargout{1} = U.pottarg.';
+            varargout{1} = reshape(U.pottarg,ndens,nt).';
         case {'sgrad', 'dgrad', 'cgrad'}
-            varargout{1} = U.gradtarg;
+            varargout{1} = gradi;
         case {'sprime', 'dprime','cprime','sp','dp','cp'}
             if ( ~isfield(targinfo, 'n') )
                 error('CHUNKIE:lap2d:fmm:normals', ...
                     'Targets require normal info when evaluating Laplace kernel ''%s''.', type);
             end
-            varargout{1} = ( U.gradtarg(1,:).*targinfo.n(1,:) + ...
-                             U.gradtarg(2,:).*targinfo.n(2,:) ).';
+            varargout{1} = gc(1).*targinfo.n(1,:).' + ...
+                           gc(2).*targinfo.n(2,:).';
         case 'stau'
             if ( ~isfield(targinfo, 'd') )
                 error('CHUNKIE:lap2d:fmm:deriv', ...
@@ -105,7 +122,7 @@ if ( nargout > 0 )
             ds = sqrt(targinfo.d(1,:).^2 + targinfo.d(2,:).^2);
             dx = targinfo.d(1,:)./ds;
             dy = targinfo.d(2,:)./ds;
-            varargout{1} = ( U.gradtarg(1,:).*dx + U.gradtarg(2,:).*dy ).';
+            varargout{1} = gc(1).*dx.' + gc(2).*dy.';
         otherwise
             error('CHUNKIE:lap2d:fmm:pot', ...
                 'Potentials not supported for Laplace kernel ''%s''.', type);

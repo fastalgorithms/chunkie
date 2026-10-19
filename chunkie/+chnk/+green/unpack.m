@@ -1,22 +1,22 @@
 function c = unpack(v,dim,k)
-%CHNK.RADPP.UNPACK derivative components of order k from a Green's
+%CHNK.GREEN.UNPACK derivative components of order k from a Green's
 % function output
 %
-% Syntax: c = chnk.radpp.unpack(v,dim,k)
+% Syntax: c = chnk.green.unpack(v,dim,k)
 %
 % v is the k-th derivative output of a Green's function, either packed
-% (nt,ns,ncomp), with the components in the order of CHNK.RADPP.TUPLES, or
+% (nt,ns,ncomp), with the components in lexicographic order, or
 % full (nt,ns,dim,...,dim) with k trailing dimensions. c is (nt*ns,ncomp),
 % the packed form.
 %
-% see also CHNK.RADPP.TUPLES, CHNK.RADPP.PROFILES
+% see also KERNEL.GREEN, CHNK.GREEN.KERN
 
-tup = chnk.radpp.tuples(dim,k);
+tup = nchoosek(1:dim+k-1,k) - (0:k-1);
 ncomp = size(tup,1);
 
 if ndims(v) <= 3
     if size(v,3) ~= ncomp
-        error('CHNK.RADPP.UNPACK: derivative %d should have %d components.', ...
+        error('CHNK.GREEN.UNPACK: derivative %d should have %d components.', ...
             k,ncomp);
     end
     c = reshape(v,[],ncomp);
@@ -25,7 +25,7 @@ end
 
 sz = size(v);
 if ndims(v) ~= 2+k || any(sz(3:2+k) ~= dim)
-    error('CHNK.RADPP.UNPACK: derivative %d has the wrong size.',k);
+    error('CHNK.GREEN.UNPACK: derivative %d has the wrong size.',k);
 end
 
 v = reshape(v,size(v,1)*size(v,2),dim^k);

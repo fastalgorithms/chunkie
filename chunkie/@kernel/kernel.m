@@ -37,12 +37,12 @@ classdef kernel
 %                                                   'free_plate', ...
 %                                                   'supported_plate_bcs',
 %                                                   'supported_plate', ...
-%      'radial green'                               's', 'd', 'sp', 'dp', 'c',
-%         ('radgreen', 'rg')                        'cp', 'sg', 'dg', 'cg',
+%      'green'                                      's', 'd', 'sp', 'dp', 'c',
+%                                                   'cp', 'sg', 'dg', 'cg',
 %                                                   's2trans', 'trans', ...
 %                                                   plate kernels (see
-%                                                   KERNEL.RADGREEN)
-%      'radial piecewise polynomial'                same types as 'radgreen'
+%                                                   KERNEL.GREEN)
+%      'radial piecewise polynomial'                same types as 'green'
 %         ('radpp', 'rp')
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
@@ -80,7 +80,9 @@ classdef kernel
 %
 %      - K.fmm: A function handle which calls the FMM for the corresponding
 %        kernel. K.fmm(eps, s, t, sigma) evaluates the kernel with density
-%        sigma from sources s to targets t with accuracy eps.
+%        sigma from sources s to targets t with accuracy eps. sigma is
+%        (opdims(2)*ns, ndens), one column for each of ndens densities, and
+%        the output is (opdims(1)*nt, ndens).
 %
 %      - K.splitinfo, which provides the quantities needed to evaluate
 %        integrals using the Helsing-Ojala kernel-split quadrature
@@ -145,8 +147,8 @@ classdef kernel
                       obj = kernel.lap2dquas(varargin{:});
                   case {'quasiperiodic flexural wave', 'flexquas', 'fq'}
                       obj = kernel.flex2dquas(varargin{:});
-                  case {'radial green', 'radgreen', 'rg'}
-                      obj = kernel.radgreen(varargin{:});
+                  case {'green'}
+                      obj = kernel.green(varargin{:});
                   case {'radial piecewise polynomial', 'radpp', 'rp'}
                       obj = kernel.radpp(varargin{:});
                   otherwise
@@ -199,7 +201,7 @@ classdef kernel
         obj = helm2dquas(varargin);
         obj = lap2dquas(varargin);
         obj = flex2dquas(varargin);
-        obj = radgreen(varargin);
+        obj = green(varargin);
         obj = radpp(varargin);
         obj = zeros(varargin);
         obj = nans(varargin);
@@ -313,16 +315,16 @@ opdims = [sum(rowdims) sum(coldims)];
         fmms = cell(m, n, nargout);
         for k = 1:m
             for l = 1:n
-                [fmms{k,l,:}] = kerns(k,l).fmm(eps, s, t, sigma(cidx{l}));
+                [fmms{k,l,:}] = kerns(k,l).fmm(eps, s, t, sigma(cidx{l},:));
             end
         end
 
         % Combine the outputs from each block using interleaved indices
         if ( nargout > 0 )
-            pot = zeros(opdims(1)*nt, 1);
+            pot = zeros(opdims(1)*nt, size(sigma, 2));
             for k = 1:m
                 for l = 1:n
-                    pot(ridx{k}) = pot(ridx{k}) + fmms{k,l,1};
+                    pot(ridx{k},:) = pot(ridx{k},:) + fmms{k,l,1};
                 end
             end
             varargout{1} = pot;

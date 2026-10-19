@@ -1,8 +1,8 @@
-function g = sumgreens(coefs, varargin)
-%CHNK.RADPP.SUMGREENS linear combination of Green's functions, for
-% KERNEL.RADGREEN and KERNEL.RADPP.
+function g = sum(coefs, varargin)
+%CHNK.GREEN.SUM linear combination of Green's functions, for
+% KERNEL.GREEN and KERNEL.RADPP.
 %
-% Syntax: g = chnk.radpp.sumgreens(coefs, g1, g2, ...)
+% Syntax: g = chnk.green.sum(coefs, g1, g2, ...)
 %
 % returns the function handle
 %
@@ -13,15 +13,15 @@ function g = sumgreens(coefs, varargin)
 % Example: Helmholtz minus Laplace, fitted as one profile
 %    gh = @(s,t) chnk.helm2d.green(1.1, s, t);
 %    gl = @(s,t) chnk.lap2d.green(s, t);
-%    K = kernel.radpp(chnk.radpp.sumgreens([1 -1], gh, gl), 4, 's');
+%    K = kernel.radpp(chnk.green.sum([1 -1], gh, gl), 4, 's');
 %
 % Analytically combining kernels is often more stable, see e.g.
 % CHNK.HELM2D.HELMDIFFGREEN.
 %
-% see also KERNEL.RADGREEN, KERNEL.RADPP
+% see also KERNEL.GREEN, KERNEL.RADPP
 
 if numel(coefs) ~= numel(varargin)
-    error('CHNK.RADPP.SUMGREENS: need one coefficient per Green''s function.');
+    error('CHNK.GREEN.SUM: need one coefficient per Green''s function.');
 end
 greens = varargin;
 g = @(s,t) green_sum(coefs, greens, s, t);

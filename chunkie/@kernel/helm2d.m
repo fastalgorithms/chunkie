@@ -53,6 +53,9 @@ if ( nargin < 2 )
     error('Missing Helmholtz wavenumber.');
 end
 
+% the fmm of the Green's function, for the systems, see CHNK.GREEN.FMM
+fmmh = @(eps,s,pg,t,pgt) hfmm2d(eps, zk, s, pg, t, pgt);
+
 obj = kernel();
 obj.name = 'helmholtz';
 obj.params.zk = zk;
@@ -126,7 +129,7 @@ switch lower(type)
         obj.type = 'all';
         obj.opdims = [2,2];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'all', coefs);
-        obj.fmm  = []; 
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'trans', sigma, coefs);
         obj.sing = 'hs'; 
 
     case {'trans_rep','trep'} 
@@ -137,7 +140,7 @@ switch lower(type)
         obj.type = 'trep';
         obj.opdims = [1,2];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'trans_rep', coefs);
-        obj.fmm  = []; 
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'trans_rep', sigma, coefs);
         obj.sing = 'pv'; 
     
     case {'trans_rep_prime','trep_p', 'trans_rep_p'}
@@ -148,7 +151,7 @@ switch lower(type)
         obj.type = 'trep_p';
         obj.opdims = [1,2];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'trans_rep_prime', coefs);
-        obj.fmm  = []; 
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'trans_rep_prime', sigma, coefs);
         obj.sing = 'hs'; 
 
     case {'c2trans', 'c2t', 'c2tr'}
@@ -159,7 +162,7 @@ switch lower(type)
         obj.type = 'c2tr';
         obj.opdims = [2,1];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c2trans', coefs);
-        obj.fmm  = []; 
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'c2trans', sigma, coefs);
         obj.sing = 'hs'; 
        
     otherwise

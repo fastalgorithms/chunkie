@@ -1,8 +1,8 @@
 function info = typeinfo(type,dim)
-%CHNK.RADPP.TYPEINFO name, operator dimensions and derivative order of the
-% kernel types of KERNEL.RADGREEN and KERNEL.RADPP
+%CHNK.GREEN.TYPEINFO name, operator dimensions and derivative order of the
+% kernel types of KERNEL.GREEN and KERNEL.RADPP
 %
-% Syntax: info = chnk.radpp.typeinfo(type,dim)
+% Syntax: info = chnk.green.typeinfo(type,dim)
 %
 % info.type   - the name of the type, aliases are resolved
 % info.opdims - operator dimensions [m n] of the kernel
@@ -11,7 +11,7 @@ function info = typeinfo(type,dim)
 % info.param  - the parameter taken after the type: '' (none), 'coefs'
 %               (2 coefficients), 'coefs22' (2x2 coefficients) or 'nu'
 %
-% see also KERNEL.RADGREEN, CHNK.RADPP.KERN
+% see also KERNEL.GREEN, CHNK.GREEN.KERN
 
 if nargin < 2 || isempty(dim), dim = 2; end
 
@@ -74,11 +74,11 @@ switch lower(type)
         [name,opdims,nderiv,param] = deal('free_eval',[1 3],1,'nu');
         planar = true;
     otherwise
-        error('CHNK.RADPP.TYPEINFO: unknown kernel type ''%s''.',type);
+        error('CHNK.GREEN.TYPEINFO: unknown kernel type ''%s''.',type);
 end
 
 if planar && dim ~= 2
-    error('CHNK.RADPP.TYPEINFO: type ''%s'' needs dim = 2.',name);
+    error('CHNK.GREEN.TYPEINFO: type ''%s'' needs dim = 2.',name);
 end
 
 info = struct('type',name,'opdims',opdims,'nderiv',nderiv,'param',param);
