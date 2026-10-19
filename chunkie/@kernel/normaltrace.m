@@ -1,7 +1,7 @@
 function Kn = normaltrace(K)
 %NORMALTRACE   Target normal derivative of a kernel from KERNEL.GREEN,
-% KERNEL.RADPP, KERNEL.LAP2D or KERNEL.HELM2D, the kernel of the prime
-% type, e.g. 'sp' for 's'.
+% KERNEL.RADPP, KERNEL.LAP2D, KERNEL.HELM2D or KERNEL.HELM2DDIFF, the
+% kernel of the prime type, e.g. 'sp' for 's'.
 %
 % See also KERNEL.GRAD, KERNEL.NTRACE.
 
@@ -35,9 +35,13 @@ switch K.name
     case 'laplace'
         Kn = kernel.lap2d(type, coefs{:});
     case 'helmholtz'
-        Kn = kernel.helm2d(type, p.zk, coefs{:});
+        if ( isfield(p, 'zks') )
+            Kn = kernel.helm2ddiff(type, p.zks, coefs{:});
+        else
+            Kn = kernel.helm2d(type, p.zk, coefs{:});
+        end
     otherwise
-        error('KERNEL.NORMALTRACE: Currently only supported for kernel.green, kernel.radpp, kernel.lap2d and kernel.helm2d.');
+        error('KERNEL.NORMALTRACE: Currently only supported for kernel.green, kernel.radpp, kernel.lap2d, kernel.helm2d and kernel.helm2ddiff.');
 end
 
 end

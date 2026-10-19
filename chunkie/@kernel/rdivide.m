@@ -8,6 +8,8 @@ function f = rdivide(f,g)
 
 if (isnumeric(g) && isscalar(g) && kernel.radpp('summable', {f}))
     f = kernel.radpp('sum', {f}, 1/g);
+elseif (isnumeric(g) && isscalar(g) && kernel.green('summable', {f}))
+    f = kernel.green('sum', {f}, 1/g);
 elseif (isnumeric(g) && isscalar(g))
     if(isa(f.eval, 'function_handle'))        
         f.eval = @(varargin) f.eval(varargin{:})/g;

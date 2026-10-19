@@ -1,5 +1,5 @@
 function g = sum(coefs, varargin)
-%CHNK.GREEN.SUM linear combination of Green's functions, for
+%CHNK.GREEN.SUM linear combination of Green's functions or fmms, for
 % KERNEL.GREEN and KERNEL.RADPP.
 %
 % Syntax: g = chnk.green.sum(coefs, g1, g2, ...)
@@ -24,23 +24,33 @@ if numel(coefs) ~= numel(varargin)
     error('CHNK.GREEN.SUM: need one coefficient per Green''s function.');
 end
 greens = varargin;
-g = @(s,t) green_sum(coefs, greens, s, t);
+g = @(varargin) green_sum(coefs, greens, varargin{:});
 
 end
 
 
-function varargout = green_sum(coefs, greens, s, t)
+function varargout = green_sum(coefs, greens, varargin)
 nout = max(nargout, 1);
 varargout = cell(1, nout);
 for k = 1:numel(greens)
     out = cell(1, nout);
-    [out{:}] = greens{k}(s, t);
+    [out{:}] = greens{k}(varargin{:});
     for i = 1:nout
-        if k == 1
-            varargout{i} = coefs(k)*out{i};
-        else
-            varargout{i} = varargout{i} + coefs(k)*out{i};
-        end
+        varargout{i} = add(varargout{i}, coefs(k), out{i});
     end
+end
+end
+
+
+function a = add(a, c, b)
+% a + c*b, field by field for the output struct of an fmm
+if ( ~isstruct(b) )
+    if ( isempty(a) ), a = c*b; else, a = a + c*b; end
+    return
+end
+for f = fieldnames(b).'
+    v = c*b.(f{1});
+    if ( isfield(a, f{1}) ), v = a.(f{1}) + v; end
+    a.(f{1}) = v;
 end
 end

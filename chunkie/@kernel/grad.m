@@ -1,7 +1,7 @@
 function Kg = grad(K)
 %GRAD   Target gradient of a kernel from KERNEL.GREEN, KERNEL.RADPP,
-% KERNEL.LAP2D or KERNEL.HELM2D, the kernel of the gradient type, e.g.
-% 'sg' for 's'.
+% KERNEL.LAP2D, KERNEL.HELM2D or KERNEL.HELM2DDIFF, the kernel of the
+% gradient type, e.g. 'sg' for 's'.
 %
 % See also KERNEL.NORMALTRACE.
 
@@ -35,9 +35,13 @@ switch K.name
     case 'laplace'
         Kg = kernel.lap2d(type, coefs{:});
     case 'helmholtz'
-        Kg = kernel.helm2d(type, p.zk, coefs{:});
+        if ( isfield(p, 'zks') )
+            Kg = kernel.helm2ddiff(type, p.zks, coefs{:});
+        else
+            Kg = kernel.helm2d(type, p.zk, coefs{:});
+        end
     otherwise
-        error('KERNEL.GRAD: Currently only supported for kernel.green, kernel.radpp, kernel.lap2d and kernel.helm2d.');
+        error('KERNEL.GRAD: Currently only supported for kernel.green, kernel.radpp, kernel.lap2d, kernel.helm2d and kernel.helm2ddiff.');
 end
 
 end

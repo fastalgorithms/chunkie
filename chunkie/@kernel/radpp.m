@@ -140,12 +140,18 @@ par = {};
 if ( ~isempty(p.param) ), par = {p.param}; end
 ppgreen = @(s,t) chnk.radpp.green( ...
     @(r) chnk.radpp.fiteval(r, breaks, coefs), p.dim, s, t);
-obj = kernel.green(ppgreen, Ks{1}.type, par{:}, 'dim', p.dim, ...
+% the fmm of the sum of the greens
+fmm = {};
+if ( all(cellfun(@(K) ~isempty(K.params.fmm), Ks)) )
+    fmms = cellfun(@(K) K.params.fmm, Ks, 'UniformOutput', false);
+    fmm = {'fmm', chnk.green.sum(cs, fmms{:})};
+end
+obj = kernel.green(ppgreen, Ks{1}.type, par{:}, 'dim', p.dim, fmm{:}, ...
     'sing', sing, 'check', false);
-
-if ( all(cellfun(@(K) isa(K.fmm, 'function_handle'), Ks)) )
+% otherwise the sum of the fmms of the kernels, if they have them
+if ( isempty(fmm) && all(cellfun(@(K) isa(K.fmm, 'function_handle'), Ks)) )
     fmms = cellfun(@(K) K.fmm, Ks, 'UniformOutput', false);
-    obj.fmm = @(varargin) fmmsum(fmms, cs, varargin{:});
+    obj.fmm = chnk.green.sum(cs, fmms{:});
 end
 
 greens = cellfun(@(K) K.params.green, Ks, 'UniformOutput', false);
@@ -153,7 +159,7 @@ obj.name = 'radpp';
 obj.params.green = chnk.green.sum(cs, greens{:});
 obj.params.ppgreen = ppgreen;
 obj.params.type = Ks{1}.type;
-obj.params.args = [par, {'dim', p.dim}];
+obj.params.args = [par, {'dim', p.dim}, fmm];
 obj.params.fitopts = p.fitopts;
 obj.params.rmin = rmin;
 obj.params.rmax = rmax;
@@ -162,14 +168,6 @@ obj.params.coefs = coefs;
 obj.params.nbin = numel(a);
 obj.params.nlev = max(cellfun(@(K) K.params.nlev, Ks));
 obj.params.err = sum(abs(cs(:)).*cellfun(@(K) K.params.err, Ks(:)));
-end
-
-
-function pot = fmmsum(fmms, cs, varargin)
-pot = 0;
-for k = 1:numel(fmms)
-    pot = pot + cs(k)*fmms{k}(varargin{:});
-end
 end
 
 

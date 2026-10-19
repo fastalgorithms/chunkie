@@ -8,6 +8,10 @@ if (isa(g,'kernel') && isa(f,'kernel'))
       f = kernel.radpp('sum', {f, g}, [1 -1]);
       return
   end
+  if kernel.green('summable', {f, g})
+      f = kernel.green('sum', {f, g}, [1 -1]);
+      return
+  end
   assert(f.opdims(1) == g.opdims(1) && f.opdims(2) == g.opdims(2), ...
       'kernel dimensions must agree to add');
   f.name = ['custom ',f.name,' ',g.name];

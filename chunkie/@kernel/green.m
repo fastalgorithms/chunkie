@@ -23,12 +23,26 @@ function obj = green(green, type, varargin)
 %   KERNEL.GREEN(GREEN, FUN, 'nderiv', ND, 'opdims', [M N]) constructs a
 %   custom kernel from the derivatives of GREEN, see CHNK.GREEN.KERN.
 %
+%   Sums and multiples of green kernels of the same built-in type are green
+%   kernels of the sum of the Green's functions, with the sum of their fmms.
+%
 %   Example:
 %      green = @(s,t) chnk.helm2d.green(zk, s, t);
 %      fmm = @(eps,s,pg,t,pgt) hfmm2d(eps, zk, s, pg, t, pgt);
 %      K = kernel.green(green, 'c', [1 1i], 'fmm', fmm);
 %
 % See also KERNEL.RADPP, CHNK.GREEN.KERN, CHNK.GREEN.FMM.
+
+% kernel arithmetic: kernel.green('summable', KS) and
+% kernel.green('sum', KS, CS) = sum_k CS(k)*KS{k}
+if ( ischar(green) )
+    if ( strcmp(green, 'summable') )
+        obj = summable(type);
+    else
+        obj = gsum(type, varargin{1});
+    end
+    return
+end
 
 if ( nargin < 1 || ~isa(green, 'function_handle') )
     error('KERNEL.GREEN: the Green''s function must be a function handle.');
@@ -84,6 +98,41 @@ else
     obj.sing = o.sing;
 end
 
+end
+
+
+function tf = summable(Ks)
+% green kernels of one built-in type, parameter and dimension
+tf = all(cellfun(@(K) strcmp(K.name, 'green'), Ks));
+if ( ~tf ), return; end
+p = Ks{1}.params;
+tf = all(cellfun(@(K) ~strcmp(K.type, 'custom') && strcmp(K.type, Ks{1}.type) && ...
+    isequal(K.params.param, p.param) && K.params.dim == p.dim, Ks));
+end
+
+
+function obj = gsum(Ks, cs)
+% sum_k cs(k)*Ks{k}, the kernel of the sum of the Green's functions
+p = Ks{1}.params;
+args = p.args;
+i = find(cellfun(@(a) (ischar(a) || isstring(a)) && ...
+    any(strcmpi(a, {'sing', 'fmm', 'check'})), args));
+args([i, i+1]) = [];
+sing = Ks{1}.sing;
+for k = 2:numel(Ks), sing = kernel.singpromotion(sing, Ks{k}.sing); end
+greens = cellfun(@(K) K.params.green, Ks, 'UniformOutput', false);
+fmm = {};
+if ( all(cellfun(@(K) ~isempty(K.params.fmm), Ks)) )
+    fmms = cellfun(@(K) K.params.fmm, Ks, 'UniformOutput', false);
+    fmm = {'fmm', chnk.green.sum(cs, fmms{:})};
+end
+obj = kernel.green(chnk.green.sum(cs, greens{:}), p.type, args{:}, fmm{:}, ...
+    'sing', sing, 'check', false);
+% otherwise the sum of the fmms of the kernels, if they have them
+if ( isempty(fmm) && all(cellfun(@(K) isa(K.fmm, 'function_handle'), Ks)) )
+    fmms = cellfun(@(K) K.fmm, Ks, 'UniformOutput', false);
+    obj.fmm = chnk.green.sum(cs, fmms{:});
+end
 end
 
 

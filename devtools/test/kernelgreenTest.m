@@ -172,7 +172,8 @@ end
 
 
 function test_helmholtz()
-% layer potentials and transmission systems against chnk.helm2d.kern
+% layer potentials and transmission systems of kernel.green and
+% kernel.helm2d against chnk.helm2d.kern
 
 [src,targ] = geom();
 zk = 1.1;
@@ -197,6 +198,15 @@ for i = 1:size(tab,1)
     assert(err < 1e-11,'green helm %s: %.2e',tab{i,1},err);
     assert(isequal(K.opdims,[size(A,1)/numel(targ.n(1,:)), ...
         size(A,2)/numel(src.n(1,:))]),'green helm %s: opdims',tab{i,1});
+    % kernel.helm2d, with its fmm, which has no 'trans'
+    if ~strcmp(tab{i,1},'trans')
+        Kh = kernel.helm2d(tab{i,1},zk,a{:});
+        sig = randn(size(B,2),2);
+        assert(norm(Kh.eval(src,targ) - B,'fro') < 1e-12*norm(B,'fro'), ...
+            'helm2d %s',tab{i,1});
+        assert(norm(Kh.fmm(1e-12,src,targ,sig) - B*sig,'fro') < ...
+            1e-10*norm(B*sig,'fro'),'helm2d %s fmm',tab{i,1});
+    end
 end
 
 end
@@ -423,10 +433,15 @@ assert(chk(Ks - Kd,S - D),'green minus');
 assert(chk(-Ks,-S),'green uminus');
 assert(chk(a.*Ks,a*S),'green times');
 assert(chk(Ks/a,S/a),'green divide');
+for K = {-Ks, a.*Ks, Ks/a, Ks - 2*Ks}
+    assert(strcmp(K{1}.name,'green') && strcmp(K{1}.type,'s'), ...
+        'green: multiples and sums of one type');
+end
 assert(chk(Ks + Kb,S + Kb.eval(src,targ)),'green plus built-in');
 assert(chk(Ks + Kr,S + Sp),'green plus radpp');
 Ksum = Ks + Kd;
 assert(strcmp(Ksum.sing,'log'),'green plus sing');
+assert(~strcmp(Ksum.name,'green'),'green: sum of two types');
 Ksum = Ks + Kdp;
 assert(strcmp(Ksum.sing,'hs'),'green plus sing hs');
 
@@ -473,8 +488,16 @@ if exist(['fmm2d.' mexext],'file') == 3
     Kr = kernel.radpp(gh,[1e-6 6],'sp','fmm',fmm);
     Kg = kernel.green(chnk.green.sum([2 -1],gh,gh),'s','fmm', ...
         @(eps,s,pg,t,pgt) fmm(eps,s,pg,t,pgt));
+    % sums of green kernels of one type, with the fmm of the sum of their
+    % greens, or else the sum of the fmms of the kernels
+    gh2 = @(s,t) chnk.helm2d.green(2.1,s,t);
+    K2 = kernel.green(gh2,'s','fmm',@(eps,s,pg,t,pgt) hfmm2d(eps,2.1,s,pg,t,pgt));
+    K3 = kernel.green(gh,'s');
+    K4 = kernel.green(gh2,'s');
+    K3.fmm = @(eps,s,t,sig) K3.eval(s,t)*sig;
+    K4.fmm = @(eps,s,t,sig) K4.eval(s,t)*sig;
     kerns = {Ks + Kd, Ks - Kr, -Kd, a.*Ks, Ks./a, Ks/a, conj(Kd), ...
-        kernel([Ks Kd; Kr Ks]), kernel([Ks; Kr]), Kg};
+        kernel([Ks Kd; Kr Ks]), kernel([Ks; Kr]), Kg, 2*Ks - K2/2, K3 - 2*K4};
     for i = 1:numel(kerns)
         K = kerns{i};
         A = K.eval(src,targ);
@@ -788,14 +811,19 @@ end
 
 % the built-in kernels
 tab = {kernel.lap2d('s'), 'sp', 'sg'; kernel.lap2d('c',cf), 'cp', 'cg'; ...
-    kernel.helm2d('d',zk), 'dp', ''; kernel.helm2d('trans_rep',zk,cf), ...
-    'trans_rep_prime', ''};
+    kernel.helm2d('d',zk), 'dp', 'dg'; kernel.helm2d('c',zk,cf), 'cp', 'cg'; ...
+    kernel.helm2d('trans_rep',zk,cf), 'trans_rep_prime', 'trans_rep_grad'; ...
+    kernel.helm2ddiff('s',[zk 2*zk],[1 0.5]), 'sp', ''; ...
+    kernel.helm2ddiff('c',[zk 2*zk]), 'cp', ''; ...
+    kernel.helm2ddiff('trans_rep',[zk 2*zk],[1 2; 3 4]), 'trans_rep_prime', ''};
 for i = 1:size(tab,1)
     K = tab{i,1};
     c = {};
     if isfield(K.params,'coefs'), c = {K.params.coefs}; end
     if strcmp(K.name,'laplace')
         mk = @(type) kernel.lap2d(type,c{:});
+    elseif isfield(K.params,'zks')
+        mk = @(type) kernel.helm2ddiff(type,K.params.zks,c{:});
     else
         mk = @(type) kernel.helm2d(type,zk,c{:});
     end
@@ -809,13 +837,45 @@ for i = 1:size(tab,1)
     end
 end
 
-caught = false;
-try
-    grad(kernel.lap2d('sp'));
-catch
-    caught = true;
+% grad and normaltrace of sums of green or radpp kernels of one type, with
+% the fmm of the sum of their greens
+green2 = @(s,t) chnk.helm2d.green(2.1,s,t);
+fmm2 = @(eps,s,pg,t,pgt) hfmm2d(eps,2.1,s,pg,t,pgt);
+sig = randn(size(src.r,2),2);
+mks = {@(g,f) kernel.green(g,'c',cf,'fmm',f), ...
+    @(g,f) kernel.radpp(g,[1e-6 6],'c',cf,'fmm',f)};
+for k = 1:2
+    K1 = mks{k}(green,fmm);
+    K2 = mks{k}(green2,fmm2);
+    K = 2*K1 - K2/2;
+    for op = {@grad, @normaltrace}
+        Kd1 = op{1}(K1);
+        Kd2 = op{1}(K2);
+        A = 2*Kd1.eval(src,targ) - Kd2.eval(src,targ)/2;
+        Kd = op{1}(K);
+        assert(norm(Kd.eval(src,targ) - A,'fro') < 1e-10*norm(A,'fro'), ...
+            'sum %d: %s',k,func2str(op{1}));
+        assert(norm(Kd.fmm(1e-12,src,targ,sig) - A*sig,'fro') < ...
+            1e-10*norm(A*sig,'fro'),'sum %d: %s fmm',k,func2str(op{1}));
+    end
 end
-assert(caught,'grad: prime type not rejected');
+Kmix = mks{1}(green,fmm) + kernel.green(green,'s');
+
+% kernels that grad and normaltrace reject: a custom type, a sum of
+% different types and a prime type
+Krej = {kernel.green(green,@(D,s,t) D({},{}),'nderiv',0), Kmix, ...
+    kernel.lap2d('sp')};
+for i = 1:numel(Krej)
+    for op = {@grad, @normaltrace}
+        caught = false;
+        try
+            op{1}(Krej{i});
+        catch
+            caught = true;
+        end
+        assert(caught,'%s: kernel %d not rejected',func2str(op{1}),i);
+    end
+end
 
 end
 
