@@ -26,6 +26,8 @@ function submat = kern(green,dim,srcinfo,targinfo,type,varargin)
 %                       kernels as in CHNK.FLEX2D.KERN (dim = 2)
 %         or a custom struct, fun(D,srcinfo,targinfo) with D(td,sd) being
 %                the derivative of G along the directions td and sd
+%         or the struct returned by CHNK.GREEN.TYPEINFO for type, which
+%                skips resolving the type on each call
 %   varargin{1} - coef, 2x2 for c2trans and trans, or nu for the plate
 %                kernels
 
@@ -35,7 +37,9 @@ function submat = kern(green,dim,srcinfo,targinfo,type,varargin)
 %
 % see also KERNEL.GREEN, KERNEL.RADPP, CHNK.GREEN.TYPEINFO
 
-if isstruct(type)
+if isstruct(type) && isfield(type,'param')
+    info = type;
+elseif isstruct(type)
     info = struct('type','custom','opdims',type.opdims, ...
         'nderiv',type.nderiv,'param','');
 else

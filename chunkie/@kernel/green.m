@@ -64,7 +64,7 @@ if ( isa(type, 'function_handle') )
         'opdims', o.opdims);
 else
     info = chnk.green.typeinfo(type, dim);
-    ktype = info.type;
+    ktype = info;
 end
 
 param = typeparam(info, o);
