@@ -53,21 +53,24 @@ warning('on','CHNK:radpp:fit:noise');
 assert(strcmp(id,'CHNK:radpp:fit:noise'),'radpp fit: no noise warning');
 assert(info.err < 1e-11,'radpp fit: noise level %.1e',info.err);
 
-% a sharp f stalls below 1e-4 before it is resolved, unless stopnoise is
-% false
-f = @(r) tanh(100*(r-1));
-r = linspace(1e-3,10,10000).';
+% a green plus 1e-6 noise stalls at the noise level
+s0 = rng(7);
+f = @(r) [exp(1i*r)./(1+r), r.^2.*log(r), r.*log(r)] + 1e-6*rand(numel(r),3);
 lastwarn('');
 warning('off','CHNK:radpp:fit:noise');
-info = chnk.radpp.fit(f,1e-3,10,struct('eps',1e-13));
+info = chnk.radpp.fit(f,1e-9,3,struct('eps',1e-13));
 warning('on','CHNK:radpp:fit:noise');
+rng(s0);
 [~,id] = lastwarn();
-assert(strcmp(id,'CHNK:radpp:fit:noise'),'radpp fit: sharp f should stall');
+assert(strcmp(id,'CHNK:radpp:fit:noise'),'radpp fit: noisy green, no noise warning');
+assert(info.err > 1e-8 && info.err < 1e-4,'radpp fit: noisy green, error %.1e',info.err);
+assert(info.nbin < 300,'radpp fit: noisy green, %d panels',info.nbin);
+
+f = @(r) [r.^2.*log(r), r.*log(r) - 2*r.^3.*log(r)];
 lastwarn('');
-info = chnk.radpp.fit(f,1e-3,10,struct('eps',1e-13,'stopnoise',false));
-assert(isempty(lastwarn()),'radpp fit: stopnoise = false warned');
-err = max(abs(chnk.radpp.fiteval(r,info.breaks,info.coefs) - f(r)));
-assert(err < 1e-12,'radpp fit: stopnoise = false, error %.1e',err);
+info = chnk.radpp.fit(f,1e-9,3,struct('eps',1e-13));
+assert(isempty(lastwarn()),'radpp fit: r log r warned');
+assert(info.err < 1e-12,'radpp fit: r log r, error %.1e',info.err);
 
 end
 

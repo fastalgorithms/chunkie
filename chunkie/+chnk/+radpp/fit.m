@@ -16,9 +16,9 @@ function info = fit(f,rmin,rmax,opts)
 %   noise   - absolute error noise(j)/r allowed in component j (default 0)
 %   stopnoise - stop at the noise level of f, see below (default true)
 %
-% A panel whose error stops halving when split, below 1e-4, is assumed
-% to have stalled due to noise. Set stopnoise = false for f with sharp
-% features.
+% A panel whose error falls by less than 3/4 when split, below 1e-4, is
+% assumed to have stalled due to noise. Set stopnoise = false for f with
+% sharp features.
 %
 % info: nbin, nlev, err, breaks (nbin+1,1), coefs (nbin,norder,m), the
 % polynomial in r-breaks(i) on panel i, highest degree first
@@ -71,7 +71,7 @@ for ilev = 1:nlevmax
     fi = reshape(amat*reshape(fv,n,na*m),2*n,na,m);        % interpolated
 
     e = relerr(fo-fi, fo, noise, tol, a);
-    stag = stopnoise & e > tol & e > ep/2 & e < 1e-4;
+    stag = stopnoise & e > tol & e > 3*ep/4 & e < 1e-4;
     done = e <= tol | stag;
     if ilev == nlevmax
         done(:) = true;
