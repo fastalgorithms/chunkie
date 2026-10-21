@@ -97,7 +97,7 @@ targ = targinfo.r;
 [~,nt] = size(targ);
 
 if isscalar(zk)
-    if abs(zk) < 1e-6 % biharmonic (\Delta^2 u) 
+    if abs(zk) < 1e-8 % biharmonic (\Delta^2 u) 
         gfunc1 = @(s,t) chnk.flex2d.bhgreen(s,t);
         gfunc2 = @(s,t) dumfunc(s,t,ns,nt);
         gfunc1f = gfunc2;
