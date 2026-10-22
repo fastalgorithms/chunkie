@@ -14,7 +14,8 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %                      number of edges
 %   dens - density on boundary, should have size opdims(2) x k x nch
 %          where k = chnkr.k, nch = chnkr.nch, where opdims is the 
-%          size of kern for a single src,targ pair.
+%          size of kern for a single src,targ pair. Several densities
+%          can be given at once.
 %   targobj - object describing the target points, can be specified as
 %       * array of points
 %       * chunker object
@@ -53,8 +54,7 @@ function [fints,ids] = chunkerkerneval(chnkobj,kern,dens,targobj,opts)
 %       opts.eps = tolerance for adaptive integration
 %
 % output:
-%   fints - opdims(1) x nt array of integral values where opdims is the 
-%           size of kern for a single input (dimension of operator output)
+%   fints - (opdims(1)*nt) x ndens array of integral values.
 %   ids - a size nt integer array. if chnkrobj is a chunkgraph, ids(i) is
 %           the ID number of the region containing the ith target. if
 %           chnkrobj is a chunker, then ids is simply an array of all 1s.
@@ -234,9 +234,17 @@ for jjj=1:nk
     icollocs(jjj+1) = icollocs(jjj) + npts(jjj)*opdims_mat(2,1,jjj);
 end
 
+ncoltot = icollocs(end)-1;
+ndens = numel(dens)/ncoltot;
+if ndens ~= round(ndens) || ndens < 1
+    error('CHUNKERKERNEVAL: dens has %d entries, not a multiple of %d', ...
+        numel(dens),ncoltot);
+end
+dens = reshape(dens,ncoltot,ndens);
+
 rowdims = opdims_mat(1,:,1); rowdims = rowdims(:);
 nout = sum(ntargs(:).*rowdims(:));
-fints = zeros(nout,1);
+fints = zeros(nout,ndens);
 if ~isempty(cormat)
     if nout ~= size(cormat,1)
         error('cormat size is incorrect\n')
@@ -269,7 +277,7 @@ for jjj = 1:nk
 
 kern0 = kern(iii,jjj);
 if kern0.isnan
-    fints(irow0) = nan;
+    fints(irow0,:) = nan;
     continue
 end
 if kern0.iszero
@@ -278,16 +286,16 @@ end
 
 chnkr0 = chnkr(jjj);
 opdims0 = opdims_mat(:,iii,jjj);
-dens0 = dens(icollocs(jjj):(icollocs(jjj+1)-1));
+dens0 = dens(icollocs(jjj):(icollocs(jjj+1)-1),:);
 
 if opts_use.forcesmooth
-    fints(irow0) = fints(irow0) + chnk.chunkerkerneval_smooth(chnkr0,kern0,opdims0,dens0,targinfo0, ...
+    fints(irow0,:) = fints(irow0,:) + chnk.chunkerkerneval_smooth(chnkr0,kern0,opdims0,dens0,targinfo0, ...
         [],opts_use);
     continue
 end
 
 if opts_use.forceadap
-    fints(irow0) = fints(irow0) + chunkerkerneval_adap(chnkr0,kern0,opdims0,dens0, ...
+    fints(irow0,:) = fints(irow0,:) + chunkerkerneval_adap(chnkr0,kern0,opdims0,dens0, ...
         targinfo0,[],opts_use);
     continue
 end
@@ -298,7 +306,7 @@ if opts_use.forcepquad
     chnkrflag = chunkerpoints(struct('r',real(chnkr0.r), ... 
         'd',real(chnkr0.d),'d2',real(chnkr0.d2)));
     flag = flagnear(chnkrflag,targinfo.r,optsflag);
-    fints(irow0) = fints(irow0) + chnk.chunkerkerneval_smooth(chnkr0,kern0,opdims0,dens0,targinfo0, ...
+    fints(irow0,:) = fints(irow0,:) + chnk.chunkerkerneval_smooth(chnkr0,kern0,opdims0,dens0,targinfo0, ...
         flag,opts_use);
 
     if ~isfield(opts_use,'side')
@@ -306,7 +314,7 @@ if opts_use.forcepquad
         error(msg)  
     end
 
-    fints(irow0) = fints(irow0) + chunkerkerneval_pquad(chnkr0,kern0,opdims0,dens0, ...
+    fints(irow0,:) = fints(irow0,:) + chunkerkerneval_pquad(chnkr0,kern0,opdims0,dens0, ...
         targinfo0,flag,opts_use);
 
     continue
@@ -324,11 +332,15 @@ npoly = chnkr0.k*2;
 nlegnew = chnk.ellipse_oversample(rho,npoly,opts_use.eps);
 nlegnew = max(nlegnew,chnkr0.k);
 
-[chnkr02,dens02] = upsample(chnkr0,nlegnew,dens0);
-fints(irow0) = fints(irow0) + chnk.chunkerkerneval_smooth(chnkr02,kern0,opdims0,dens02,targinfo0, ...
+% upsample each density, as opdims(2)*ndens functions on the chunker
+[chnkr02,dens02] = upsample(chnkr0,nlegnew, ...
+    permute(reshape(dens0,opdims0(2),chnkr0.k,chnkr0.nch,ndens),[1 4 2 3]));
+dens02 = reshape(permute(reshape(dens02,opdims0(2),ndens,nlegnew, ...
+    chnkr0.nch),[1 3 4 2]),[],ndens);
+fints(irow0,:) = fints(irow0,:) + chnk.chunkerkerneval_smooth(chnkr02,kern0,opdims0,dens02,targinfo0, ...
     flag,opts_use);
 
-fints(irow0) = fints(irow0) + chunkerkerneval_adap(chnkr0,kern0,opdims0,dens0, ...
+fints(irow0,:) = fints(irow0,:) + chunkerkerneval_adap(chnkr0,kern0,opdims0,dens0, ...
         targinfo0,flag,opts_use);
 
 end
@@ -349,7 +361,8 @@ end
 
 % target
 [~,nt] = size(targinfo.r);
-fints = zeros(opdims(1)*nt,1);
+ndens = numel(dens)/(opdims(2)*chnkr.npt);
+fints = zeros(opdims(1)*nt,ndens);
 k = chnkr.k;
 nch = chnkr.nch;
 [t,w] = lege.exps(2*k);
@@ -361,8 +374,7 @@ n = chnkr.n;
 d2 = chnkr.d2;
 wts = chnkr.wts;
 
-assert(numel(dens) == opdims(2)*k*nch,'dens not of appropriate size')
-dens = reshape(dens,opdims(2),k,nch);
+dens = reshape(dens,opdims(2),k,nch,ndens);
 
 % interpolation matrix
 intp = lege.matrin(k,t);          % interpolation from k to 2*k
@@ -394,7 +406,7 @@ for j=1:size(chnkr.r,3)
         srcinfo.d = d(:,:,j);
         srcinfo.d2 = d2(:,:,j);
         srcinfo.n = n(:,:,j);
-        densj = dens(:,:,j);
+        densj = reshape(dens(:,:,j,:),opdims(2),k,ndens);
         indji = (ji-1)*opdims(1);
         ind = (indji(:)).' + (1:opdims(1)).';
 
@@ -415,8 +427,12 @@ for j=1:size(chnkr.r,3)
             end
             mat0opdim = kron(mat0,ones(opdims'));
             mat0xsplitfun = mat0opdim.*funsf{l};
-            densfj = densj*intp';
-            fints(ind(:)) = fints(ind(:)) + mat0xsplitfun*densfj(:);
+            densfj = zeros(opdims(2),size(intp,1),ndens);
+            for iv = 1:ndens
+                densfj(:,:,iv) = densj(:,:,iv)*intp';
+            end
+            fints(ind(:),:) = fints(ind(:),:) + ...
+                mat0xsplitfun*reshape(densfj,[],ndens);
         end
     end
 end
@@ -444,8 +460,9 @@ if nargin < 7
     opts = [];
 end
 
-assert(numel(dens) == opdims(2)*k*nch,'dens not of appropriate size')
-dens = reshape(dens,opdims(2),k,nch);
+ndens = numel(dens)/(opdims(2)*k*nch);
+assert(ndens == round(ndens),'dens not of appropriate size')
+dens = reshape(dens,opdims(2)*k*nch,ndens);
 
 % Extract target info
 targs = targinfo.r;
@@ -469,7 +486,7 @@ if isfield(targinfo,'data')
 end
 
 
-fints = zeros(opdims(1)*nt,1);
+fints = zeros(opdims(1)*nt,ndens);
 
 % using adaptive quadrature
 
@@ -495,7 +512,7 @@ if isempty(flag) % do all to all adaptive
             
             indj = (j-1)*opdims(1);
             ind = indj(:).' + (1:opdims(1)).'; ind = ind(:);
-            fints(ind) = fints(ind) + fints1;
+            fints(ind,:) = fints(ind,:) + fints1;
         end
     end
 else % do only those flagged
@@ -511,7 +528,7 @@ else % do only those flagged
         indji = (ji-1)*opdims(1);
         ind = (indji(:)).' + (1:opdims(1)).';
         ind = ind(:);
-        fints(ind) = fints(ind) + fints1;        
+        fints(ind,:) = fints(ind,:) + fints1;
 
     end
     

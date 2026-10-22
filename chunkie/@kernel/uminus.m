@@ -2,6 +2,15 @@ function f = uminus(f)
 % multiply a kernel class by negative 1
 %
 
+if kernel.radpp('summable', {f})
+    f = kernel.radpp('sum', {f}, -1);
+    return
+end
+if kernel.green('summable', {f})
+    f = kernel.green('sum', {f}, -1);
+    return
+end
+
 if(isa(f.shifted_eval, 'function_handle'))
     f.shifted_eval = @(varargin) -f.shifted_eval(varargin{:});
 else

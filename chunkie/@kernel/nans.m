@@ -37,7 +37,7 @@ end
             nt = size(t(:,:), 2);
         end
 
-        if ( nargout > 0 ), varargout{1} = nan(m*nt, 1); end
+        if ( nargout > 0 ), varargout{1} = nan(m*nt, size(sigma, 2)); end
         if ( nargout > 1 ), varargout{2} = nan(2, m*nt); end
         if ( nargout > 2 ), varargout{3} = nan(3, m*nt); end
         if ( nargout > 3 )

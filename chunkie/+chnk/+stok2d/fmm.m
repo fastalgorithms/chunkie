@@ -47,7 +47,7 @@ function varargout = fmm(eps, mu, srcinfo, targinfo, type, sigma, varargin)
 %                type = 'sgrad' gradient corresponding to single layer,
 %                type = 'dgrad' gradient corresponding to double layer,
 %                type = 'cgad' gradient corresponding to combined layer,
-%   sigma - density
+%   sigma - density, (2*ns,ndens) for ndens densities
 %   varargin{1} - coef in the combined layer formula, otherwise
 %                 does nothing
 %
@@ -65,18 +65,24 @@ end
 srcuse = [];
 srcuse.sources = srcinfo.r(1:2,:);
 [m, ns] = size(srcuse.sources);
-sigma = reshape(sigma, [m, ns]);
+ndens = numel(sigma)/(m*ns);
+% the densities as (ndens,2,ns), as stfmm2d expects for nd = ndens
+sigma = permute(reshape(sigma, [m, ns, ndens]), [3 1 2]);
+srcuse.nd = ndens;
+if ~any(strcmpi(type, {'svel', 'strac', 'spres', 'sgrad'}))
+    strsvec = repmat(reshape(srcinfo.n(1:2,:), [1 m ns]), [ndens 1 1]);
+end
 switch lower(type)
     case {'svel', 'strac', 'spres', 'sgrad'}
         srcuse.stoklet = 1/(2*pi*mu)*sigma;
     case {'dvel', 'dtrac', 'dpres', 'dgrad'}
         srcuse.strslet = -1/(2*pi)*sigma;
-        srcuse.strsvec = srcinfo.n(1:2,:);
+        srcuse.strsvec = strsvec;
     case {'cvel', 'ctrac', 'cpres', 'cgrad'}
         coef = varargin{1};
         srcuse.stoklet = 1/(2*pi*mu)*coef(2)*sigma;
         srcuse.strslet  = -1/(2*pi)*coef(1)*sigma;
-        srcuse.strsvec  = srcinfo.n(1:2,:);
+        srcuse.strsvec  = strsvec;
 end
 
 if ( isstruct(targinfo) )
@@ -106,16 +112,25 @@ end
 
 U = stfmm2d(eps, srcuse, ifppreg, targuse, ifppregtarg);
 [m, nt] = size(targuse);
+% the outputs with the densities last: velocity (2,nt,ndens), pressure
+% (nt,ndens) and gradient (2,2,nt,ndens)
+pot = permute(reshape(U.pottarg, [ndens m nt]), [2 3 1]);
+if ( ifppregtarg >= 2 )
+    pre = reshape(U.pretarg, [ndens nt]).';
+end
+if ( ifppregtarg >= 3 )
+    grad = permute(reshape(U.gradtarg, [ndens m m nt]), [2 3 4 1]);
+end
 % Assign potentials
 if ( nargout > 0 )
     switch lower(type)
         case {'svel', 'dvel', 'cvel'}
-            varargout{1} = reshape(U.pottarg, [m*nt, 1]);
+            varargout{1} = reshape(pot, [m*nt, ndens]);
             if nargout > 1
-                varargout{2} = reshape(U.pretarg, [nt,1])*mu;
+                varargout{2} = pre*mu;
             end
             if nargout > 2
-                varargout{3} = reshape(U.gradtarg, [m, m, nt]);
+                varargout{3} = grad;
             end
             if nargout > 3
                 str_err = ['CHUNKIE:stok2d:fmm: too many output ',...
@@ -123,14 +138,14 @@ if ( nargout > 0 )
                 error(str_err, type);
             end
         case {'spres', 'dpres', 'cpres'}
-            varargout{1} = U.pretarg.'*mu;
+            varargout{1} = pre*mu;
             if nargout > 1
                 str_err = ['CHUNKIE:stok2d:fmm: too many output ',...
                     'arguments for Stokes kernel ''%s''.'];
                 error(str_err, type);
             end
         case {'sgrad', 'dgrad', 'cgrad'}
-            varargout{1} = reshape(U.gradtarg, [m*m*nt, 1]);
+            varargout{1} = reshape(grad, [m*m*nt, ndens]);
             if nargout > 1
                 str_err = ['CHUNKIE:stok2d:fmm: too many output ',...
                     'arguments for Stokes kernel ''%s''.'];
@@ -142,18 +157,16 @@ if ( nargout > 0 )
                 error('CHUNKIE:stok2d:fmm:normals', ...
                     'Targets require normal info when evaluating Stokes kernel ''%s''.', type);
             end
-            du = reshape(U.gradtarg, [m, m, nt]);
-            dut = permute(du, [2,1,3]);
-            eu = du + dut;
-            euxx = squeeze(eu(1,1,:));
-            euxy = squeeze(eu(1,2,:));
-            euyy = squeeze(eu(2,2,:));
-            f = zeros(m*nt,1);
-            p = U.pretarg.';
+            eu = grad + permute(grad, [2 1 3 4]);
+            euxx = reshape(eu(1,1,:,:), [nt ndens]);
+            euxy = reshape(eu(1,2,:,:), [nt ndens]);
+            euyy = reshape(eu(2,2,:,:), [nt ndens]);
+            f = zeros(m*nt,ndens);
+            p = pre;
             ntx = targinfo.n(1,:).';
             nty = targinfo.n(2,:).';
-            f(1:2:end) = -p.*ntx + euxx.*ntx + euxy.*nty;
-            f(2:2:end) = -p.*nty + euxy.*ntx + euyy.*nty;
+            f(1:2:end,:) = -p.*ntx + euxx.*ntx + euxy.*nty;
+            f(2:2:end,:) = -p.*nty + euxy.*ntx + euyy.*nty;
             varargout{1} = mu*f;
             if nargout > 1
                 str_err = ['CHUNKIE:stok2d:fmm: too many output ',...
