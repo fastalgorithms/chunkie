@@ -16,9 +16,10 @@ function info = fit(f,rmin,rmax,opts)
 %   noise   - absolute error noise(j)/r allowed in component j (default 0)
 %   stopnoise - stop at the noise level of f, see below (default true)
 %
-% A panel whose error falls by less than 3/4 when split, below 1e-4, is
-% assumed to have stalled due to noise. Set stopnoise = false for f with
-% sharp features.
+% Errors are relative to the size of f on the panel, or on the outer half
+% of [rmin, rmax] if larger. A panel whose error, scaled as its parent's,
+% falls by less than 3/4 when split, below 1e-4, is assumed to have
+% stalled due to noise. Set stopnoise = false for f with sharp features.
 %
 % info: nbin, nlev, err, breaks (nbin+1,1), coefs (nbin,norder,m), the
 % polynomial in r-breaks(i) on panel i, highest degree first
@@ -56,11 +57,18 @@ fv = f(a + (x+1)*(b-a)/2);
 m  = size(fv,2);
 fv = reshape(fv,n,1,m);
 
+% size of f on the outer half of [rmin,rmax], away from a singularity at 0
+fs = f((a+b)/2 + (x+1)*(b-a)/4);
+fs = max(max(abs(real(fs)),[],1),max(abs(imag(fs)),[],1));
+fs(fs == 0) = 1;
+fs = reshape(fs,1,1,m);
+
 ad = zeros(0,1);  bd = zeros(0,1);  fd = zeros(n,0,m);
 err = 0;
 
-% error of the parent of each panel
+% error of the parent of each panel, and its normalization
 ep = inf;
+dp = [];
 inoise = false(0,1);
 
 for ilev = 1:nlevmax
@@ -70,8 +78,10 @@ for ilev = 1:nlevmax
     fo = reshape(f(t(:)),2*n,na,m);                       % on the halves
     fi = reshape(amat*reshape(fv,n,na*m),2*n,na,m);        % interpolated
 
-    e = relerr(fo-fi, fo, noise, tol, a);
-    stag = stopnoise & e > tol & e > 3*ep/4 & e < 1e-4;
+    [e, derr, den] = relerr(fo-fi, fo, fs, noise, tol, a);
+    if isempty(dp), dp = den; end
+    es = reshape(max(derr./dp,[],3),[],1);
+    stag = stopnoise & e > tol & es > 3*ep/4 & e < 1e-4;
     done = e <= tol | stag;
     if ilev == nlevmax
         done(:) = true;
@@ -99,6 +109,7 @@ for ilev = 1:nlevmax
 
     amid = (a(isplit) + b(isplit))/2;
     ep   = [e(isplit); e(isplit)];
+    dp   = cat(2,den(:,isplit,:),den(:,isplit,:));
     fv   = cat(2,fo(1:n,isplit,:),fo(n+1:2*n,isplit,:));
     a    = [a(isplit); amid];
     b    = [amid; b(isplit)];
@@ -130,11 +141,12 @@ info = struct('nbin',nbin,'nlev',ilev,'err',err, ...
 end
 
 
-function e = relerr(d, fo, noise, tol, a)
+function [e, derr, den] = relerr(d, fo, fs, noise, tol, a)
 % largest error over nodes and components of each panel, relative to
-% max(local size,1) plus the noise allowance, (npanel,1)
+% max(local size, size fs of f away from 0) plus the noise allowance,
+% (npanel,1)
 derr = max(max(abs(real(d)),[],1), max(abs(imag(d)),[],1));      % (1,na,m)
-den  = max(max(max(abs(real(fo)),[],1), max(abs(imag(fo)),[],1)), 1);
+den  = max(max(max(abs(real(fo)),[],1), max(abs(imag(fo)),[],1)), fs);
 if any(noise(:) ~= 0)
     den = den + reshape(noise(:),1,1,[])./(tol*a(:).');
 end

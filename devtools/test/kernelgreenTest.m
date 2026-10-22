@@ -3,6 +3,7 @@
 rng(42);
 
 test_fit_limits();
+test_fit_battery();
 test_tensors();
 test_formats();
 test_laplace();
@@ -71,6 +72,47 @@ lastwarn('');
 info = chnk.radpp.fit(f,1e-9,3,struct('eps',1e-13));
 assert(isempty(lastwarn()),'radpp fit: r log r warned');
 assert(info.err < 1e-12,'radpp fit: r log r, error %.1e',info.err);
+
+end
+
+
+
+function test_fit_battery()
+% radpp fit resolves singular, smooth, oscillatory and flexural profiles
+% on short and long ranges, at any scale, without warnings
+
+hd = @(k,r) chnk.flex2d.helmdiffgreen(k,[0;0],[r(:).'; 0*r(:).']);
+flexg = @(k1,k2,r) (hd(k1,r) - hd(k2,r))/(k1^2 - k2^2);
+prof = { ...
+  'r^m log r', @(r) [log(r), r.*log(r), r.^2.*log(r), r.^3.*log(r)]; ...
+  '1/r^p',     @(r) [1./r, 1./r.^2, 1./r.^3]; ...
+  'smooth',    @(r) [exp(-r.^2), exp(-r)]; ...
+  'helm 3d',   @(r) [exp(1i*r)./r, exp(30i*r)./r]; ...
+  'helm 2d',   @(r) [besselh(0,1,2*r), besselh(0,1,30*r)]; ...
+  'flex',      @(r) [flexg(1.7,1.7i,r), flexg(1.7,0.5i,r), r.^2.*log(r)/(8*pi)]};
+ranges = [1e-9 1; 1e-4 10; 1e-6 100];
+
+for i = 1:size(prof,1)
+    for j = 1:size(ranges,1)
+        for sc = [1 1e6 1e-6]
+            g = @(r) sc*prof{i,2}(r);
+            a = ranges(j,1);  b = ranges(j,2);
+            lbl = sprintf('%s on [%g, %g], scale %g',prof{i,1},a,b,sc);
+            lastwarn('');
+            info = chnk.radpp.fit(g,a,b,struct('eps',1e-12));
+            assert(isempty(lastwarn()),'radpp fit %s: %s',lbl,lastwarn());
+            assert(info.err < 1e-11,'radpp fit %s: error %.1e',lbl,info.err);
+            r = min(max(logspace(log10(a),log10(b),2000).',a),b);
+            fv = g(r);
+            pv = chnk.radpp.fiteval(r,info.breaks,info.coefs);
+            fsc = max(abs(fv(r >= (a+b)/2,:)),[],1);
+            fsc(fsc == 0) = 1;
+            den = max(movmax(abs(fv),101),fsc);
+            err = max(abs(pv - fv)./den,[],'all');
+            assert(err < 1e-10,'radpp fit %s: eval error %.1e',lbl,err);
+        end
+    end
+end
 
 end
 
