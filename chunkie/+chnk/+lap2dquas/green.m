@@ -18,7 +18,7 @@ function [val,grad,hess] = green(src,targ,kappa,d,s0,sn,l,ising,nsub)
 %   d     - period (scalar)
 %   s0    - (nkappa,1) precomputed n=0 lattice sum constant
 %               (see chnk.lap2dquas.latticecoefs)
-%   sn    - (nkappa, N) precomputed lattice sum coefficients for orders 1..N
+%   sn    - (nkappa, N) precomputed lattice sum coefficients for orders 1...N
 %               (see chnk.lap2dquas.latticecoefs)
 %   l     - number of periodic copies included explicitly on each side
 %   ising - if 1, include the free-space (singular) part of the Green's
@@ -49,7 +49,7 @@ rx = rx(:);
 ry = ry(:);
 
 
-nx = fix(rx/d);
+nx = round(rx/d);
 rx = rx - nx*d;
 
 
@@ -62,7 +62,7 @@ r = sqrt(r2);
 
 npt = size(r,1);
 
-ythresh = 1.5*d/2;
+ythresh = d;
 iclose = abs(ry) < ythresh;
 ifar = ~iclose;
 

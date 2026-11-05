@@ -33,7 +33,7 @@ function submat = kern(srcinfo,targinfo,type,kappa,d,s0,sn,l,ising,nsub,varargin
 %   d        - period (scalar)
 %   s0       - (nkappa,1) n=0 lattice sum constant
 %                  (see chnk.lap2dquas.latticecoefs)
-%   sn       - (nkappa, N) lattice sum coefficients for orders 1..N
+%   sn       - (nkappa, N) lattice sum coefficients for orders 1...N
 %                  (see chnk.lap2dquas.latticecoefs)
 %   l        - number of explicit periodic copies on each side
 %   ising    - if 1, include the free-space singular part; if 0, periodic
@@ -80,7 +80,7 @@ case {'sp', 'sprime'}
 
 
 % Tangential derivative of single layer
-case {'stau'}
+case {'st', 'stau'}
     targnorm = targinfo.n;
     [~,grad] = chnk.lap2dquas.green(src,targ,kappa,d,s0,sn,l,ising,nsub);
     % nx = repmat((targnorm(1,:)).',1,ns);

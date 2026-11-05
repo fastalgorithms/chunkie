@@ -3,10 +3,10 @@ function S = latticecoefs(n,zk,d,kappa,alpha,a,M,l)
 % quasiperiodic Helmholtz Green's function.
 %
 % Computes the local expansion coefficients S_n such that the far-field
-% (periodic images beyond radius l) of the quasiperiodic Green's function
+% (periodic images with |m| >= l) of the quasiperiodic Green's function
 % is represented as
 %
-%   G_far(x,y) := sum_{|m|>l} i/4 H_0^{(1)}(zk |x - m d e_1 - y|)
+%   G_far(x,y) := sum_{|m|>=l} i/4 H_0^{(1)}(zk |x - m d e_1 - y|)
 %                   exp(i kappa d m)
 %              = sum_{n=0}^{N} S_n J_n(zk r) cos(n theta)
 %
@@ -23,8 +23,8 @@ function S = latticecoefs(n,zk,d,kappa,alpha,a,M,l)
 %   alpha - (nkappa,1) array exp(1i*kappa*d), Bloch factors
 %   a     - upper limit of trapezoid quadrature interval (default 15)
 %   M     - number of trapezoid quadrature nodes (default 1e4)
-%   l     - number of explicit periodic copies on each side to exclude
-%               (default 2)
+%   l     - index of the first periodic copy included in the lattice sum,
+%               i.e. copies with |m| >= l are summed (default 3).
 %
 % Output:
 %   S - (nkappa, N+1) lattice sum coefficients; S(i,n+1) is the n-th
@@ -32,7 +32,7 @@ function S = latticecoefs(n,zk,d,kappa,alpha,a,M,l)
 %
 % see also CHNK.HELM2DQUAS.GREEN, CHNK.HELM2DQUAS.KERN
 
-if nargin < 8, l = 2; end
+if nargin < 8, l = 3; end
 taus = linspace(0,a,M)*(1-1i);
 
 nkappa = length(kappa);

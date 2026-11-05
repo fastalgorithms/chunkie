@@ -179,6 +179,16 @@ if vrb
 
 end
 
+%flexural Bloch phase test.
+verts = [-0.5, 0, 0.5; -1,0,-1];
+cg = chunkgraph_per(verts,[3 2; 2 1],{[1 3]});
+dx = cg.dx; zk = 1.2; kap = 0.7;
+o = []; o.nsub_or_tol = 5;
+Sf = chunkermat(cg,kernel('fq','s',zk,kap,dx),o);
+Sh = (chunkermat(cg,kernel('hq','s',zk,kap,dx),o) ...
+    - chunkermat(cg,kernel('hq','s',1i*zk,kap,dx),o))/(2*zk^2);
+assert(norm(Sf-Sh)/norm(Sh) < 1e-8,'flexural chunkermat RCIP test failed.')
+
 fprintf('\nchunkgraph_per tests passed.\n')
 end
 

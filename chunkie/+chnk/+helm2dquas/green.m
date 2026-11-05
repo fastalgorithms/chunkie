@@ -48,7 +48,7 @@ rx = rx(:);
 ry = ry(:);
 
 
-nx = fix(rx/d);
+nx = round(rx/d);
 rx = rx - nx*d;
 
 
@@ -61,7 +61,7 @@ r = sqrt(r2);
 
 npt = size(r,1);
 
-ythresh = 2*d/2;
+ythresh = d;
 iclose = abs(ry) < ythresh;
 ifar = ~iclose;
 
@@ -180,6 +180,12 @@ if ~isempty(rxclose)
     
     tmp = reshape(Js(:,:,2:end-2).*cs(:,:,2:end),[],N);
     val_far = 0.25*1i*Js(:,:,1).*sn(:,:,1) + 0.5*1i*sn(:,2:end)*tmp.';
+
+    idiag = rclose(:).' < 1e-14;
+    ndiag = sum(idiag);
+    if ndiag > 0
+        val_far(:,idiag) = repmat(0.25*1i*sn(:,:,1),1,ndiag);
+    end
     val(:,iclose) = val_near+val_far;
     
     if nargout >1
@@ -192,6 +198,10 @@ if ~isempty(rxclose)
         grad_far_t = (0.5*1i*((-reshape((1:N),1,[]).*sn(:,2:end))*tmp.'));
         
         grad_far = cat(3,cs(:,:,2).*grad_far_p - ss(:,:,2).*grad_far_t, ss(:,:,2).*grad_far_p + cs(:,:,2).*grad_far_t);
+        if ndiag > 0
+            grad_far(:,idiag,1) = repmat(0.25*1i*zk*sn(:,:,2),1,ndiag);
+            grad_far(:,idiag,2) = 0;
+        end
         grad(:,iclose,:) = grad_near + grad_far; 
     end
     if nargout > 2
@@ -221,6 +231,14 @@ if ~isempty(rxclose)
         hess_far_yy = 0.25*1i*tmp_n(:,1).'.*sn(:,1)+.5*1i*sn(:,2:end)*tmp_n(:,2:end).';
 
         hess_far = cat(3,hess_far_xx, hess_far_xy, hess_far_yy);
+
+        if ndiag > 0
+            hxx = -0.125*1i*zk^2*sn(:,:,1) + 0.125*1i*zk^2*sn(:,:,3);
+            hyy = -0.125*1i*zk^2*sn(:,:,1) - 0.125*1i*zk^2*sn(:,:,3);
+            hess_far(:,idiag,1) = repmat(hxx,1,ndiag);
+            hess_far(:,idiag,2) = 0;
+            hess_far(:,idiag,3) = repmat(hyy,1,ndiag);
+        end
 
         hess(:,iclose,:) = hess_near + hess_far;
     end
