@@ -33,7 +33,7 @@ function [inds,adjs,info] = sortinfo(chnkr)
 % author: Travis Askham (askhamwhat@gmail.com)
 
 nch = chnkr.nch;
-ncompmax = 1000;
+ncompmax = max(1000, nch);
 
 ier = 0;
 
