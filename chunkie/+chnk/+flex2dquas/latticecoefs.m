@@ -16,8 +16,8 @@ function S = latticecoefs(n,zk,d,kappa,alpha,a,M,l)
 %   alpha - (nkappa,1) array exp(1i*kappa*d), Bloch factors
 %   a     - upper limit of trapezoid quadrature interval (default 15)
 %   M     - number of trapezoid quadrature nodes (default 1e4)
-%   l     - number of explicit periodic copies on each side to exclude
-%               (default 2)
+%   l     - index of the first periodic copy included in the lattice sum,
+%               i.e. copies with |m| >= l are summed (default 3).
 %
 % Output:
 %   S - (nkappa, N+1, 2) lattice sum coefficients; S(:,:,1) are the
@@ -25,6 +25,7 @@ function S = latticecoefs(n,zk,d,kappa,alpha,a,M,l)
 %
 % see also CHNK.HELM2DQUAS.LATTICECOEFS, CHNK.FLEX2DQUAS.GREEN
 
+if nargin < 8, l = 3; end
 sn1 = chnk.helm2dquas.latticecoefs(n,zk,d,kappa,alpha,a,M,l);
 sn2 = chnk.helm2dquas.latticecoefs(n,1i*zk,d,kappa,alpha,a,M,l);
 S = cat(3,sn1,sn2);

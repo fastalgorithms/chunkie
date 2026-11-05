@@ -59,13 +59,15 @@ function obj = helm2dquas(type, zk, kappa, d, coefs, quad_opts, ising)
 %   
 %   all versions accept quad_opts to change the parameters in the lattice
 %   sum computations. (see chnk.helm2dquas.latticecoefs)
-%       quad_opts.l - (2) radius of periodic copies to exclude from 
+%       quad_opts.l    - (2) radius of periodic copies to exclude from
 %           lattice sum (excludes copies within l*d)
-%       quad_opts.N - (40) number of lattice sums
-%       quad_opts.m - (1e4) number of trapezoid rule quadrature nodes
-%       quad_opts.a - (a) length of trpezoid quadrature rule
+%       quad_opts.N    - (40) number of lattice sums
+%       quad_opts.M    - (1e4) number of trapezoid rule quadrature nodes
+%       quad_opts.a    - (15) length of trapezoid quadrature rule
 %       quad_opts.nsub - (0) number of extra periodic copies to subtract
-%           on each side when ising == 0 (for nearly-singular quadrature)
+%           near the source, for use in nearly-singular quadrature
+%   ising - (optional, default 1) if 1, include the free-space singular
+%       part; if 0, periodic images only (smooth kernel)
 %
 % See also CHNK.HELM2DQUAS.KERN.
 
@@ -160,7 +162,7 @@ switch lower(type)
         obj.sing = 'hs';
 
     case {'c', 'combined'}
-        if ( nargin < 3 )
+        if ( nargin < 5 || isempty(coefs) )
             warning('Missing combined layer coefficients. Defaulting to [1,1i].');
             coefs = [1,1i];
         end
@@ -177,7 +179,7 @@ switch lower(type)
         end
 
     case {'cp', 'cprime'}
-        if ( nargin < 3 )
+        if ( nargin < 5 || isempty(coefs) )
             warning('Missing combined layer coefficients. Defaulting to [1,1i].');
             coefs = [1,1i];
         end
@@ -188,46 +190,46 @@ switch lower(type)
         obj.sing = 'hs';
 
     case {'all', 'trans_sys', 'tsys'}
-        if ( nargin < 3 )
+        if ( nargin < 5 || isempty(coefs) )
             warning('Missing transmission coefficients. Defaulting to [1,1;1,1].');
             coefs = ones(2,2);
         end
         obj.type = 'all';
-        obj.opdims = [2,2];
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'all',quas_param, coefs);
+        obj.opdims = [2*numel(kappa),2];
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'all',quas_param, coefs, ising, nsub);
         obj.fmm  = []; 
         obj.sing = 'hs'; 
     
     case {'trans_rep','trep'} 
-        if ( nargin < 3 )
+        if ( nargin < 5 || isempty(coefs) )
             warning('Missing transmission coefficients. Defaulting to [1;1].');
             coefs = ones(2,1);
         end
         obj.type = 'trep';
-        obj.opdims = [1,2];
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'trep',quas_param, coefs);
+        obj.opdims = [numel(kappa),2];
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'trep',quas_param, coefs, ising, nsub);
         obj.fmm  = []; 
         obj.sing = 'pv'; 
     
     case {'trans_rep_prime','trep_p', 'trans_rep_p'}
-        if ( nargin < 3 )
+        if ( nargin < 5 || isempty(coefs) )
             warning('Missing transmission coefficients. Defaulting to [1;1].');
             coefs = ones(2,1);
         end
         obj.type = 'trep_p';
-        obj.opdims = [1,2];
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'trep_p',quas_param, coefs);
+        obj.opdims = [numel(kappa),2];
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'trep_p',quas_param, coefs, ising, nsub);
         obj.fmm  = []; 
         obj.sing = 'hs'; 
 
     case {'c2trans', 'c2t', 'c2tr'}
-        if ( nargin < 3 )
+        if ( nargin < 5 || isempty(coefs) )
             warning('Missing combined layer coefficients. Defaulting to [1,1i;1,1i].');
             coefs =  [1,1i;1,1i];
         end
         obj.type = 'c2tr';
-        obj.opdims = [2,1];
-        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c2t',quas_param, coefs);
+        obj.opdims = [2*numel(kappa),1];
+        obj.eval = @(s,t) chnk.helm2dquas.kern(zk, s, t, 'c2t',quas_param, coefs, ising, nsub);
         obj.fmm  = []; 
         obj.sing = 'hs'; 
 

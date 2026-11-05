@@ -82,6 +82,8 @@ function obj = flex2dquas(type, zk, kappa, d, coefs, quad_opts, ising)
 %       quad_opts.a    - (15) length of trapezoid quadrature rule
 %       quad_opts.nsub - (0) number of extra periodic copies to subtract
 %           near the source, for use in nearly-singular quadrature
+%   ising - (optional, default 1) if 1, include the free-space singular
+%       part; if 0, periodic images only (smooth kernel)
 %
 % See also CHNK.FLEX2DQUAS.KERN.
 
@@ -103,7 +105,7 @@ obj.opdims = [numel(kappa) 1];
 % lattice sum parameters
 l = 2; N = 40; a = 15; M = 1e4; nsub = 0;
 
-if nargin >= 6
+if nargin >= 6 && ~isempty(quad_opts)
     if isfield(quad_opts,'l')
         l = quad_opts.l;
     end
@@ -130,15 +132,18 @@ alpha = exp(1i*kappa*d);
 Sn = chnk.flex2dquas.latticecoefs(ns,zk,d,kappa,alpha,a,M,l+1);
 
 % lap2dquas lattice coefs (needed for free_plate kernels)
-ns_l = 1:3;
+ns_l = 1:N;
 [s0_l,sn_l] = chnk.lap2dquas.latticecoefs(ns_l,d,kappa,l+1);
 
-obj.params.kappa = kappa;
-obj.params.d = d;
-obj.params.l = l;
-obj.params.Sn = Sn;
-obj.params.s0_l = s0_l;
-obj.params.sn_l = sn_l;
+quas_param = [];
+quas_param.kappa = kappa;
+quas_param.d = d;
+quas_param.l = l;
+quas_param.sn = Sn;
+quas_param.s0_l = s0_l;
+quas_param.sn_l = sn_l;
+
+obj.params.quas_param = quas_param;
 obj.params.ising = ising;
 
 switch lower(type)
@@ -164,14 +169,14 @@ switch lower(type)
     case {'clamped_plate_bcs'}
         obj.type = 'clamped_plate_bcs';
         obj.opdims = [2*numel(kappa) 1];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_bcs', kappa, d, Sn, s0_l, sn_l, l, ising);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_bcs', kappa, d, Sn, s0_l, sn_l, l, ising, nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
     case {'clamped_plate_bcs_trx'}
         obj.type = 'clamped_plate_bcs_trx';
         obj.opdims = [2*numel(kappa) 4];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_bcs_trx', kappa, d, Sn, s0_l, sn_l, l, ising);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_bcs_trx', kappa, d, Sn, s0_l, sn_l, l, ising, nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
@@ -182,21 +187,21 @@ switch lower(type)
         obj.type = 'clamped_plate';
         obj.params.coefs = coefs;
         obj.opdims = [2*numel(kappa) 2];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate', kappa, d, Sn, s0_l, sn_l, l, ising, coefs);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate', kappa, d, Sn, s0_l, sn_l, l, ising, nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
     case {'clamped_plate_eval'}
         obj.type = 'clamped_plate_eval';
         obj.opdims = [numel(kappa) 2];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_eval', kappa, d, Sn, s0_l, sn_l, l, ising);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_eval', kappa, d, Sn, s0_l, sn_l, l, ising, nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
     case {'clamped_plate_eval_trx'}
         obj.type = 'clamped_plate_eval_trx';
         obj.opdims = [4*numel(kappa) 2];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_eval_trx', kappa, d, Sn, s0_l, sn_l, l, ising);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_eval_trx', kappa, d, Sn, s0_l, sn_l, l, ising, nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -207,7 +212,7 @@ switch lower(type)
         obj.type = 'free_plate_bcs';
         obj.params.coefs = coefs;
         obj.opdims = [2*numel(kappa) 1];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_bcs', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1));
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_bcs', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
@@ -218,7 +223,7 @@ switch lower(type)
         obj.type = 'free_plate_bcs_trx';
         obj.params.coefs = coefs;
         obj.opdims = [2*numel(kappa) 4];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_bcs_trx', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1));
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_bcs_trx', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
@@ -229,7 +234,7 @@ switch lower(type)
         obj.type = 'free_plate';
         obj.params.coefs = coefs;
         obj.opdims = [4*numel(kappa) 2];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1));
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -240,7 +245,7 @@ switch lower(type)
         obj.type = 'free_plate_eval';
         obj.params.coefs = coefs;
         obj.opdims = [numel(kappa) 3];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_eval', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1));
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_eval', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -251,7 +256,7 @@ switch lower(type)
         obj.type = 'free_plate_eval_trx';
         obj.params.coefs = coefs;
         obj.opdims = [4*numel(kappa) 3];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_eval_trx', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1));
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate_eval_trx', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -262,7 +267,7 @@ switch lower(type)
         obj.type = 'supported_plate_bcs';
         obj.params.coefs = coefs;
         obj.opdims = [2*numel(kappa) 1];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_bcs', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1));
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_bcs', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
@@ -273,7 +278,7 @@ switch lower(type)
         obj.type = 'supported_plate_bcs_trx';
         obj.params.coefs = coefs;
         obj.opdims = [2*numel(kappa) 4];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_bcs_trx', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1));
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_bcs_trx', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'log';
 
@@ -284,7 +289,7 @@ switch lower(type)
         obj.type = 'supported_plate';
         obj.params.coefs = coefs;
         obj.opdims = [2*numel(kappa) 2];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate', kappa, d, Sn, s0_l, sn_l, l, ising, coefs);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -295,7 +300,7 @@ switch lower(type)
         obj.type = 'supported_plate_eval';
         obj.params.coefs = coefs;
         obj.opdims = [numel(kappa) 2];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_eval', kappa, d, Sn, s0_l, sn_l, l, ising, coefs);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_eval', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
@@ -306,13 +311,17 @@ switch lower(type)
         obj.type = 'supported_plate_eval_trx';
         obj.params.coefs = coefs;
         obj.opdims = [4*numel(kappa) 2];
-        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_eval_trx', kappa, d, Sn, s0_l, sn_l, l, ising, coefs);
+        obj.eval = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_eval_trx', kappa, d, Sn, s0_l, sn_l, l, ising, coefs(1), nsub);
         obj.fmm = [];
         obj.sing = 'hs';
 
     otherwise
         error('Unknown quasiperiodic flexural wave kernel type ''%s''.', type);
 
+end
+
+if obj.params.ising == 0
+    obj.sing = 'smooth';
 end
 
 end

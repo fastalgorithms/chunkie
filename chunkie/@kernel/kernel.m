@@ -27,16 +27,26 @@ classdef kernel
 %      'axis sym helmholtz difference'              's' 'd' 'sp' 'dp'
 %         ('axissymhdiff', 'axissymhelmdiff', 'axissymhelm_diff') 
 %      'quasiperiodic helmholtz'                    's', 'd', 'sp', 'dp', 'c'
-%         ('helmquas', 'hq')                        'cp'
+%         ('helmquas', 'hq')                        'cp', 'all', 'trep',
+%                                                   'trep_p', 'c2t'
 %      'quasiperiodic laplace'                      's', 'd', 'sp', 'st'
 %         ('lapquas', 'lq')                         'hilb', 'hilbprime', 'dp'
 %      'quasiperiodic flexural wave'                's', 'd', 'sp',
-%         ('flexquas', 'fq')                        'clamped_plate_bcs',
-%                                                   'clamped_plate', ...
+%         ('flexquas', 'fq')                        'clamped_plate',
+%                                                   'clamped_plate_bcs',
+%                                                   'clamped_plate_bcs_trx',
+%                                                   'clamped_plate_eval',
+%                                                   'clamped_plate_eval_trx',
+%                                                   'free_plate',
 %                                                   'free_plate_bcs',
-%                                                   'free_plate', ...
+%                                                   'free_plate_bcs_trx',
+%                                                   'free_plate_eval',
+%                                                   'free_plate_eval_trx',
+%                                                   'supported_plate',
 %                                                   'supported_plate_bcs',
-%                                                   'supported_plate', ...
+%                                                   'supported_plate_bcs_trx',
+%                                                   'supported_plate_eval',
+%                                                   'supported_plate_eval_trx'
 %   The types may also be written in longer form, e.g. 'single', 'double',
 %   'sprime', 'combined', 'svelocity', 'spressure', 'straction',
 %   'dvelocity', 'dpressure', 'dtraction'.

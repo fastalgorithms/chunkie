@@ -24,6 +24,8 @@ function [val,grad,hess,der3,der4,der5,der6] = hkdiffgreen(k,src,targ,ifr2logr)
 % G_{x1x2x2}, G_{x2x2x2}
 % - der4 has the fourth derivatives in the order G_{x1x1x1x1}, 
 % G_{x1x1x1x2}, G_{x1x1x2x2}, G_{x1x2x2x2}, G_{x2x2x2x2}
+% - der5 and der6 have the fifth and sixth derivatives in the same order,
+% from G_{x1...x1} to G_{x2...x2}
 %
 % derivatives are on the *target* variables
 %

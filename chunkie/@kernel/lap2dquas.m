@@ -36,6 +36,7 @@ function obj = lap2dquas(type, kappa, d, quad_opts, ising)
 %   sum computations. (see chnk.lap2dquas.latticecoefs)
 %       quad_opts.l    - (2) radius of periodic copies to exclude from
 %           lattice sum (excludes copies within l*d)
+%       quad_opts.N    - (40) number of lattice sums
 %       quad_opts.nsub - (0) number of extra periodic copies to subtract
 %           near the source, for use in nearly-singular quadrature
 %   ising - (optional, default 1) if 1, include the free-space singular
@@ -76,7 +77,7 @@ if nargin >= 4 && ~isempty(quad_opts)
 end
 
 ns = (1:N);
-[s0,sn] = chnk.lap2dquas.latticecoefs(ns,d,kappa,l);
+[s0,sn] = chnk.lap2dquas.latticecoefs(ns,d,kappa,l+1);
 
 quas_param = [];
 quas_param.kappa = kappa;
@@ -135,6 +136,10 @@ switch lower(type)
     otherwise
         error('Unknown quasiperiodic Laplace kernel type ''%s''.', type);
 
+end
+
+if obj.params.ising == 0
+    obj.sing = 'smooth';
 end
 
 end

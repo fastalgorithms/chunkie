@@ -6,6 +6,8 @@ quasiperiodicTest_flex_free();
 quasiperiodicTest_flex_supported();
 quasiperiodicTest_lap_algebraic();
 quasiperiodicTest_flex_algebraic();
+quasiperiodicTest_constructors();
+quasiperiodicTest_reference();
 
 function quasiperiodicTest0()
 % algebraic consistency checks for helm2dquas kernels (Bloch shift, Green's function identity, ising flag)
@@ -35,16 +37,17 @@ cpkern = kernel('hq','cp',zk,kappa,d,coefs);
 
 quas_param = skern.params.quas_param;
 
-allkern = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'all',quas_param,coefa));
-trkern = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'trans_rep',quas_param,coefs));
-trpkern = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'trans_rep_prime',quas_param,coefs));
+allkern = kernel('hq','all',zk,kappa,d,coefa);
+trkern = kernel('hq','trans_rep',zk,kappa,d,coefs);
+trpkern = kernel('hq','trans_rep_prime',zk,kappa,d,coefs);
 
+% gradient kernels have no kernel(...) constructor
 sgkern = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'sgrad',quas_param));
 dgkern = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'dgrad',quas_param));
 cgkern = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'cgrad',quas_param,coefs));
 trgkern = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'trans_rep_grad',quas_param,coefs));
 
-c2trkern = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'c2trans',quas_param,coefs));
+c2trkern = kernel('hq','c2trans',zk,kappa,d,coefs);
 
 % evaluate kernels
 sval = skern.eval(src,targ);
@@ -162,7 +165,7 @@ for kt = {'s','sp','dp'}
     assert(norm(recon - kfull) < 1e-11)
 end
 
-allkern1a = kernel(@(s,t) chnk.helm2dquas.kern(zk,s,t,'all',quas_param,coefa,0));
+allkern1a = kernel('hq','all',zk,kappa,d,coefa,[],0);
 allkern1b = kernel(@(s,t) chnk.helm2d.kern(zk,s,t,'all',coefa));
 allval1a = allkern1a.eval(src,targ);
 allval1b = allkern1b.eval(src,targ); 
@@ -320,8 +323,6 @@ function quasiperiodicTest_flex_clamped()
 
 % problem parameters
 d = 2; zk = 7; kappa = 0.2-0.1*1i;
-l = 2; N = 40; a = 15; M = 1e4;
-sn = chnk.flex2dquas.latticecoefs((0:N).', zk, d, kappa, exp(1i*kappa*d), a, M, l+1);
 
 % setup geometry
 nch = 2^3; A = .2;
@@ -338,7 +339,7 @@ opts_l = []; opts_l.sing = 'log';
 ising = 0; nsub = 1;
 alpha = exp(1i*kappa*d);
 
-fkern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate', kappa, d, sn, [], [], l, ising, nsub);
+fkern   = kernel('fq', 'clamped_plate', zk, kappa, d, [], struct('nsub',nsub), ising);
 fkern_0 = @(s,t) chnk.flex2d.kern(    zk, s, t, 'clamped_plate');
 
 sys   = reshape(chunkermat(chnkr, fkern,   opts_s), 1, 2*chnkr.npt, 2*chnkr.npt);
@@ -351,22 +352,21 @@ sys = sys + sys_0 - reshape(0.5*eye(2*chnkr.npt), 1, 2*chnkr.npt, 2*chnkr.npt);
 sys(:,2:2:end,1:2:end) = sys(:,2:2:end,1:2:end) + reshape(curv .* eye(chnkr.npt), 1, chnkr.npt, chnkr.npt);
 
 % solve
-ising = 1;
 src    = struct('r', [0; -1.5]);
-bskern = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_bcs', kappa, d, sn, [], [], l, ising);
-skern  = @(s,t) chnk.flex2dquas.kern(zk, s, t, 's',                  kappa, d, sn, [], [], l, ising);
+bskern = kernel('fq', 'clamped_plate_bcs', zk, kappa, d);
+skern  = kernel('fq', 's',                 zk, kappa, d);
 
-rhs = -bskern(src, chnkr);
+rhs = -bskern.eval(src, chnkr);
 sol = squeeze(sys) \ rhs;
 
 % check: total field vanishes exterior => uscat + uin = 0
 targ    = struct('r', [3*d/4; 1.5]);
-ikern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'clamped_plate_eval', kappa, d, sn, [], [], l, 0);
+ikern   = kernel('fq', 'clamped_plate_eval', zk, kappa, d, [], [], 0);
 ikern_0 = @(s,t) chnk.flex2d.kern(    zk, s, t, 'clamped_plate_eval');
 
 wts    = repmat(chnkr.wts(:).', 2, 1);
-uscat  = (ikern(chnkr, targ) .* wts(:).' + chunkerkernevalmat(chnkr, ikern_0, targ, opts_l)) * sol;
-uin    = skern(src, targ);
+uscat  = (ikern.eval(chnkr, targ) .* wts(:).' + chunkerkernevalmat(chnkr, ikern_0, targ, opts_l)) * sol;
+uin    = skern.eval(src, targ);
 assert(abs(uscat + uin) < 1e-8)
 
 end
@@ -377,9 +377,6 @@ function quasiperiodicTest_flex_free()
 
 % problem parameters
 d = 2; zk = 7; kappa = 0.2-0.1*1i; nu = 0.3;
-l = 2; N = 40; a = 15; M = 1e4;
-sn            = chnk.flex2dquas.latticecoefs((0:N).', zk, d, kappa, exp(1i*kappa*d), a, M, l+1);
-[s0_l, sn_l] = chnk.lap2dquas.latticecoefs((1:N), d, kappa, l);
 
 % setup geometry
 nch = 2^3; A = .2;
@@ -396,9 +393,10 @@ opts_pv = []; opts_pv.sing = 'pv';
 ising = 0; nsub = 1;
 alpha = exp(1i*kappa*d);
 
-fkern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'free_plate', kappa, d, sn, s0_l, sn_l, l, ising, nu, nsub);
-double  = @(s,t) chnk.lap2dquas.kern(      s, t, 'd',          kappa, d, s0_l, sn_l, l, ising, nsub);
-hilbert = @(s,t) chnk.lap2dquas.kern(      s, t, 'hilb',       kappa, d, s0_l, sn_l, l, ising, nsub);
+qopts   = struct('nsub', nsub);
+fkern   = kernel('fq', 'free_plate', zk, kappa, d, nu, qopts, ising);
+double  = kernel('lq', 'd',    kappa, d, qopts, ising);
+hilbert = kernel('lq', 'hilb', kappa, d, qopts, ising);
 fkern_0   = @(s,t) chnk.flex2d.kern(zk, s, t, 'free_plate', nu);
 double_0  = @(s,t) chnk.lap2d.kern(      s, t, 'd');
 hilbert_0 = @(s,t) chnk.lap2d.kern(      s, t, 'hilb');
@@ -437,7 +435,7 @@ sysmat(:,2:2:end,2:2:end) = sysmat1(:,2:4:end,2:2:end) + sysmat1(:,4:4:end,2:2:e
 Djump = reshape(kron(eye(chnkr.npt), [-1/2 + (1/8)*(1+nu)^2, 0; 0, 1/2]), 1, 2*chnkr.npt, 2*chnkr.npt);
 sys = Djump + sysmat;
 
-% solve using kernel('fq',...) factory to verify the @kernel path works
+% solve
 src    = struct('r', [0; -1.5]);
 bskern = kernel('fq', 'free_plate_bcs', zk, kappa, d, nu);
 skern  = kernel('fq', 's',              zk, kappa, d);
@@ -469,9 +467,6 @@ function quasiperiodicTest_flex_supported()
 
 % problem parameters
 d = 2; zk = 7; kappa = 0.2-0.1*1i; nu = 0.3;
-l = 2; N = 40; a = 15; M = 1e4;
-sn            = chnk.flex2dquas.latticecoefs((0:N).', zk, d, kappa, exp(1i*kappa*d), a, M, l+1);
-[s0_l, sn_l] = chnk.lap2dquas.latticecoefs((1:N), d, kappa, l);
 
 % setup geometry (curvature arc-length derivatives stored in chnkr.data)
 nch = 2^3; A = .2;
@@ -492,7 +487,7 @@ ising = 0; nsub = 1;
 alpha = exp(1i*kappa*d);
 c0    = (nu - 1)*(nu + 3)*(2*nu - 1)/(2*(3 - nu));
 
-fkern    = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate',        kappa, d, sn, [], [], l, ising, nu, nsub);
+fkern    = kernel('fq', 'supported_plate', zk, kappa, d, nu, struct('nsub',nsub), ising);
 fkern_0l = @(s,t) chnk.flex2d.kern(    zk, s, t, 'supported_plate_log',    nu);
 fkern_0s = @(s,t) chnk.flex2d.kern(    zk, s, t, 'supported_plate_smooth', nu);
 
@@ -511,22 +506,21 @@ M(:,2:2:end,1:2:end) = M(:,2:2:end,1:2:end) + M2;
 sys = M3 + M;
 
 % solve
-ising = 1;
 src    = struct('r', [0; -1.5]);
-bskern = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_bcs', kappa, d, sn, s0_l, sn_l, l, ising, nu);
-skern  = @(s,t) chnk.flex2dquas.kern(zk, s, t, 's',                   kappa, d, sn, s0_l, sn_l, l, ising);
+bskern = kernel('fq', 'supported_plate_bcs', zk, kappa, d, nu);
+skern  = kernel('fq', 's',                   zk, kappa, d);
 
-rhs = -bskern(src, chnkr);
+rhs = -bskern.eval(src, chnkr);
 sol = squeeze(sys) \ rhs;
 
 % check: total field vanishes exterior => uscat + uin = 0
 targ    = struct('r', [3*d/4; 1.5]);
-ikern   = @(s,t) chnk.flex2dquas.kern(zk, s, t, 'supported_plate_eval', kappa, d, sn, s0_l, sn_l, l, 0, nu);
+ikern   = kernel('fq', 'supported_plate_eval', zk, kappa, d, nu, [], 0);
 ikern_0 = @(s,t) chnk.flex2d.kern(    zk, s, t, 'supported_plate_eval', nu);
 
 wts   = repmat(chnkr.wts(:).', 2, 1);
-uscat = (ikern(chnkr, targ) .* wts(:).' + chunkerkernevalmat(chnkr, ikern_0, targ, opts_l)) * sol;
-uin   = skern(src, targ);
+uscat = (ikern.eval(chnkr, targ) .* wts(:).' + chunkerkernevalmat(chnkr, ikern_0, targ, opts_l)) * sol;
+uin   = skern.eval(src, targ);
 assert(abs(uscat + uin) < 1e-8)
 
 end
@@ -545,10 +539,6 @@ targ = []; targ.r = [[1.1;0.3],[2;0]]; targ.n = [[-1;0.3],[0.1;1]];
 ns = size(src.r,2);
 nt = size(targ.r,2);
 
-% lattice sum coefficients
-N = 20; l = 2;
-[s0, sn] = chnk.lap2dquas.latticecoefs(1:N, d, kappa, l);
-
 % kernels via @kernel
 skern  = kernel('lq', 's',  kappa, d);
 spkern = kernel('lq', 'sp', kappa, d);
@@ -559,8 +549,8 @@ stkern = kernel('lq', 'st', kappa, d);
 quas_param = skern.params.quas_param;
 s0q = quas_param.s0; snq = quas_param.sn; lq = quas_param.l;
 
-hilbkern  = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'hilb',     kappa,d,s0q,snq,lq,1));
-hilbpkern = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'hilbprime',kappa,d,s0q,snq,lq,1));
+hilbkern  = kernel('lq', 'hilb',      kappa, d);
+hilbpkern = kernel('lq', 'hilbprime', kappa, d);
 
 % evaluate all kernels
 sval  = skern.eval(src,targ);
@@ -607,8 +597,8 @@ assert(norm(hilbp_ref - hilbpval) < 1e-11)
 % S kernel is G; D kernel is -dG/dn_src = -(G_grad . n_src). The ising=1
 % values are already covered by the Bloch-shift and hilb checks above
 % (sval == green(...,1)), so here we pin down the ising=0 kernels.
-sval0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'s',kappa,d,s0q,snq,lq,0)).eval(src,targ);
-dval0 = kernel(@(s,t) chnk.lap2dquas.kern(s,t,'d',kappa,d,s0q,snq,lq,0)).eval(src,targ);
+sval0 = kernel('lq', 's', kappa, d, [], 0).eval(src,targ);
+dval0 = kernel('lq', 'd', kappa, d, [], 0).eval(src,targ);
 
 [G0, G0_grad] = chnk.lap2dquas.green(src.r, targ.r, kappa, d, s0q, snq, lq, 0);
 nx_fs = repmat(src.n(1,:), nkappa*nt, 1);
@@ -665,13 +655,9 @@ targ.d = [[1;-1],[1;1]]; targ.d2 = [[0;1],[0;-1]];
 ns = size(src.r,2);
 nt = size(targ.r,2);
 
-% lattice sum coefficients
-N = 40; l = 2; a = 15; M = 1e4;
-alpha = exp(1i*kappa*d);
-Sn = chnk.flex2dquas.latticecoefs((0:N).', zk, d, kappa, alpha, a, M, l+1);
-
-% helper: kern wrapper
-K = @(type) kernel(@(s,t) chnk.flex2dquas.kern(zk,s,t,type,kappa,d,Sn,[],[],l,1));
+% kernels via @kernel
+K = @(type) kernel('fq', type, zk, kappa, d);
+Sn = K('s').params.quas_param.sn; l = K('s').params.quas_param.l;
 
 sval  = K('s').eval(src,targ);
 dval  = K('d').eval(src,targ);
@@ -700,8 +686,8 @@ Gh_izk = chnk.helm2dquas.green(src.r, targ.r, 1i*zk, kappa, d, shkern_izk.params
 assert(norm(Gflex - (Gh_zk - Gh_izk)) < 1e-11)
 
 % test ising flag: ising=0 (periodic images) + free-space singular part = ising=1
-K0  = @(type) kernel(@(s,t) chnk.flex2dquas.kern(zk,s,t,type,kappa,d,Sn,[],[],l,0));
-K1  = @(type) kernel(@(s,t) chnk.flex2dquas.kern(zk,s,t,type,kappa,d,Sn,[],[],l,1));
+K0  = @(type) kernel('fq', type, zk, kappa, d, [], [], 0);
+K1  = K;
 
 sval0  = K0('s').eval(src,targ);
 dval0  = K0('d').eval(src,targ);
@@ -751,4 +737,245 @@ omega = 2*pi/d;
 r = [t, A*sin(omega*t)].';
 d = [ones(length(t),1), omega*A*cos(omega*t)].';
 d2 = [zeros(length(t),1), -omega^2*A*sin(omega*t)].';
+end
+
+
+function quasiperiodicTest_constructors()
+% regression tests that go through the kernel(...) constructors and compare
+% against independent references (spectral dual sum, brute-force images)
+
+d = 1; zk = 1.3; kappa = 0.3; alpha = exp(1i*kappa*d);
+src = []; src.r = [0.1;-0.2]; src.n = [0.6;0.8];
+src.d = [0.8;-0.6]; src.d2 = [0.1;0.2];
+targ = []; targ.r = [0.5;0.3]; targ.n = [-0.8;0.6];
+targ.d = [0.6;0.8]; targ.d2 = [-0.1;0.3];
+rx = targ.r(1)-src.r(1); ry = targ.r(2)-src.r(2);
+
+% Laplace lattice coefficients stored by flex2dquas match l (used by the
+% free plate hilbert transforms); check hilb against the dual sum gradient
+l = 2;
+fk = kernel('fq','free_plate',zk,kappa,d,[0.3 0]);
+lk = kernel('lq','hilb',kappa,d);
+assert(norm(fk.params.quas_param.sn_l - lk.params.quas_param.sn) < 1e-14);
+assert(norm(fk.params.quas_param.s0_l - lk.params.quas_param.s0) < 1e-14);
+[~,g] = chnk.lap2dquas.quasi_dual_sum(rx,ry,0,kappa,d);
+hilbref = 2*(g(1,1,1)*src.n(2) - g(1,1,2)*src.n(1));
+hilb = chnk.lap2dquas.kern(src,targ,'hilb',kappa,d,fk.params.quas_param.s0_l, ...
+    fk.params.quas_param.sn_l,l,1);
+assert(abs(hilb-hilbref) < 1e-12);
+assert(abs(lk.eval(src,targ)-hilbref) < 1e-12);
+
+% ising = 0 kernels are finite and continuous at coincident points
+for type = {'s','d','sp','dp'}
+    kh = kernel('hq',type{1},zk,kappa,d,[],[],0);
+    v = kh.eval(src,src);
+    assert(all(isfinite(v(:))));
+    s2 = src; s2.r = src.r + 1e-7*[1;1];
+    assert(abs(v - kh.eval(s2,src)) < 1e-5);
+end
+
+% ising = 0 kernels use smooth quadrature, and all carry quas_param
+for type = {'s','d','sp','dp','st','hilb','hilbprime'}
+    k = kernel('lq',type{1},kappa,d,[],0);
+    assert(strcmp(k.sing,'smooth') && isfield(k.params,'quas_param'));
+end
+for type = {'s','d','sp','clamped_plate','free_plate','supported_plate'}
+    k = kernel('fq',type{1},zk,kappa,d,0.3,[],0);
+    assert(strcmp(k.sing,'smooth') && isfield(k.params,'quas_param'));
+    assert(k.params.quas_param.kappa == kappa);
+end
+
+% combined kernels without explicit coefs fall back to defaults
+ck = kernel('hq','c',zk,kappa,d);
+assert(abs(ck.eval(src,targ) - ...
+    kernel('hq','c',zk,kappa,d,[1,1i]).eval(src,targ)) < 1e-14);
+kernel('hq','cp',zk,kappa,d);
+
+% block kernels respect ising and have opdims consistent with eval
+kap2 = [0.3 0.4]; coefa = [1,0.3;-1i,0.2]; coefs = [1;0.5];
+s0k = kernel('hq','s',zk,kap2,d,[],[],0).eval(src,targ);
+d0k = kernel('hq','d',zk,kap2,d,[],[],0).eval(src,targ);
+types = {'all','trep','trep_p','c2t'};
+cfs = {coefa,coefs,coefs,coefa};
+for it = 1:numel(types)
+    k = kernel('hq',types{it},zk,kap2,d,cfs{it},[],0);
+    v = k.eval(src,targ);
+    assert(isequal(size(v), k.opdims));
+    assert(strcmp(k.sing,'smooth'));
+end
+va = kernel('hq','all',zk,kap2,d,coefa,[],0).eval(src,targ);
+va = reshape(va,numel(kap2),2,[],2); % rows ordered (kappa, component, target)
+assert(norm(reshape(va(:,1,:,2),[],1) - coefa(1,2)*s0k(:)) < 1e-14);
+vt = kernel('hq','trep',zk,kap2,d,coefs,[],0).eval(src,targ);
+assert(norm(vt(:,1) - coefs(1)*d0k) < 1e-14);
+
+% clamped plate: default constructor = periodic part (nsub=0) + free space
+ck = kernel('fq','clamped_plate',zk,kappa,d);
+Kp = chnk.flex2dquas.kern(zk,src,targ,'clamped_plate',kappa,d, ...
+    ck.params.quas_param.sn,[],[],l,0,0);
+Kf = chnk.flex2d.kern(zk,src,targ,'clamped_plate');
+assert(norm(ck.eval(src,targ) - (Kp+Kf)) < 1e-12*norm(Kp+Kf));
+
+% quad_opts.nsub reaches the plate kernels
+qo = []; qo.nsub = 1;
+ck1 = kernel('fq','clamped_plate',zk,kappa,d,[],qo,0);
+Kp1 = chnk.flex2dquas.kern(zk,src,targ,'clamped_plate',kappa,d, ...
+    ck.params.quas_param.sn,[],[],l,0,1);
+assert(norm(ck1.eval(src,targ) - Kp1) < 1e-14);
+fk1 = kernel('fq','free_plate',zk,kappa,d,[0.3 0],qo,0);
+Fp1 = chnk.flex2dquas.kern(zk,src,targ,'free_plate',kappa,d, ...
+    fk1.params.quas_param.sn,fk1.params.quas_param.s0_l,fk1.params.quas_param.sn_l,l,0,0.3,1);
+assert(norm(fk1.eval(src,targ) - Fp1) < 1e-14);
+
+% 'st' is accepted by the low-level Laplace kern
+[s0,sn] = chnk.lap2dquas.latticecoefs(1:40,d,kappa,l+1);
+assert(abs(chnk.lap2dquas.kern(targ,src,'st',kappa,d,s0,sn,l,1) - ...
+    kernel('lq','st',kappa,d).eval(targ,src)) < 1e-14);
+
+end
+
+
+function quasiperiodicTest_reference()
+% compare against references independent of the lattice sums:
+%  - green (all derivative orders) vs the spectral sum
+%  - helm kernels vs explicit image sums (complex zk, so images decay)
+%  - flex kernels: ising=1 minus ising=0 (nsub=1) vs the free-space
+%    kernels at the 3 nearest images
+
+d = 1; kaps = [0.3, -1.1+0.2i];
+src = []; src.r = [0.1;0.2];
+rx = [0.37, -0.49, 1.8, -2.45]; ry = [0.42, -0.3, -0.9, 0.15];
+targ = []; targ.r = src.r + [rx; ry];
+
+zk = 1.3;
+kl = kernel('lq','s',kaps,d).params.quas_param;
+kh = kernel('hq','s',zk,kaps,d).params.quas_param;
+kf = kernel('fq','s',zk,kaps,d).params.quas_param;
+gl = cell(1,3); gh = cell(1,3); gf = cell(1,7);
+[gl{:}] = chnk.lap2dquas.green(src.r,targ.r,kaps,d,kl.s0,kl.sn,kl.l,1);
+[gh{:}] = chnk.helm2dquas.green(src.r,targ.r,zk,kaps,d,kh.sn,kh.l,1);
+[gf{:}] = chnk.flex2dquas.green(src.r,targ.r,zk,kaps,d,kf.sn,kf.l,1);
+for o = 0:6
+    rf = spectral(rx,ry,zk,kaps,d,o) - spectral(rx,ry,1i*zk,kaps,d,o);
+    assert(relerr(gf{o+1},rf) < 1e-10);
+    if o <= 2
+        assert(relerr(gl{o+1},spectral(rx,ry,0,kaps,d,o)) < 1e-12);
+        assert(relerr(gh{o+1},spectral(rx,ry,zk,kaps,d,o)) < 1e-12);
+    end
+end
+
+% kernel types, through the constructors
+src = []; src.r = [[0.1;0.2],[-0.3;-0.1]]; src.n = [[0.6;0.8],[1;0]];
+src.d = [[0.8;-0.6],[0;-2]]; src.d2 = [[0.1;0.2],[0.3;-0.2]];
+targ = []; targ.r = [[0.5;0.6],[-1.6;-0.4],[2.3;0.1]];
+targ.n = [[-0.8;0.6],[0;1],[0.6;-0.8]];
+targ.d = [[0.6;0.8],[2;0],[-1.6;-1.2]];
+targ.d2 = [[-0.1;0.3],[0.2;0.1],[0;0.4]];
+src.data = [[0.1;0.3],[-0.2;0.4]]; targ.data = [[0.2;0.1],[0.3;-0.2],[0.1;0.5]];
+kap = 0.3; alpha = exp(1i*kap*d); nu = 0.3;
+coefs = [1;0.5]; coefa = [1,0.3;-1i,0.2];
+qo = []; qo.nsub = 1;
+
+zkc = 2+2i;
+helm = {'s',[],'d',[],'sp',[],'dp',[],'c',coefs,'cp',coefs,'all',coefa, ...
+    'trep',coefs,'trep_p',coefs,'c2t',coefa};
+for it = 1:2:numel(helm)
+    ty = helm{it}; cf = helm{it+1};
+    kfs = @(s,t) chnk.helm2d.kern(zkc,s,t,ty,cf);
+    Q1 = kernel('hq',ty,zkc,kap,d,cf).eval(src,targ);
+    Q0 = kernel('hq',ty,zkc,kap,d,cf,qo,0).eval(src,targ);
+    assert(relerr(Q1,imagesum(kfs,src,targ,-20:20,alpha,d)) < 1e-12);
+    assert(relerr(Q0,imagesum(kfs,src,targ,[-20:-2,2:20],alpha,d)) < 1e-12);
+end
+qp = kernel('hq','s',zkc,kap,d).params.quas_param;
+for ty = {'sgrad','dgrad','cgrad','trep_g'}
+    Q = chnk.helm2dquas.kern(zkc,src,targ,ty{1},qp,coefs);
+    R = imagesum(@(s,t) chnk.helm2d.kern(zkc,s,t,ty{1},coefs), ...
+        src,targ,-20:20,alpha,d);
+    assert(relerr(Q,R) < 1e-12);
+end
+
+flex = {'s',[],'d',[],'sp',[],'clamped_plate_bcs',[],'clamped_plate',[], ...
+    'clamped_plate_eval',[],'free_plate_bcs',nu,'free_plate',nu, ...
+    'free_plate_eval',nu,'supported_plate_bcs',nu,'supported_plate_eval',nu};
+for it = 1:2:numel(flex)
+    ty = flex{it}; cf = flex{it+1};
+    if isempty(cf), args = {}; else, args = {cf}; end
+    Q = kernel('fq',ty,zk,kap,d,cf,qo,1).eval(src,targ) ...
+        - kernel('fq',ty,zk,kap,d,cf,qo,0).eval(src,targ);
+    R = imagesum(@(s,t) chnk.flex2d.kern(zk,s,t,ty,args{:}), ...
+        src,targ,-1:1,alpha,d);
+    assert(relerr(Q,R) < 1e-12);
+end
+
+% supported plate: the free-space part is the log kernel plus the smooth
+% kernel in the (2,1) block
+Q = kernel('fq','supported_plate',zk,kap,d,nu,qo,1).eval(src,targ) ...
+    - kernel('fq','supported_plate',zk,kap,d,nu,qo,0).eval(src,targ);
+R = imagesum(@(s,t) chnk.flex2d.kern(zk,s,t,'supported_plate_log',nu), ...
+    src,targ,-1:1,alpha,d);
+R(2:2:end,1:2:end) = R(2:2:end,1:2:end) + imagesum(@(s,t) ...
+    chnk.flex2d.kern(zk,s,t,'supported_plate_smooth',nu),src,targ,-1:1,alpha,d);
+assert(relerr(Q,R) < 1e-12);
+
+% transmission kernels: bcs_trx columns are the bcs applied to the source
+% fields G, -G_x, G_xx + 2 G_yy, -(G_xxx + 2 G_xyy) (columns 4...1), and
+% eval_trx rows are d_x^(k-1) of eval (checked by finite differences)
+src.r = src.r + [0;-0.8];
+h = 1e-3; e = [h;0];
+sh = @(s,v) setfield(s,'r',s.r+v);
+for pl = {{'clamped',[]},{'free',nu},{'supported',nu}}
+    nm = pl{1}{1}; cf = pl{1}{2};
+    B = kernel('fq',[nm '_plate_bcs'],zk,kap,d,cf);
+    BT = kernel('fq',[nm '_plate_bcs_trx'],zk,kap,d,cf);
+    bt = BT.eval(src,targ);
+    btx = (BT.eval(sh(src,e),targ) - BT.eval(sh(src,-e),targ))/(2*h);
+    bx = (B.eval(sh(src,e),targ) - B.eval(sh(src,-e),targ))/(2*h);
+    assert(relerr(bt(:,4:4:end),B.eval(src,targ)) < 1e-14);
+    assert(relerr(bt(:,3:4:end),bx) < 1e-3);
+    assert(relerr(bt(:,1:4:end),btx(:,2:4:end)) < 1e-3);
+
+    E = kernel('fq',[nm '_plate_eval'],zk,kap,d,cf);
+    ET = kernel('fq',[nm '_plate_eval_trx'],zk,kap,d,cf);
+    et = ET.eval(src,targ);
+    etx = (ET.eval(src,sh(targ,e)) - ET.eval(src,sh(targ,-e)))/(2*h);
+    assert(relerr(et(1:4:end,:),E.eval(src,targ)) < 1e-14);
+    for k = 2:4
+        assert(relerr(et(k:4:end,:),etx(k-1:4:end,:)) < 1e-3);
+    end
+end
+
+% ising = 0 flex Green's function is finite at r = 0 to all orders
+gf = cell(1,7);
+[gf{:}] = chnk.flex2dquas.green([0;0],[0;0],zk,kap,d, ...
+    kernel('fq','s',zk,kap,d).params.quas_param.sn,2,0);
+assert(all(cellfun(@(g) all(isfinite(g(:))), gf)));
+
+end
+
+function e = relerr(a,b)
+e = norm(a(:)-b(:))/norm(b(:));
+end
+
+function R = imagesum(kfs,src,targ,js,alpha,d)
+% sum of free-space kernels over the source images js
+R = 0;
+for j = js
+    s = src; s.r = src.r + [j*d;0];
+    R = R + alpha^j*kfs(s,targ);
+end
+end
+
+function D = spectral(rx,ry,zk,kappa,d,o)
+% derivatives d^o/(dx^(o-j) dy^j), j = 0...o, of the quasiperiodic Green's
+% function from its spectral (Fourier) series, size (nkappa, npt, o+1)
+kappa = kappa(:); rx = rx(:).'; ry = ry(:).';
+M = ceil((40 + 6*o)/min(abs(ry))*d/(2*pi)) + 5;
+xi = kappa + 2*pi/d*reshape(-M:M,1,1,[]);
+beta = sqrt(1i*(xi-zk)).*sqrt(-1i*(xi+zk));
+f = exp(-beta.*abs(ry) + 1i*xi.*rx)./(2*beta)/d;
+D = zeros(numel(kappa),numel(rx),o+1);
+for j = 0:o
+    D(:,:,j+1) = sum((1i*xi).^(o-j).*(-beta.*sign(ry)).^j.*f,3);
+end
 end

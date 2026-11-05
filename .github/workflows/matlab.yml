@@ -13,8 +13,6 @@ jobs:
           submodules: recursive	
       - name: Install MATLAB
         uses: matlab-actions/setup-matlab@v3
-        with:
-          products: Symbolic_Math_Toolbox
       - name: Install FMMLIB
         run: cd chunkie/fmm2d; make matlab
       - name: Run commands
