@@ -20,6 +20,7 @@ classdef kernel
 %                                                   'dtrac', 'dgrad'
 %                                                   'cvel', 'cpres',
 %                                                   'ctrac', 'cgrad'
+%      'oscillatory stokes' ('ostokes', 'ostok', 'os') 's', 'd', 'c'
 %      'zeros'       ('zero','z') 
 %      'ones'        ('one','o')  optional size M, N
 %      'axis sym helmholtz'                         's' 'd' 'sp' 'c'
@@ -117,6 +118,8 @@ classdef kernel
                       obj = kernel.helm2ddiff(varargin{:});
                   case {'stokes', 'stok', 's'}
                       obj = kernel.stok2d(varargin{:});
+                  case {'oscillatory stokes', 'ostokes', 'ostok', 'os'}
+                      obj = kernel.ostok2d(varargin{:});
                   case {'elasticity', 'elast', 'e'}
                       obj = kernel.elast2d(varargin{:});
                   case {'elasticity_string', 'elast_str', 'e_str'}
@@ -181,6 +184,7 @@ classdef kernel
         obj = helm1d(varargin);
         obj = helm2ddiff(varargin);
         obj = stok2d(varargin);
+        obj = ostok2d(varargin);
         obj = elast2d(varargin);
         obj = elast2d_string(varargin);
         obj = axissymhelm2d(varargin);
