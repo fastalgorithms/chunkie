@@ -19,6 +19,10 @@ function obj = helm2d(type, zk, coefs)
 %   wavenumber ZK and  parameter ETA, i.e., COEFS(1)*KERNEL.HELM2D('dp', ZK) + 
 %   COEFS(2)*KERNEL.HELM2D('sp', ZK).
 %
+%   KERNEL.HELM2D('sg', ZK), KERNEL.HELM2D('dg', ZK) and
+%   KERNEL.HELM2D('cg', ZK, COEFS) construct the target gradients (2x1) of
+%   the single, double and combined-layer kernels.
+%
 %   KERNEL.HELM2D('all', ZK, COEFS) or KERNEL.HELM2D('tsys', ZK, COEFS) 
 %   constructs the (2x2) matrix of kernels [D, S; D' S'] scaled by coefs
 %   where coefs is (2x2) matrix, i.e. D part is scaled as
@@ -34,6 +38,10 @@ function obj = helm2d(type, zk, coefs)
 %   (1x2) matrix of kernels [D', S'] scaled by coefs where coefs is (1x2)
 %   matrix, i.e. D part is scaled as COEFS(1)*KERNEL.HELM2D('dp', zk), and
 %   so on.
+%
+%   KERNEL.HELM2D('trans_rep_g', ZK, COEFS) or KERNEL.HELM2D('trep_g', ZK,
+%   COEFS) constructs the target gradient (2x2) of the transmission
+%   representation, [grad D, grad S] scaled by coefs.
 %
 %   KERNEL.HELM2D('c2trans', ZK, COEFS) or KERNEL.HELM2D('c2t', ZK, COEFS) 
 %   evaluates the combined-layer Helmholtz kernel and its derivative, i.e.
@@ -52,6 +60,9 @@ end
 if ( nargin < 2 )
     error('Missing Helmholtz wavenumber.');
 end
+
+% the fmm of the Green's function, for the systems, see CHNK.GREEN.FMM
+fmmh = @(eps,s,pg,t,pgt) hfmm2d(eps, zk, s, pg, t, pgt);
 
 obj = kernel();
 obj.name = 'helmholtz';
@@ -92,6 +103,20 @@ switch lower(type)
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'dprime', sigma);
         obj.sing = 'hs';
 
+    case {'sg', 'sgrad'}
+        obj.type = 'sg';
+        obj.opdims = [2,1];
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'sgrad');
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'sg', sigma);
+        obj.sing = 'pv';
+
+    case {'dg', 'dgrad'}
+        obj.type = 'dg';
+        obj.opdims = [2,1];
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'dgrad');
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'dg', sigma);
+        obj.sing = 'hs';
+
     case {'c', 'combined'}
         if ( nargin < 3 )
             warning('Missing combined layer coefficients. Defaulting to [1,1i].');
@@ -118,6 +143,18 @@ switch lower(type)
         obj.fmm  = @(eps,s,t,sigma) chnk.helm2d.fmm(eps, zk, s, t, 'cprime', sigma, coefs);
         obj.sing = 'hs';
 
+    case {'cg', 'cgrad'}
+        if ( nargin < 3 )
+            warning('Missing combined layer coefficients. Defaulting to [1,1i].');
+            coefs = [1,1i];
+        end
+        obj.type = 'cg';
+        obj.opdims = [2,1];
+        obj.params.coefs = coefs;
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'cgrad', coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'cg', sigma, coefs);
+        obj.sing = 'hs';
+
     case {'all', 'trans_sys', 'tsys'}
         if ( nargin < 3 )
             warning('Missing transmission coefficients. Defaulting to [1,1;1,1].');
@@ -126,7 +163,7 @@ switch lower(type)
         obj.type = 'all';
         obj.opdims = [2,2];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'all', coefs);
-        obj.fmm  = []; 
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'trans', sigma, coefs);
         obj.sing = 'hs'; 
 
     case {'trans_rep','trep'} 
@@ -135,9 +172,10 @@ switch lower(type)
             coefs = ones(2,1);
         end
         obj.type = 'trep';
+        obj.params.coefs = coefs;
         obj.opdims = [1,2];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'trans_rep', coefs);
-        obj.fmm  = []; 
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'trans_rep', sigma, coefs);
         obj.sing = 'pv'; 
     
     case {'trans_rep_prime','trep_p', 'trans_rep_p'}
@@ -148,8 +186,20 @@ switch lower(type)
         obj.type = 'trep_p';
         obj.opdims = [1,2];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'trans_rep_prime', coefs);
-        obj.fmm  = []; 
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'trans_rep_prime', sigma, coefs);
         obj.sing = 'hs'; 
+
+    case {'trans_rep_grad', 'trep_g', 'trans_rep_g'}
+        if ( nargin < 3 )
+            warning('Missing transmission coefficients. Defaulting to [1;1].');
+            coefs = ones(2,1);
+        end
+        obj.type = 'trep_g';
+        obj.params.coefs = coefs;
+        obj.opdims = [2,2];
+        obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'trans_rep_grad', coefs);
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'trans_rep_grad', sigma, coefs);
+        obj.sing = 'hs';
 
     case {'c2trans', 'c2t', 'c2tr'}
         if ( nargin < 3 )
@@ -159,7 +209,7 @@ switch lower(type)
         obj.type = 'c2tr';
         obj.opdims = [2,1];
         obj.eval = @(s,t) chnk.helm2d.kern(zk, s, t, 'c2trans', coefs);
-        obj.fmm  = []; 
+        obj.fmm  = @(eps,s,t,sigma) chnk.green.fmm(fmmh, eps, s, t, 'c2trans', sigma, coefs);
         obj.sing = 'hs'; 
        
     otherwise

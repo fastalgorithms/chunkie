@@ -50,7 +50,8 @@ A = builtin('ones', m, n);
         else
             nt = size(t(:,:), 2);
         end
-        blk = A * sum(reshape(sigma, n, []), 2);
+        ndens = size(sigma, 2);
+        blk = A * reshape(sum(reshape(sigma, n, [], ndens), 2), n, ndens);
         if ( nargout > 0 ), varargout{1} = repmat(blk, nt, 1); end
         if ( nargout > 1 ), varargout{2} = zeros(2, m*nt); end
         if ( nargout > 2 ), varargout{3} = zeros(3, m*nt); end

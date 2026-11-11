@@ -24,13 +24,15 @@ if isfield(opts,'forcefmm'); forcefmm = opts.forcefmm; end
 k = chnkr.k;
 nch = chnkr.nch;
 
-assert(numel(dens) == opdims(2)*k*nch,'dens not of appropriate size')
-dens = reshape(dens,opdims(2),k,nch);
+% dens may hold several densities, the last dimension indexing over them
+ndens = numel(dens)/(opdims(2)*k*nch);
+assert(ndens >= 1 && ndens == round(ndens),'dens not of appropriate size')
+dens = reshape(dens,opdims(2),k,nch,ndens);
 
 w = chnkr.wstor;
 [~,nt] = size(targinfo.r);
 
-fints = zeros(opdims(1)*nt,1);
+fints = zeros(opdims(1)*nt,ndens);
 
 % assume smooth weights are good enough
 
@@ -86,7 +88,7 @@ if strcmpi(imethod,'direct')
     if isempty(flag)
         % nothing to ignore
         for i = 1:nch
-            densvals = dens(:,:,i); densvals = densvals(:);
+            densvals = reshape(dens(:,:,i,:),opdims(2)*k,ndens);
             dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
             dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
@@ -110,7 +112,7 @@ if strcmpi(imethod,'direct')
     else
         % ignore interactions in flag array
         for i = 1:nch
-            densvals = dens(:,:,i); densvals = densvals(:);
+            densvals = reshape(dens(:,:,i,:),opdims(2)*k,ndens);
             dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
             dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
@@ -195,19 +197,18 @@ else
         optsifmm.proxybylevel = opts.proxybylevel;
         optsifmm.verb = verb;
         F = ifmm(matfun,targinfo_flam.r,xflam1,200,1e-14,pxyfun,optsifmm);
-        fints = ifmm_mv(F,dens(:),matfun);
-        fints = fints(:);
+        fints = ifmm_mv(F,reshape(dens,[],ndens),matfun);
     else
         wts2 = repmat(wts(:).', opdims(2), 1);
-        sigma = wts2(:).*dens(:);
+        sigma = wts2(:).*reshape(dens,[],ndens);
         fints = kern.fmm(1e-14, chnkr, targinfo, sigma);
-        fints = fints(:);
+        fints = reshape(fints,[],ndens);
     end
     % delete interactions in flag array (possibly unstable approach)
     
     if ~isempty(flag)
         for i = 1:nch
-            densvals = dens(:,:,i); densvals = densvals(:);
+            densvals = reshape(dens(:,:,i,:),opdims(2)*k,ndens);
             dsdtdt = sqrt(sum(chnkr.d(:,:,i).^2,1));
             dsdtdt = dsdtdt(:).*w(:);
             dsdtdt = repmat( (dsdtdt(:)).',opdims(2),1);
@@ -248,7 +249,7 @@ else
             linsp = isp + (jsp-1)*length(i(:));
             kernmat(linsp) = 0;
 
-            fints(delsmoothrow) = fints(delsmoothrow) - kernmat*densvals;
+            fints(delsmoothrow,:) = fints(delsmoothrow,:) - kernmat*densvals;
         end
     end    
 end

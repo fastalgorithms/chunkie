@@ -8,6 +8,10 @@ function f = times(f,g)
 if (~isa(f,'kernel'))
     f = times(g,f);
     return
+elseif (isnumeric(g) && isscalar(g) && kernel.radpp('summable', {f}))
+    f = kernel.radpp('sum', {f}, g);
+elseif (isnumeric(g) && isscalar(g) && kernel.green('summable', {f}))
+    f = kernel.green('sum', {f}, g);
 elseif (isnumeric(g) && isscalar(g))
     if(isa(f.eval, 'function_handle'))
         f.eval = @(varargin) g*f.eval(varargin{:});

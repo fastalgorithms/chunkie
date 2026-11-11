@@ -17,7 +17,8 @@ function [fints,maxrecs,numints,iers] = adapgausskerneval(r,d,n,d2,data,ct,bw,j,
 %   bw - barycentric interpolation weights for Legendre nodes at order of
 %   chunker
 %   j - chunk of interest
-%   dens - (opdims(2)*chnkr.k,chnkr.nch) array of density values
+%   dens - (opdims(2)*chnkr.k*chnkr.nch,ndens) array of density values, one
+%          column for each of the ndens densities
 %   rt,dt,d2t - position, derivative, second derivative of select 
 %               target points. if any are not used by kernel (or not well
 %               defined, e.g. when not on curve), a dummy array
@@ -71,12 +72,16 @@ if ~isempty(data)
 end
 jstart = opdims(2)*k*(j-1)+1;
 jend = opdims(2)*k*j;
-densj = reshape(dens(jstart:jend),opdims(2),k);
+ndens = numel(dens)/(opdims(2)*k*size(r,3));
+dens = reshape(dens,[],ndens);
+% rows are the density components of each density, (opdims(2)*ndens,k)
+densj = reshape(permute(reshape(dens(jstart:jend,:),opdims(2),k,ndens), ...
+    [1 3 2]),opdims(2)*ndens,k);
 
 stack = zeros(2,maxdepth);
-vals = zeros(opdims(1),maxdepth);
+vals = zeros(opdims(1)*ndens,maxdepth);
 
-fints = zeros(opdims(1)*ntarg,1);
+fints = zeros(opdims(1)*ntarg,ndens);
 
 numints = zeros(ntarg,1); iers = zeros(ntarg,1); maxrecs = zeros(ntarg,1);
 
@@ -162,7 +167,7 @@ for ii = 1:ntarg
     if toomanyints; iers(ii) = 16; end
     
     istart = (ii-1)*opdims(1)+1; iend = ii*opdims(1);
-    fints(istart:iend) = fint1;
+    fints(istart:iend,:) = reshape(fint1,opdims(1),ndens);
     
 end
 
@@ -204,9 +209,12 @@ mat_tt = kern(srcinfo,targinfo);
 dsdt = u*( (w(:).' ).*dintlen);
 dsdt = repmat(dsdt,opdims(2),1); dsdt = dsdt(:);
 
-densint = densint(:).*dsdt;
+ndens = size(densj,1)/opdims(2);
+densint = reshape(permute(reshape(densint,opdims(2),ndens,ntt),[1 3 2]), ...
+    opdims(2)*ntt,ndens).*dsdt;
 
 val = mat_tt*densint;
+val = val(:);
 
 end
 

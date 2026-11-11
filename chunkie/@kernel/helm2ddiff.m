@@ -84,8 +84,6 @@ if(nargin < 3)
       coefs = ones(2,2,2);
     end
 end
-obj.params.coefs = coefs;
-
 switch lower(type)
 
     case {'s', 'single'}
@@ -144,7 +142,7 @@ switch lower(type)
         if (nargin < 3)
             coefs = ones(2,2);
         end
-        obj.type = 'c';
+        obj.type = 'cp';
         obj.eval = @(s,t) chnk.helm2d.kern(zks(1), s, t, 'cp_diff',coefs(:,1)) - ...
                           chnk.helm2d.kern(zks(2), s, t, 'cp_diff',coefs(:,2));
         obj.fmm  = @(eps,s,t,sigma) ...
@@ -216,6 +214,9 @@ switch lower(type)
         error('Unknown Helmholtz difference kernel type ''%s''.', type);
 
 end
+
+% the coefs of the type, after its defaults
+obj.params.coefs = coefs;
 
 icheck = exist(['fmm2d.' mexext], 'file');
 if icheck ~=3

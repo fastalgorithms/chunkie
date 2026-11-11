@@ -219,8 +219,9 @@ end
     function out = fmm_left(eps, s, t, sigma)
         nt    = size(t.r(:,:), 2);
         fval  = evalh(t);
+        ndens = size(sigma, 2);
         inner = Kfmm(eps, s, t, sigma);
-        out   = reshape(apply_left(fval, reshape(inner, m, 1, nt)), p*nt, 1);
+        out   = reshape(apply_left(fval, reshape(inner, m, 1, nt, ndens)), p*nt, ndens);
     end
 
 % right-multiply: K(s,t) * h(s)
@@ -246,7 +247,8 @@ end
     function out = fmm_right(eps, s, t, sigma)
         ns     = size(s.r(:,:), 2);
         fval   = evalh(s);
-        sig_in = reshape(apply_left(fval, reshape(sigma, p, 1, ns)), q, ns);
+        ndens  = size(sigma, 2);
+        sig_in = reshape(apply_left(fval, reshape(sigma, p, 1, ns, ndens)), q*ns, ndens);
         out    = Kfmm(eps, s, t, sig_in);
     end
 
