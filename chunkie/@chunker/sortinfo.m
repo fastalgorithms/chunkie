@@ -33,7 +33,7 @@ function [inds,adjs,info] = sortinfo(chnkr)
 % author: Travis Askham (askhamwhat@gmail.com)
 
 nch = chnkr.nch;
-ncompmax = max(1000, nch);
+ncompmax = nch; % each component has at least one chunk
 
 ier = 0;
 
@@ -136,12 +136,22 @@ for i = 1:length(ileftzero)
 end
 
 % do remaining, closed components
+% ptr is the first chunk not yet hit. ihit only changes from false to
+% true, so ptr only moves forward: O(nch) total instead of a fresh
+% find(~ihit,1,'first') for every component, which is O(nch^2) worst case
+ptr = 1;
 for i = 1:ncompmax
     if inext > nch
         break;
     end
+    while ptr <= nch && ihit(ptr)
+        ptr = ptr+1;
+    end
+    if ptr > nch
+        break; % bad adj info, flagged by ier = 2 below
+    end
     comp = comp+1;
-    icurrent = find(~ihit,1,'first');
+    icurrent = ptr;
     istart = icurrent;
     for ii = inext:nch
         inds(ii) = icurrent;
@@ -162,7 +172,7 @@ end
 ifclosed = ifclosed(1:comp);
 nchs = nchs(1:comp);
 
-if any(inds < 1) || length(unique(inds)) ~= length(inds)
+if inext <= nch || any(inds < 1) || length(unique(inds)) ~= length(inds)
     % sorting inds are bad
     ier = 2;
 end
