@@ -195,10 +195,16 @@ rel_error_w = norm(w.*sysd - syswd,'fro')/norm(syswd,'fro');
 fprintf('%5.2e : Relative fro error in w(t)*K\n',rel_error_w);
 assert(rel_error_w < 1e-10)
 
-% right multiply by a function handle: splitinfo is dropped, since
-% pquad can't handle a split coefficient that varies within a panel
+% right multiply by a function handle
 wrkernd = kernd*wfun;
-assert(isempty(wrkernd.splitinfo))
+assert(~isempty(wrkernd.splitinfo))
+syswrd = chunkerkernevalmat(chnkr,wrkernd,targs,opts);
+xs = chnkr.r(1,:).'; ys = chnkr.r(2,:).';
+dens = cos(xs) + sin(2*ys);
+ref_wr = sysd*((1 + xs.^2).*dens);
+rel_error_wr = norm(ref_wr - syswrd*dens)/norm(ref_wr);
+fprintf('%5.2e : Relative error in K*w(s) on a smooth density\n',rel_error_wr);
+assert(rel_error_wr < 1e-12)
 
 % matrix-valued kernel, left multiply by a 3x2 constant matrix: p~=m
 sysv = chunkerkernevalmat(chnkr,kernv,targs,opts);
