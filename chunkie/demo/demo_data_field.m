@@ -4,7 +4,7 @@
 k = 2; 
 
 % Make a non-circular chnkr
-chnkr = chunkerfunc(@(t) [5.*(cos(t))'; (sin(t))'],cparams,pref); 
+chnkr = chunkerfunc(@(t) [5.*(cos(t))'; (sin(t))']); 
 % Make a data field for the Hilbert kernel
 chnkr = chnkr.makedatarows(1);
 L = sum(sum(chnkr.wts));
