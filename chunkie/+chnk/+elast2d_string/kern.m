@@ -64,6 +64,10 @@ rx = t.r(1,:).' - s.r(1,:);
 ry = t.r(2,:).' - s.r(2,:);
 
 hp = zeros(1,ns);
+% string directions default to the source normals (also needed when
+% ifimage = false)
+nx = s.n(1,:);
+ny = s.n(2,:);
 
 if (ifimage)
     if (isfield(s,'data'))

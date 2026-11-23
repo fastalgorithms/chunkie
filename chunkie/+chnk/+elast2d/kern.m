@@ -139,6 +139,27 @@ case {'dalt'}
     term1 = eta*(kron(rdotv./r2,[2 0; 0 2]));
     mat = -(term1+term2);
 
+    % coincident source and target (on the curve): the singularity is
+    % removable, with limit (kappa/2)*(2*eta*I + zeta*tau*tau^T), kappa
+    % the signed curvature and tau the unit tangent at the source. This
+    % needs s.d and s.d2; without them the entry stays NaN.
+    [it,is] = find(r2 == 0);
+    if ~isempty(it)
+        sd = []; sd2 = [];
+        try sd = s.d(:,:); sd2 = s.d2(:,:); catch, end
+        if ~isempty(sd) && ~isempty(sd2)
+            d1 = sd(:,is); dd = sd2(:,is);
+            dn = sqrt(sum(d1.^2,1));
+            kap = (d1(1,:).*dd(2,:) - d1(2,:).*dd(1,:))./dn.^3;
+            tx = d1(1,:)./dn; ty = d1(2,:)./dn;
+            it = it(:).'; is = is(:).';
+            mat(sub2ind(size(mat),2*it-1,2*is-1)) = kap/2.*(2*eta + zeta*tx.^2);
+            mat(sub2ind(size(mat),2*it-1,2*is))   = kap/2.*zeta.*tx.*ty;
+            mat(sub2ind(size(mat),2*it,2*is-1))   = kap/2.*zeta.*tx.*ty;
+            mat(sub2ind(size(mat),2*it,2*is))     = kap/2.*(2*eta + zeta*ty.^2);
+        end
+    end
+
 case {'daltgrad', 'daltg'}
     dirx = s.n(1,:); dirx = dirx(:).';
     diry = s.n(2,:); diry = diry(:).';

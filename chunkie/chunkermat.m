@@ -383,7 +383,19 @@ for i=1:nchunkers
     
     % call requested routine
 
-    if strcmpi(quad,'ggq')
+    % a 'smooth' kernel that is finite at coincident points (i.e. it
+    % returns the limit of its removable singularity there) is integrated
+    % with the plain Gauss-Legendre rule on its own chunker. The GGQ
+    % log rule used otherwise evaluates the kernel at points ~1e-4 panel
+    % lengths from the target, where removable singularities of the form
+    % (r.n)/r^2 are computed by cancellation from absolute coordinates.
+    usesmoothdiag = strcmpi(quad,'ggq') && strcmpi(singi,'smooth') && ...
+        smooth_diag_available(chnkr,ftmp);
+
+    if usesmoothdiag
+        sysmat_tmp = smoothdiag_buildmat(chnkr,ftmp,opdims, ...
+            nonsmoothonly,corrections);
+    elseif strcmpi(quad,'ggq')
         if strcmpi(singi,'smooth')
             %TODO: make a reasonable method for smooth with removable
             type = 'log';
@@ -491,7 +503,7 @@ for i=1:nchunkers
 end
 
 if(icgrph && isrcip)
-    [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(k);
+    [sbclmat,sbcrmat,lvmat,rvmat,u] = chnk.rcip.shiftedlegbasismats(chnkrs(1).k);
     nch_all = horzcat(chnkobj.echnks.nch);
     npt_all = horzcat(chnkobj.echnks.npt);
     [~,nv] = size(chnkobj.verts);
@@ -776,4 +788,59 @@ end
 
 mat = sparse(is,js,vs,opdims(1)*nt,opdims(2)*chnkr.npt);
 
+end
+
+
+function tf = smooth_diag_available(chnkr,kerneval)
+% true if the kernel is finite at a coincident source and target point,
+% i.e. it supplies the limit of its (removable) singularity there
+tf = false;
+if chnkr.nch < 1 || chnkr.k < 1
+    return
+end
+pt = []; pt.r = chnkr.r(:,1,1); pt.d = chnkr.d(:,1,1);
+pt.d2 = chnkr.d2(:,1,1); pt.n = chnkr.n(:,1,1);
+if chnkr.hasdata
+    pt.data = chnkr.data(:,1,1);
+end
+try
+    v = kerneval(pt,pt);
+    tf = ~isempty(v) && all(isfinite(v(:)));
+catch
+    tf = false;
+end
+end
+
+
+function mat = smoothdiag_buildmat(chnkr,kerneval,opdims,nonsmoothonly, ...
+    corrections)
+% plain Gauss-Legendre rule for a smooth kernel with a finite diagonal.
+% dense: all interactions on the chunker. nonsmoothonly: the self and
+% neighbour blocks (sparse). corrections: only the coincident-point
+% entries, since the smooth rule used with corrections skips them.
+if ~nonsmoothonly
+    mat = chnk.quadnative.buildmat(chnkr,kerneval,opdims);
+    return
+end
+k = chnkr.k; nch = chnkr.nch;
+is = []; js = []; vs = [];
+for j = 1:nch
+    ilist = j;
+    if ~corrections
+        ilist = [j, chnkr.adj(1,j), chnkr.adj(2,j)];
+        ilist = ilist(ilist > 0);
+    end
+    for i = ilist
+        blk = chnk.quadnative.buildmat(chnkr,kerneval,opdims,i,j);
+        [ib,jb] = ndgrid(1:opdims(1)*k,1:opdims(2)*k);
+        if corrections
+            keep = ceil(ib/opdims(1)) == ceil(jb/opdims(2));
+            ib = ib(keep); jb = jb(keep); blk = blk(keep);
+        end
+        is = [is; ib(:) + (i-1)*opdims(1)*k]; %#ok<AGROW>
+        js = [js; jb(:) + (j-1)*opdims(2)*k]; %#ok<AGROW>
+        vs = [vs; blk(:)]; %#ok<AGROW>
+    end
+end
+mat = sparse(is,js,vs,opdims(1)*chnkr.npt,opdims(2)*chnkr.npt);
 end
